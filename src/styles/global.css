@@ -1,3 +1,61 @@
 @layer theme, base, clerk, components, utilities; /* Ensure Clerk is compatible with Tailwind CSS v4 */
 
 @import 'tailwindcss';
+
+/* Matrix-specific styles */
+@layer components {
+  .matrix-text {
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 10px #00ff00;
+  }
+
+  .matrix-glow {
+    box-shadow: 0 0 20px #00ff00;
+  }
+
+  .matrix-bg {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 255, 0, 0.1) 100%);
+  }
+}
+
+/* Custom animations */
+@keyframes matrix-fade {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes matrix-glitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+.animate-matrix-fade {
+  animation: matrix-fade 2s ease-in-out infinite;
+}
+
+.animate-matrix-glitch {
+  animation: matrix-glitch 0.3s ease-in-out infinite;
+}
