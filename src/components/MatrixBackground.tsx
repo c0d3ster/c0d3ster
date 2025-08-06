@@ -45,7 +45,7 @@ export const MatrixBackground = () => {
     for (let i = 0; i < columns; i++) {
       for (let j = 0; j < charsPerColumn; j++) {
         const index = i * charsPerColumn + j
-        drops[index] = Math.random() * -200 - 75 + (j * 30) // Start further above screen
+        drops[index] = Math.random() * -200 - 75 + j * 30 // Start further above screen
         charIndexes[index] = Math.floor(Math.random() * chars.length)
       }
     }
@@ -71,7 +71,8 @@ export const MatrixBackground = () => {
               const charX = columnIndex * fontSize
               const charY = drop * fontSize
               const distance = Math.sqrt(
-                (charX - mousePositionRef.current.x) ** 2 + (charY - mousePositionRef.current.y) ** 2,
+                (charX - mousePositionRef.current.x) ** 2 +
+                  (charY - mousePositionRef.current.y) ** 2
               )
 
               // Set opacity based on distance - binary cutoff
@@ -88,7 +89,10 @@ export const MatrixBackground = () => {
 
               // Reset to top with more randomization
               if (drop * fontSize > canvas.height) {
-                drops[i] = Math.random() * -200 - 75 + (Math.floor(i % charsPerColumn) * 30)
+                drops[i] =
+                  Math.random() * -200 -
+                  75 +
+                  Math.floor(i % charsPerColumn) * 30
                 charIndexes[i] = Math.floor(Math.random() * chars.length)
               }
             }
@@ -109,7 +113,7 @@ export const MatrixBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-0"
+      className='fixed inset-0 z-0'
       style={{
         background: 'black',
         width: '100vw',

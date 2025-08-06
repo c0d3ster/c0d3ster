@@ -7,7 +7,9 @@ type ISignUpPageProps = {
   params: Promise<{ locale: string }>
 }
 
-export async function generateMetadata(props: ISignUpPageProps): Promise<Metadata> {
+export async function generateMetadata(
+  props: ISignUpPageProps
+): Promise<Metadata> {
   const { locale } = await props.params
   const t = await getTranslations({
     locale,
@@ -24,7 +26,5 @@ export default async function SignUpPage(props: ISignUpPageProps) {
   const { locale } = await props.params
   setRequestLocale(locale)
 
-  return (
-    <SignUp path={getI18nPath('/sign-up', locale)} />
-  )
-};
+  return <SignUp path={getI18nPath('/sign-up', locale)} />
+}

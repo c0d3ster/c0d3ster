@@ -36,4 +36,4 @@ Ready to discuss your next project? I'm always open to new opportunities!
 
 ---
 
-*Let's build something amazing together!* 🚀
+_Let's build something amazing together!_ 🚀

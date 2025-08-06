@@ -8,8 +8,6 @@ export default async function Layout(props: {
   setRequestLocale(locale)
 
   return (
-    <div className="min-h-screen bg-black">
-      {props.children}
-    </div>
+    <div className='min-h-screen scroll-smooth bg-black'>{props.children}</div>
   )
 }

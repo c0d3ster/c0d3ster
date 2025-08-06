@@ -47,8 +47,14 @@ describe('MatrixBackground', () => {
     const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
     render(<MatrixBackground />)
 
-    expect(addEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function))
-    expect(addEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function))
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'mousemove',
+      expect.any(Function)
+    )
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function)
+    )
   })
 
   it('cleans up event listeners on unmount', () => {
@@ -57,8 +63,14 @@ describe('MatrixBackground', () => {
 
     unmount()
 
-    expect(removeEventListenerSpy).toHaveBeenCalledWith('mousemove', expect.any(Function))
-    expect(removeEventListenerSpy).toHaveBeenCalledWith('resize', expect.any(Function))
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'mousemove',
+      expect.any(Function)
+    )
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function)
+    )
   })
 
   it('sets up animation interval', () => {

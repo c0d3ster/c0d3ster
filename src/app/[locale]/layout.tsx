@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 }
 
 export function generateStaticParams() {
-  return routing.locales.map(locale => ({ locale }))
+  return routing.locales.map((locale) => ({ locale }))
 }
 
 export default async function RootLayout(props: {
@@ -51,9 +51,7 @@ export default async function RootLayout(props: {
     <html lang={locale}>
       <body>
         <NextIntlClientProvider>
-          <PostHogProvider>
-            {props.children}
-          </PostHogProvider>
+          <PostHogProvider>{props.children}</PostHogProvider>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -2,11 +2,7 @@ import type { KnipConfig } from 'knip'
 
 const config: KnipConfig = {
   // Files to exclude from Knip analysis
-  ignore: [
-    'src/libs/I18n.ts',
-    'src/types/I18n.ts',
-    'tests/**/*.ts',
-  ],
+  ignore: ['src/libs/I18n.ts', 'src/types/I18n.ts', 'tests/**/*.ts'],
   // Dependencies to ignore during analysis
   ignoreDependencies: [
     '@commitlint/types',

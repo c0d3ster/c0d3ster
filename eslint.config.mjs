@@ -1,6 +1,7 @@
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import antfu from '@antfu/eslint-config'
+import prettier from 'eslint-config-prettier'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
 import playwright from 'eslint-plugin-playwright'
 import tailwind from 'eslint-plugin-tailwindcss'
@@ -15,20 +16,16 @@ export default antfu(
     lessOpinionated: true,
     isInEditor: false,
 
-    // Code style
-    stylistic: {
-      semi: false,
-    },
+    // Code style - disabled to let Prettier handle formatting
+    stylistic: false,
 
-    // Format settings
+    // Format settings - disabled to let Prettier handle formatting
     formatters: {
-      css: true,
+      css: false,
     },
 
     // Ignored paths
-    ignores: [
-      'migrations/**/*',
-    ],
+    ignores: ['migrations/**/*'],
   },
   // --- Accessibility Rules ---
   jsxA11y.flatConfigs.recommended,
@@ -43,11 +40,11 @@ export default antfu(
   },
   // --- E2E Testing Rules ---
   {
-    files: [
-      '**/*.spec.ts',
-      '**/*.e2e.ts',
-    ],
+    files: ['**/*.spec.ts', '**/*.e2e.ts'],
     ...playwright.configs['flat/recommended'],
+    rules: {
+      'style/quotes': 'off', // Allow different quote styles in test files
+    },
   },
 
   // --- Custom Rule Overrides ---
@@ -62,4 +59,6 @@ export default antfu(
       'test/prefer-lowercase-title': 'off', // Allow using uppercase titles in test titles
     },
   },
+  // --- Prettier Config (must be last) ---
+  prettier
 )
