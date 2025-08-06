@@ -1,6 +1,6 @@
-import { hasLocale } from 'next-intl';
-import { getRequestConfig } from 'next-intl/server';
-import { routing } from './I18nRouting';
+import { hasLocale } from 'next-intl'
+import { getRequestConfig } from 'next-intl/server'
+import { routing } from './I18nRouting'
 
 // NextJS Boilerplate uses Crowdin as the localization software.
 // As a developer, you only need to take care of the English (or another default language) version.
@@ -14,13 +14,13 @@ import { routing } from './I18nRouting';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   // Typically corresponds to the `[locale]` segment
-  const requested = await requestLocale;
+  const requested = await requestLocale
   const locale = hasLocale(routing.locales, requested)
     ? requested
-    : routing.defaultLocale;
+    : routing.defaultLocale
 
   return {
     locale,
     messages: (await import(`../locales/${locale}.json`)).default,
-  };
-});
+  }
+})

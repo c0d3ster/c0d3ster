@@ -1,51 +1,42 @@
-import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Sponsors } from '@/components/Sponsors';
+import type { Metadata } from 'next'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { Sponsors } from '@/components/Sponsors'
 
 type IIndexProps = {
-  params: Promise<{ locale: string }>;
-};
+  params: Promise<{ locale: string }>
+}
 
 export async function generateMetadata(props: IIndexProps): Promise<Metadata> {
-  const { locale } = await props.params;
+  const { locale } = await props.params
   const t = await getTranslations({
     locale,
     namespace: 'Index',
-  });
+  })
 
   return {
     title: t('meta_title'),
     description: t('meta_description'),
-  };
+  }
 }
 
 export default async function Index(props: IIndexProps) {
-  const { locale } = await props.params;
-  setRequestLocale(locale);
+  const { locale } = await props.params
+  setRequestLocale(locale)
   const t = await getTranslations({
     locale,
     namespace: 'Index',
-  });
+  })
 
   return (
     <>
       <p>
-        {`Follow `}
-        <a
-          className="text-blue-700 hover:border-b-2 hover:border-blue-700"
-          href="https://twitter.com/ixartz"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          @Ixartz on Twitter
-        </a>
-        {` for updates and more information about the boilerplate.`}
+        A modern Next.js template ready for your next project.
       </p>
       <h2 className="mt-5 text-2xl font-bold">
-        Boilerplate Code for Your Next.js Project with Tailwind CSS
+        Modern Next.js Template with TypeScript and Tailwind CSS
       </h2>
       <p className="text-base">
-        Next.js Boilerplate is a developer-friendly starter code for Next.js projects, built with Tailwind CSS and TypeScript.
+        A clean, production-ready Next.js template built with TypeScript, Tailwind CSS, and modern development tools.
         {' '}
         <span role="img" aria-label="zap">
           ⚡️
@@ -94,7 +85,6 @@ export default async function Index(props: IIndexProps) {
         <li>📏 Linting and formatting (ESLint, Prettier)</li>
         <li>🦊 Git hooks and commit linting (Husky, Commitlint)</li>
         <li>🦺 Testing suite (Vitest, React Testing Library, Playwright)</li>
-        <li>🎉 Storybook for UI development</li>
         <li>
           🐰 AI-powered code reviews with
           {' '}
@@ -105,17 +95,7 @@ export default async function Index(props: IIndexProps) {
             CodeRabbit
           </a>
         </li>
-        <li>
-          🚨 Error monitoring (
-          <a
-            className="font-bold text-blue-700 hover:border-b-2 hover:border-blue-700"
-            href="https://sentry.io/for/nextjs/?utm_source=github&amp;utm_medium=paid-community&amp;utm_campaign=general-fy25q1-nextjs&amp;utm_content=github-banner-nextjsboilerplate-logo"
-          >
-            Sentry
-          </a>
-          ) and logging (LogTape, an alternative to Pino.js)
-        </li>
-        <li>🖥️ Monitoring as Code (Checkly)</li>
+
         <li>
           🔐 Security and bot protection (
           <a
@@ -137,5 +117,5 @@ export default async function Index(props: IIndexProps) {
       <h2 className="mt-5 text-2xl font-bold">{t('sponsors_title')}</h2>
       <Sponsors />
     </>
-  );
+  )
 };

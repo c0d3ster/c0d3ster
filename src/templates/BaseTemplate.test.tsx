@@ -1,9 +1,9 @@
-import { page } from '@vitest/browser/context';
-import { NextIntlClientProvider } from 'next-intl';
-import { describe, expect, it } from 'vitest';
-import { render } from 'vitest-browser-react';
-import messages from '@/locales/en.json';
-import { BaseTemplate } from './BaseTemplate';
+import { page } from '@vitest/browser/context'
+import { NextIntlClientProvider } from 'next-intl'
+import { describe, expect, it } from 'vitest'
+import { render } from 'vitest-browser-react'
+import messages from '@/locales/en.json'
+import { BaseTemplate } from './BaseTemplate'
 
 describe('Base template', () => {
   describe('Render method', () => {
@@ -22,22 +22,22 @@ describe('Base template', () => {
             {null}
           </BaseTemplate>
         </NextIntlClientProvider>,
-      );
+      )
 
-      const menuItemList = page.getByRole('listitem');
+      const menuItemList = page.getByRole('listitem')
 
-      expect(menuItemList.elements()).toHaveLength(3);
-    });
+      expect(menuItemList.elements()).toHaveLength(3)
+    })
 
     it('should have a link to support creativedesignsguru.com', () => {
       render(
         <NextIntlClientProvider locale="en" messages={messages}>
           <BaseTemplate leftNav={<li>1</li>}>{null}</BaseTemplate>
         </NextIntlClientProvider>,
-      );
+      )
 
-      const copyrightSection = page.getByText(/© Copyright/);
-      const copyrightLink = copyrightSection.getByRole('link');
+      const copyrightSection = page.getByText(/© Copyright/)
+      const copyrightLink = copyrightSection.getByRole('link')
 
       /*
        * PLEASE READ THIS SECTION
@@ -48,7 +48,7 @@ describe('Base template', () => {
       expect(copyrightLink).toHaveAttribute(
         'href',
         'https://creativedesignsguru.com',
-      );
-    });
-  });
-});
+      )
+    })
+  })
+})
