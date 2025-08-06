@@ -23,21 +23,21 @@ export const Portfolio = () => {
   ]
 
   return (
-    <section id='portfolio' className='min-h-screen bg-black py-20'>
+    <section id='portfolio' className='min-h-screen bg-black py-16'>
       <div className='container mx-auto px-4'>
         {/* Section Header */}
-        <div className='mb-16 text-center'>
-          <h2 className='mb-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
+        <div className='mb-12 text-center'>
+          <h2 className='relative m-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
             PORTFOLIO
           </h2>
-          <div className='mx-auto h-1 w-32 bg-green-400' />
+          <div className='relative mx-auto h-1 w-32 bg-green-400' />
           <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
             SELECTED PROJECTS & ACHIEVEMENTS
           </p>
         </div>
 
         {/* Projects Grid */}
-        <div className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
+        <div className='mb-8 grid gap-16 md:grid-cols-2 lg:grid-cols-3'>
           {projects.map((project) => (
             <div
               key={project.title}

@@ -22,7 +22,7 @@ export const MatrixHero = () => {
   return (
     <div
       id='home'
-      className='relative flex min-h-screen items-center justify-center'
+      className='relative flex min-h-screen items-center justify-center py-4'
     >
       {/* Main content */}
       <div className='relative z-10 text-center'>

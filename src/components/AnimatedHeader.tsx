@@ -4,11 +4,27 @@ import { useEffect, useState } from 'react'
 
 export const AnimatedHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false)
+  const [activeSection, setActiveSection] = useState('home')
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY
       setIsScrolled(scrollPosition > 100)
+
+      // Determine active section based on scroll position
+      const sections = ['home', 'portfolio', 'contact']
+      const sectionElements = sections.map(id => document.getElementById(id))
+      
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const element = sectionElements[i]
+        if (element) {
+          const rect = element.getBoundingClientRect()
+          if (rect.top <= 100) {
+            setActiveSection(sections[i] || 'home')
+            break
+          }
+        }
+      }
     }
 
     window.addEventListener('scroll', handleScroll)
@@ -30,23 +46,29 @@ export const AnimatedHeader = () => {
           </h1>
         </div>
 
-        {/* Navigation */}
-        <nav className='hidden items-center space-x-8 md:flex'>
+        {/* Navigation - centered */}
+        <nav className='absolute left-1/2 hidden -translate-x-1/2 items-center space-x-8 md:flex'>
           <a
             href='#home'
-            className='font-mono text-sm text-green-300 transition-colors hover:text-green-400'
+            className={`font-mono text-sm transition-colors hover:text-green-400 ${
+              activeSection === 'home' ? 'text-green-400' : 'text-green-300 opacity-50'
+            }`}
           >
             HOME
           </a>
           <a
             href='#portfolio'
-            className='font-mono text-sm text-green-300 transition-colors hover:text-green-400'
+            className={`font-mono text-sm transition-colors hover:text-green-400 ${
+              activeSection === 'portfolio' ? 'text-green-400' : 'text-green-300 opacity-50'
+            }`}
           >
             PORTFOLIO
           </a>
           <a
             href='#contact'
-            className='font-mono text-sm text-green-300 transition-colors hover:text-green-400'
+            className={`font-mono text-sm transition-colors hover:text-green-400 ${
+              activeSection === 'contact' ? 'text-green-400' : 'text-green-300 opacity-50'
+            }`}
           >
             CONTACT
           </a>

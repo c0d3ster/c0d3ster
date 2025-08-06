@@ -4,9 +4,9 @@ export const Contact = () => {
   const contactMethods = [
     {
       title: 'EMAIL',
-      value: 'contact@c0d3ster.dev',
+      value: 'support@c0d3ster.com',
       icon: '📧',
-      link: 'mailto:contact@c0d3ster.dev',
+      link: 'mailto:support@c0d3ster.com',
     },
     {
       title: 'GITHUB',
@@ -16,35 +16,35 @@ export const Contact = () => {
     },
     {
       title: 'LINKEDIN',
-      value: 'linkedin.com/in/c0d3ster',
+      value: 'linkedin.com/in/cody-douglas',
       icon: '🔗',
-      link: 'https://linkedin.com/in/c0d3ster',
+      link: 'https://linkedin.com/in/cody-douglass',
     },
   ]
 
   return (
-    <section id='contact' className='min-h-screen bg-black py-20'>
-      <div className='container mx-auto px-4'>
+    <section id='contact' className='min-h-screen bg-black py-16'>
+      <div className='container mx-auto px-4 pt-4'>
         {/* Section Header */}
         <div className='mb-16 text-center'>
-          <h2 className='mb-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
+          <h2 className='relative mb-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
             CONTACT
           </h2>
-          <div className='mx-auto h-1 w-32 bg-green-400' />
+          <div className='relative mx-auto h-1 w-32 bg-green-400' />
           <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
             READY TO START YOUR PROJECT?
           </p>
         </div>
 
         {/* Contact Methods */}
-        <div className='mb-16 grid gap-8 md:grid-cols-3'>
+        <div className='mb-12 grid gap-16 md:grid-cols-3'>
           {contactMethods.map((method) => (
             <a
               key={method.title}
               href={method.link}
               target='_blank'
               rel='noopener noreferrer'
-              className='group relative overflow-hidden rounded-lg border border-green-400/20 bg-black/50 p-8 text-center transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/5'
+              className='group relative overflow-hidden rounded-lg border border-green-400/20 bg-black/50 p-4 text-center transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/5'
             >
               {/* Icon */}
               <div className='mb-4 text-4xl'>{method.icon}</div>
@@ -71,8 +71,8 @@ export const Contact = () => {
         </div>
 
         {/* Contact Form */}
-        <div className='mx-auto max-w-2xl'>
-          <div className='rounded-lg border border-green-400/20 bg-black/50 p-8'>
+        <div className='relative z-20 mx-auto mt-8 max-w-2xl'>
+          <div className='rounded-lg border border-green-400/20 bg-black/50 p-4'>
             <h3 className='mb-6 text-center font-mono text-2xl font-bold text-green-400'>
               SEND MESSAGE
             </h3>
@@ -133,8 +133,8 @@ export const Contact = () => {
                 </label>
                 <textarea
                   id='message'
-                  rows={6}
-                  className='w-full rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
+                  rows={4}
+                  className='w-full resize-none rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
                   placeholder='DESCRIBE YOUR PROJECT...'
                 />
               </div>
