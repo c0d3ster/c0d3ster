@@ -18,9 +18,9 @@ export async function generateMetadata(props: {
 
 export default function Counter() {
   return (
-    <div className="text-center">
-      <h1 className="mb-4 text-2xl font-bold">Counter</h1>
-      <p className="text-gray-600">This page is under construction.</p>
+    <div className='text-center'>
+      <h1 className='mb-4 text-2xl font-bold'>Counter</h1>
+      <p className='text-gray-600'>This page is under construction.</p>
     </div>
   )
 }

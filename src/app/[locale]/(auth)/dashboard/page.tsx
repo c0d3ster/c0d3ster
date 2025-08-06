@@ -17,8 +17,8 @@ export async function generateMetadata(props: {
 
 export default function Dashboard() {
   return (
-    <div className="py-5 [&_p]:my-6">
-      <h1 className="mb-4 text-2xl font-bold">Dashboard</h1>
+    <div className='py-5 [&_p]:my-6'>
+      <h1 className='mb-4 text-2xl font-bold'>Dashboard</h1>
       <p>Welcome to your dashboard.</p>
     </div>
   )

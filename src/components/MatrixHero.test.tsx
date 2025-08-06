@@ -33,7 +33,15 @@ describe('MatrixHero', () => {
 
     // The typing effect is complex to test with fake timers
     // Just verify the component renders properly
-    expect(title).toHaveClass('mb-8', 'font-mono', 'text-8xl', 'font-bold', 'tracking-wider', 'text-green-400', 'md:text-9xl')
+    expect(title).toHaveClass(
+      'mb-8',
+      'font-mono',
+      'text-8xl',
+      'font-bold',
+      'tracking-wider',
+      'text-green-400',
+      'md:text-9xl'
+    )
   })
 
   it('shows flashing underscore during typing', () => {
@@ -61,7 +69,11 @@ describe('MatrixHero', () => {
     const developmentText = screen.getByText('FULL-STACK DEVELOPMENT')
 
     expect(developmentText).toBeInTheDocument()
-    expect(developmentText).toHaveClass('font-mono', 'text-lg', 'text-green-400')
+    expect(developmentText).toHaveClass(
+      'font-mono',
+      'text-lg',
+      'text-green-400'
+    )
   })
 
   it('displays technology stack', () => {
@@ -77,9 +89,9 @@ describe('MatrixHero', () => {
     render(<MatrixHero />)
 
     // Check for decorative bars
-    const decorativeBars = screen.getAllByRole('generic').filter(el =>
-      el.className.includes('h-16 w-1 bg-green'),
-    )
+    const decorativeBars = screen
+      .getAllByRole('generic')
+      .filter((el) => el.className.includes('h-16 w-1 bg-green'))
 
     expect(decorativeBars).toHaveLength(3)
   })
@@ -106,7 +118,7 @@ describe('MatrixHero', () => {
       'flex',
       'min-h-screen',
       'items-center',
-      'justify-center',
+      'justify-center'
     )
   })
 

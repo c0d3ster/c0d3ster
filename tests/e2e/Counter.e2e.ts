@@ -17,7 +17,9 @@ test.describe('Counter', () => {
       await page.getByLabel('Increment by').fill('-1')
       await page.getByRole('button', { name: 'Increment' }).click()
 
-      await expect(page.getByText('Value must be between 1 and 3')).toBeVisible()
+      await expect(
+        page.getByText('Value must be between 1 and 3')
+      ).toBeVisible()
       await expect(page.getByText('Count:')).toHaveText(countText)
     })
 
@@ -42,12 +44,16 @@ test.describe('Counter', () => {
       await page.getByLabel('Increment by').fill('2')
       await page.getByRole('button', { name: 'Increment' }).click()
 
-      await expect(page.getByText('Count:')).toHaveText(`Count: ${countNumber + 2}`)
+      await expect(page.getByText('Count:')).toHaveText(
+        `Count: ${countNumber + 2}`
+      )
 
       await page.getByLabel('Increment by').fill('3')
       await page.getByRole('button', { name: 'Increment' }).click()
 
-      await expect(page.getByText('Count:')).toHaveText(`Count: ${countNumber + 5}`)
+      await expect(page.getByText('Count:')).toHaveText(
+        `Count: ${countNumber + 5}`
+      )
     })
   })
 })
