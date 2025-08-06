@@ -1,5 +1,8 @@
 'use client'
 
+import { ScrollAnimatedWrapper, TypewriterEffect } from './animations'
+import { SectionWrapper } from './SectionWrapper'
+
 export const Contact = () => {
   const contactMethods = [
     {
@@ -23,10 +26,10 @@ export const Contact = () => {
   ]
 
   return (
-    <section id='contact' className='min-h-screen bg-black py-16'>
-      <div className='container mx-auto px-4 pt-4'>
-        {/* Section Header */}
-        <div className='mb-16 text-center'>
+    <SectionWrapper id='contact'>
+      {/* Section Header */}
+      <ScrollAnimatedWrapper>
+        <div className='mt-8 mb-16 text-center'>
           <h2 className='relative mb-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
             CONTACT
           </h2>
@@ -35,8 +38,10 @@ export const Contact = () => {
             READY TO START YOUR PROJECT?
           </p>
         </div>
+      </ScrollAnimatedWrapper>
 
-        {/* Contact Methods */}
+      {/* Contact Methods */}
+      <ScrollAnimatedWrapper>
         <div className='mb-12 grid gap-16 md:grid-cols-3'>
           {contactMethods.map((method) => (
             <a
@@ -69,8 +74,10 @@ export const Contact = () => {
             </a>
           ))}
         </div>
+      </ScrollAnimatedWrapper>
 
-        {/* Contact Form */}
+      {/* Contact Form */}
+      <ScrollAnimatedWrapper>
         <div className='relative z-20 mx-auto mt-8 max-w-2xl'>
           <div className='rounded-lg border border-green-400/20 bg-black/50 p-4'>
             <h3 className='mb-6 text-center font-mono text-2xl font-bold text-green-400'>
@@ -150,14 +157,22 @@ export const Contact = () => {
             </form>
           </div>
         </div>
+      </ScrollAnimatedWrapper>
 
-        {/* Additional Matrix-style info */}
+      {/* Additional Matrix-style info */}
+      <ScrollAnimatedWrapper>
         <div className='mt-16 text-center font-mono text-sm text-green-600 opacity-40'>
-          <p>RESPONSE TIME: &lt; 24 HOURS</p>
-          <p>AVAILABILITY: OPEN FOR PROJECTS</p>
-          <p>COMMUNICATION: SECURE & CONFIDENTIAL</p>
+          <p>
+            <TypewriterEffect text='RESPONSE TIME: < 24 HOURS' speed={65} />
+          </p>
+          <p>
+            <TypewriterEffect text='AVAILABILITY: OPEN FOR PROJECTS' speed={65} />
+          </p>
+          <p>
+            <TypewriterEffect text='COMMUNICATION: SECURE & CONFIDENTIAL' speed={65} />
+          </p>
         </div>
-      </div>
-    </section>
+      </ScrollAnimatedWrapper>
+    </SectionWrapper>
   )
 }

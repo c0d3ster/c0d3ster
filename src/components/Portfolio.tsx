@@ -1,5 +1,8 @@
 'use client'
 
+import { ScrollAnimatedWrapper, TypewriterEffect } from './animations'
+import { SectionWrapper } from './SectionWrapper'
+
 export const Portfolio = () => {
   const projects = [
     {
@@ -23,10 +26,10 @@ export const Portfolio = () => {
   ]
 
   return (
-    <section id='portfolio' className='min-h-screen bg-black py-16'>
-      <div className='container mx-auto px-4'>
-        {/* Section Header */}
-        <div className='mb-12 text-center'>
+    <SectionWrapper id='portfolio'>
+      {/* Section Header */}
+      <ScrollAnimatedWrapper>
+        <div className='mt-8 mb-12 text-center'>
           <h2 className='relative m-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
             PORTFOLIO
           </h2>
@@ -35,8 +38,10 @@ export const Portfolio = () => {
             SELECTED PROJECTS & ACHIEVEMENTS
           </p>
         </div>
+      </ScrollAnimatedWrapper>
 
-        {/* Projects Grid */}
+      {/* Projects Grid */}
+      <ScrollAnimatedWrapper>
         <div className='mb-8 grid gap-16 md:grid-cols-2 lg:grid-cols-3'>
           {projects.map((project) => (
             <div
@@ -82,17 +87,22 @@ export const Portfolio = () => {
             </div>
           ))}
         </div>
+      </ScrollAnimatedWrapper>
 
-        {/* Additional Matrix-style info */}
+      {/* Additional Matrix-style info */}
+      <ScrollAnimatedWrapper>
         <div className='mt-16 text-center font-mono text-sm text-green-600 opacity-40'>
           <p>
-            PROJECTS LOADED:
-            {projects.length}
+            <TypewriterEffect text={`PROJECTS LOADED: ${projects.length}`} speed={65} />
           </p>
-          <p>SUCCESS RATE: 100%</p>
-          <p>CLIENT SATISFACTION: EXCELLENT</p>
+          <p>
+            <TypewriterEffect text='SUCCESS RATE: 100%' speed={65} />
+          </p>
+          <p>
+            <TypewriterEffect text='CLIENT SATISFACTION: EXCELLENT' speed={65} />
+          </p>
         </div>
-      </div>
-    </section>
+      </ScrollAnimatedWrapper>
+    </SectionWrapper>
   )
 }

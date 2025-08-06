@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { setRequestLocale } from 'next-intl/server'
 import {
-  AnimatedHeader,
   Contact,
+  Header,
   MatrixBackground,
   MatrixHero,
   Portfolio,
@@ -27,7 +27,7 @@ export default async function Index(props: IIndexProps) {
   return (
     <div className='min-h-screen bg-black'>
       <MatrixBackground />
-      <AnimatedHeader />
+      <Header />
       <MatrixHero />
       <Portfolio />
       <Contact />

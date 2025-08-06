@@ -2,15 +2,14 @@
 
 import { useEffect, useState } from 'react'
 
-export const AnimatedHeader = () => {
-  const [isScrolled, setIsScrolled] = useState(false)
+export const Header = () => {
   const [activeSection, setActiveSection] = useState('home')
+  const [scrollY, setScrollY] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPosition = window.scrollY
-      setIsScrolled(scrollPosition > 100)
-
+      setScrollY(window.scrollY)
+      
       // Determine active section based on scroll position
       const sections = ['home', 'portfolio', 'contact']
       const sectionElements = sections.map(id => document.getElementById(id))
@@ -31,12 +30,17 @@ export const AnimatedHeader = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  if (!isScrolled) {
-    return null
-  }
+  // Header animation: fade in when scrolling down, fade out when at top
+  const fadeStart = 50 // Start fading in at 50px scroll
+  const fadeEnd = 150 // Fully visible at 150px scroll
+  const fadeProgress = Math.max(0, Math.min(1, (scrollY - fadeStart) / (fadeEnd - fadeStart)))
+  const opacity = fadeProgress
 
   return (
-    <header className='fixed top-0 right-0 left-0 z-50 border-b border-green-400/20 bg-black/80 backdrop-blur-sm'>
+    <header 
+      className='fixed top-0 right-0 left-0 z-50 border-b border-green-400/20 bg-black/80 backdrop-blur-sm transition-opacity duration-300'
+      style={{ opacity }}
+    >
       <div className='container mx-auto flex items-center justify-between px-4 py-4'>
         {/* Logo */}
         <div className='flex items-center space-x-4'>
@@ -82,4 +86,4 @@ export const AnimatedHeader = () => {
       </div>
     </header>
   )
-}
+} 
