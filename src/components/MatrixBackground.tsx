@@ -74,9 +74,9 @@ export const MatrixBackground = () => {
                 (charX - mousePositionRef.current.x) ** 2 + (charY - mousePositionRef.current.y) ** 2,
               )
 
-              // Set opacity based on distance (0.2 base, 1.0 when close)
-              const maxDistance = 300 // Much larger distance for full opacity
-              const opacity = Math.max(0.25, 1 - distance / maxDistance)
+              // Set opacity based on distance - binary cutoff
+              const closeDistance = 300
+              const opacity = distance > closeDistance ? 0.3 : 0
 
               ctx.fillStyle = `rgba(0, 255, 0, ${opacity})`
               ctx.fillText(char, charX, charY)
