@@ -45,7 +45,7 @@ export const MatrixBackground = () => {
     for (let i = 0; i < columns; i++) {
       for (let j = 0; j < charsPerColumn; j++) {
         const index = i * charsPerColumn + j
-        drops[index] = Math.random() * -200 - 60 + (j * 30) // Start further above screen
+        drops[index] = Math.random() * -200 - 75 + (j * 30) // Start further above screen
         charIndexes[index] = Math.floor(Math.random() * chars.length)
       }
     }
@@ -76,7 +76,7 @@ export const MatrixBackground = () => {
 
               // Set opacity based on distance (0.2 base, 1.0 when close)
               const maxDistance = 300 // Much larger distance for full opacity
-              const opacity = Math.max(0.2, 1 - distance / maxDistance)
+              const opacity = Math.max(0.25, 1 - distance / maxDistance)
 
               ctx.fillStyle = `rgba(0, 255, 0, ${opacity})`
               ctx.fillText(char, charX, charY)
@@ -88,7 +88,7 @@ export const MatrixBackground = () => {
 
               // Reset to top with more randomization
               if (drop * fontSize > canvas.height) {
-                drops[i] = Math.random() * -200 - 60 + (Math.floor(i % charsPerColumn) * 30)
+                drops[i] = Math.random() * -200 - 75 + (Math.floor(i % charsPerColumn) * 30)
                 charIndexes[i] = Math.floor(Math.random() * chars.length)
               }
             }

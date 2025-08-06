@@ -8,28 +8,18 @@
     "sign_up_link": "S'inscrire"
   },
   "BaseTemplate": {
-    "description": "Code de démarrage pour Next.js avec Tailwind CSS",
+    "description": "Contracteur Logiciel & Développeur Full-Stack",
     "made_with": "Fait avec <author></author>."
   },
   "Index": {
-    "meta_title": "Présentation de Next.js Boilerplate",
-    "meta_description": "Next js Boilerplate est le code de démarrage parfait pour votre projet. Construisez votre application React avec le framework Next.js.",
-    "sponsors_title": "Partenaires"
+    "meta_title": "c0d3ster - Contracteur Logiciel",
+    "meta_description": "Contracteur en développement logiciel full-stack spécialisé dans React, Next.js, TypeScript et Node.js"
   },
   "Counter": {
     "meta_title": "Compteur",
     "meta_description": "Un exemple d'opération DB",
     "loading_counter": "Chargement du compteur...",
     "security_powered_by": "Sécurité, détection de bot et rate limiting propulsés par"
-  },
-  "CounterForm": {
-    "presentation": "Le compteur est stocké dans la base de données et incrémenté par la valeur que vous fournissez.",
-    "label_increment": "Incrémenter de",
-    "button_increment": "Incrémenter",
-    "error_increment_range": "La valeur doit être entre 1 et 3"
-  },
-  "CurrentCount": {
-    "count": "Nombre : {count}"
   },
   "About": {
     "meta_title": "A propos",

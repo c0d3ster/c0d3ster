@@ -8,28 +8,18 @@
     "sign_up_link": "Sign up"
   },
   "BaseTemplate": {
-    "description": "Starter code for your Nextjs Boilerplate with Tailwind CSS",
+    "description": "Software Contractor & Full-Stack Developer",
     "made_with": "Made with <author></author>."
   },
   "Index": {
-    "meta_title": "Next.js Boilerplate Presentation",
-    "meta_description": "Next js Boilerplate is the perfect starter code for your project. Build your React application with the Next.js framework.",
-    "sponsors_title": "Sponsors"
+    "meta_title": "c0d3ster - Software Contractor",
+    "meta_description": "Full-stack software development contractor specializing in React, Next.js, TypeScript, and Node.js"
   },
   "Counter": {
     "meta_title": "Counter",
     "meta_description": "An example of DB operation",
     "loading_counter": "Loading counter...",
     "security_powered_by": "Security, bot detection and rate limiting powered by"
-  },
-  "CounterForm": {
-    "presentation": "The counter is stored in the database and incremented by the value you provide.",
-    "label_increment": "Increment by",
-    "button_increment": "Increment",
-    "error_increment_range": "Value must be between 1 and 3"
-  },
-  "CurrentCount": {
-    "count": "Count: {count}"
   },
   "About": {
     "meta_title": "About",
