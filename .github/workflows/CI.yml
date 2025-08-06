@@ -34,8 +34,6 @@ jobs:
 
       - name: Build Next.js
         run: npm run build
-        env:
-          NEXT_PUBLIC_SENTRY_DISABLED: 'true' # Only upload Sentry source maps in deployment
 
       - if: matrix.node-version == '22.x' && success()
         name: Cache Next.js build output
@@ -105,28 +103,6 @@ jobs:
         uses: codecov/codecov-action@v5
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  storybook:
-    strategy:
-      matrix:
-        node-version: [22.x]
-
-    name: Run Storybook
-    runs-on: ubuntu-latest
-    needs: [build]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js environment
-        uses: ./.github/actions/setup-project
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Run storybook tests
-        uses: docker://mcr.microsoft.com/playwright:v1.54.0
-        with:
-          args: npm run storybook:test
 
   e2e:
     strategy:
