@@ -10,6 +10,6 @@ const config = {
     // Add Tailwind CSS support
     '@tailwindcss/postcss': {},
   },
-};
+}
 
-export default config;
+export default config

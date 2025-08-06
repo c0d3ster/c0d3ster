@@ -1,11 +1,11 @@
-import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import Image from 'next/image';
-import { routing } from '@/libs/I18nRouting';
+import type { Metadata } from 'next'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import Image from 'next/image'
+import { routing } from '@/libs/I18nRouting'
 
 type IPortfolioDetailProps = {
-  params: Promise<{ slug: string; locale: string }>;
-};
+  params: Promise<{ slug: string, locale: string }>
+}
 
 export function generateStaticParams() {
   return routing.locales
@@ -15,29 +15,29 @@ export function generateStaticParams() {
         locale,
       })),
     )
-    .flat(1);
+    .flat(1)
 }
 
 export async function generateMetadata(props: IPortfolioDetailProps): Promise<Metadata> {
-  const { locale, slug } = await props.params;
+  const { locale, slug } = await props.params
   const t = await getTranslations({
     locale,
     namespace: 'PortfolioSlug',
-  });
+  })
 
   return {
     title: t('meta_title', { slug }),
     description: t('meta_description', { slug }),
-  };
+  }
 }
 
 export default async function PortfolioDetail(props: IPortfolioDetailProps) {
-  const { locale, slug } = await props.params;
-  setRequestLocale(locale);
+  const { locale, slug } = await props.params
+  setRequestLocale(locale)
   const t = await getTranslations({
     locale,
     namespace: 'PortfolioSlug',
-  });
+  })
 
   return (
     <>
@@ -66,7 +66,7 @@ export default async function PortfolioDetail(props: IPortfolioDetailProps) {
         />
       </a>
     </>
-  );
+  )
 };
 
-export const dynamicParams = false;
+export const dynamicParams = false

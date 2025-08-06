@@ -1,4 +1,4 @@
-import type { KnipConfig } from 'knip';
+import type { KnipConfig } from 'knip'
 
 const config: KnipConfig = {
   // Files to exclude from Knip analysis
@@ -21,6 +21,6 @@ const config: KnipConfig = {
   compilers: {
     css: (text: string) => [...text.matchAll(/(?<=@)import[^;]+/g)].join('\n'),
   },
-};
+}
 
-export default config;
+export default config

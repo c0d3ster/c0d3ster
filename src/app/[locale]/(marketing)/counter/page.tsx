@@ -1,28 +1,28 @@
-import type { Metadata } from 'next';
-import { useTranslations } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
-import Image from 'next/image';
-import { Suspense } from 'react';
-import { CounterForm } from '@/components/CounterForm';
-import { CurrentCount } from '@/components/CurrentCount';
+import type { Metadata } from 'next'
+import { useTranslations } from 'next-intl'
+import { getTranslations } from 'next-intl/server'
+import Image from 'next/image'
+import { Suspense } from 'react'
+import { CounterForm } from '@/components/CounterForm'
+import { CurrentCount } from '@/components/CurrentCount'
 
 export async function generateMetadata(props: {
-  params: Promise<{ locale: string }>;
+  params: Promise<{ locale: string }>
 }): Promise<Metadata> {
-  const { locale } = await props.params;
+  const { locale } = await props.params
   const t = await getTranslations({
     locale,
     namespace: 'Counter',
-  });
+  })
 
   return {
     title: t('meta_title'),
     description: t('meta_description'),
-  };
+  }
 }
 
 export default function Counter() {
-  const t = useTranslations('Counter');
+  const t = useTranslations('Counter')
 
   return (
     <>
@@ -56,5 +56,5 @@ export default function Counter() {
         />
       </a>
     </>
-  );
+  )
 };

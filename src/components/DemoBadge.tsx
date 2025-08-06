@@ -9,4 +9,4 @@ export const DemoBadge = () => (
       </div>
     </a>
   </div>
-);
+)

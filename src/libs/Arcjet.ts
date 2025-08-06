@@ -1,4 +1,4 @@
-import arcjet, { shield } from '@arcjet/next';
+import arcjet, { shield } from '@arcjet/next'
 
 // Create a base Arcjet instance which can be imported and extended in each route.
 export default arcjet({
@@ -14,4 +14,4 @@ export default arcjet({
     }),
     // Other rules are added in different routes
   ],
-});
+})

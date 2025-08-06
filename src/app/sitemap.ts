@@ -1,5 +1,5 @@
-import type { MetadataRoute } from 'next';
-import { getBaseUrl } from '@/utils/Helpers';
+import type { MetadataRoute } from 'next'
+import { getBaseUrl } from '@/utils/Helpers'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -10,5 +10,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     // Add more URLs here
-  ];
+  ]
 }

@@ -1,7 +1,7 @@
-import type { AsyncSink } from '@logtape/logtape';
-import { configure, fromAsyncSink, getConsoleSink, getJsonLinesFormatter, getLogger } from '@logtape/logtape';
-import { isServer } from '@/utils/Helpers';
-import { Env } from './Env';
+import type { AsyncSink } from '@logtape/logtape'
+import { configure, fromAsyncSink, getConsoleSink, getJsonLinesFormatter, getLogger } from '@logtape/logtape'
+import { isServer } from '@/utils/Helpers'
+import { Env } from './Env'
 
 const betterStackSink: AsyncSink = async (record) => {
   await fetch('https://in.logs.betterstack.com', {
@@ -11,8 +11,8 @@ const betterStackSink: AsyncSink = async (record) => {
       'Authorization': `Bearer ${Env.BETTER_STACK_SOURCE_TOKEN}`,
     },
     body: JSON.stringify(record),
-  });
-};
+  })
+}
 
 await configure({
   sinks: {
@@ -27,6 +27,6 @@ await configure({
       lowestLevel: 'debug',
     },
   ],
-});
+})
 
-export const logger = getLogger(['app']);
+export const logger = getLogger(['app'])
