@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { setRequestLocale } from 'next-intl/server'
-import { MatrixBackground } from '@/components/MatrixBackground'
-import { MatrixHero } from '@/components/MatrixHero'
+import { AnimatedHeader, Contact, MatrixBackground, MatrixHero, Portfolio } from '@/components'
 
 type IIndexProps = {
   params: Promise<{ locale: string }>
@@ -21,7 +20,10 @@ export default async function Index(props: IIndexProps) {
   return (
     <div className="min-h-screen bg-black">
       <MatrixBackground />
+      <AnimatedHeader />
       <MatrixHero />
+      <Portfolio />
+      <Contact />
     </div>
   )
 }

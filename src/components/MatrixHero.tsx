@@ -20,7 +20,7 @@ export const MatrixHero = () => {
   }, [currentIndex])
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center">
+    <div id="home" className="relative flex min-h-screen items-center justify-center">
       {/* Main content */}
       <div className="relative z-10 text-center">
         {/* Main text */}

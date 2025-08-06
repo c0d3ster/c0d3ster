@@ -1,0 +1,6 @@
+export { AnimatedHeader } from './AnimatedHeader'
+export { Contact } from './Contact'
+export { LocaleSwitcher } from './LocaleSwitcher'
+export { MatrixBackground } from './MatrixBackground'
+export { MatrixHero } from './MatrixHero'
+export { Portfolio } from './Portfolio'
