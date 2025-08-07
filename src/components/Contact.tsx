@@ -1,6 +1,7 @@
 'use client'
 
-import { ScrollAnimatedWrapper, TypewriterEffect } from './animations'
+import { ExpandingUnderline, TypewriterEffect } from './animations'
+import { ScrollFade } from './animations/ScrollFade'
 import { SectionWrapper } from './SectionWrapper'
 
 export const Contact = () => {
@@ -28,28 +29,27 @@ export const Contact = () => {
   return (
     <SectionWrapper id='contact'>
       {/* Section Header */}
-      <ScrollAnimatedWrapper>
+      <ScrollFade>
         <div className='mt-8 mb-16 text-center'>
           <h2 className='relative mb-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
             CONTACT
           </h2>
-          <div className='relative mx-auto h-1 w-32 bg-green-400' />
+          <ExpandingUnderline />
           <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
             READY TO START YOUR PROJECT?
           </p>
         </div>
-      </ScrollAnimatedWrapper>
+      </ScrollFade>
 
       {/* Contact Methods */}
-      <ScrollAnimatedWrapper>
-        <div className='mb-12 grid gap-16 md:grid-cols-3'>
-          {contactMethods.map((method) => (
+      <div className='mb-12 grid gap-16 md:grid-cols-3'>
+        {contactMethods.map((method) => (
+          <ScrollFade key={method.title} className='group relative overflow-hidden rounded-lg border border-green-400/20 bg-black/50 p-4 text-center transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/5'>
             <a
-              key={method.title}
               href={method.link}
               target='_blank'
               rel='noopener noreferrer'
-              className='group relative overflow-hidden rounded-lg border border-green-400/20 bg-black/50 p-4 text-center transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/5'
+              className='h-full w-full'
             >
               {/* Icon */}
               <div className='mb-4 text-4xl'>{method.icon}</div>
@@ -72,12 +72,12 @@ export const Contact = () => {
                 <div className='h-6 w-1 bg-green-500' />
               </div>
             </a>
-          ))}
-        </div>
-      </ScrollAnimatedWrapper>
+          </ScrollFade>
+        ))}
+      </div>
 
       {/* Contact Form */}
-      <ScrollAnimatedWrapper>
+      <ScrollFade>
         <div className='relative z-20 mx-auto mt-8 max-w-2xl'>
           <div className='rounded-lg border border-green-400/20 bg-black/50 p-4'>
             <h3 className='mb-6 text-center font-mono text-2xl font-bold text-green-400'>
@@ -157,10 +157,10 @@ export const Contact = () => {
             </form>
           </div>
         </div>
-      </ScrollAnimatedWrapper>
+      </ScrollFade>
 
       {/* Additional Matrix-style info */}
-      <ScrollAnimatedWrapper>
+      <ScrollFade>
         <div className='mt-16 text-center font-mono text-sm text-green-600 opacity-40'>
           <p>
             <TypewriterEffect text='RESPONSE TIME: < 24 HOURS' speed={65} />
@@ -172,7 +172,7 @@ export const Contact = () => {
             <TypewriterEffect text='COMMUNICATION: SECURE & CONFIDENTIAL' speed={65} />
           </p>
         </div>
-      </ScrollAnimatedWrapper>
+      </ScrollFade>
     </SectionWrapper>
   )
 }

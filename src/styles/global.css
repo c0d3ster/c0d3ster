@@ -2,6 +2,13 @@
 
 @import 'tailwindcss';
 
+@layer theme {
+  :root {
+    --font-size-2xs: 12px;
+    --line-height-2xs: 16px;
+  }
+}
+
 /* Matrix-specific styles */
 @layer components {
   .matrix-text {
@@ -19,6 +26,13 @@
       rgba(0, 0, 0, 0.9) 0%,
       rgba(0, 255, 0, 0.1) 100%
     );
+  }
+}
+
+@layer utilities {
+  .text-2xs {
+    font-size: 12px;
+    line-height: 16px;
   }
 }
 
