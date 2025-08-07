@@ -34,6 +34,28 @@
     font-size: 12px;
     line-height: 16px;
   }
+  
+  .header-nav-link {
+    font-size: 12px;
+    line-height: 16px;
+  }
+  
+  .header-status {
+    font-size: 12px;
+    line-height: 16px;
+  }
+  
+  @media (min-width: 768px) {
+    .header-nav-link {
+      font-size: 18px;
+      line-height: 28px;
+    }
+    
+    .header-status {
+      font-size: 14px;
+      line-height: 20px;
+    }
+  }
 }
 
 /* Custom animations */
