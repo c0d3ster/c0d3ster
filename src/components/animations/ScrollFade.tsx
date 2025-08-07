@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-type ScrollAnimatedWrapperProps = {
+type ScrollFadeProps = {
   children: React.ReactNode
   className?: string
 }
 
-export const ScrollAnimatedWrapper = ({ 
+export const ScrollFade = ({ 
   children, 
   className = ''
-}: ScrollAnimatedWrapperProps) => {
+}: ScrollFadeProps) => {
   const [scrollY, setScrollY] = useState(0)
   const [elementTop, setElementTop] = useState(0)
   const elementRef = useRef<HTMLDivElement>(null)

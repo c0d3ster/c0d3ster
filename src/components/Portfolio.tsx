@@ -1,6 +1,6 @@
 'use client'
 
-import { ScrollAnimatedWrapper, TypewriterEffect } from './animations'
+import { ExpandingUnderline, ScrollFade, TypewriterEffect } from './animations'
 import { SectionWrapper } from './SectionWrapper'
 
 export const Portfolio = () => {
@@ -28,24 +28,23 @@ export const Portfolio = () => {
   return (
     <SectionWrapper id='portfolio'>
       {/* Section Header */}
-      <ScrollAnimatedWrapper>
+      <ScrollFade>
         <div className='mt-8 mb-12 text-center'>
           <h2 className='relative m-4 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
             PORTFOLIO
           </h2>
-          <div className='relative mx-auto h-1 w-32 bg-green-400' />
+          <ExpandingUnderline />
           <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
             SELECTED PROJECTS & ACHIEVEMENTS
           </p>
         </div>
-      </ScrollAnimatedWrapper>
+      </ScrollFade>
 
       {/* Projects Grid */}
-      <ScrollAnimatedWrapper>
-        <div className='mb-8 grid gap-16 md:grid-cols-2 lg:grid-cols-3'>
-          {projects.map((project) => (
+      <div className='mb-8 grid gap-8 md:grid-cols-2 md:gap-16 lg:grid-cols-3'>
+        {projects.map((project) => (
+          <ScrollFade key={project.title}>
             <div
-              key={project.title}
               className='group relative overflow-hidden rounded-lg border border-green-400/20 bg-black/50 p-6 transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/5'
             >
               {/* Status Badge */}
@@ -85,12 +84,12 @@ export const Portfolio = () => {
                 <div className='h-8 w-1 bg-green-500' />
               </div>
             </div>
-          ))}
-        </div>
-      </ScrollAnimatedWrapper>
+          </ScrollFade>
+        ))}
+      </div>
 
       {/* Additional Matrix-style info */}
-      <ScrollAnimatedWrapper>
+      <ScrollFade>
         <div className='mt-16 text-center font-mono text-sm text-green-600 opacity-40'>
           <p>
             <TypewriterEffect text={`PROJECTS LOADED: ${projects.length}`} speed={65} />
@@ -102,7 +101,7 @@ export const Portfolio = () => {
             <TypewriterEffect text='CLIENT SATISFACTION: EXCELLENT' speed={65} />
           </p>
         </div>
-      </ScrollAnimatedWrapper>
+      </ScrollFade>
     </SectionWrapper>
   )
 }

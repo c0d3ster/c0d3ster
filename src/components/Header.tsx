@@ -44,34 +44,34 @@ export const Header = () => {
       <div className='container mx-auto flex items-center justify-between px-4 py-4'>
         {/* Logo */}
         <div className='flex items-center space-x-4'>
-          <h1 className='font-mono text-2xl font-bold text-green-400'>
+          <h1 className='font-mono font-bold text-green-400 sm:text-xl md:text-2xl'>
             c0d3ster
             <span className='animate-pulse'>_</span>
           </h1>
         </div>
 
         {/* Navigation - centered */}
-        <nav className='absolute left-1/2 hidden -translate-x-1/2 items-center space-x-8 md:flex'>
+        <nav className='absolute left-1/2 flex -translate-x-1/2 items-center space-x-4 md:space-x-8'>
           <a
             href='#home'
-            className={`font-mono text-sm transition-colors hover:text-green-400 ${
-              activeSection === 'home' ? 'text-green-400' : 'text-green-300 opacity-50'
+            className={`text-2xs font-mono transition-colors hover:text-green-400 md:text-sm ${
+              activeSection === 'home' ? 'text-green-400' : 'text-green-300 opacity-40'
             }`}
           >
             HOME
           </a>
           <a
             href='#portfolio'
-            className={`font-mono text-sm transition-colors hover:text-green-400 ${
-              activeSection === 'portfolio' ? 'text-green-400' : 'text-green-300 opacity-50'
+            className={`text-2xs font-mono transition-colors hover:text-green-400 md:text-sm ${
+              activeSection === 'portfolio' ? 'text-green-400' : 'text-green-300 opacity-40'
             }`}
           >
             PORTFOLIO
           </a>
           <a
             href='#contact'
-            className={`font-mono text-sm transition-colors hover:text-green-400 ${
-              activeSection === 'contact' ? 'text-green-400' : 'text-green-300 opacity-50'
+            className={`text-2xs font-mono transition-colors hover:text-green-400 md:text-sm ${
+              activeSection === 'contact' ? 'text-green-400' : 'text-green-300 opacity-40'
             }`}
           >
             CONTACT
@@ -81,7 +81,7 @@ export const Header = () => {
         {/* Status indicator */}
         <div className='flex items-center space-x-2'>
           <div className='h-2 w-2 animate-pulse rounded-full bg-green-400' />
-          <span className='font-mono text-xs text-green-400'>ONLINE</span>
+          <span className='text-2xs font-mono text-green-400 md:text-xs'>ONLINE</span>
         </div>
       </div>
     </header>

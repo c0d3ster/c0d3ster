@@ -1,2 +1,3 @@
-export * from './ScrollAnimatedWrapper'
+export * from './ExpandingUnderline'
+export * from './ScrollFade'
 export * from './TypewriterEffect' 
