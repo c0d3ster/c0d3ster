@@ -77,7 +77,6 @@ export const Contact = () => {
       </div>
 
       {/* Contact Form */}
-      <ScrollFade>
         <div className='relative z-20 mx-auto mt-8 max-w-2xl'>
           <div className='rounded-lg border border-green-400/20 bg-black/50 p-4'>
             <h3 className='mb-6 text-center font-mono text-2xl font-bold text-green-400'>
@@ -157,10 +156,8 @@ export const Contact = () => {
             </form>
           </div>
         </div>
-      </ScrollFade>
 
       {/* Additional Matrix-style info */}
-      <ScrollFade>
         <div className='mt-16 text-center font-mono text-sm text-green-600 opacity-40'>
           <p>
             <TypewriterEffect text='RESPONSE TIME: < 24 HOURS' speed={65} />
@@ -172,7 +169,6 @@ export const Contact = () => {
             <TypewriterEffect text='COMMUNICATION: SECURE & CONFIDENTIAL' speed={65} />
           </p>
         </div>
-      </ScrollFade>
     </SectionWrapper>
   )
 }
