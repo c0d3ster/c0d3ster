@@ -22,6 +22,7 @@ export const TypewriterEffect = ({
   const [isComplete, setIsComplete] = useState(false)
   const [isInViewport, setIsInViewport] = useState(false)
   const elementRef = useRef<HTMLSpanElement>(null)
+  const setIsCompleteRef = useRef(setIsComplete)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -52,7 +53,7 @@ export const TypewriterEffect = ({
 
       return () => clearTimeout(timer)
     } else {
-      setIsComplete(true)
+      setIsCompleteRef.current(true)
     }
     return () => {}
   }, [currentIndex, text, speed, isInViewport])
