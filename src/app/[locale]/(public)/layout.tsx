@@ -7,7 +7,5 @@ export default async function Layout(props: {
   const { locale } = await props.params
   setRequestLocale(locale)
 
-  return (
-    <div className='min-h-screen scroll-smooth bg-black'>{props.children}</div>
-  )
+  return <div className='min-h-screen scroll-smooth'>{props.children}</div>
 }

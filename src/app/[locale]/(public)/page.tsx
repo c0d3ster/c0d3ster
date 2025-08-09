@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { setRequestLocale } from 'next-intl/server'
 import {
-  Contact,
-  Header,
-  MatrixBackground,
-  MatrixHero,
-  Portfolio,
+  ContactSection,
+  HeroSection,
+  LandingPageTemplate,
+  ProjectsPreviewSection,
+  SiteHeader,
 } from '@/components'
 
 type IIndexProps = {
@@ -25,12 +25,11 @@ export default async function Index(props: IIndexProps) {
   setRequestLocale(locale)
 
   return (
-    <div className='min-h-screen bg-black'>
-      <MatrixBackground />
-      <Header />
-      <MatrixHero />
-      <Portfolio />
-      <Contact />
-    </div>
+    <LandingPageTemplate>
+      <SiteHeader />
+      <HeroSection />
+      <ProjectsPreviewSection />
+      <ContactSection />
+    </LandingPageTemplate>
   )
 }
