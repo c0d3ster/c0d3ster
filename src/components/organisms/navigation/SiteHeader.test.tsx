@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { cleanup, render, screen } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
