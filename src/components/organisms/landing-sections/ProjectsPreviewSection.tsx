@@ -50,14 +50,14 @@ export const ProjectsPreviewSection = ({
       <ScrollFade>
         <div className='mt-12 mb-16 text-center'>
           <AnimatedHeading
-            text='FEATURED PROJECTS'
+            text='PORTFOLIO'
             level='h2'
             variant='section'
             className='mb-4'
           />
           <ExpandingUnderline />
           <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
-            SHOWCASING MY RECENT WORK
+            HIGHLIGHTED PROJECT SHOWCASE
           </p>
         </div>
       </ScrollFade>

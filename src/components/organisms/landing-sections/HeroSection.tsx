@@ -30,7 +30,8 @@ export const HeroSection = ({
   }, [])
 
   // Matrix-style decorative elements animation
-  const maxExpansion = 50
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 0
+  const maxExpansion = viewportWidth * 0.25 // 1/4 of viewport width
   const expansionProgress = Math.min(scrollY / 500, 1)
   const leftBarTransform = `translateX(-${expansionProgress * maxExpansion}px)`
   const rightBarTransform = `translateX(${expansionProgress * maxExpansion}px)`
