@@ -118,7 +118,6 @@ export const MatrixBackground = () => {
         background: 'black',
         width: '100vw',
         height: '100vh',
-        zIndex: -1,
       }}
     />
   )
