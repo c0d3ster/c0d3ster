@@ -13,7 +13,7 @@ type AnimatedHeadingProps = {
 }
 
 const variantStyles = {
-  hero: 'font-mono text-6xl md:text-8xl lg:text-9xl font-bold tracking-wider text-green-400',
+  hero: 'font-mono text-5xl md:text-8xl lg:text-9xl font-bold tracking-wider text-green-400',
   section: 'font-mono text-5xl font-bold text-green-400 md:text-6xl',
   subtitle: 'font-mono text-lg text-green-300 sm:text-xl md:text-2xl',
 }
