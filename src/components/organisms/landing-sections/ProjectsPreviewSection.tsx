@@ -1,5 +1,6 @@
 'use client'
 
+import type { Project } from '@/components/molecules'
 import Link from 'next/link'
 import {
   ExpandingUnderline,
@@ -7,14 +8,7 @@ import {
   SectionWrapper,
   TypewriterEffect,
 } from '@/components/atoms'
-import { AnimatedHeading } from '@/components/molecules'
-
-type Project = {
-  title: string
-  description: string
-  tech: string[]
-  status: string
-}
+import { AnimatedHeading, ProjectCard } from '@/components/molecules'
 
 type ProjectsPreviewSectionProps = {
   featuredProjects?: Project[]
@@ -22,22 +16,26 @@ type ProjectsPreviewSectionProps = {
 
 const defaultFeaturedProjects: Project[] = [
   {
-    title: 'E-Commerce Platform',
-    description: 'Full-stack React/Next.js application with TypeScript',
-    tech: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'],
-    status: 'COMPLETED',
-  },
-  {
-    title: 'Real-time Dashboard',
-    description: 'Analytics dashboard with real-time data visualization',
-    tech: ['React', 'Node.js', 'Socket.io', 'Chart.js'],
+    title: 'Cross-Platform 3D Game',
+    description: 'Multi-platform 3D action game built with Unity Engine',
+    tech: ['Unity', 'C#', 'Firebase', '3D Graphics'],
     status: 'IN PROGRESS',
+    logo: '/assets/images/BALLZLogo.png',
   },
   {
-    title: 'API Gateway',
-    description: 'Microservices architecture with authentication',
-    tech: ['Node.js', 'Express', 'JWT', 'MongoDB'],
+    title: 'AI Generation Platform',
+    description: 'Advanced AI-powered platform for creating videos and images',
+    tech: ['React', 'TypeScript', 'LoRAs', 'ML Models'],
     status: 'COMPLETED',
+    logo: '/assets/images/KaiberLogo.png',
+  },
+  {
+    title: 'Interactive Audio Visualizer',
+    description:
+      'Fully customizable audio-reactive visualizer with real-time effects',
+    tech: ['Three.js', 'MongoDB', 'WebGL', 'Audio API'],
+    status: 'COMPLETED',
+    logo: '/assets/images/FractaleyezLogo.png',
   },
 ]
 
@@ -66,49 +64,7 @@ export const ProjectsPreviewSection = ({
       <div className='mb-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
         {featuredProjects.map((project) => (
           <ScrollFade key={project.title}>
-            <div className='group rounded-lg border border-green-400/20 bg-black/80 p-6 transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/5'>
-              {/* Project Title */}
-              <h3 className='mb-2 font-mono text-lg font-bold text-green-400'>
-                {project.title}
-              </h3>
-
-              {/* Project Description */}
-              <p className='mb-4 font-mono text-sm text-green-300 opacity-80'>
-                {project.description}
-              </p>
-
-              {/* Tech Stack */}
-              <div className='mb-4 flex flex-wrap gap-1'>
-                {project.tech.map((tech) => (
-                  <span
-                    key={tech}
-                    className='rounded border border-green-400/30 bg-green-400/10 px-2 py-1 font-mono text-xs text-green-400'
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-
-              {/* Status */}
-              <div className='flex items-center justify-between'>
-                <span
-                  className={`font-mono text-xs font-bold ${
-                    project.status === 'COMPLETED'
-                      ? 'text-green-400'
-                      : 'text-yellow-400'
-                  }`}
-                >
-                  {project.status}
-                </span>
-
-                {/* Matrix-style decorative elements */}
-                <div className='flex space-x-1'>
-                  <div className='h-4 w-1 bg-green-400 opacity-20' />
-                  <div className='h-4 w-1 bg-green-500 opacity-40' />
-                  <div className='h-4 w-1 bg-green-300 opacity-20' />
-                </div>
-              </div>
-            </div>
+            <ProjectCard project={project} />
           </ScrollFade>
         ))}
       </div>
