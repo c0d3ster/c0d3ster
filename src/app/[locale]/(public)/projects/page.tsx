@@ -27,7 +27,7 @@ export default async function Portfolio(props: IPortfolioProps) {
 
   return (
     <LandingPageTemplate>
-      <SiteHeader />
+      <SiteHeader fadeOnScroll={false} />
       <div className='container mx-auto px-4 py-16 pt-32'>
         <div className='text-center'>
           <h1 className='mb-8 font-mono text-5xl font-bold text-green-400 md:text-6xl'>

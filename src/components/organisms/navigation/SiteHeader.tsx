@@ -1,11 +1,22 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-export const SiteHeader = () => {
+type SiteHeaderProps = {
+  fadeOnScroll?: boolean
+}
+
+export const SiteHeader = ({ fadeOnScroll = true }: SiteHeaderProps) => {
   const [activeSection, setActiveSection] = useState('home')
   const [scrollY, setScrollY] = useState(0)
+  const pathname = usePathname()
+
+  // Check if we're on the landing page (where anchor navigation works)
+  const isLandingPage =
+    pathname === '/' || pathname.endsWith('/en') || pathname.endsWith('/fr')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,7 +49,7 @@ export const SiteHeader = () => {
     0,
     Math.min(1, (scrollY - fadeStart) / (fadeEnd - fadeStart))
   )
-  const opacity = fadeProgress
+  const opacity = fadeOnScroll ? fadeProgress : 1
 
   return (
     <header
@@ -60,36 +71,69 @@ export const SiteHeader = () => {
 
         {/* Navigation - centered */}
         <nav className='absolute left-1/2 flex -translate-x-1/2 items-center space-x-4 md:space-x-8'>
-          <a
-            href='#home'
-            className={`header-nav-link font-mono transition-colors hover:text-green-400 ${
-              activeSection === 'home'
-                ? 'text-green-400'
-                : 'text-green-300 opacity-40'
-            }`}
-          >
-            HOME
-          </a>
-          <a
-            href='#portfolio'
-            className={`header-nav-link font-mono transition-colors hover:text-green-400 ${
-              activeSection === 'portfolio'
-                ? 'text-green-400'
-                : 'text-green-300 opacity-40'
-            }`}
-          >
-            PORTFOLIO
-          </a>
-          <a
-            href='#contact'
-            className={`header-nav-link font-mono transition-colors hover:text-green-400 ${
-              activeSection === 'contact'
-                ? 'text-green-400'
-                : 'text-green-300 opacity-40'
-            }`}
-          >
-            CONTACT
-          </a>
+          {isLandingPage ? (
+            <a
+              href='#home'
+              className={`header-nav-link font-mono transition-colors hover:text-green-400 ${
+                activeSection === 'home'
+                  ? 'text-green-400'
+                  : 'text-green-300 opacity-40'
+              }`}
+            >
+              HOME
+            </a>
+          ) : (
+            <Link
+              href='/'
+              className='header-nav-link font-mono text-green-300 opacity-40 transition-colors hover:text-green-400'
+            >
+              HOME
+            </Link>
+          )}
+
+          {isLandingPage ? (
+            <a
+              href='#portfolio'
+              className={`header-nav-link font-mono transition-colors hover:text-green-400 ${
+                activeSection === 'portfolio'
+                  ? 'text-green-400'
+                  : 'text-green-300 opacity-40'
+              }`}
+            >
+              PORTFOLIO
+            </a>
+          ) : (
+            <Link
+              href='/projects'
+              className={`header-nav-link font-mono transition-colors hover:text-green-400 ${
+                pathname.includes('/projects')
+                  ? 'text-green-400'
+                  : 'text-green-300 opacity-40'
+              }`}
+            >
+              PORTFOLIO
+            </Link>
+          )}
+
+          {isLandingPage ? (
+            <a
+              href='#contact'
+              className={`header-nav-link font-mono transition-colors hover:text-green-400 ${
+                activeSection === 'contact'
+                  ? 'text-green-400'
+                  : 'text-green-300 opacity-40'
+              }`}
+            >
+              CONTACT
+            </a>
+          ) : (
+            <Link
+              href='/#contact'
+              className='header-nav-link font-mono text-green-300 opacity-40 transition-colors hover:text-green-400'
+            >
+              CONTACT
+            </Link>
+          )}
         </nav>
 
         {/* Status indicator */}

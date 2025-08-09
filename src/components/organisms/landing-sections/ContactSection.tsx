@@ -24,7 +24,7 @@ export const ContactSection = () => {
     },
     {
       title: 'LINKEDIN',
-      value: 'linkedin.com/in/cody-douglas',
+      value: 'linkedin.com/in/cody-douglass',
       icon: '🔗',
       link: 'https://linkedin.com/in/cody-douglass',
     },
@@ -160,7 +160,7 @@ export const ContactSection = () => {
                 type='submit'
                 className='rounded border border-green-400 bg-green-400/10 px-8 py-3 font-mono font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
               >
-                SEND MESSAGE
+                INITIATE TRANSMISSION
               </button>
             </div>
           </form>
