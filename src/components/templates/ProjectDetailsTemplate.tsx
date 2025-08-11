@@ -2,12 +2,7 @@
 
 import type { Project } from '@/components/molecules'
 import Image from 'next/image'
-import {
-  BackButton,
-  ExpandingUnderline,
-  ScrollFade,
-  TypewriterEffect,
-} from '@/components/atoms'
+import { BackButton, ExpandingUnderline, ScrollFade } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
 import { CleanPageTemplate } from './CleanPageTemplate'
 
@@ -96,35 +91,11 @@ export const ProjectDetailsTemplate = ({
               {/* Project Description */}
               <div>
                 <h3 className='mb-4 font-mono text-xl font-bold text-green-400'>
-                  PROJECT OVERVIEW
-                </h3>
-                <p className='font-mono leading-relaxed text-green-300 opacity-90'>
-                  {project.overview}
-                </p>
-              </div>
-
-              {/* Additional Details Placeholder */}
-              <div>
-                <h3 className='mb-4 font-mono text-xl font-bold text-green-400'>
                   PROJECT DETAILS
                 </h3>
-                <div className='space-y-4 font-mono text-sm text-green-300 opacity-80'>
-                  <p>
-                    <TypewriterEffect
-                      text='DEVELOPMENT TIMELINE: 6-12 MONTHS'
-                      speed={65}
-                    />
-                  </p>
-                  <p>
-                    <TypewriterEffect
-                      text='TEAM SIZE: 3-5 DEVELOPERS'
-                      speed={65}
-                    />
-                  </p>
-                  <p>
-                    <TypewriterEffect text='COMPLEXITY: ADVANCED' speed={65} />
-                  </p>
-                </div>
+                <p className='font-mono leading-relaxed text-green-300 opacity-90'>
+                  {project.description || 'Project details coming soon...'}
+                </p>
               </div>
             </div>
           </ScrollFade>

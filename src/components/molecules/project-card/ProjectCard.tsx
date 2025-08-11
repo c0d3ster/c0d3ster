@@ -12,6 +12,7 @@ export type Project = {
   logo?: string
   projectName?: string
   projectUrl?: string
+  description?: string
 }
 
 type ProjectCardProps = {
