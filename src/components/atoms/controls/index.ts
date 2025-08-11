@@ -1,1 +1,2 @@
-export * from './LocaleSwitcher'
+export { BackButton } from './BackButton'
+export { LocaleSwitcher } from './LocaleSwitcher'

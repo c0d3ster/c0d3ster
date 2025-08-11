@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { LandingPageTemplate, SiteHeader } from '@/components'
+import { CleanPageTemplate, SiteHeader } from '@/components'
+import { ExpandingUnderline, ScrollFade } from '@/components/atoms'
+import { AnimatedHeading, ProjectCard } from '@/components/molecules'
+import { defaultFeaturedProjects } from '@/data/projects'
 
 type IPortfolioProps = {
   params: Promise<{ locale: string }>
@@ -26,18 +29,34 @@ export default async function Portfolio(props: IPortfolioProps) {
   setRequestLocale(locale)
 
   return (
-    <LandingPageTemplate>
+    <CleanPageTemplate>
       <SiteHeader fadeOnScroll={false} />
       <div className='container mx-auto px-4 py-16 pt-32'>
-        <div className='text-center'>
-          <h1 className='mb-8 font-mono text-5xl font-bold text-green-400 md:text-6xl'>
-            ALL PROJECTS
-          </h1>
-          <p className='font-mono text-lg text-green-300 opacity-80'>
-            Coming soon - full projects listing will be implemented here
-          </p>
+        {/* Page Header */}
+        <ScrollFade>
+          <div className='mb-16 text-center'>
+            <AnimatedHeading
+              text='ALL PROJECTS'
+              level='h1'
+              variant='section'
+              className='mb-4'
+            />
+            <ExpandingUnderline />
+            <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
+              COMPLETE PROJECT PORTFOLIO
+            </p>
+          </div>
+        </ScrollFade>
+
+        {/* Projects Grid */}
+        <div className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
+          {defaultFeaturedProjects.map((project) => (
+            <ScrollFade key={project.overview}>
+              <ProjectCard project={project} />
+            </ScrollFade>
+          ))}
         </div>
       </div>
-    </LandingPageTemplate>
+    </CleanPageTemplate>
   )
 }
