@@ -26,7 +26,7 @@ export default async function Ballz(props: IBallzProps) {
   return (
     <CleanPageTemplate>
       <SiteHeader fadeOnScroll={false} />
-      <BackButton href='/projects' />
+      <BackButton href='/projects' text='BACK TO PROJECTS' />
       <div className='container mx-auto px-4 py-16 pt-32'>
         {/* Project Header */}
         <div className='mb-16 text-center'>

@@ -77,14 +77,16 @@ export const SiteHeader = ({ fadeOnScroll = true }: SiteHeaderProps) => {
       <div className='container mx-auto flex items-center justify-between px-4 py-4'>
         {/* Logo */}
         <div className='flex items-center space-x-4'>
-          <Image
-            src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
-            alt='c0d3ster Logo'
-            width={32}
-            height={32}
-            className='h-8 w-auto sm:h-10'
-            priority
-          />
+          <Link href='/'>
+            <Image
+              src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
+              alt='c0d3ster Logo'
+              width={32}
+              height={32}
+              className='h-8 w-auto transition-opacity duration-300 hover:opacity-80 sm:h-10'
+              priority
+            />
+          </Link>
         </div>
 
         {/* Navigation - centered */}

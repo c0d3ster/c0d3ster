@@ -5,19 +5,23 @@ import { FaArrowLeft } from 'react-icons/fa'
 
 type BackButtonProps = {
   href: string
-  className?: string
+  text?: string
 }
 
-export const BackButton = ({ href, className = '' }: BackButtonProps) => {
+export const BackButton = ({ href, text = 'BACK' }: BackButtonProps) => {
   return (
     <Link
       href={href}
-      className={`group fixed top-24 left-6 z-50 flex items-center rounded-full border border-green-400/20 bg-black/80 px-3 py-2 text-green-400 transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/20 ${className}`}
+      className='group fixed top-24 left-1/2 z-40 w-full max-w-7xl -translate-x-1/2 px-4'
     >
-      <FaArrowLeft className='h-5 w-5 transition-transform duration-300 group-hover:-translate-x-1' />
-      <span className='max-w-0 overflow-hidden whitespace-nowrap transition-all duration-300 group-hover:max-w-36'>
-        BACK TO PROJECTS
-      </span>
+      <div className='flex items-center space-x-2 text-green-400 transition-all duration-300 hover:text-green-300'>
+        <div className='transform transition-transform duration-300 group-hover:-translate-x-1'>
+          <FaArrowLeft className='text-xl' />
+        </div>
+        <span className='font-mono font-bold whitespace-nowrap opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
+          {text}
+        </span>
+      </div>
     </Link>
   )
 }
