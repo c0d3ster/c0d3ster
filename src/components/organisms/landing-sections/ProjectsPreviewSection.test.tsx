@@ -40,6 +40,18 @@ vi.mock('@/components/molecules', () => ({
   AnimatedHeading: ({ text }: { text: string }) => (
     <h2 data-testid='animated-heading'>{text}</h2>
   ),
+  ProjectCard: ({ project }: { project: any }) => (
+    <div data-testid='project-card'>
+      <h3>{project.projectName || project.title}</h3>
+      <p>{project.overview}</p>
+      <div>
+        {project.tech.map((tech: string) => (
+          <span key={tech}>{tech}</span>
+        ))}
+      </div>
+      <span>{project.status}</span>
+    </div>
+  ),
 }))
 
 describe('ProjectsPreviewSection', () => {
@@ -56,38 +68,40 @@ describe('ProjectsPreviewSection', () => {
     render(<ProjectsPreviewSection />)
 
     expect(screen.getByTestId('section-wrapper')).toBeInTheDocument()
-    expect(screen.getByText('PORTFOLIO')).toBeInTheDocument()
+    expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
   })
 
   it('renders section header with underline', () => {
     render(<ProjectsPreviewSection />)
 
-    expect(screen.getByText('PORTFOLIO')).toBeInTheDocument()
+    expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
     expect(screen.getByTestId('expanding-underline')).toBeInTheDocument()
-    expect(screen.getByText('HIGHLIGHTED PROJECT SHOWCASE')).toBeInTheDocument()
+    expect(screen.getByText('INDIVIDUAL PROJECT SHOWCASE')).toBeInTheDocument()
   })
 
   it('renders default featured projects', () => {
     render(<ProjectsPreviewSection />)
 
-    expect(screen.getByText('E-Commerce Platform')).toBeInTheDocument()
-    expect(screen.getByText('Real-time Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('API Gateway')).toBeInTheDocument()
+    expect(screen.getByText('BALLZ')).toBeInTheDocument()
+    expect(screen.getByText('Kaiber.ai')).toBeInTheDocument()
+    expect(screen.getByText('Fractaleyez')).toBeInTheDocument()
   })
 
   it('renders custom featured projects', () => {
     const customProjects = [
       {
-        title: 'Custom Project 1',
-        description: 'Custom description 1',
+        title: 'Custom Project Type 1',
+        overview: 'Custom overview 1',
         tech: ['React', 'TypeScript'],
         status: 'COMPLETED',
+        projectName: 'Custom Project 1',
       },
       {
-        title: 'Custom Project 2',
-        description: 'Custom description 2',
+        title: 'Custom Project Type 2',
+        overview: 'Custom overview 2',
         tech: ['Vue', 'JavaScript'],
         status: 'IN PROGRESS',
+        projectName: 'Custom Project 2',
       },
     ]
 
@@ -95,17 +109,18 @@ describe('ProjectsPreviewSection', () => {
 
     expect(screen.getByText('Custom Project 1')).toBeInTheDocument()
     expect(screen.getByText('Custom Project 2')).toBeInTheDocument()
-    expect(screen.getByText('Custom description 1')).toBeInTheDocument()
-    expect(screen.getByText('Custom description 2')).toBeInTheDocument()
+    expect(screen.getByText('Custom overview 1')).toBeInTheDocument()
+    expect(screen.getByText('Custom overview 2')).toBeInTheDocument()
   })
 
   it('renders project tech stacks', () => {
     const testProjects = [
       {
-        title: 'Test Project',
-        description: 'Test description',
+        title: 'Test Project Type',
+        overview: 'Test overview',
         tech: ['React', 'TypeScript', 'Tailwind'],
         status: 'COMPLETED',
+        projectName: 'Test Project',
       },
     ]
 
@@ -145,10 +160,11 @@ describe('ProjectsPreviewSection', () => {
   it('updates project count in statistics based on props', () => {
     const customProjects = [
       {
-        title: 'Project 1',
-        description: 'Description 1',
+        title: 'Project Type 1',
+        overview: 'Overview 1',
         tech: ['React'],
         status: 'COMPLETED',
+        projectName: 'Project 1',
       },
     ]
 
@@ -160,7 +176,7 @@ describe('ProjectsPreviewSection', () => {
   it('handles empty projects array', () => {
     render(<ProjectsPreviewSection featuredProjects={[]} />)
 
-    expect(screen.getByText('PORTFOLIO')).toBeInTheDocument()
+    expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
     expect(screen.getByText('PROJECTS LOADED: 0')).toBeInTheDocument()
   })
 
@@ -183,14 +199,15 @@ describe('ProjectsPreviewSection', () => {
   it('handles projects with different tech stack lengths', () => {
     const customProjects = [
       {
-        title: 'Simple Project',
-        description: 'Simple description',
+        title: 'Simple Project Type',
+        overview: 'Simple overview',
         tech: ['React'],
         status: 'COMPLETED',
+        projectName: 'Simple Project',
       },
       {
-        title: 'Complex Project',
-        description: 'Complex description',
+        title: 'Complex Project Type',
+        overview: 'Complex overview',
         tech: [
           'React',
           'Next.js',
@@ -200,6 +217,7 @@ describe('ProjectsPreviewSection', () => {
           'PostgreSQL',
         ],
         status: 'IN PROGRESS',
+        projectName: 'Complex Project',
       },
     ]
 

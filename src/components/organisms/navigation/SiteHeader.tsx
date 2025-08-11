@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type SiteHeaderProps = {
   fadeOnScroll?: boolean
@@ -13,25 +13,43 @@ export const SiteHeader = ({ fadeOnScroll = true }: SiteHeaderProps) => {
   const [activeSection, setActiveSection] = useState('home')
   const [scrollY, setScrollY] = useState(0)
   const pathname = usePathname()
+  const setActiveSectionRef = useRef(setActiveSection)
+  const setScrollYRef = useRef(setScrollY)
 
   // Check if we're on the landing page (where anchor navigation works)
   const isLandingPage =
     pathname === '/' || pathname.endsWith('/en') || pathname.endsWith('/fr')
 
   useEffect(() => {
+    // Check initial scroll position on mount
+    const initialScrollY = window.scrollY
+    setScrollYRef.current(initialScrollY)
+
+    // Determine initial active section based on current scroll position
+    const sections = ['home', 'portfolio', 'contact']
+    const sectionElements = sections.map((id) => document.getElementById(id))
+
+    for (let i = sections.length - 1; i >= 0; i--) {
+      const element = sectionElements[i]
+      if (element) {
+        const rect = element.getBoundingClientRect()
+        if (rect.top <= 100) {
+          setActiveSectionRef.current(sections[i] || 'home')
+          break
+        }
+      }
+    }
+
     const handleScroll = () => {
-      setScrollY(window.scrollY)
+      setScrollYRef.current(window.scrollY)
 
       // Determine active section based on scroll position
-      const sections = ['home', 'portfolio', 'contact']
-      const sectionElements = sections.map((id) => document.getElementById(id))
-
       for (let i = sections.length - 1; i >= 0; i--) {
         const element = sectionElements[i]
         if (element) {
           const rect = element.getBoundingClientRect()
           if (rect.top <= 100) {
-            setActiveSection(sections[i] || 'home')
+            setActiveSectionRef.current(sections[i] || 'home')
             break
           }
         }
@@ -59,14 +77,16 @@ export const SiteHeader = ({ fadeOnScroll = true }: SiteHeaderProps) => {
       <div className='container mx-auto flex items-center justify-between px-4 py-4'>
         {/* Logo */}
         <div className='flex items-center space-x-4'>
-          <Image
-            src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
-            alt='c0d3ster Logo'
-            width={32}
-            height={32}
-            className='h-8 w-auto sm:h-10'
-            priority
-          />
+          <Link href='/'>
+            <Image
+              src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
+              alt='c0d3ster Logo'
+              width={32}
+              height={32}
+              className='h-8 w-auto transition-opacity duration-300 hover:opacity-80 sm:h-10'
+              priority
+            />
+          </Link>
         </div>
 
         {/* Navigation - centered */}

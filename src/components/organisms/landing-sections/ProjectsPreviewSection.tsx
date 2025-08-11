@@ -9,35 +9,11 @@ import {
   TypewriterEffect,
 } from '@/components/atoms'
 import { AnimatedHeading, ProjectCard } from '@/components/molecules'
+import { defaultFeaturedProjects } from '@/data/projects'
 
 type ProjectsPreviewSectionProps = {
   featuredProjects?: Project[]
 }
-
-const defaultFeaturedProjects: Project[] = [
-  {
-    title: 'Cross-Platform 3D Game',
-    description: 'Multi-platform 3D action game built with Unity Engine',
-    tech: ['Unity', 'C#', 'Firebase', '3D Graphics'],
-    status: 'IN PROGRESS',
-    logo: '/assets/images/BALLZLogo.png',
-  },
-  {
-    title: 'AI Generation Platform',
-    description: 'Advanced AI-powered platform for creating videos and images',
-    tech: ['React', 'TypeScript', 'LoRAs', 'ML Models'],
-    status: 'COMPLETED',
-    logo: '/assets/images/KaiberLogo.png',
-  },
-  {
-    title: 'Interactive Audio Visualizer',
-    description:
-      'Fully customizable audio-reactive visualizer with real-time effects',
-    tech: ['Three.js', 'MongoDB', 'WebGL', 'Audio API'],
-    status: 'COMPLETED',
-    logo: '/assets/images/FractaleyezLogo.png',
-  },
-]
 
 export const ProjectsPreviewSection = ({
   featuredProjects = defaultFeaturedProjects,
@@ -48,14 +24,14 @@ export const ProjectsPreviewSection = ({
       <ScrollFade>
         <div className='mt-12 mb-16 text-center'>
           <AnimatedHeading
-            text='PORTFOLIO'
+            text='FEATURED PROJECTS'
             level='h2'
             variant='section'
             className='mb-4'
           />
           <ExpandingUnderline />
           <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
-            HIGHLIGHTED PROJECT SHOWCASE
+            INDIVIDUAL PROJECT SHOWCASE
           </p>
         </div>
       </ScrollFade>
@@ -63,7 +39,7 @@ export const ProjectsPreviewSection = ({
       {/* Projects Grid */}
       <div className='mb-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
         {featuredProjects.map((project) => (
-          <ScrollFade key={project.title}>
+          <ScrollFade key={project.overview}>
             <ProjectCard project={project} />
           </ScrollFade>
         ))}
