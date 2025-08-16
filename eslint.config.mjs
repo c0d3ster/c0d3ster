@@ -16,13 +16,6 @@ export default antfu(
     lessOpinionated: true,
     isInEditor: false,
 
-    // Code style - enabled to control import formatting
-    stylistic: {
-      quotes: 'single',
-      semi: false,
-      indent: 2,
-    },
-
     // Format settings - disabled to let Prettier handle formatting
     formatters: {
       css: false,

@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
+import { Resend } from 'resend'
 
+import { ContactFormEmail } from '@/components/email'
 import { contactSchema } from '@/validations'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: Request) {
   try {
@@ -17,37 +21,27 @@ export async function POST(request: Request) {
 
     const { name, email, subject, message } = validation.data
 
-    // For now, we'll log the contact form submission
-    // In production, you'd integrate with an email service like:
-    // - Resend (resend.com)
-    // - SendGrid
-    // - Nodemailer with your own SMTP
-    // - Vercel's built-in email functionality
-
-    // eslint-disable-next-line no-console
-    console.log('Contact form submission:', {
-      name,
-      email,
-      subject,
-      message,
-      timestamp: new Date().toISOString(),
+    // Send email using Resend
+    const { error } = await resend.emails.send({
+      from: 'c0d3ster <support@c0d3ster.com>',
+      to: ['support@c0d3ster.com'],
+      subject: `New Contact Form: ${subject}`,
+      react: ContactFormEmail({
+        name,
+        email,
+        subject,
+        message,
+      }) as React.ReactElement,
+      replyTo: email,
     })
 
-    // TODO: Replace this with actual email sending logic
-    // Example with a hypothetical email service:
-    // await sendEmail({
-    //   to: 'support@c0d3ster.com',
-    //   from: 'noreply@c0d3ster.com',
-    //   subject: `Contact Form: ${subject}`,
-    //   text: `
-    //     Name: ${name}
-    //     Email: ${email}
-    //     Subject: ${subject}
-    //
-    //     Message:
-    //     ${message}
-    //   `,
-    // })
+    if (error) {
+      console.error('Resend error:', error)
+      return NextResponse.json(
+        { error: 'Failed to send email' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json(
       { message: 'Message sent successfully!' },
