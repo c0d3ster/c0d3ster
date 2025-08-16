@@ -1,10 +1,9 @@
 'use client'
 
-import Link from 'next/link'
-
 import type { Project } from '@/components/molecules'
 
 import {
+  Button,
   ExpandingUnderline,
   ScrollFade,
   SectionWrapper,
@@ -50,12 +49,9 @@ export const ProjectsPreviewSection = ({
       {/* View All Projects Button */}
       <ScrollFade>
         <div className='text-center'>
-          <Link
-            href='/projects'
-            className='inline-block rounded border border-green-400 bg-green-400/10 px-8 py-3 font-mono font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
-          >
+          <Button href='/projects' size='md'>
             VIEW ALL PROJECTS
-          </Link>
+          </Button>
         </div>
       </ScrollFade>
 

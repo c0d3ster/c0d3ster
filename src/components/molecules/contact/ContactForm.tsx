@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 
 import type { ContactFormData } from '@/validations'
 
+import { Button } from '@/components/atoms'
 import { useToast } from '@/hooks'
 import { contactFormSchema } from '@/validations'
 
@@ -134,13 +135,9 @@ export const ContactForm = () => {
           </div>
 
           <div className='text-center'>
-            <button
-              type='submit'
-              disabled={isSubmitting}
-              className='rounded border border-green-400 bg-green-400/10 px-8 py-3 font-mono font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-50'
-            >
+            <Button type='submit' size='md' disabled={isSubmitting}>
               {isSubmitting ? 'SENDING...' : 'INITIATE TRANSMISSION'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

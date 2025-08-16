@@ -15,20 +15,20 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unit',
-          include: ['src/**/*.test.{js,ts}'],
+          include: ['src/**/*.test.{js,ts,tsx}'],
           exclude: ['src/hooks/**/*.test.ts'],
-          environment: 'node',
+          environment: 'jsdom',
         },
       },
       {
         extends: true,
         test: {
           name: 'ui',
-          include: ['**/*.test.tsx', 'src/hooks/**/*.test.ts'],
+          include: ['tests/e2e/**/*'],
           browser: {
             enabled: true,
             headless: true,
-            provider: 'playwright', // or 'webdriverio'
+            provider: 'playwright',
             screenshotDirectory: 'vitest-test-results',
             instances: [{ browser: 'chromium' }],
           },

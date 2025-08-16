@@ -4,7 +4,12 @@ import Image from 'next/image'
 
 import type { Project } from '@/components/molecules'
 
-import { BackButton, ExpandingUnderline, ScrollFade } from '@/components/atoms'
+import {
+  BackButton,
+  Button,
+  ExpandingUnderline,
+  ScrollFade,
+} from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
@@ -108,20 +113,13 @@ export const ProjectDetailsTemplate = ({
         {project.projectUrl && (
           <ScrollFade>
             <div className='mt-16 text-center'>
-              <a
+              <Button
                 href={project.projectUrl}
-                target={
-                  project.projectUrl.startsWith('http') ? '_blank' : '_self'
-                }
-                rel={
-                  project.projectUrl.startsWith('http')
-                    ? 'noopener noreferrer'
-                    : undefined
-                }
-                className='inline-block rounded border border-green-400 bg-green-400 px-8 py-3 font-mono font-bold text-black transition-all duration-300 hover:border-green-500 hover:bg-green-500'
+                external={project.projectUrl.startsWith('http')}
+                size='md'
               >
                 ACCESS PROJECT
-              </a>
+              </Button>
             </div>
           </ScrollFade>
         )}
