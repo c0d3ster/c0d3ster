@@ -1,5 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { ExpandingUnderline } from './ExpandingUnderline'
 
 // Mock window properties

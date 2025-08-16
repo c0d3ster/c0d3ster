@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+
 import { setRequestLocale } from 'next-intl/server'
+
 import { CleanPageTemplate, SiteHeader } from '@/components'
 import { BackButton, ExpandingUnderline } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'

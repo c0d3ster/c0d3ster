@@ -1,10 +1,10 @@
-import { dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import antfu from '@antfu/eslint-config'
 import prettier from 'eslint-config-prettier'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
 import playwright from 'eslint-plugin-playwright'
 import tailwind from 'eslint-plugin-tailwindcss'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 export default antfu(
   {
@@ -16,8 +16,12 @@ export default antfu(
     lessOpinionated: true,
     isInEditor: false,
 
-    // Code style - disabled to let Prettier handle formatting
-    stylistic: false,
+    // Code style - enabled to control import formatting
+    stylistic: {
+      quotes: 'single',
+      semi: false,
+      indent: 2,
+    },
 
     // Format settings - disabled to let Prettier handle formatting
     formatters: {
@@ -57,6 +61,25 @@ export default antfu(
       'node/prefer-global/process': 'off', // Allow using `process.env`
       'test/padding-around-all': 'error', // Add padding in test files
       'test/prefer-lowercase-title': 'off', // Allow using uppercase titles in test titles
+      'perfectionist/sort-imports': [
+        'error',
+        {
+          type: 'alphabetical',
+          order: 'asc',
+          groups: [
+            'type-import',
+            ['value-builtin', 'value-external'],
+            'type-internal',
+            'value-internal',
+            ['type-parent', 'type-sibling', 'type-index'],
+            ['value-parent', 'value-sibling', 'value-index'],
+            'ts-equals-import',
+            'unknown',
+          ],
+          newlinesBetween: 1,
+          partitionByNewLine: false,
+        },
+      ],
     },
   },
   // --- Prettier Config (must be last) ---

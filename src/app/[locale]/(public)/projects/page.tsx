@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+
 import { CleanPageTemplate, SiteHeader } from '@/components'
 import { ExpandingUnderline, ScrollFade } from '@/components/atoms'
 import { AnimatedHeading, ProjectCard } from '@/components/molecules'

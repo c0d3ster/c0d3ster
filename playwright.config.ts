@@ -1,4 +1,5 @@
 import type { ChromaticConfig } from '@chromatic-com/playwright'
+
 import { defineConfig, devices } from '@playwright/test'
 
 // Use process.env.PORT by default and fallback to port 3000

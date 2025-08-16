@@ -1,9 +1,12 @@
 'use client'
 
-import type { Project } from '@/components/molecules'
 import Image from 'next/image'
+
+import type { Project } from '@/components/molecules'
+
 import { BackButton, ExpandingUnderline, ScrollFade } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
+
 import { CleanPageTemplate } from './CleanPageTemplate'
 
 type ProjectDetailsTemplateProps = {

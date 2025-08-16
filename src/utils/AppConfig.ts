@@ -1,5 +1,6 @@
 import type { LocalizationResource } from '@clerk/types'
 import type { LocalePrefixMode } from 'next-intl/routing'
+
 import { enUS, frFR } from '@clerk/localizations'
 
 const localePrefix: LocalePrefixMode = 'as-needed'

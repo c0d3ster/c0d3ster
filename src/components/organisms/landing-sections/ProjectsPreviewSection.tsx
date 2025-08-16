@@ -1,7 +1,9 @@
 'use client'
 
-import type { Project } from '@/components/molecules'
 import Link from 'next/link'
+
+import type { Project } from '@/components/molecules'
+
 import {
   ExpandingUnderline,
   ScrollFade,

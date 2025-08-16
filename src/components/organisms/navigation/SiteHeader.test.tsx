@@ -2,6 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { SiteHeader } from './SiteHeader'
 
 // Mock next/navigation
