@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { AnimatedHeading } from './AnimatedHeading'
 
@@ -23,15 +23,6 @@ vi.mock('@/components/atoms', () => ({
 }))
 
 describe('AnimatedHeading', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    cleanup()
-  })
-
-  afterEach(() => {
-    cleanup()
-  })
-
   it('renders with default props', () => {
     render(<AnimatedHeading text='Test Heading' />)
 
@@ -49,13 +40,15 @@ describe('AnimatedHeading', () => {
     const levels = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const
 
     levels.forEach((level, index) => {
-      render(<AnimatedHeading text={`Heading ${level}`} level={level} />)
+      const { unmount } = render(
+        <AnimatedHeading text={`Heading ${level}`} level={level} />
+      )
 
       expect(
         screen.getByRole('heading', { level: index + 1 })
       ).toBeInTheDocument()
 
-      cleanup()
+      unmount()
     })
   })
 
@@ -122,11 +115,13 @@ describe('AnimatedHeading', () => {
     const variants = ['hero', 'section', 'subtitle'] as const
 
     variants.forEach((variant) => {
-      render(<AnimatedHeading text={`${variant} heading`} variant={variant} />)
+      const { unmount } = render(
+        <AnimatedHeading text={`${variant} heading`} variant={variant} />
+      )
 
       expect(screen.getByRole('heading')).toBeInTheDocument()
 
-      cleanup()
+      unmount()
     })
   })
 })

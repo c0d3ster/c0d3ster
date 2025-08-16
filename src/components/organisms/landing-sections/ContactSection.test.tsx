@@ -1,18 +1,9 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { ContactSection } from './ContactSection'
 
 describe('ContactSection', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    cleanup()
-  })
-
-  afterEach(() => {
-    cleanup()
-  })
-
   it('renders section header', () => {
     render(<ContactSection />)
 
@@ -86,5 +77,37 @@ describe('ContactSection', () => {
 
     expect(submitButton).toBeInTheDocument()
     expect(submitButton).toHaveAttribute('type', 'submit')
+  })
+
+  it('renders status information with typewriter effects', async () => {
+    render(<ContactSection />)
+
+    // Wait for TypewriterEffect texts to appear
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText('RESPONSE TIME: < 24 HOURS')
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
+
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText('AVAILABILITY: OPEN FOR PROJECTS')
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
+
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText('COMMUNICATION: SECURE & CONFIDENTIAL')
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
   })
 })

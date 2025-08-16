@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { defaultFeaturedProjects } from '@/data/projects'
 
@@ -16,15 +16,6 @@ vi.mock('next/link', () => ({
 }))
 
 describe('ProjectsPreviewSection', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    cleanup()
-  })
-
-  afterEach(() => {
-    cleanup()
-  })
-
   it('renders with default projects', () => {
     render(<ProjectsPreviewSection />)
 
@@ -172,5 +163,35 @@ describe('ProjectsPreviewSection', () => {
     expect(screen.getByText('Simple Project Type')).toBeInTheDocument()
     expect(screen.getByText('Complex Project Type')).toBeInTheDocument()
     expect(screen.getByText('PostgreSQL')).toBeInTheDocument()
+  })
+
+  it('renders statistics information with typewriter effects', async () => {
+    render(<ProjectsPreviewSection />)
+
+    // Wait for TypewriterEffect texts to appear
+    await waitFor(
+      () => {
+        expect(screen.getByText('SUCCESS RATE: 100%')).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
+
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText('CLIENT SATISFACTION: EXCELLENT')
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
+
+    // For the dynamic projects loaded text, we need to check the actual count
+    const expectedText = `PROJECTS LOADED: ${defaultFeaturedProjects.length}`
+    await waitFor(
+      () => {
+        expect(screen.getByText(expectedText)).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
   })
 })

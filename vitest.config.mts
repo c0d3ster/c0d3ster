@@ -10,25 +10,26 @@ export default defineConfig({
       include: ['src/**/*'],
       exclude: ['src/**/*.stories.{js,jsx,ts,tsx}'],
     },
+    setupFiles: ['tests/setup.ts'],
     projects: [
       {
         extends: true,
         test: {
           name: 'unit',
-          include: ['src/**/*.test.{js,ts,tsx}'],
+          include: ['src/**/*.test.{js,ts}'],
           exclude: ['src/hooks/**/*.test.ts'],
-          environment: 'jsdom',
+          environment: 'node',
         },
       },
       {
         extends: true,
         test: {
           name: 'ui',
-          include: ['tests/e2e/**/*'],
+          include: ['**/*.test.tsx', 'src/hooks/**/*.test.ts'],
           browser: {
             enabled: true,
             headless: true,
-            provider: 'playwright',
+            provider: 'playwright', // or 'webdriverio'
             screenshotDirectory: 'vitest-test-results',
             instances: [{ browser: 'chromium' }],
           },

@@ -1,37 +1,45 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { HeroSection } from './HeroSection'
 
 describe('HeroSection', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    cleanup()
     // Mock window properties
     Object.defineProperty(window, 'innerWidth', { value: 1024, writable: true })
   })
 
-  afterEach(() => {
-    cleanup()
-  })
-
-  it('renders with default props', () => {
+  it('renders with default props', async () => {
     render(<HeroSection />)
 
-    expect(screen.getByText('SOFTWARE CONTRACTOR')).toBeInTheDocument()
-    expect(screen.getByText('FULL-STACK DEVELOPMENT')).toBeInTheDocument()
-    expect(
-      screen.getByText('REACT • NEXT.JS • TYPESCRIPT • NODE.JS')
-    ).toBeInTheDocument()
+    // Wait for the TypewriterEffect text to appear
+    await waitFor(() => {
+      expect(screen.getByText('SOFTWARE CONTRACTOR')).toBeInTheDocument()
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('FULL-STACK DEVELOPMENT')).toBeInTheDocument()
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('REACT • NEXT.JS • TYPESCRIPT • NODE.JS')
+      ).toBeInTheDocument()
+    })
   })
 
-  it('renders custom title', () => {
+  it('renders custom title', async () => {
     const customTitle = 'Custom Title'
     render(<HeroSection title={customTitle} />)
 
-    // The title is rendered via TypewriterEffect, so we can't test for the exact text
-    // Just verify the component renders without crashing
-    expect(screen.getByText('SOFTWARE CONTRACTOR')).toBeInTheDocument()
+    // Wait for the custom title to appear via TypewriterEffect
+    // Increase timeout since TypewriterEffect takes time to type each character
+    await waitFor(
+      () => {
+        expect(screen.getByText(customTitle)).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    ) // 3 second timeout
   })
 
   it('renders custom subtitle', () => {
