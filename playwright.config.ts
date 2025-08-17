@@ -32,7 +32,7 @@ export default defineConfig<ChromaticConfig>({
   webServer: {
     command: process.env.CI
       ? 'npx pglite-server --run "npm run start"'
-      : 'npx run-p db-server:memory dev:next',
+      : 'npm run dev',
     url: baseURL,
     timeout: 2 * 60 * 1000,
     reuseExistingServer: !process.env.CI,

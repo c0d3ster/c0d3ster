@@ -2,7 +2,6 @@
   "RootLayout": {
     "home_link": "Accueil",
     "about_link": "A propos",
-    "counter_link": "Compteur",
     "portfolio_link": "Portfolio",
     "sign_in_link": "Se connecter",
     "sign_up_link": "S'inscrire"
@@ -14,12 +13,6 @@
   "Index": {
     "meta_title": "c0d3ster - Contracteur Logiciel",
     "meta_description": "Contracteur en développement logiciel full-stack spécialisé dans React, Next.js, TypeScript et Node.js"
-  },
-  "Counter": {
-    "meta_title": "Compteur",
-    "meta_description": "Un exemple d'opération DB",
-    "loading_counter": "Chargement du compteur...",
-    "security_powered_by": "Sécurité, détection de bot et rate limiting propulsés par"
   },
   "About": {
     "meta_title": "A propos",

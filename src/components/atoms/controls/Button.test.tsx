@@ -83,11 +83,11 @@ describe('Button', () => {
   })
 
   it('applies custom className', () => {
-    render(<Button className='custom-class'>Custom Button</Button>)
+    render(<Button className='bg-blue-500'>Custom Button</Button>)
 
     const button = screen.getByRole('button')
 
-    expect(button).toHaveClass('custom-class')
+    expect(button).toHaveClass('bg-blue-500')
   })
 
   it('renders disabled state', () => {

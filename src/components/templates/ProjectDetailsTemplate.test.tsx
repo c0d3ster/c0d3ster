@@ -7,7 +7,7 @@ import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 vi.mock('next/image', () => ({
   __esModule: true,
   default: ({ src, alt, priority, ...props }: any) => (
-    <img src={src} alt={alt} {...props} />
+    <div data-testid='next-image' data-src={src} data-alt={alt} {...props} />
   ),
 }))
 
@@ -37,10 +37,10 @@ describe('ProjectDetailsTemplate', () => {
   it('renders project logo when available', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
-    const logo = screen.getByAltText('Test Project logo')
+    const logo = screen.getByTestId('next-image')
 
     expect(logo).toBeInTheDocument()
-    expect(logo).toHaveAttribute('src', '/test-logo.png')
+    expect(logo).toHaveAttribute('data-src', '/test-logo.png')
   })
 
   it('renders status badge with correct styling', () => {

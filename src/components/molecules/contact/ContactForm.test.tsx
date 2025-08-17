@@ -8,6 +8,7 @@ const mockShowSuccess = vi.fn()
 const mockShowError = vi.fn()
 
 vi.mock('@/hooks', () => ({
+  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
   useToast: () => ({
     showSuccess: mockShowSuccess,
     showError: mockShowError,
