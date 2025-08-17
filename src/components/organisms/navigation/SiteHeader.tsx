@@ -86,7 +86,7 @@ export const SiteHeader = ({
       // Check each section for scroll-based highlighting
       const sections = [
         { label: 'home', id: 'home' },
-        { label: 'portfolio', id: 'projects' },
+        { label: 'portfolio', id: 'portfolio' },
         { label: 'contact', id: 'contact' },
       ]
 
@@ -122,7 +122,7 @@ export const SiteHeader = ({
       if (hash) {
         // Map hash to label
         const hashToLabel: Record<string, string> = {
-          '#projects': 'portfolio',
+          '#portfolio': 'portfolio',
           '#contact': 'contact',
         }
 
@@ -162,7 +162,7 @@ export const SiteHeader = ({
           pathname === '/' ||
           pathname.endsWith('/en') ||
           pathname.endsWith('/fr')
-        href = isRootRoute ? '/#projects' : '/projects'
+        href = isRootRoute ? '/#portfolio' : '/projects'
       }
 
       return (

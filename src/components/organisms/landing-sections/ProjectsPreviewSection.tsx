@@ -20,7 +20,7 @@ export const ProjectsPreviewSection = ({
   featuredProjects = defaultFeaturedProjects,
 }: ProjectsPreviewSectionProps) => {
   return (
-    <SectionWrapper id='projects'>
+    <SectionWrapper id='portfolio'>
       {/* Section Header */}
       <ScrollFade>
         <div className='mt-12 mb-16 text-center'>

@@ -152,7 +152,7 @@ describe('SiteHeader', () => {
     const contactLink = screen.getByText('CONTACT').closest('a')
 
     expect(homeLink).toHaveAttribute('href', '/')
-    expect(portfolioLink).toHaveAttribute('href', '/#projects') // Custom route logic for root route
+    expect(portfolioLink).toHaveAttribute('href', '/#portfolio') // Custom route logic for root route
     expect(contactLink).toHaveAttribute('href', '/#contact')
   })
 
