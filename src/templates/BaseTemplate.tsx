@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl'
+
 import { AppConfig } from '@/utils/AppConfig'
 
 export const BaseTemplate = (props: {

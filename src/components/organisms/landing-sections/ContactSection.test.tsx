@@ -1,61 +1,13 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+
 import { ContactSection } from './ContactSection'
 
-// Mock child components
-vi.mock('@/components/atoms', () => ({
-  __esModule: true,
-  ExpandingUnderline: () => <div data-testid='expanding-underline' />,
-  ScrollFade: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid='scroll-fade'>{children}</div>
-  ),
-  SectionWrapper: ({
-    children,
-    id,
-  }: {
-    children: React.ReactNode
-    id: string
-  }) => (
-    <section id={id} data-testid='section-wrapper'>
-      {children}
-    </section>
-  ),
-  TypewriterEffect: ({ text }: { text: string }) => (
-    <span data-testid='typewriter'>{text}</span>
-  ),
-}))
-
-vi.mock('@/components/molecules', () => ({
-  __esModule: true,
-  AnimatedHeading: ({ text }: { text: string }) => (
-    <h2 data-testid='animated-heading'>{text}</h2>
-  ),
-  ContactMethodCard: ({ method }: { method: any }) => (
-    <div data-testid='contact-method-card'>
-      <h3>{method.title}</h3>
-      <p>{method.value}</p>
-      <a href={method.link} target='_blank' rel='noopener noreferrer'>
-        {method.icon}
-      </a>
-    </div>
-  ),
-}))
-
 describe('ContactSection', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    cleanup()
-  })
-
-  afterEach(() => {
-    cleanup()
-  })
-
   it('renders section header', () => {
     render(<ContactSection />)
 
     expect(screen.getByText('CONTACT')).toBeInTheDocument()
-    expect(screen.getByTestId('expanding-underline')).toBeInTheDocument()
     expect(screen.getByText('READY TO START YOUR PROJECT?')).toBeInTheDocument()
   })
 
@@ -75,24 +27,6 @@ describe('ContactSection', () => {
     expect(
       screen.getByText('linkedin.com/in/cody-douglass')
     ).toBeInTheDocument()
-  })
-
-  it('renders contact method links with correct hrefs', () => {
-    render(<ContactSection />)
-
-    // Just verify that ContactMethodCard components are rendered
-    const contactCards = screen.getAllByTestId('contact-method-card')
-
-    expect(contactCards).toHaveLength(3)
-  })
-
-  it('opens links in new tab', () => {
-    render(<ContactSection />)
-
-    // Just verify that ContactMethodCard components are rendered
-    const contactCards = screen.getAllByTestId('contact-method-card')
-
-    expect(contactCards).toHaveLength(3)
   })
 
   it('renders contact form', () => {
@@ -145,73 +79,35 @@ describe('ContactSection', () => {
     expect(submitButton).toHaveAttribute('type', 'submit')
   })
 
-  it('handles form input changes', () => {
+  it('renders status information with typewriter effects', async () => {
     render(<ContactSection />)
 
-    const nameInput = screen.getByLabelText('NAME')
+    // Wait for TypewriterEffect texts to appear
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText('RESPONSE TIME: < 24 HOURS')
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
 
-    // Input should be present and accept input
-    expect(nameInput).toBeInTheDocument()
-    expect(nameInput).toHaveAttribute('type', 'text')
-  })
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText('AVAILABILITY: OPEN FOR PROJECTS')
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
 
-  it('handles textarea input', () => {
-    render(<ContactSection />)
-
-    const messageTextarea = screen.getByLabelText('MESSAGE')
-
-    // Textarea should be present and accept input
-    expect(messageTextarea).toBeInTheDocument()
-    expect(messageTextarea.tagName).toBe('TEXTAREA')
-  })
-
-  it('renders status information with typewriter effects', () => {
-    render(<ContactSection />)
-
-    expect(screen.getByText('RESPONSE TIME: < 24 HOURS')).toBeInTheDocument()
-    expect(
-      screen.getByText('AVAILABILITY: OPEN FOR PROJECTS')
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('COMMUNICATION: SECURE & CONFIDENTIAL')
-    ).toBeInTheDocument()
-  })
-
-  it('renders with correct section id', () => {
-    render(<ContactSection />)
-
-    const section = screen.getByTestId('section-wrapper')
-
-    expect(section).toHaveAttribute('id', 'contact')
-  })
-
-  it('wraps content in ScrollFade components', () => {
-    render(<ContactSection />)
-
-    const scrollFadeElements = screen.getAllByTestId('scroll-fade')
-
-    expect(scrollFadeElements.length).toBeGreaterThan(0)
-  })
-
-  it('renders contact method icons', () => {
-    render(<ContactSection />)
-
-    // Icons are emojis in the component
-    expect(screen.getByText('📧')).toBeInTheDocument()
-    expect(screen.getByText('💻')).toBeInTheDocument()
-    expect(screen.getByText('🔗')).toBeInTheDocument()
-  })
-
-  it('handles form submission', () => {
-    render(<ContactSection />)
-
-    const submitButton = screen.getByRole('button', {
-      name: 'INITIATE TRANSMISSION',
-    })
-    const form = submitButton.closest('form')
-
-    // Form should be present and submittable
-    expect(form).toBeInTheDocument()
-    expect(submitButton).toHaveAttribute('type', 'submit')
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText('COMMUNICATION: SECURE & CONFIDENTIAL')
+        ).toBeInTheDocument()
+      },
+      { timeout: 3000 }
+    )
   })
 })

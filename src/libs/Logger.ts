@@ -1,4 +1,5 @@
 import type { AsyncSink } from '@logtape/logtape'
+
 import {
   configure,
   fromAsyncSink,
@@ -6,7 +7,9 @@ import {
   getJsonLinesFormatter,
   getLogger,
 } from '@logtape/logtape'
+
 import { isServer } from '@/utils/Helpers'
+
 import { Env } from './Env'
 
 const betterStackSink: AsyncSink = async (record) => {

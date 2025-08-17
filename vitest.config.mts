@@ -10,6 +10,7 @@ export default defineConfig({
       include: ['src/**/*'],
       exclude: ['src/**/*.stories.{js,jsx,ts,tsx}'],
     },
+    setupFiles: ['tests/setup.ts'],
     projects: [
       {
         extends: true,

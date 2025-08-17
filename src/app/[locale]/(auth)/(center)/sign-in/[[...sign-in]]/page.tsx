@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+
 import { SignIn } from '@clerk/nextjs'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+
 import { getI18nPath } from '@/utils/Helpers'
 
 type ISignInPageProps = {

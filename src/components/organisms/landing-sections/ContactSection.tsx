@@ -1,13 +1,18 @@
 'use client'
 
 import type { ContactMethod } from '@/components/molecules'
+
 import {
   ExpandingUnderline,
   ScrollFade,
   SectionWrapper,
   TypewriterEffect,
 } from '@/components/atoms'
-import { AnimatedHeading, ContactMethodCard } from '@/components/molecules'
+import {
+  AnimatedHeading,
+  ContactForm,
+  ContactMethodCard,
+} from '@/components/molecules'
 
 export const ContactSection = () => {
   const contactMethods: ContactMethod[] = [
@@ -60,83 +65,7 @@ export const ContactSection = () => {
 
       {/* Contact Form */}
       <div className='relative z-20 mx-auto mt-8 max-w-2xl'>
-        <div className='rounded-lg border border-green-400/20 bg-black/80 p-4'>
-          <h3 className='mb-6 text-center font-mono text-2xl font-bold text-green-400'>
-            SEND MESSAGE
-          </h3>
-
-          <form className='space-y-6'>
-            <div className='grid gap-6 md:grid-cols-2'>
-              <div>
-                <label
-                  htmlFor='name'
-                  className='mb-2 block font-mono text-sm text-green-300'
-                >
-                  NAME
-                </label>
-                <input
-                  id='name'
-                  type='text'
-                  className='w-full rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
-                  placeholder='YOUR NAME'
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor='email'
-                  className='mb-2 block font-mono text-sm text-green-300'
-                >
-                  EMAIL
-                </label>
-                <input
-                  id='email'
-                  type='email'
-                  className='w-full rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
-                  placeholder='YOUR EMAIL'
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor='subject'
-                className='mb-2 block font-mono text-sm text-green-300'
-              >
-                SUBJECT
-              </label>
-              <input
-                id='subject'
-                type='text'
-                className='w-full rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
-                placeholder='PROJECT TYPE'
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor='message'
-                className='mb-2 block font-mono text-sm text-green-300'
-              >
-                MESSAGE
-              </label>
-              <textarea
-                id='message'
-                rows={4}
-                className='w-full resize-none rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
-                placeholder='DESCRIBE YOUR PROJECT...'
-              />
-            </div>
-
-            <div className='text-center'>
-              <button
-                type='submit'
-                className='rounded border border-green-400 bg-green-400/10 px-8 py-3 font-mono font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
-              >
-                INITIATE TRANSMISSION
-              </button>
-            </div>
-          </form>
-        </div>
+        <ContactForm />
       </div>
 
       {/* Additional Matrix-style info */}

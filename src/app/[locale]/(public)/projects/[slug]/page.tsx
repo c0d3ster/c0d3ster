@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+
 import { setRequestLocale } from 'next-intl/server'
 import Link from 'next/link'
+
 import { ProjectDetailsTemplate, SiteHeader } from '@/components'
 import { defaultFeaturedProjects, projectNameToSlug } from '@/data/projects'
 import { routing } from '@/libs/I18nRouting'

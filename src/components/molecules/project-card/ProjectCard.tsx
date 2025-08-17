@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+
 import { projectNameToSlug } from '@/data/projects'
 
 export type Project = {
@@ -48,7 +49,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
 
         {/* Project Title */}
         <h3 className='mb-2 pr-12 font-mono text-lg font-bold text-green-400'>
-          {project.projectName || project.title}
+          {project.title || project.projectName}
         </h3>
 
         {/* Project Description */}
