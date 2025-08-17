@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 
 import { getTranslations } from 'next-intl/server'
 
+import { UserProfile } from '@/components/atoms'
+
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
@@ -20,7 +22,11 @@ export default function Dashboard() {
   return (
     <div className='py-5 [&_p]:my-6'>
       <h1 className='mb-4 text-2xl font-bold'>Dashboard</h1>
-      <p>Welcome to your dashboard.</p>
+      <p className='mb-8'>
+        Welcome to your dashboard. Manage your profile and account settings
+        below.
+      </p>
+      <UserProfile />
     </div>
   )
 }

@@ -23,6 +23,8 @@ const isAuthPage = createRouteMatcher([
   '/:locale/sign-up(.*)',
 ])
 
+const isApiRoute = (pathname: string) => pathname.startsWith('/api/')
+
 // Improve security with Arcjet
 const aj = arcjet.withRule(
   detectBot({
@@ -41,6 +43,13 @@ export default async function middleware(
   request: NextRequest,
   event: NextFetchEvent
 ) {
+  const { pathname } = request.nextUrl
+
+  // Skip middleware for API routes - let Clerk handle auth directly
+  if (isApiRoute(pathname)) {
+    return NextResponse.next()
+  }
+
   // Verify the request with Arcjet
   // Use `process.env` instead of Env to reduce bundle size in middleware
   if (process.env.ARCJET_KEY) {

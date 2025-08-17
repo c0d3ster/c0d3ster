@@ -31,7 +31,7 @@
   "dependencies": {
     "@arcjet/next": "^1.0.0-beta.9",
     "@clerk/localizations": "^3.20.6",
-    "@clerk/nextjs": "^6.28.1",
+    "@clerk/nextjs": "^6.31.1",
     "@hookform/resolvers": "^5.2.1",
     "@logtape/logtape": "^1.0.4",
     "@react-email/render": "^1.2.0",
@@ -47,6 +47,7 @@
     "react-icons": "^5.5.0",
     "react-toastify": "^11.0.5",
     "resend": "^6.0.1",
+    "svix": "^1.73.0",
     "zod": "^4.0.15"
   },
   "devDependencies": {

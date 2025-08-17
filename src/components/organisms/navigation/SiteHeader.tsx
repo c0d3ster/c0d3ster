@@ -1,5 +1,6 @@
 'use client'
 
+import { SignInButton, SignOutButton, useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -12,9 +13,11 @@ type SiteHeaderProps = {
 export const SiteHeader = ({ fadeOnScroll = true }: SiteHeaderProps) => {
   const [activeSection, setActiveSection] = useState('home')
   const [scrollY, setScrollY] = useState(0)
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false)
   const pathname = usePathname()
   const setActiveSectionRef = useRef(setActiveSection)
   const setScrollYRef = useRef(setScrollY)
+  const { user, isLoaded } = useUser()
 
   // Check if we're on the landing page (where anchor navigation works)
   const isLandingPage =
@@ -156,10 +159,69 @@ export const SiteHeader = ({ fadeOnScroll = true }: SiteHeaderProps) => {
           )}
         </nav>
 
-        {/* Status indicator */}
-        <div className='flex items-center space-x-2'>
-          <div className='h-2 w-2 animate-pulse rounded-full bg-green-400' />
-          <span className='header-status font-mono text-green-400'>ONLINE</span>
+        {/* Status indicator and auth controls */}
+        <div className='flex items-center space-x-4'>
+          {/* Status indicator dropdown */}
+          <div className='relative'>
+            <div
+              className='flex cursor-pointer items-center space-x-2 transition-opacity hover:opacity-80'
+              onMouseEnter={() => setShowStatusDropdown(true)}
+            >
+              <div
+                className={`h-2 w-2 rounded-full ${
+                  isLoaded && user
+                    ? 'animate-pulse bg-green-400'
+                    : 'bg-yellow-300'
+                }`}
+              />
+              <span
+                className={`header-status font-mono ${
+                  isLoaded && user ? 'text-green-400' : 'text-yellow-300'
+                }`}
+              >
+                {isLoaded && user ? 'ONLINE' : 'GUEST'}
+              </span>
+            </div>
+
+            {/* Dropdown menu */}
+            {showStatusDropdown && (
+              <div
+                className='absolute top-full right-0 z-50 mt-2 min-w-32 rounded-lg border border-green-400/20 bg-black/90 shadow-lg backdrop-blur-sm'
+                onMouseEnter={() => setShowStatusDropdown(true)}
+                onMouseLeave={() => setShowStatusDropdown(false)}
+              >
+                <div className='py-2'>
+                  {isLoaded && user ? (
+                    <>
+                      <Link
+                        href='/dashboard'
+                        className='block px-4 py-2 text-right font-mono text-sm text-green-300 transition-colors hover:bg-green-400/10 hover:text-green-400'
+                      >
+                        Dashboard
+                      </Link>
+                      <SignOutButton>
+                        <button
+                          type='button'
+                          className='block w-full px-4 py-2 text-right font-mono text-sm text-yellow-300 transition-colors hover:bg-yellow-300/20 hover:text-yellow-400'
+                        >
+                          Sign Out
+                        </button>
+                      </SignOutButton>
+                    </>
+                  ) : (
+                    <SignInButton mode='modal'>
+                      <button
+                        type='button'
+                        className='block w-full px-4 py-2 text-right font-mono text-sm text-green-300 transition-colors hover:bg-green-400/10 hover:text-green-400'
+                      >
+                        Sign In
+                      </button>
+                    </SignInButton>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
