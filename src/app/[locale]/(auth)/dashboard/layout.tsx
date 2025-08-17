@@ -1,9 +1,9 @@
-import { SignOutButton } from '@clerk/nextjs'
-import { getTranslations, setRequestLocale } from 'next-intl/server'
-import Link from 'next/link'
+import { setRequestLocale } from 'next-intl/server'
 
-import { LocaleSwitcher } from '@/components'
-import { BaseTemplate } from '@/templates/BaseTemplate'
+import type { NavItem } from '@/components/organisms'
+
+import { BackButton } from '@/components/atoms'
+import { SiteHeader } from '@/components/organisms'
 
 export default async function DashboardLayout(props: {
   children: React.ReactNode
@@ -11,53 +11,19 @@ export default async function DashboardLayout(props: {
 }) {
   const { locale } = await props.params
   setRequestLocale(locale)
-  const t = await getTranslations({
-    locale,
-    namespace: 'DashboardLayout',
-  })
+
+  // Dashboard menu items
+  const menuItems: NavItem[] = [
+    { label: 'DASHBOARD', href: '/dashboard' },
+    { label: 'USER PROFILE', href: '/dashboard/user-profile' },
+  ]
 
   return (
-    <BaseTemplate
-      leftNav={
-        <>
-          <li>
-            <Link
-              href='/dashboard/'
-              className='border-none text-gray-700 hover:text-gray-900'
-            >
-              {t('dashboard_link')}
-            </Link>
-          </li>
-          <li>
-            <Link
-              href='/dashboard/user-profile/'
-              className='border-none text-gray-700 hover:text-gray-900'
-            >
-              {t('user_profile_link')}
-            </Link>
-          </li>
-        </>
-      }
-      rightNav={
-        <>
-          <li>
-            <SignOutButton>
-              <button
-                className='border-none text-gray-700 hover:text-gray-900'
-                type='button'
-              >
-                {t('sign_out')}
-              </button>
-            </SignOutButton>
-          </li>
-
-          <li>
-            <LocaleSwitcher />
-          </li>
-        </>
-      }
-    >
+    <div className='bg-black'>
+      <SiteHeader menuItems={menuItems} isDashboard />
+      <BackButton href={`/${locale}`} text='BACK TO SITE' />
+      {/* Content - No wrapper needed */}
       {props.children}
-    </BaseTemplate>
+    </div>
   )
 }

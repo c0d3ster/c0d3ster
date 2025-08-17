@@ -22,11 +22,11 @@ export const LocaleSwitcher = () => {
     <select
       defaultValue={locale}
       onChange={handleChange}
-      className='border border-gray-300 font-medium focus:outline-hidden focus-visible:ring-3'
+      className='rounded-lg border border-green-400/30 bg-black/50 px-3 py-2 font-mono text-sm text-green-400 transition-all duration-200 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
       aria-label='lang-switcher'
     >
       {routing.locales.map((elt) => (
-        <option key={elt} value={elt}>
+        <option key={elt} value={elt} className='bg-black text-green-400'>
           {elt.toUpperCase()}
         </option>
       ))}

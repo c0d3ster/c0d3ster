@@ -2,13 +2,13 @@ import type { Metadata } from 'next'
 
 import { setRequestLocale } from 'next-intl/server'
 
-import { CleanPageTemplate, SiteHeader } from '@/components'
 import {
   BackButton,
   ExpandingUnderline,
   TypewriterEffect,
 } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
+import { CleanPageTemplate } from '@/components/templates'
 
 type IBallzProps = {
   params: Promise<{ locale: string }>
@@ -27,9 +27,8 @@ export default async function Ballz(props: IBallzProps) {
 
   return (
     <CleanPageTemplate>
-      <SiteHeader fadeOnScroll={false} />
       <BackButton href='/projects' text='BACK TO PROJECTS' />
-      <div className='container mx-auto px-4 py-16 pt-32'>
+      <div className='container mx-auto px-4'>
         {/* Project Header */}
         <div className='mb-16 text-center'>
           <AnimatedHeading

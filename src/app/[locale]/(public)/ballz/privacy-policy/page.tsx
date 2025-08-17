@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 
 import { setRequestLocale } from 'next-intl/server'
 
-import { CleanPageTemplate, SiteHeader } from '@/components'
 import { BackButton, ExpandingUnderline } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
+import { CleanPageTemplate } from '@/components/templates'
 
 type IPrivacyPolicyProps = {
   params: Promise<{ locale: string }>
@@ -25,9 +25,8 @@ export default async function PrivacyPolicy(props: IPrivacyPolicyProps) {
 
   return (
     <CleanPageTemplate>
-      <SiteHeader fadeOnScroll={false} />
       <BackButton href='/ballz' text='BACK TO PROJECTS' />
-      <div className='container mx-auto px-4 py-16 pt-32'>
+      <div className='container mx-auto px-4'>
         {/* Page Header */}
         <div className='mb-16 text-center'>
           <AnimatedHeading

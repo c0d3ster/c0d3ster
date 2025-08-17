@@ -1,6 +1,7 @@
 'use client'
 
 import { useUser } from '@clerk/nextjs'
+import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
 type UserData = {
@@ -71,60 +72,71 @@ export const UserProfile = () => {
   }
 
   if (!isLoaded) {
-    return <div className='animate-pulse'>Loading...</div>
+    return (
+      <div className='flex items-center justify-center py-8'>
+        <div className='font-mono text-green-400'>LOADING...</div>
+      </div>
+    )
   }
 
   if (!user) {
-    return <div>Please sign in to view your profile.</div>
+    return (
+      <div className='text-center font-mono text-green-300'>
+        Please sign in to view your profile.
+      </div>
+    )
   }
 
   return (
-    <div className='mx-auto max-w-2xl rounded-lg bg-white p-6 shadow-md'>
-      <div className='mb-6 flex items-center space-x-4'>
+    <div className='space-y-6'>
+      {/* Profile Header */}
+      <div className='flex items-center space-x-6'>
         {user.imageUrl && (
-          <img
+          <Image
             src={user.imageUrl}
             alt='Profile'
-            className='h-16 w-16 rounded-full'
+            width={80}
+            height={80}
+            className='h-20 w-20 rounded-full border-2 border-green-400/50 shadow-lg'
           />
         )}
         <div>
-          <h2 className='text-2xl font-bold text-gray-900'>
+          <h2 className='font-mono text-2xl font-bold text-green-400'>
             {userData?.firstName && userData?.lastName
               ? `${userData.firstName} ${userData.lastName}`
-              : 'Complete your profile'}
+              : 'COMPLETE YOUR PROFILE'}
           </h2>
-          <p className='text-gray-600'>
+          <p className='font-mono text-green-300/80'>
             {userData?.email || user.primaryEmailAddress?.emailAddress}
           </p>
         </div>
       </div>
 
       {!isEditing ? (
-        <div className='space-y-4'>
-          <div className='grid grid-cols-2 gap-4'>
+        <div className='space-y-6'>
+          <div className='grid gap-6 md:grid-cols-2'>
             <div>
-              <span className='block text-sm font-medium text-gray-700'>
-                First Name
+              <span className='block font-mono text-sm font-medium text-green-300'>
+                FIRST NAME
               </span>
-              <p className='mt-1 text-sm text-gray-900'>
+              <p className='mt-2 font-mono text-lg text-green-400'>
                 {userData?.firstName || 'Not set'}
               </p>
             </div>
             <div>
-              <span className='block text-sm font-medium text-gray-700'>
-                Last Name
+              <span className='block font-mono text-sm font-medium text-green-300'>
+                LAST NAME
               </span>
-              <p className='mt-1 text-sm text-gray-900'>
+              <p className='mt-2 font-mono text-lg text-green-400'>
                 {userData?.lastName || 'Not set'}
               </p>
             </div>
           </div>
           <div>
-            <span className='block text-sm font-medium text-gray-700'>
-              Member Since
+            <span className='block font-mono text-sm font-medium text-green-300'>
+              MEMBER SINCE
             </span>
-            <p className='mt-1 text-sm text-gray-900'>
+            <p className='mt-2 font-mono text-lg text-green-400'>
               {userData?.createdAt
                 ? new Date(userData.createdAt).toLocaleDateString()
                 : 'N/A'}
@@ -133,20 +145,20 @@ export const UserProfile = () => {
           <button
             type='button'
             onClick={() => setIsEditing(true)}
-            className='rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700'
+            className='rounded border border-green-400 bg-green-400/10 px-6 py-3 font-mono font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
           >
-            Edit Profile
+            EDIT PROFILE
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className='space-y-4'>
-          <div className='grid grid-cols-2 gap-4'>
+        <form onSubmit={handleSubmit} className='space-y-6'>
+          <div className='grid gap-6 md:grid-cols-2'>
             <div>
               <label
                 htmlFor='firstName'
-                className='block text-sm font-medium text-gray-700'
+                className='block font-mono text-sm font-medium text-green-300'
               >
-                First Name
+                FIRST NAME
               </label>
               <input
                 id='firstName'
@@ -155,15 +167,16 @@ export const UserProfile = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
                 }
-                className='mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none'
+                className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
+                placeholder='Enter first name'
               />
             </div>
             <div>
               <label
                 htmlFor='lastName'
-                className='block text-sm font-medium text-gray-700'
+                className='block font-mono text-sm font-medium text-green-300'
               >
-                Last Name
+                LAST NAME
               </label>
               <input
                 id='lastName'
@@ -172,24 +185,25 @@ export const UserProfile = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
-                className='mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none'
+                className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
+                placeholder='Enter last name'
               />
             </div>
           </div>
-          <div className='flex space-x-3'>
+          <div className='flex space-x-4'>
             <button
               type='submit'
               disabled={isLoading}
-              className='rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-50'
+              className='rounded border border-green-400 bg-green-400/10 px-6 py-3 font-mono font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black disabled:cursor-not-allowed disabled:opacity-50'
             >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? 'SAVING...' : 'SAVE CHANGES'}
             </button>
             <button
               type='button'
               onClick={() => setIsEditing(false)}
-              className='rounded-md bg-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-400'
+              className='rounded border border-gray-400/30 bg-gray-400/10 px-6 py-3 font-mono font-bold text-gray-400 transition-all duration-300 hover:bg-gray-400 hover:text-black'
             >
-              Cancel
+              CANCEL
             </button>
           </div>
         </form>

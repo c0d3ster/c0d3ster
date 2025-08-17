@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { setRequestLocale } from 'next-intl/server'
 import Link from 'next/link'
 
-import { ProjectDetailsTemplate, SiteHeader } from '@/components'
+import { ProjectDetailsTemplate } from '@/components/templates'
 import { defaultFeaturedProjects, projectNameToSlug } from '@/data/projects'
 import { routing } from '@/libs/I18nRouting'
 
@@ -64,8 +64,7 @@ export default async function PortfolioDetail(props: IPortfolioDetailProps) {
   if (!project) {
     return (
       <div className='min-h-screen bg-black'>
-        <SiteHeader />
-        <div className='container mx-auto px-4 py-16 pt-32'>
+        <div className='container mx-auto px-4'>
           <div className='text-center'>
             <h1 className='mb-8 font-mono text-4xl font-bold text-green-400'>
               Project Not Found
@@ -89,7 +88,6 @@ export default async function PortfolioDetail(props: IPortfolioDetailProps) {
 
   return (
     <>
-      <SiteHeader fadeOnScroll={false} />
       <ProjectDetailsTemplate project={project} />
     </>
   )

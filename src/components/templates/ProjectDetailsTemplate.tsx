@@ -24,7 +24,7 @@ export const ProjectDetailsTemplate = ({
   return (
     <CleanPageTemplate>
       <BackButton href='/projects' text='BACK TO PROJECTS' />
-      <div className='container mx-auto px-4 py-16 pt-32'>
+      <div className='container mx-auto px-4'>
         {/* Project Header */}
         <ScrollFade>
           <div className='mb-16 text-center'>

@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 
-import { UserProfile } from '@clerk/nextjs'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
-import { getI18nPath } from '@/utils/Helpers'
+import { ExpandingUnderline, UserProfile } from '@/components/atoms'
+import { AnimatedHeading } from '@/components/molecules'
+import { CleanPageTemplate } from '@/components/templates'
 
 type IUserProfilePageProps = {
   params: Promise<{ locale: string }>
@@ -28,8 +29,27 @@ export default async function UserProfilePage(props: IUserProfilePageProps) {
   setRequestLocale(locale)
 
   return (
-    <div className='my-6 -ml-16'>
-      <UserProfile path={getI18nPath('/dashboard/user-profile', locale)} />
-    </div>
+    <CleanPageTemplate>
+      <div className='container mx-auto px-4'>
+        <div className='mx-auto max-w-4xl'>
+          {/* Header Section */}
+          <div className='mb-8 text-center'>
+            <AnimatedHeading
+              text='USER PROFILE'
+              className='mb-4 font-mono text-3xl font-bold text-green-400'
+            />
+            <ExpandingUnderline className='mx-auto mb-4' />
+            <p className='text-lg text-green-300/80'>
+              Manage your account settings and profile information
+            </p>
+          </div>
+
+          {/* Profile Content */}
+          <div className='rounded-lg border border-green-400/20 bg-black/80 p-6 shadow-2xl backdrop-blur-sm'>
+            <UserProfile />
+          </div>
+        </div>
+      </div>
+    </CleanPageTemplate>
   )
 }

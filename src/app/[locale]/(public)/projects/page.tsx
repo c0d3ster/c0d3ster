@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 
-import { CleanPageTemplate, SiteHeader } from '@/components'
 import { ExpandingUnderline, ScrollFade } from '@/components/atoms'
 import { AnimatedHeading, ProjectCard } from '@/components/molecules'
+import { CleanPageTemplate } from '@/components/templates'
 import { defaultFeaturedProjects } from '@/data/projects'
 
 type IPortfolioProps = {
@@ -32,8 +32,7 @@ export default async function Portfolio(props: IPortfolioProps) {
 
   return (
     <CleanPageTemplate>
-      <SiteHeader fadeOnScroll={false} />
-      <div className='container mx-auto px-4 py-16 pt-32'>
+      <div className='container mx-auto px-4'>
         {/* Page Header */}
         <ScrollFade>
           <div className='mb-16 text-center'>

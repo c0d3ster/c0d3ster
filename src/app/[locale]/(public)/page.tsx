@@ -5,10 +5,9 @@ import { setRequestLocale } from 'next-intl/server'
 import {
   ContactSection,
   HeroSection,
-  LandingPageTemplate,
   ProjectsPreviewSection,
-  SiteHeader,
-} from '@/components'
+} from '@/components/organisms'
+import { LandingPageTemplate } from '@/components/templates'
 
 type IIndexProps = {
   params: Promise<{ locale: string }>
@@ -28,7 +27,6 @@ export default async function Index(props: IIndexProps) {
 
   return (
     <LandingPageTemplate>
-      <SiteHeader />
       <HeroSection />
       <ProjectsPreviewSection />
       <ContactSection />
