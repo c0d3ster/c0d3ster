@@ -1,23 +1,33 @@
 import { describe, expect, it } from 'vitest'
 
-import { routing } from '@/libs/I18nRouting'
-
-import { getI18nPath } from './Helpers'
+import { getBaseUrl, isServer } from './Helpers'
 
 describe('Helpers', () => {
-  describe('getI18nPath function', () => {
-    it('should not change the path for default language', () => {
-      const url = '/random-url'
-      const locale = routing.defaultLocale
-
-      expect(getI18nPath(url, locale)).toBe(url)
+  describe('getBaseUrl function', () => {
+    it('should return NEXT_PUBLIC_APP_URL when set', () => {
+      const originalEnv = process.env.NEXT_PUBLIC_APP_URL
+      process.env.NEXT_PUBLIC_APP_URL = 'https://example.com'
+      
+      expect(getBaseUrl()).toBe('https://example.com')
+      
+      process.env.NEXT_PUBLIC_APP_URL = originalEnv
     })
 
-    it('should prepend the locale to the path for non-default language', () => {
-      const url = '/random-url'
-      const locale = 'fr'
+    it('should return localhost when no environment variables are set', () => {
+      const originalEnv = process.env.NEXT_PUBLIC_APP_URL
+      delete process.env.NEXT_PUBLIC_APP_URL
+      
+      expect(getBaseUrl()).toBe('http://localhost:3000')
+      
+      if (originalEnv) {
+        process.env.NEXT_PUBLIC_APP_URL = originalEnv
+      }
+    })
+  })
 
-      expect(getI18nPath(url, locale)).toMatch(/^\/fr/)
+  describe('isServer function', () => {
+    it('should return true when running on server', () => {
+      expect(isServer()).toBe(true)
     })
   })
 })
