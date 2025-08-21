@@ -34,6 +34,14 @@ jobs:
 
       - name: Build Next.js
         run: npm run build
+        env:
+          # Required Clerk variables
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          # Database
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Build environment
+          NODE_ENV: production
 
       - if: matrix.node-version == '22.x' && success()
         name: Cache Next.js build output
@@ -70,6 +78,14 @@ jobs:
 
       - name: Type checking
         run: npm run check:types
+        env:
+          # Required Clerk variables
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          # Database
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Build environment
+          NODE_ENV: production
 
       - name: Check dependencies
         run: npm run check:deps
@@ -95,6 +111,14 @@ jobs:
         uses: docker://mcr.microsoft.com/playwright:v1.54.0
         with:
           args: npm run test -- --coverage
+        env:
+          # Required Clerk variables
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          # Database
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Test environment
+          NODE_ENV: test
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

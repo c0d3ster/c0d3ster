@@ -2,6 +2,16 @@ import type { ChromaticConfig } from '@chromatic-com/playwright'
 
 import { defineConfig, devices } from '@playwright/test'
 
+// Utility to pick explicit keys and allow certain prefixes from process.env
+const pickEnv = (keys: string[], prefixes: string[] = []) => {
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(process.env)) {
+    if (v == null) continue
+    if (keys.includes(k) || prefixes.some((p) => k.startsWith(p))) out[k] = v
+  }
+  return out
+}
+
 // Use process.env.PORT by default and fallback to port 3000
 const PORT = process.env.PORT || 3000
 
@@ -37,10 +47,20 @@ export default defineConfig<ChromaticConfig>({
     timeout: 2 * 60 * 1000,
     reuseExistingServer: !process.env.CI,
     env: {
-      // Pass through all environment variables
-      ...process.env,
-      // Override specific test settings
-      NEXT_PUBLIC_SENTRY_DISABLED: 'true',
+      // Only include what tests/app actually need + public prefixes
+      ...pickEnv(
+        [
+          'NODE_ENV',
+          'DATABASE_URL',
+          'CLERK_SECRET_KEY',
+          'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+          'PORT',
+          'VERCEL_URL',
+        ],
+        ['NEXT_PUBLIC_', 'PLAYWRIGHT_']
+      ),
+      // Force-disable telemetry in E2E
+      NEXT_TELEMETRY_DISABLED: '1',
     },
   },
 

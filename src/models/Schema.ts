@@ -9,7 +9,10 @@ export const users = pgTable('users', {
   lastName: varchar('last_name', { length: 100 }),
   avatarUrl: text('avatar_url'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 })
 
 // Export the schemas object for Drizzle

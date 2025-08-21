@@ -14,8 +14,9 @@ export async function POST(request: NextRequest) {
 
   if (!WEBHOOK_SECRET) {
     logger.error('CLERK_WEBHOOK_SECRET not configured')
-    throw new Error(
-      'Please add CLERK_WEBHOOK_SECRET from Clerk Dashboard to .env'
+    return NextResponse.json(
+      { error: 'Server misconfiguration' },
+      { status: 500 }
     )
   }
 
@@ -28,9 +29,9 @@ export async function POST(request: NextRequest) {
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
     logger.warn('Webhook missing required headers', {
-      svix_id,
-      svix_timestamp,
-      svix_signature,
+      has_id: Boolean(svix_id),
+      has_timestamp: Boolean(svix_timestamp),
+      has_signature: Boolean(svix_signature),
     })
     return new Response('Error occured -- no svix headers', {
       status: 400,
@@ -39,7 +40,6 @@ export async function POST(request: NextRequest) {
 
   // Get the body
   const payload = await request.text()
-  const body = JSON.parse(payload)
 
   // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET)
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   const { id } = evt.data
   const eventType = evt.type
 
-  logger.info('Webhook received', { id, eventType, body })
+  logger.info('Webhook received', { id, eventType })
 
   if (eventType === 'user.created') {
     const {
@@ -77,18 +77,32 @@ export async function POST(request: NextRequest) {
 
     const email = email_addresses?.[0]?.email_address
 
-    if (email) {
+    if (!email) {
+      logger.warn('Skipping user.created with no email', { clerkId })
+    } else {
       try {
-        await db.insert(users).values({
-          clerkId,
-          email,
-          firstName: first_name || null,
-          lastName: last_name || null,
-          avatarUrl: image_url || null,
-        })
-        logger.info('User created in database', { clerkId })
+        await db
+          .insert(users)
+          .values({
+            clerkId,
+            email,
+            firstName: first_name || null,
+            lastName: last_name || null,
+            avatarUrl: image_url || null,
+          })
+          .onConflictDoUpdate({
+            target: users.clerkId,
+            set: {
+              email,
+              firstName: first_name || null,
+              lastName: last_name || null,
+              avatarUrl: image_url || null,
+              updatedAt: new Date(),
+            },
+          })
+        logger.info('User upserted in database', { clerkId })
       } catch (error) {
-        logger.error('Error creating user in database', { error, clerkId })
+        logger.error('Error upserting user in database', { error, clerkId })
       }
     }
   }
@@ -103,23 +117,19 @@ export async function POST(request: NextRequest) {
     } = evt.data
 
     const email = email_addresses?.[0]?.email_address
-
-    if (email) {
-      try {
-        await db
-          .update(users)
-          .set({
-            email,
-            firstName: first_name || null,
-            lastName: last_name || null,
-            avatarUrl: image_url || null,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.clerkId, clerkId))
-        logger.info('User updated in database', { clerkId })
-      } catch (error) {
-        logger.error('Error updating user in database', { error, clerkId })
+    try {
+      const updateSet: Partial<typeof users.$inferInsert> = {
+        firstName: first_name || null,
+        lastName: last_name || null,
+        avatarUrl: image_url || null,
+        updatedAt: new Date(),
       }
+      if (email) updateSet.email = email
+
+      await db.update(users).set(updateSet).where(eq(users.clerkId, clerkId))
+      logger.info('User updated in database', { clerkId })
+    } catch (error) {
+      logger.error('Error updating user in database', { error, clerkId })
     }
   }
 

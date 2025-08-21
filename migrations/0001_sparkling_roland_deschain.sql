@@ -1,3 +1,6 @@
+-- Ensure UUID generation is available
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"clerk_id" text NOT NULL,
@@ -9,5 +12,5 @@ CREATE TABLE "users" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_clerk_id_unique" UNIQUE("clerk_id")
 );
---> statement-breakpoint
-DROP TABLE "counter" CASCADE;
+
+DROP TABLE IF EXISTS "counter" CASCADE;
