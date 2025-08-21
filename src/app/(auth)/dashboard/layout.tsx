@@ -11,6 +11,7 @@ export default function DashboardLayout({
   // Dashboard menu items
   const menuItems: NavItem[] = [
     { label: 'DASHBOARD', href: '/dashboard' },
+    { label: 'REQUEST PROJECT', href: '/dashboard/request-project' },
     { label: 'USER PROFILE', href: '/dashboard/user-profile' },
   ]
 

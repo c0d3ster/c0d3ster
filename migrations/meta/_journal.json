@@ -13,7 +13,21 @@
       "idx": 1,
       "version": "7",
       "when": 1755393585455,
-      "tag": "0001_sparkling_roland_deschain",
+      "tag": "0001_create_users_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755745063362,
+      "tag": "0002_add_project_management_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1755747937114,
+      "tag": "0003_add_unique_email_constraint",
       "breakpoints": true
     }
   ]

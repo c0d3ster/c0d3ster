@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
             avatarUrl: image_url || null,
           })
           .onConflictDoUpdate({
-            target: users.clerkId,
+            target: users.clerkId, // Only update if same clerkId
             set: {
               email,
               firstName: first_name || null,

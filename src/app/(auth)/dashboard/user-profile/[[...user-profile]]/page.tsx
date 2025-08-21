@@ -15,12 +15,9 @@ export default function UserProfilePage() {
         <div className='mx-auto max-w-4xl'>
           {/* Header Section */}
           <div className='mb-8 text-center'>
-            <AnimatedHeading
-              text='USER PROFILE'
-              className='mb-4 font-mono text-3xl font-bold text-green-400'
-            />
+            <AnimatedHeading text='USER PROFILE' level='h1' className='mb-4' />
             <ExpandingUnderline className='mx-auto mb-4' />
-            <p className='text-lg text-green-300/80'>
+            <p className='font-mono text-base text-green-300/80'>
               Manage your account settings and profile information
             </p>
           </div>

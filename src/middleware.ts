@@ -42,11 +42,7 @@ export default async function middleware(
   return clerkMiddleware(async (auth, req) => {
     // Only protect dashboard routes
     if (isProtectedRoute(req)) {
-      const signInUrl = new URL('/sign-in', req.url)
-
-      await auth.protect({
-        unauthenticatedUrl: signInUrl.toString(),
-      })
+      await auth.protect()
     }
 
     return NextResponse.next()
