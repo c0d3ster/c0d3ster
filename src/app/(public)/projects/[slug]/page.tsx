@@ -6,7 +6,7 @@ import { ProjectDetailsTemplate } from '@/components/templates'
 import { defaultFeaturedProjects, projectNameToSlug } from '@/data/projects'
 
 type IPortfolioDetailProps = {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 // Create a map of slugs to projects
@@ -29,8 +29,10 @@ export function generateStaticParams() {
   }))
 }
 
-export function generateMetadata(props: IPortfolioDetailProps): Metadata {
-  const { slug } = props.params
+export async function generateMetadata(
+  props: IPortfolioDetailProps
+): Promise<Metadata> {
+  const { slug } = await props.params
   const project = projectsData[slug]
 
   if (!project) {
@@ -46,8 +48,8 @@ export function generateMetadata(props: IPortfolioDetailProps): Metadata {
   }
 }
 
-export default function PortfolioDetail(props: IPortfolioDetailProps) {
-  const { slug } = props.params
+export default async function PortfolioDetail(props: IPortfolioDetailProps) {
+  const { slug } = await props.params
 
   const project = projectsData[slug]
 
