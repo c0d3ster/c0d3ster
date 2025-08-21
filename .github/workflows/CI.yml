@@ -162,13 +162,14 @@ jobs:
         run: |
           sudo chmod -R 777 test-results
 
-      - name: Run visual regression tests
-        uses: chromaui/action@v13
-        with:
-          playwright: true
-          exitOnceUploaded: true # Speed up by skipping the build results
-          outputDir: storybook-static
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+      # Temporarily disabled until Chromatic service is set up
+      # - name: Run visual regression tests
+      #   uses: chromaui/action@v13
+      #   with:
+      #     playwright: true
+      #     exitOnceUploaded: true # Speed up by skipping the build results
+      #     outputDir: storybook-static
+      #     projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
