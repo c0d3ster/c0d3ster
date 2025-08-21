@@ -10,7 +10,7 @@ export const DashboardContent = () => {
   const { items, summary, isLoading, error } = useMyProjects()
 
   return (
-    <>
+    <div className='pb-8'>
       {/* User Overview Section */}
       <div className='mb-8 rounded-lg border border-green-400/20 bg-black/80 p-6 shadow-2xl backdrop-blur-sm'>
         <div className='flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0'>
@@ -143,6 +143,6 @@ export const DashboardContent = () => {
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }
