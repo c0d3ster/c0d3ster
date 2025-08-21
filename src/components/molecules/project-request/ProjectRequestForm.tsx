@@ -94,19 +94,27 @@ export const ProjectRequestForm = () => {
       showToast('Project request submitted successfully!', 'success')
       router.push('/dashboard')
     } catch (error) {
-      if (error instanceof Error) {
-        showToast(error.message, 'error')
-      }
-
-      // Handle validation errors
+      // Handle Zod validation errors
       if (error && typeof error === 'object' && 'issues' in error) {
         const validationErrors: Record<string, string> = {}
+        const firstError = (error as any).issues[0]
+
+        // Show the first validation error as a toast
+        if (firstError && firstError.message) {
+          showToast(firstError.message, 'error')
+        }
+
+        // Set all validation errors for field highlighting
         ;(error as any).issues.forEach((issue: any) => {
           if (issue.path && issue.path.length > 0) {
             validationErrors[issue.path[0]] = issue.message
           }
         })
         setErrors(validationErrors)
+      } else if (error instanceof Error) {
+        showToast(error.message, 'error')
+      } else {
+        showToast('Failed to submit request', 'error')
       }
     } finally {
       setIsSubmitting(false)
