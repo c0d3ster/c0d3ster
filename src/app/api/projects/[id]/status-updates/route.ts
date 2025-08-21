@@ -6,14 +6,14 @@ import { NextResponse } from 'next/server'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
-import { projectStatusUpdates, projects, users } from '@/models/Schema'
+import { projects, projectStatusUpdates, users } from '@/models/Schema'
 
 type RouteParams = {
   params: Promise<{ id: string }>
 }
 
 // GET /api/projects/[id]/status-updates - Get status updates for a project
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   try {
     const { userId: clerkId } = await auth()
     const { id: projectId } = await params

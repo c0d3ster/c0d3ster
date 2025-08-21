@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       .returning()
 
     logger.info('Project created', {
-      projectId: newProject.id,
+      projectId: newProject?.id,
       clientId,
       title,
     })

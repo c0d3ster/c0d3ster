@@ -1,12 +1,3 @@
-// Export all enums
-export * from './enums'
-
-// Export all tables
-export * from './users'
-export * from './projects'
-export * from './files'
-export * from './domains'
-
 // Re-export for convenience
 import { domains } from './domains'
 import { projectFiles } from './files'
@@ -17,6 +8,15 @@ import {
   projectStatusUpdates,
 } from './projects'
 import { users } from './users'
+
+export * from './domains'
+
+// Export all enums
+export * from './enums'
+export * from './files'
+export * from './projects'
+// Export all tables
+export * from './users'
 
 export const schemas = {
   users,

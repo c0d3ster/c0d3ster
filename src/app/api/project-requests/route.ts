@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       .returning()
 
     logger.info('Project request created', {
-      requestId: newRequest.id,
+      requestId: newRequest?.id,
       userId: user.id,
       title,
     })

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 
+import Link from 'next/link'
+
 import { ExpandingUnderline, UserProfile } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
@@ -67,18 +69,18 @@ export default function Dashboard() {
                 QUICK ACTIONS
               </h3>
               <div className='space-y-2'>
-                <button
-                  type='button'
-                  className='w-full rounded border border-green-400/30 bg-green-400/10 px-3 py-2 font-mono text-xs text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
+                <Link
+                  href='/dashboard/request-project'
+                  className='block w-full rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-center font-mono text-xs text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
                 >
-                  VIEW SETTINGS
-                </button>
-                <button
-                  type='button'
-                  className='w-full rounded border border-green-400/30 bg-green-400/10 px-3 py-2 font-mono text-xs text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
+                  REQUEST PROJECT
+                </Link>
+                <Link
+                  href='/dashboard/user-profile'
+                  className='block w-full rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-center font-mono text-xs text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
                 >
                   MANAGE ACCOUNT
-                </button>
+                </Link>
               </div>
             </div>
           </div>
