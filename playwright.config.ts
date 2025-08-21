@@ -37,6 +37,9 @@ export default defineConfig<ChromaticConfig>({
     timeout: 2 * 60 * 1000,
     reuseExistingServer: !process.env.CI,
     env: {
+      // Pass through all environment variables
+      ...process.env,
+      // Override specific test settings
       NEXT_PUBLIC_SENTRY_DISABLED: 'true',
     },
   },
