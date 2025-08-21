@@ -39,9 +39,9 @@ export const CompactUserProfile = () => {
 
   if (!isLoaded || !user) {
     return (
-      <div className='flex animate-pulse items-center space-x-4'>
+      <div className='flex animate-pulse flex-col items-center space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4'>
         <div className='h-12 w-12 rounded-full bg-green-400/20'></div>
-        <div className='space-y-2'>
+        <div className='space-y-2 text-center sm:text-left'>
           <div className='h-4 w-32 rounded bg-green-400/20'></div>
           <div className='h-3 w-24 rounded bg-green-400/10'></div>
         </div>
@@ -56,9 +56,9 @@ export const CompactUserProfile = () => {
     : user.fullName || user.emailAddresses[0]?.emailAddress || 'User'
 
   return (
-    <div className='flex items-center space-x-4'>
+    <div className='flex flex-col items-center space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4'>
       {/* Avatar */}
-      <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-green-400/30'>
+      <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-green-400/30 sm:h-12 sm:w-12'>
         {user.imageUrl ? (
           <Image
             src={user.imageUrl}
@@ -75,7 +75,7 @@ export const CompactUserProfile = () => {
       </div>
 
       {/* Name and Email */}
-      <div className='min-w-0 flex-1'>
+      <div className='min-w-0 flex-1 text-center sm:text-left'>
         <h2 className='truncate font-mono text-lg font-bold text-green-400'>
           {displayName}
         </h2>

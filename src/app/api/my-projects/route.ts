@@ -66,7 +66,7 @@ export async function GET() {
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         collaboratorRole: projectCollaborators.role,
-        isOwner: projects.clientId,
+        clientId: projects.clientId,
       })
       .from(projects)
       .leftJoin(
@@ -88,7 +88,7 @@ export async function GET() {
         acc.push({
           ...item,
           userRole:
-            item.isOwner === user.id
+            item.clientId === user.id
               ? 'client'
               : item.collaboratorRole || 'viewer',
         })

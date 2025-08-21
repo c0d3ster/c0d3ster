@@ -1,11 +1,13 @@
 import type { NextRequest } from 'next/server'
 
 import { auth } from '@clerk/nextjs/server'
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
+import { z } from 'zod'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
+import { projectStatusEnum } from '@/models/enums'
 import { projects, projectStatusUpdates, users } from '@/models/Schema'
 
 type RouteParams = {
@@ -42,6 +44,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     // Check if user is the client or admin (for now, just check if they're the client)
     const isClient = project.clientId === user.id
+    // TODO: extend to collaborators/admins when roles are available
+    const hasAccess = isClient
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     // Get status updates, filtering by client visibility if needed
     const updates = await db
@@ -64,17 +71,15 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       .leftJoin(users, eq(projectStatusUpdates.updatedBy, users.id))
       .where(
         isClient
-          ? eq(projectStatusUpdates.projectId, projectId)
+          ? and(
+              eq(projectStatusUpdates.projectId, projectId),
+              eq(projectStatusUpdates.isClientVisible, true)
+            )
           : eq(projectStatusUpdates.projectId, projectId)
       )
       .orderBy(desc(projectStatusUpdates.createdAt))
 
-    // Filter client-visible updates if user is a client
-    const filteredUpdates = isClient
-      ? updates.filter((update) => update.isClientVisible)
-      : updates
-
-    return NextResponse.json({ updates: filteredUpdates })
+    return NextResponse.json({ updates })
   } catch (error) {
     logger.error('Error fetching project status updates', { error })
     return NextResponse.json(
@@ -103,24 +108,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // TODO: Add admin role check here when user roles are implemented
-    // For now, only allow project updates from admin users
+    // TODO: Extend to admins/collaborators when roles are implemented
 
     const body = await request.json()
-    const {
-      newStatus,
-      progressPercentage,
-      updateMessage,
-      isClientVisible = true,
-    } = body
-
-    // Validate required fields
-    if (!newStatus || !updateMessage) {
+    const BodySchema = z.object({
+      newStatus: z.enum(projectStatusEnum.enumValues),
+      progressPercentage: z.number().int().min(0).max(100).optional(),
+      updateMessage: z.string().min(1),
+      isClientVisible: z.boolean().optional().default(true),
+    })
+    const parse = BodySchema.safeParse(body)
+    if (!parse.success) {
       return NextResponse.json(
-        { error: 'New status and update message are required' },
+        { error: parse.error.issues[0]?.message ?? 'Invalid request body' },
         { status: 400 }
       )
     }
+    const { newStatus, progressPercentage, updateMessage, isClientVisible } =
+      parse.data
 
     // Get current project to capture old status
     const project = await db.query.projects.findFirst({
@@ -131,29 +136,38 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    // Create the status update
-    const [statusUpdate] = await db
-      .insert(projectStatusUpdates)
-      .values({
-        projectId,
-        oldStatus: project.status,
-        newStatus,
-        progressPercentage,
-        updateMessage,
-        isClientVisible,
-        updatedBy: user.id,
-      })
-      .returning()
+    // Enforce authorization (MVP): only the project client can update
+    const isClient = project.clientId === user.id
+    if (!isClient) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
-    // Update the project status and progress
-    await db
-      .update(projects)
-      .set({
-        status: newStatus,
-        progressPercentage: progressPercentage || project.progressPercentage,
-        updatedAt: new Date(),
-      })
-      .where(eq(projects.id, projectId))
+    // Create the status update and mutate project atomically
+    const statusUpdate = await db.transaction(async (tx) => {
+      const [inserted] = await tx
+        .insert(projectStatusUpdates)
+        .values({
+          projectId,
+          oldStatus: project.status,
+          newStatus,
+          progressPercentage,
+          updateMessage,
+          isClientVisible,
+          updatedBy: user.id,
+        })
+        .returning()
+
+      await tx
+        .update(projects)
+        .set({
+          status: newStatus,
+          progressPercentage: progressPercentage ?? project.progressPercentage,
+          updatedAt: new Date(),
+        })
+        .where(eq(projects.id, projectId))
+
+      return inserted
+    })
 
     logger.info('Project status updated', {
       projectId,

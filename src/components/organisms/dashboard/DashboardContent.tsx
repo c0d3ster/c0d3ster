@@ -13,16 +13,16 @@ export const DashboardContent = () => {
     <>
       {/* User Overview Section */}
       <div className='mb-8 rounded-lg border border-green-400/20 bg-black/80 p-6 shadow-2xl backdrop-blur-sm'>
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0'>
           {/* Left: Compact User Profile */}
           <div className='flex-1'>
             <CompactUserProfile />
           </div>
 
           {/* Right: Quick Stats */}
-          <div className='ml-8 flex-shrink-0'>
-            <div className='text-right'>
-              <div className='mb-2 flex items-center justify-end space-x-3'>
+          <div className='lg:ml-8 lg:flex-shrink-0'>
+            <div className='text-center lg:text-right'>
+              <div className='mb-2 flex items-center justify-center space-x-3 lg:justify-end'>
                 <span className='font-mono text-sm text-green-300'>
                   Status:
                 </span>
@@ -30,7 +30,7 @@ export const DashboardContent = () => {
                   ONLINE
                 </span>
               </div>
-              <div className='flex items-center justify-end space-x-3'>
+              <div className='flex items-center justify-center space-x-3 lg:justify-end'>
                 <span className='font-mono text-sm text-green-300'>
                   Projects:
                 </span>
@@ -38,7 +38,7 @@ export const DashboardContent = () => {
                   {summary.activeProjects} Active
                 </span>
               </div>
-              <div className='flex items-center justify-end space-x-3'>
+              <div className='flex items-center justify-center space-x-3 lg:justify-end'>
                 <span className='font-mono text-sm text-green-300'>
                   Requests:
                 </span>
@@ -112,10 +112,7 @@ export const DashboardContent = () => {
         {!isLoading && !error && items.length > 0 && (
           <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
             {items.map((item) => (
-              <ProjectStatusCard
-                key={`${item.type}-${item.id}`}
-                item={item as any}
-              />
+              <ProjectStatusCard key={`${item.type}-${item.id}`} item={item} />
             ))}
           </div>
         )}
@@ -125,7 +122,7 @@ export const DashboardContent = () => {
           <div className='mt-6 flex justify-center space-x-6 text-sm'>
             <div className='text-center'>
               <div className='font-mono font-bold text-green-400'>
-                {summary.totalProjects}
+                {summary.activeProjects}
               </div>
               <div className='font-mono text-green-300/60'>Active Projects</div>
             </div>

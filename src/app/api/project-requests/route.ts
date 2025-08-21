@@ -89,7 +89,8 @@ export async function POST(request: NextRequest) {
         title,
         description,
         projectType,
-        budget: budget ? String(budget) : null,
+        budget:
+          budget && budget.toString().trim() !== '' ? String(budget) : null,
         timeline,
         requirements,
         contactPreference,

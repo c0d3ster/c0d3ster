@@ -7,8 +7,8 @@ export const projectRequestSchema = z.object({
     .string()
     .min(20, 'Description must be at least 20 characters')
     .max(2000, 'Description too long'),
-  projectType: z
-    .enum([
+  projectType: z.enum(
+    [
       'website',
       'web_app',
       'mobile_app',
@@ -17,20 +17,18 @@ export const projectRequestSchema = z.object({
       'maintenance',
       'consultation',
       'other',
-    ])
-    .refine((val) => val, {
-      message: 'Please select a project type',
-    }),
+    ],
+    { message: 'Please select a project type' }
+  ),
   budget: z
     .string()
     .optional()
-    .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) > 0), {
-      message: 'Budget must be a positive number',
+    .refine((val) => !val || (!Number.isNaN(Number(val)) && Number(val) >= 0), {
+      message: 'Budget must be a non-negative number',
     }),
   timeline: z.string().max(100, 'Timeline too long').optional(),
   contactPreference: z
-    .enum(['email', 'phone', 'video_call', 'in_person'])
-    .refine((val) => val, {
+    .enum(['email', 'phone', 'video_call', 'in_person'], {
       message: 'Please select a contact preference',
     })
     .optional(),

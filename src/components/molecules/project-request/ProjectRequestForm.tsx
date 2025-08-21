@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import type { ProjectRequestData } from '@/validations'
 
@@ -13,11 +13,45 @@ import {
   projectTypeOptions,
 } from '@/validations'
 
+// Helper component to reserve space for error messages
+const ErrorMessage = ({ error }: { error?: string }) => (
+  <div className='mt-1 h-5 font-mono text-sm text-red-400'>
+    {error && <p>{error}</p>}
+  </div>
+)
+
 export const ProjectRequestForm = () => {
   const router = useRouter()
   const { showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Refs for form fields to enable focusing
+  const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
+
+  // Function to focus on first field with error
+  const focusFirstError = (validationErrors: Record<string, string>) => {
+    const fieldOrder = [
+      'title',
+      'projectType',
+      'description',
+      'budget',
+      'timeline',
+      'contactPreference',
+      'additionalInfo',
+    ]
+
+    for (const field of fieldOrder) {
+      if (validationErrors[field] && fieldRefs.current[field]) {
+        fieldRefs.current[field]?.focus()
+        fieldRefs.current[field]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+        break
+      }
+    }
+  }
 
   const [formData, setFormData] = useState<ProjectRequestData>({
     title: '',
@@ -75,7 +109,22 @@ export const ProjectRequestForm = () => {
 
     try {
       // Validate form data
-      const validatedData = projectRequestSchema.parse(formData)
+      const result = projectRequestSchema.safeParse(formData)
+      if (!result.success) {
+        const validationErrors: Record<string, string> = {}
+        // Set all validation errors for field highlighting
+        for (const issue of result.error.issues) {
+          const pathKey = issue.path.join('.') || 'form'
+          // Only keep the first error per field
+          if (!validationErrors[pathKey]) {
+            validationErrors[pathKey] = issue.message
+          }
+        }
+        setErrors(validationErrors)
+        focusFirstError(validationErrors)
+        return
+      }
+      const validatedData = result.data
 
       // Submit to API
       const response = await fetch('/api/project-requests', {
@@ -94,24 +143,7 @@ export const ProjectRequestForm = () => {
       showToast('Project request submitted successfully!', 'success')
       router.push('/dashboard')
     } catch (error) {
-      // Handle Zod validation errors
-      if (error && typeof error === 'object' && 'issues' in error) {
-        const validationErrors: Record<string, string> = {}
-        const firstError = (error as any).issues[0]
-
-        // Show the first validation error as a toast
-        if (firstError && firstError.message) {
-          showToast(firstError.message, 'error')
-        }
-
-        // Set all validation errors for field highlighting
-        ;(error as any).issues.forEach((issue: any) => {
-          if (issue.path && issue.path.length > 0) {
-            validationErrors[issue.path[0]] = issue.message
-          }
-        })
-        setErrors(validationErrors)
-      } else if (error instanceof Error) {
+      if (error instanceof Error) {
         showToast(error.message, 'error')
       } else {
         showToast('Failed to submit request', 'error')
@@ -139,17 +171,16 @@ export const ProjectRequestForm = () => {
           </label>
           <input
             id='title'
+            ref={(el) => {
+              fieldRefs.current.title = el
+            }}
             type='text'
             value={formData.title}
             onChange={(e) => handleInputChange('title', e.target.value)}
             className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
             placeholder='e.g., E-commerce website for my business'
           />
-          {errors.title && (
-            <p className='mt-1 font-mono text-sm text-red-400'>
-              {errors.title}
-            </p>
-          )}
+          <ErrorMessage error={errors.title} />
         </div>
 
         {/* Project Type */}
@@ -162,6 +193,9 @@ export const ProjectRequestForm = () => {
           </label>
           <select
             id='projectType'
+            ref={(el) => {
+              fieldRefs.current.projectType = el
+            }}
             value={formData.projectType}
             onChange={(e) => handleInputChange('projectType', e.target.value)}
             className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
@@ -172,11 +206,7 @@ export const ProjectRequestForm = () => {
               </option>
             ))}
           </select>
-          {errors.projectType && (
-            <p className='mt-1 font-mono text-sm text-red-400'>
-              {errors.projectType}
-            </p>
-          )}
+          <ErrorMessage error={errors.projectType} />
         </div>
 
         {/* Description */}
@@ -189,17 +219,16 @@ export const ProjectRequestForm = () => {
           </label>
           <textarea
             id='description'
+            ref={(el) => {
+              fieldRefs.current.description = el
+            }}
             value={formData.description}
             onChange={(e) => handleInputChange('description', e.target.value)}
             rows={5}
             className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
             placeholder='Describe your project in detail. What are your goals? What features do you need? Who is your target audience?'
           />
-          {errors.description && (
-            <p className='mt-1 font-mono text-sm text-red-400'>
-              {errors.description}
-            </p>
-          )}
+          <ErrorMessage error={errors.description} />
         </div>
 
         {/* Budget and Timeline */}
@@ -213,6 +242,9 @@ export const ProjectRequestForm = () => {
             </label>
             <input
               id='budget'
+              ref={(el) => {
+                fieldRefs.current.budget = el
+              }}
               type='number'
               value={formData.budget}
               onChange={(e) => handleInputChange('budget', e.target.value)}
@@ -220,11 +252,7 @@ export const ProjectRequestForm = () => {
               placeholder='e.g., 5000'
               min='0'
             />
-            {errors.budget && (
-              <p className='mt-1 font-mono text-sm text-red-400'>
-                {errors.budget}
-              </p>
-            )}
+            <ErrorMessage error={errors.budget} />
           </div>
 
           <div>
@@ -236,17 +264,16 @@ export const ProjectRequestForm = () => {
             </label>
             <input
               id='timeline'
+              ref={(el) => {
+                fieldRefs.current.timeline = el
+              }}
               type='text'
               value={formData.timeline}
               onChange={(e) => handleInputChange('timeline', e.target.value)}
               className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
               placeholder='e.g., 2-3 months, ASAP, by end of year'
             />
-            {errors.timeline && (
-              <p className='mt-1 font-mono text-sm text-red-400'>
-                {errors.timeline}
-              </p>
-            )}
+            <ErrorMessage error={errors.timeline} />
           </div>
         </div>
       </div>
@@ -311,6 +338,9 @@ export const ProjectRequestForm = () => {
           </label>
           <select
             id='contactPreference'
+            ref={(el) => {
+              fieldRefs.current.contactPreference = el
+            }}
             value={formData.contactPreference}
             onChange={(e) =>
               handleInputChange('contactPreference', e.target.value)
@@ -323,11 +353,7 @@ export const ProjectRequestForm = () => {
               </option>
             ))}
           </select>
-          {errors.contactPreference && (
-            <p className='mt-1 font-mono text-sm text-red-400'>
-              {errors.contactPreference}
-            </p>
-          )}
+          <ErrorMessage error={errors.contactPreference} />
         </div>
 
         {/* Additional Info */}
@@ -340,6 +366,9 @@ export const ProjectRequestForm = () => {
           </label>
           <textarea
             id='additionalInfo'
+            ref={(el) => {
+              fieldRefs.current.additionalInfo = el
+            }}
             value={formData.additionalInfo}
             onChange={(e) =>
               handleInputChange('additionalInfo', e.target.value)
@@ -348,11 +377,7 @@ export const ProjectRequestForm = () => {
             className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
             placeholder='Any additional details, inspiration websites, specific requirements, or questions you have...'
           />
-          {errors.additionalInfo && (
-            <p className='mt-1 font-mono text-sm text-red-400'>
-              {errors.additionalInfo}
-            </p>
-          )}
+          <ErrorMessage error={errors.additionalInfo} />
         </div>
       </div>
 

@@ -45,20 +45,28 @@ export async function GET() {
       )
       .orderBy(desc(projects.updatedAt))
 
-    // Remove duplicates and format response
-    const uniqueProjects = userProjects.reduce((acc, item) => {
-      const existingProject = acc.find((p) => p.id === item.project.id)
-      if (!existingProject) {
-        acc.push({
-          ...item.project,
-          userRole:
-            item.project.clientId === user.id
-              ? 'client'
-              : item.collaboratorRole || 'viewer',
-        })
+    // Remove duplicates and format response (O(n))
+    type ProjectWithRole = typeof projects.$inferSelect & {
+      userRole: 'client' | 'admin' | 'editor' | 'viewer'
+    }
+    const rank: Record<ProjectWithRole['userRole'], number> = {
+      client: 4,
+      admin: 3,
+      editor: 2,
+      viewer: 1,
+    }
+    const map = new Map<string, ProjectWithRole>()
+    for (const item of userProjects) {
+      const computedRole =
+        item.project.clientId === user.id
+          ? 'client'
+          : ((item.collaboratorRole as ProjectWithRole['userRole']) ?? 'viewer')
+      const prev = map.get(item.project.id)
+      if (!prev || rank[computedRole] > rank[prev.userRole]) {
+        map.set(item.project.id, { ...item.project, userRole: computedRole })
       }
-      return acc
-    }, [] as any[])
+    }
+    const uniqueProjects = Array.from(map.values())
 
     return NextResponse.json({ projects: uniqueProjects })
   } catch (error) {
