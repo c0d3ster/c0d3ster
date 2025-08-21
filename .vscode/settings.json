@@ -24,10 +24,6 @@
   // Vitest
   "testing.automaticallyOpenTestResults": "neverOpen", // Don't open the test results automatically
 
-  // I18n
-  "i18n-ally.localesPaths": ["src/locales"],
-  "i18n-ally.keystyle": "nested",
-
   // Enable Prettier for formatting
   "prettier.enable": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",

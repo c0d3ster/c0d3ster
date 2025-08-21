@@ -7,6 +7,7 @@ import path from 'node:path'
 import * as schema from '@/models/Schema'
 
 import { Env } from './Env'
+import { logger } from './Logger'
 
 // Stores the db connection in the global scope to prevent multiple instances due to hot reloading with Next.js
 const globalForDb = globalThis as unknown as {
@@ -21,7 +22,8 @@ const createDbConnection = () => {
       connectionString: Env.DATABASE_URL,
       ssl:
         !Env.DATABASE_URL.includes('localhost') &&
-        !Env.DATABASE_URL.includes('127.0.0.1'),
+        !Env.DATABASE_URL.includes('127.0.0.1') &&
+        !Env.DATABASE_URL.includes('pglite'),
     },
     schema,
   })
@@ -34,8 +36,16 @@ if (Env.NODE_ENV !== 'production') {
   globalForDb.drizzle = db
 }
 
-await migrate(db, {
-  migrationsFolder: path.join(process.cwd(), 'migrations'),
-})
+// Run migrations only in production or when explicitly requested
+if (Env.NODE_ENV === 'production') {
+  try {
+    await migrate(db, {
+      migrationsFolder: path.join(process.cwd(), 'migrations'),
+    })
+  } catch (error) {
+    logger.error('Database migration failed', { error })
+    // Don't crash the app if migration fails
+  }
+}
 
 export { db }

@@ -17,21 +17,6 @@ test.describe('Visual testing', () => {
       await takeSnapshot(page, testInfo)
     })
 
-    test('should take screenshot of the about page', async ({
-      page,
-    }, testInfo) => {
-      await page.goto('/about')
-
-      // Check for actual content from your about page using translation
-      await expect(
-        page.getByText(
-          'Welcome to our About page! We are a team of passionate individuals dedicated to creating amazing software.'
-        )
-      ).toBeVisible()
-
-      await takeSnapshot(page, testInfo)
-    })
-
     test('should take screenshot of the projects page', async ({
       page,
     }, testInfo) => {
@@ -41,21 +26,6 @@ test.describe('Visual testing', () => {
       await expect(
         page.getByRole('heading', {
           name: 'ALL PROJECTS',
-        })
-      ).toBeVisible()
-
-      await takeSnapshot(page, testInfo)
-    })
-
-    test('should take screenshot of the French homepage', async ({
-      page,
-    }, testInfo) => {
-      await page.goto('/fr')
-
-      // Check for actual content from your French landing page
-      await expect(
-        page.getByRole('heading', {
-          name: 'CONTACT',
         })
       ).toBeVisible()
 

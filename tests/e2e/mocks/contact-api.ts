@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-import { contactSchema } from '@/validations'
+import { contactFormSchema } from '@/validations'
 
 // Mock contact API for testing - prevents real emails from being sent
 export async function POST(request: Request) {
@@ -8,7 +8,8 @@ export async function POST(request: Request) {
     const body = await request.json()
 
     // Validate the request body (same validation as real API)
-    const validation = contactSchema.safeParse(body)
+    const validation = contactFormSchema.safeParse(body)
+
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.issues },

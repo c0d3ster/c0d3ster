@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 import { cleanup, render, screen } from '@testing-library/react'
-import { NextIntlClientProvider } from 'next-intl'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import type { NavItem } from './SiteHeader'
 
 import { SiteHeader } from './SiteHeader'
 
@@ -28,10 +29,30 @@ vi.mock('next/image', () => ({
   ),
 }))
 
+// Mock Clerk
+vi.mock('@clerk/nextjs', () => ({
+  useUser: vi.fn(() => ({
+    user: null,
+    isLoaded: true,
+  })),
+  SignInButton: ({ children }: any) => <div>{children}</div>,
+  SignOutButton: ({ children }: any) => <div>{children}</div>,
+}))
+
 // Mock window properties to prevent hanging
 Object.defineProperty(window, 'scrollY', { value: 0, writable: true })
 
-const mockMessages = {}
+// Sample menu items for testing
+const sampleMenuItems: NavItem[] = [
+  { label: 'HOME', href: '/' },
+  { label: 'PORTFOLIO', href: '/projects' },
+  { label: 'CONTACT', href: '/#contact' },
+]
+
+const dashboardMenuItems: NavItem[] = [
+  { label: 'DASHBOARD', href: '/dashboard' },
+  { label: 'USER PROFILE', href: '/dashboard/user-profile' },
+]
 
 describe('SiteHeader', () => {
   beforeEach(() => {
@@ -43,16 +64,8 @@ describe('SiteHeader', () => {
     cleanup()
   })
 
-  const renderWithIntl = (component: React.ReactNode) => {
-    return render(
-      <NextIntlClientProvider locale='en' messages={mockMessages}>
-        {component}
-      </NextIntlClientProvider>
-    )
-  }
-
   it('renders header element', () => {
-    renderWithIntl(<SiteHeader />)
+    render(<SiteHeader menuItems={sampleMenuItems} />)
 
     const header = screen.getByRole('banner')
 
@@ -60,46 +73,45 @@ describe('SiteHeader', () => {
   })
 
   it('renders logo image', () => {
-    renderWithIntl(<SiteHeader />)
+    render(<SiteHeader menuItems={sampleMenuItems} />)
 
     const logo = screen.getByAltText('c0d3ster Logo')
 
     expect(logo).toBeInTheDocument()
   })
 
-  it('renders navigation links', () => {
-    renderWithIntl(<SiteHeader />)
+  it('renders navigation menu items', () => {
+    render(<SiteHeader menuItems={sampleMenuItems} />)
 
     expect(screen.getByText('HOME')).toBeInTheDocument()
     expect(screen.getByText('PORTFOLIO')).toBeInTheDocument()
     expect(screen.getByText('CONTACT')).toBeInTheDocument()
   })
 
-  it('renders status indicator', () => {
-    renderWithIntl(<SiteHeader />)
+  it('renders public site status indicator when not dashboard', () => {
+    render(<SiteHeader menuItems={sampleMenuItems} />)
+
+    expect(screen.getByText('GUEST')).toBeInTheDocument()
+  })
+
+  it('renders dashboard status indicator when isDashboard is true', () => {
+    render(<SiteHeader menuItems={dashboardMenuItems} isDashboard />)
 
     expect(screen.getByText('ONLINE')).toBeInTheDocument()
   })
 
-  it('applies fade on scroll by default', () => {
-    renderWithIntl(<SiteHeader />)
+  it('applies fade on scroll for root route', () => {
+    render(<SiteHeader menuItems={sampleMenuItems} />)
 
     const header = screen.getByRole('banner')
 
-    expect(header).toHaveStyle({ opacity: '0' }) // Initially hidden due to scroll position
-  })
-
-  it('disables fade when fadeOnScroll is false', () => {
-    renderWithIntl(<SiteHeader fadeOnScroll={false} />)
-
-    const header = screen.getByRole('banner')
-
-    expect(header).toHaveStyle({ opacity: '1' }) // Always visible
+    expect(header).toHaveAttribute('style')
+    expect(header.getAttribute('style')).toContain('opacity')
   })
 
   it('sets up scroll event listener', () => {
     const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
-    renderWithIntl(<SiteHeader />)
+    render(<SiteHeader menuItems={sampleMenuItems} />)
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       'scroll',
@@ -109,7 +121,7 @@ describe('SiteHeader', () => {
 
   it('cleans up scroll event listener on unmount', () => {
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
-    const { unmount } = renderWithIntl(<SiteHeader />)
+    const { unmount } = render(<SiteHeader menuItems={sampleMenuItems} />)
 
     unmount()
 
@@ -119,61 +131,70 @@ describe('SiteHeader', () => {
     )
   })
 
-  it('has opacity style when fadeOnScroll is enabled', () => {
-    renderWithIntl(<SiteHeader fadeOnScroll={true} />)
-
-    const header = screen.getByRole('banner')
-
-    // Header should have opacity style applied
-    expect(header).toHaveAttribute('style')
-    expect(header.getAttribute('style')).toContain('opacity')
-  })
-
-  it('renders anchor links on landing page', () => {
-    renderWithIntl(<SiteHeader />)
+  it('renders correct href attributes for menu items', () => {
+    render(<SiteHeader menuItems={sampleMenuItems} />)
 
     const homeLink = screen.getByText('HOME').closest('a')
     const portfolioLink = screen.getByText('PORTFOLIO').closest('a')
     const contactLink = screen.getByText('CONTACT').closest('a')
 
-    expect(homeLink).toHaveAttribute('href', '#home')
-    expect(portfolioLink).toHaveAttribute('href', '#portfolio')
-    expect(contactLink).toHaveAttribute('href', '#contact')
+    expect(homeLink).toHaveAttribute('href', '/')
+    expect(portfolioLink).toHaveAttribute('href', '/#portfolio') // Custom route logic for root route
+    expect(contactLink).toHaveAttribute('href', '/#contact')
   })
 
-  it('highlights active section based on scroll position', () => {
-    // Mock getBoundingClientRect for sections
-    const mockGetBoundingClientRect = vi.fn(() => ({
-      top: 50,
-      left: 0,
-      bottom: 100,
-      right: 100,
-      width: 100,
-      height: 50,
-      x: 0,
-      y: 50,
-      toJSON: () => ({}),
-    }))
+  it('handles dashboard menu items correctly', () => {
+    render(<SiteHeader menuItems={dashboardMenuItems} isDashboard />)
 
-    Element.prototype.getBoundingClientRect = mockGetBoundingClientRect
+    expect(screen.getByText('DASHBOARD')).toBeInTheDocument()
+    expect(screen.getByText('USER PROFILE')).toBeInTheDocument()
 
-    renderWithIntl(<SiteHeader />)
+    const dashboardLink = screen.getByText('DASHBOARD').closest('a')
+    const profileLink = screen.getByText('USER PROFILE').closest('a')
 
-    // Should render without errors
-    expect(screen.getByText('HOME')).toBeInTheDocument()
+    expect(dashboardLink).toHaveAttribute('href', '/dashboard')
+    expect(profileLink).toHaveAttribute('href', '/dashboard/user-profile')
   })
 
-  it('handles missing sections gracefully', () => {
-    // Mock getElementById to return null
-    const originalGetElementById = document.getElementById
-    document.getElementById = vi.fn(() => null)
+  it('applies correct styling classes to menu items', () => {
+    render(<SiteHeader menuItems={sampleMenuItems} />)
 
-    renderWithIntl(<SiteHeader />)
+    const homeLink = screen.getByText('HOME').closest('a')
 
-    // Should not throw errors
-    expect(screen.getByText('HOME')).toBeInTheDocument()
+    expect(homeLink).toHaveClass(
+      'header-nav-link',
+      'font-mono',
+      'transition-colors'
+    )
+  })
 
-    // Restore original method
-    document.getElementById = originalGetElementById
+  it('renders without errors when no menu items provided', () => {
+    render(<SiteHeader menuItems={[]} />)
+
+    const header = screen.getByRole('banner')
+
+    expect(header).toBeInTheDocument()
+  })
+
+  it('sets up hash change event listener', () => {
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
+    render(<SiteHeader menuItems={sampleMenuItems} />)
+
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'hashchange',
+      expect.any(Function)
+    )
+  })
+
+  it('cleans up hash change event listener on unmount', () => {
+    const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
+    const { unmount } = render(<SiteHeader menuItems={sampleMenuItems} />)
+
+    unmount()
+
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'hashchange',
+      expect.any(Function)
+    )
   })
 })

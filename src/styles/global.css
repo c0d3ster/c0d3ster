@@ -9,6 +9,20 @@
   }
 }
 
+@layer base {
+  /* Smooth scrolling for hash navigation (respects user motion preferences) */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
 /* Matrix-specific styles */
 @layer components {
   .matrix-text {
@@ -34,23 +48,23 @@
     font-size: 12px;
     line-height: 16px;
   }
-  
+
   .header-nav-link {
     font-size: 12px;
     line-height: 16px;
   }
-  
+
   .header-status {
     font-size: 12px;
     line-height: 16px;
   }
-  
+
   @media (min-width: 768px) {
     .header-nav-link {
       font-size: 18px;
       line-height: 28px;
     }
-    
+
     .header-status {
       font-size: 14px;
       line-height: 20px;

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-export type ButtonProps = {
+type ButtonProps = {
   size?: 'sm' | 'md' | 'lg'
   href?: string
   external?: boolean

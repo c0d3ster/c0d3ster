@@ -1,23 +1,39 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { routing } from '@/libs/I18nRouting'
-
-import { getI18nPath } from './Helpers'
+import { getBaseUrl, isServer } from './Helpers'
 
 describe('Helpers', () => {
-  describe('getI18nPath function', () => {
-    it('should not change the path for default language', () => {
-      const url = '/random-url'
-      const locale = routing.defaultLocale
+  // Snapshot/restore environment for each test to avoid cross-test bleed
+  let ORIGINAL_ENV: NodeJS.ProcessEnv
 
-      expect(getI18nPath(url, locale)).toBe(url)
+  beforeEach(() => {
+    ORIGINAL_ENV = { ...process.env }
+  })
+
+  afterEach(() => {
+    process.env = ORIGINAL_ENV
+  })
+
+  describe('getBaseUrl function', () => {
+    it('should return NEXT_PUBLIC_APP_URL when set', () => {
+      process.env.NEXT_PUBLIC_APP_URL = 'https://example.com'
+
+      expect(getBaseUrl()).toBe('https://example.com')
     })
 
-    it('should prepend the locale to the path for non-default language', () => {
-      const url = '/random-url'
-      const locale = 'fr'
+    it('should return localhost when no environment variables are set', () => {
+      delete process.env.NEXT_PUBLIC_APP_URL
+      delete process.env.VERCEL_ENV
+      delete process.env.VERCEL_PROJECT_PRODUCTION_URL
+      delete process.env.VERCEL_URL
 
-      expect(getI18nPath(url, locale)).toMatch(/^\/fr/)
+      expect(getBaseUrl()).toBe('http://localhost:3000')
+    })
+  })
+
+  describe('isServer function', () => {
+    it('should return true when running on server', () => {
+      expect(isServer()).toBe(true)
     })
   })
 })

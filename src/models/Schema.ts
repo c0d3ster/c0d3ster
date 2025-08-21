@@ -1,16 +1,21 @@
-// This file defines the structure of your database tables using the Drizzle ORM.
+import { pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
 
-// To modify the database schema:
-// 1. Update this file with your desired changes.
-// 2. Generate a new migration by running: `npm run db:generate`
+// Users table that integrates with Clerk authentication
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  clerkId: text('clerk_id').notNull().unique(), // Clerk user ID
+  email: varchar('email', { length: 255 }).notNull(),
+  firstName: varchar('first_name', { length: 100 }),
+  lastName: varchar('last_name', { length: 100 }),
+  avatarUrl: text('avatar_url'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+})
 
-// The generated migration file will reflect your schema changes.
-// The migration is automatically applied during the next database interaction,
-// so there's no need to run it manually or restart the Next.js server.
-
-// Need a database for production? Check out https://www.prisma.io/?via=nextjsboilerplate
-// Tested and compatible with Next.js Boilerplate
-
-// Export empty schema object to prevent import errors
-// Add your database schemas here when needed
-export const schemas = {}
+// Export the schemas object for Drizzle
+export const schemas = {
+  users,
+}
