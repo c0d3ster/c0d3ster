@@ -1,5 +1,4 @@
--- Ensure UUID generation is available
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- UUID generation is available natively in modern PostgreSQL
 
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
