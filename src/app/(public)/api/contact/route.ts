@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
 import { ContactFormEmail } from '@/components/email'
-import { contactSchema } from '@/validations'
+import { contactFormSchema } from '@/validations'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const body = await request.json()
 
     // Validate the request body
-    const validation = contactSchema.safeParse(body)
+    const validation = contactFormSchema.safeParse(body)
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.issues },

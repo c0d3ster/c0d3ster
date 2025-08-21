@@ -16,6 +16,3 @@ export const contactFormSchema = z.object({
 
 // Infer the TypeScript type from the schema
 export type ContactFormData = z.infer<typeof contactFormSchema>
-
-// Export the schema for use in API routes
-export const contactSchema = contactFormSchema
