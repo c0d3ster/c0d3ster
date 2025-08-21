@@ -15,6 +15,13 @@
       "when": 1755393585455,
       "tag": "0001_sparkling_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755745063362,
+      "tag": "0002_known_sunspot",
+      "breakpoints": true
     }
   ]
 }
