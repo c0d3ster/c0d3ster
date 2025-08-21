@@ -7,9 +7,10 @@
   "scripts": {
     "dev:spotlight": "npx @spotlightjs/spotlight",
     "dev:next": "next dev --turbopack",
-    "dev": "run-p db-server:file dev:*",
+    "dev": "npm run dev:next",
     "build:next": "next build",
-    "build": "run-p db-server:memory build:* --race",
+    "build": "npm run db:migrate && npm run build:next",
+    "build:prod": "cross-env NODE_ENV=production npm run build",
     "start": "next start",
     "build-stats": "cross-env ANALYZE=true npm run build",
     "clean": "rimraf .next out coverage",
@@ -22,8 +23,6 @@
     "commit": "commit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "db-server:file": "pglite-server --db=local.db",
-    "db-server:memory": "pglite-server",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio"
   },
