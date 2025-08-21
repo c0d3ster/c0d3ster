@@ -10,6 +10,12 @@ import { logger } from '@/libs/Logger'
 import { users } from '@/models/Schema'
 
 export async function POST(request: NextRequest) {
+  logger.info('Webhook POST request received', {
+    url: request.url,
+    method: request.method,
+    userAgent: request.headers.get('user-agent'),
+  })
+
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
 
   if (!WEBHOOK_SECRET) {
@@ -144,5 +150,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true })
+  logger.info('Webhook processed successfully', { eventType, id })
+  return NextResponse.json({ success: true }, { status: 200 })
 }
