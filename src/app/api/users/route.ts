@@ -11,32 +11,15 @@ import { users } from '@/models/Schema'
 // GET /api/users - Get current user profile
 export async function GET() {
   try {
-    console.warn('=== SIMPLE LOG TEST ===')
-    logger.info('GET /api/users called')
-
     const { userId } = await auth()
-    logger.info('Auth result', {
-      userId,
-      userIdType: typeof userId,
-      userIdLength: userId?.length,
-    })
 
     if (!userId) {
       logger.warn('Unauthorized access attempt to /api/users')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    logger.info('Attempting database query', {
-      userId,
-      queryClause: `users.clerkId = '${userId}'`,
-    })
     const user = await db.query.users.findFirst({
       where: eq(users.clerkId, userId),
-    })
-    logger.info('Database query result', {
-      userFound: !!user,
-      foundUserId: user?.clerkId,
-      foundEmail: user?.email,
     })
 
     if (!user) {
