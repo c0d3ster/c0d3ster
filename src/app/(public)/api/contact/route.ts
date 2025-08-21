@@ -4,7 +4,14 @@ import { Resend } from 'resend'
 import { ContactFormEmail } from '@/components/email'
 import { contactFormSchema } from '@/validations'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy initialize Resend only when needed
+const getResend = () => {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY environment variable is required')
+  }
+  return new Resend(apiKey)
+}
 
 export async function POST(request: Request) {
   try {
@@ -22,6 +29,7 @@ export async function POST(request: Request) {
     const { name, email, subject, message } = validation.data
 
     // Send email using Resend
+    const resend = getResend()
     const { error } = await resend.emails.send({
       from: 'c0d3ster <support@c0d3ster.com>',
       to: ['support@c0d3ster.com'],
