@@ -10,6 +10,7 @@
     "dev": "npm run dev:next",
     "build:next": "next build",
     "build": "npm run db:migrate && npm run build:next",
+    "build:ci": "npm run build:next",
     "build:prod": "cross-env NODE_ENV=production npm run build",
     "start": "next start",
     "build-stats": "cross-env ANALYZE=true npm run build",
@@ -24,6 +25,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

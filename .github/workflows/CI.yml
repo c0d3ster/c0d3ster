@@ -33,7 +33,7 @@ jobs:
           key: nextjs-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('src/**') }}
 
       - name: Build Next.js
-        run: npm run build
+        run: npm run build:ci
         env:
           # Required Clerk variables
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}

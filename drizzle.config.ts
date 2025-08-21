@@ -1,13 +1,13 @@
 import { config } from 'dotenv'
 import { defineConfig } from 'drizzle-kit'
 
-// Load environment files based on NODE_ENV
+// Load environment files based on NODE_ENV, test environment uses GitHub secrets
 if (process.env.NODE_ENV === 'production') {
   // In production, load .env.production.local first, then .env.production, then .env
   config({ path: '.env.production.local' }) // Needed for local production builds
   config({ path: '.env.production' })
   config({ path: '.env' })
-} else {
+} else if (process.env.NODE_ENV === 'development') {
   // In development, load .env.local first, then .env
   config({ path: '.env.local' })
   config({ path: '.env' })
