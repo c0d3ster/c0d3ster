@@ -1,12 +1,12 @@
 import type { NextRequest } from 'next/server'
 
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
-import { projectRequests, projects } from '@/models/Schema'
+import { projectRequests, projects } from '@/models'
 import { requireAdmin } from '@/utils'
 
 type RouteParams = {
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Start transaction to create project and update request
     const result = await db.transaction(async (tx) => {
-      // Update project request status
-      await tx
+      // Atomically transition request to approved only if currently in_review
+      const updatedReq = await tx
         .update(projectRequests)
         .set({
           status: 'approved',
@@ -77,7 +77,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           reviewedBy: adminUser.id,
           updatedAt: new Date(),
         })
-        .where(eq(projectRequests.id, requestId))
+        .where(
+          and(
+            eq(projectRequests.id, requestId),
+            eq(projectRequests.status, 'in_review')
+          )
+        )
+        .returning({ id: projectRequests.id })
+
+      if (updatedReq.length === 0) {
+        throw new Error('Conflict: request already approved or not in review')
+      }
 
       // Create the project
       const [newProject] = await tx
@@ -126,6 +136,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
       if (error.message === 'Admin access required') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      if (error.message.startsWith('Conflict:')) {
+        return NextResponse.json({ error: error.message }, { status: 409 })
       }
     }
 

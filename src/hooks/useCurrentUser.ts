@@ -33,6 +33,8 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
   const fetchUser = async () => {
     if (!isSignedIn) {
       setUser(null)
+      setError(null)
+      setIsLoading(false)
       return
     }
 

@@ -1,6 +1,6 @@
 {
-  "id": "1d4938c7-1e36-4bc6-80c1-2d06af3a90b4",
-  "prevId": "03ea577c-0dcb-415a-a69e-f2299e5bcab9",
+  "id": "ac7d3b8e-2f1a-4c6d-9e8b-1a5c7f9d2e4b",
+  "prevId": "29aa2dcd-dfa9-4517-b7ed-e1a316ebc1fd",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -591,6 +591,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "developer_id": {
+          "name": "developer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "title": {
           "name": "title",
           "type": "varchar(255)",
@@ -740,6 +746,15 @@
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "projects_developer_id_users_id_fk": {
+          "name": "projects_developer_id_users_id_fk",
+          "tableFrom": "projects",
+          "tableTo": "users",
+          "columnsFrom": ["developer_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -789,7 +804,14 @@
           "primaryKey": false,
           "notNull": false
         },
-
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'client'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -870,6 +892,11 @@
         "consultation",
         "other"
       ]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": ["client", "developer", "admin", "super_admin"]
     }
   },
   "schemas": {},

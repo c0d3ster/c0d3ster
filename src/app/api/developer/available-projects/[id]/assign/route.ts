@@ -51,7 +51,7 @@ export async function PATCH(_request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Assign developer to project and update status
+    // Assign developer to project and update status (atomic guard)
     const updatedProject = await db
       .update(projects)
       .set({
@@ -59,8 +59,22 @@ export async function PATCH(_request: NextRequest, { params }: RouteParams) {
         status: 'in_progress',
         updatedAt: new Date(),
       })
-      .where(eq(projects.id, projectId))
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.status, 'approved'),
+          isNull(projects.developerId)
+        )
+      )
       .returning()
+
+    if (updatedProject.length === 0) {
+      // Another developer likely claimed it first
+      return NextResponse.json(
+        { error: 'Project already assigned or not in an assignable state' },
+        { status: 409 }
+      )
+    }
 
     logger.info('Developer assigned to project', {
       userId: user.id,
@@ -68,10 +82,13 @@ export async function PATCH(_request: NextRequest, { params }: RouteParams) {
       projectTitle: existingProject[0]?.title,
     })
 
-    return NextResponse.json({
-      project: updatedProject[0],
-      message: 'Successfully assigned to project',
-    })
+    return NextResponse.json(
+      {
+        project: updatedProject[0],
+        message: 'Successfully assigned to project',
+      },
+      { status: 200 }
+    )
   } catch (error) {
     logger.error('Error assigning developer to project', { error, projectId })
 

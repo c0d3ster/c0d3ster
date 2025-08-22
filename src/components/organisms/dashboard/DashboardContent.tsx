@@ -25,7 +25,7 @@ export const DashboardContent = () => {
   const { projects: assignedProjects, isLoading: assignedLoading } =
     useAssignedProjects()
   const { requests: adminRequests, isLoading: adminLoading } =
-    useAdminProjectRequests()
+    useAdminProjectRequests({ enabled: isAdmin })
 
   const getStatusCounts = () => {
     const counts = {

@@ -8,7 +8,7 @@ import { projectNameToSlug } from '@/data/projects'
 export type Project = {
   title: string
   overview: string
-  tech: string[]
+  techStack: string[]
   status: string
   logo?: string
   projectName?: string
@@ -59,7 +59,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
 
         {/* Tech Stack */}
         <div className='mb-4 flex flex-wrap gap-1'>
-          {project.tech.map((tech) => (
+          {project.techStack.map((tech) => (
             <span
               key={tech}
               className='rounded border border-green-400/30 bg-green-400/10 px-2 py-1 font-mono text-xs text-green-400'

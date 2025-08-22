@@ -43,14 +43,14 @@ describe('ProjectsPreviewSection', () => {
       {
         title: 'Custom Project Type 1',
         overview: 'Custom overview 1',
-        tech: ['React', 'TypeScript'],
+        techStack: ['React', 'TypeScript'],
         status: 'COMPLETED',
         projectName: 'Custom Project 1',
       },
       {
         title: 'Custom Project Type 2',
         overview: 'Custom overview 2',
-        tech: ['Vue', 'JavaScript'],
+        techStack: ['Vue', 'JavaScript'],
         status: 'IN PROGRESS',
         projectName: 'Custom Project 2',
       },
@@ -69,7 +69,7 @@ describe('ProjectsPreviewSection', () => {
       {
         title: 'Test Project Type',
         overview: 'Test overview',
-        tech: ['React', 'TypeScript', 'Tailwind'],
+        techStack: ['React', 'TypeScript', 'Tailwind'],
         status: 'COMPLETED',
         projectName: 'Test Project',
       },
@@ -105,7 +105,7 @@ describe('ProjectsPreviewSection', () => {
       {
         title: 'Project Type 1',
         overview: 'Overview 1',
-        tech: ['React'],
+        techStack: ['React'],
         status: 'COMPLETED',
         projectName: 'Project 1',
       },
@@ -138,14 +138,14 @@ describe('ProjectsPreviewSection', () => {
       {
         title: 'Simple Project Type',
         overview: 'Simple overview',
-        tech: ['React'],
+        techStack: ['React'],
         status: 'COMPLETED',
         projectName: 'Simple Project',
       },
       {
         title: 'Complex Project Type',
         overview: 'Complex overview',
-        tech: [
+        techStack: [
           'React',
           'Next.js',
           'TypeScript',

@@ -85,7 +85,7 @@ export const ProjectDetailsTemplate = ({
                   TECHNOLOGIES USED
                 </h3>
                 <div className='flex flex-wrap gap-3'>
-                  {project.tech.map((tech) => (
+                  {project.techStack.map((tech) => (
                     <span
                       key={tech}
                       className='rounded border border-green-400/30 bg-green-400/10 px-4 py-2 font-mono text-sm text-green-400'

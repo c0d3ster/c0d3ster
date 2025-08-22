@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/libs/DB'
-import { users } from '@/models/Schema'
+import { users } from '@/models'
 
 export type UserRole = 'client' | 'developer' | 'admin' | 'super_admin'
 

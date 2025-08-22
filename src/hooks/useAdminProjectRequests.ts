@@ -44,7 +44,12 @@ type UseAdminProjectRequestsReturn = {
   ) => Promise<void>
 }
 
-export const useAdminProjectRequests = (): UseAdminProjectRequestsReturn => {
+type UseAdminProjectRequestsOptions = { enabled?: boolean }
+
+export const useAdminProjectRequests = (
+  opts: UseAdminProjectRequestsOptions = {}
+): UseAdminProjectRequestsReturn => {
+  const { enabled = true } = opts
   const [requests, setRequests] = useState<ProjectRequestWithUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -145,8 +150,14 @@ export const useAdminProjectRequests = (): UseAdminProjectRequestsReturn => {
   }
 
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false)
+      setRequests([])
+      setError(null)
+      return
+    }
     fetchRequests()
-  }, [])
+  }, [enabled])
 
   return {
     requests,

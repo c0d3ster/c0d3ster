@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
-import { projectRequests, users } from '@/models/Schema'
+import { projectRequests, users } from '@/models'
 import { requireAdmin } from '@/utils'
 
 // GET /api/admin/project-requests - Get all project requests (admin only)
@@ -74,8 +74,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const BodySchema = z.object({
       requestId: z.string().uuid(),
-      status: z.enum(['requested', 'in_review', 'approved', 'cancelled']),
-      reviewNotes: z.string().optional(),
+      status: z.enum(['requested', 'in_review', 'cancelled']),
     })
 
     const parse = BodySchema.safeParse(body)
@@ -86,7 +85,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { requestId, status, reviewNotes } = parse.data
+    const { requestId, status } = parse.data
 
     // Update the project request
     const [updatedRequest] = await db
@@ -112,7 +111,6 @@ export async function PUT(request: NextRequest) {
       newStatus: status,
       adminId: adminUser.id,
       adminEmail: adminUser.email,
-      reviewNotes,
     })
 
     return NextResponse.json({ request: updatedRequest })
