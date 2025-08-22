@@ -50,3 +50,11 @@ export const fileTypeEnum = pgEnum('file_type', [
   'code',
   'other',
 ])
+
+// User role enums
+export const userRoleEnum = pgEnum('user_role', [
+  'client',
+  'developer',
+  'admin',
+  'super_admin',
+])

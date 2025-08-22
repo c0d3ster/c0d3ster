@@ -4,7 +4,7 @@ export enum ProjectItemType {
   PROJECT = 'project',
 }
 
-export type ProjectRequest = {
+type ProjectRequest = {
   id: string
   title: string
   description: string
@@ -17,7 +17,7 @@ export type ProjectRequest = {
   type: ProjectItemType.REQUEST
 }
 
-export type Project = {
+type Project = {
   id: string
   title: string
   description: string
@@ -31,10 +31,16 @@ export type Project = {
   actualCompletionDate: string | null
   liveUrl: string | null
   stagingUrl: string | null
+  repositoryUrl: string | null
+  techStack: string[] | null
   createdAt: string
   updatedAt: string
   type: ProjectItemType.PROJECT
   userRole?: string
+  // Client information (when user is a collaborator)
+  clientEmail?: string
+  clientFirstName?: string | null
+  clientLastName?: string | null
 }
 
 export type ProjectItem = ProjectRequest | Project

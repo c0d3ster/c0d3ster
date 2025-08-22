@@ -1,9 +1,11 @@
 'use client'
 
 import { useAuth } from '@clerk/nextjs'
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
 import type { ProjectItem } from '@/types'
+
+import { fetchMyProjects } from '@/services/api'
 
 type ProjectsSummary = {
   totalRequests: number
@@ -22,55 +24,57 @@ type UseMyProjectsReturn = {
 
 export const useMyProjects = (): UseMyProjectsReturn => {
   const { isSignedIn } = useAuth()
-  const [items, setItems] = useState<ProjectItem[]>([])
-  const [summary, setSummary] = useState<ProjectsSummary>({
-    totalRequests: 0,
-    totalProjects: 0,
-    pendingRequests: 0,
-    activeProjects: 0,
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchProjects = async () => {
-    if (!isSignedIn) return
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/my-projects')
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch projects')
+  // Fetch projects and summary
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['my-projects'],
+    queryFn: async () => {
+      const response = await fetchMyProjects()
+      // Return both items and summary for the query
+      return response
+    },
+    enabled: isSignedIn,
+    staleTime: 30000,
+    select: (data) => {
+      // Transform the response to include computed summary
+      const items = data || []
+      const summary: ProjectsSummary = {
+        totalRequests: items.filter((item) => item.type === 'request').length,
+        totalProjects: items.filter((item) => item.type === 'project').length,
+        pendingRequests: items.filter(
+          (item) =>
+            item.type === 'request' &&
+            ['requested', 'in_review'].includes(item.status)
+        ).length,
+        activeProjects: items.filter(
+          (item) =>
+            item.type === 'project' &&
+            ['approved', 'in_progress', 'in_testing'].includes(item.status)
+        ).length,
       }
-
-      const data = await response.json()
-      setItems(data.items || [])
-      setSummary(
-        data.summary || {
-          totalRequests: 0,
-          totalProjects: 0,
-          pendingRequests: 0,
-          activeProjects: 0,
-        }
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchProjects()
-  }, [isSignedIn]) // eslint-disable-line react-hooks/exhaustive-deps
+      return { items, summary }
+    },
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        return false
+      }
+      return failureCount < 1
+    },
+  })
 
   return {
-    items,
-    summary,
+    items: data?.items || [],
+    summary: data?.summary || {
+      totalRequests: 0,
+      totalProjects: 0,
+      pendingRequests: 0,
+      activeProjects: 0,
+    },
     isLoading,
-    error,
-    refetch: fetchProjects,
+    error: error instanceof Error ? error.message : null,
+    refetch: async () => {
+      await refetch()
+    },
   }
 }

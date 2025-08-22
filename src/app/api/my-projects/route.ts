@@ -63,16 +63,24 @@ export async function GET() {
         actualCompletionDate: projects.actualCompletionDate,
         liveUrl: projects.liveUrl,
         stagingUrl: projects.stagingUrl,
+        repositoryUrl: projects.repositoryUrl,
+        techStack: projects.techStack,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         collaboratorRole: projectCollaborators.role,
         clientId: projects.clientId,
+        // Client information
+        clientEmail: users.email,
+        clientFirstName: users.firstName,
+        clientLastName: users.lastName,
+        developerId: projects.developerId,
       })
       .from(projects)
       .leftJoin(
         projectCollaborators,
         eq(projectCollaborators.projectId, projects.id)
       )
+      .leftJoin(users, eq(projects.clientId, users.id))
       .where(
         or(
           eq(projects.clientId, user.id),
@@ -90,23 +98,27 @@ export async function GET() {
           userRole:
             item.clientId === user.id
               ? 'client'
-              : item.collaboratorRole || 'viewer',
+              : item.developerId === user.id
+                ? 'developer'
+                : item.collaboratorRole || 'viewer',
         })
       }
       return acc
     }, [] as any[])
 
-    // Add type field and combine requests and projects
-    const requestsWithType = requests.map((r) => ({
-      ...r,
-      type: ProjectItemType.REQUEST,
-    }))
+    // Add type field and filter out approved requests (they become projects instead)
+    const pendingRequestsWithType = requests
+      .filter((r) => r.status !== 'approved') // Only show non-approved requests
+      .map((r) => ({
+        ...r,
+        type: ProjectItemType.REQUEST,
+      }))
     const projectsWithType = uniqueProjects.map((p) => ({
       ...p,
       type: ProjectItemType.PROJECT,
     }))
 
-    const allItems = [...requestsWithType, ...projectsWithType].sort(
+    const allItems = [...pendingRequestsWithType, ...projectsWithType].sort(
       (a, b) =>
         new Date(b.updatedAt || b.createdAt).getTime() -
         new Date(a.updatedAt || a.createdAt).getTime()
@@ -115,9 +127,9 @@ export async function GET() {
     return NextResponse.json({
       items: allItems,
       summary: {
-        totalRequests: requests.length,
+        totalRequests: pendingRequestsWithType.length, // Only count non-approved requests
         totalProjects: uniqueProjects.length,
-        pendingRequests: requests.filter((r) =>
+        pendingRequests: pendingRequestsWithType.filter((r) =>
           ['requested', 'in_review'].includes(r.status)
         ).length,
         activeProjects: uniqueProjects.filter((p) =>

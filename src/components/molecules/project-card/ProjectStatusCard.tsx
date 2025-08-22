@@ -83,27 +83,57 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
   const statusInfo = getStatusInfo(item.status, item.type)
   const isProject = item.type === ProjectItemType.PROJECT
 
+  // Check if user is working on someone else's project
+  const isCollaborator = isProject && item.userRole !== 'client'
+  const clientName =
+    item.type === ProjectItemType.PROJECT
+      ? `${item.clientFirstName || ''} ${item.clientLastName || ''}`.trim() ||
+        'Unknown Client'
+      : null
+
   return (
     <div className='flex h-full min-h-[280px] flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
       {/* Header */}
       <div className='mb-3 flex items-start justify-between'>
-        <div className='flex-1'>
+        <div className='min-w-0 flex-1'>
           <h3 className='truncate font-mono text-lg font-bold text-green-400'>
             {item.title}
           </h3>
           <p className='font-mono text-xs tracking-wide text-green-300/60 uppercase'>
             {item.projectType.replace('_', ' ')}
           </p>
+          {/* Role indicator for collaborators */}
+          {isCollaborator && (
+            <div className='mt-1 flex flex-wrap gap-1'>
+              <span className='rounded bg-purple-400/20 px-2 py-1 font-mono text-xs text-purple-400'>
+                {item.userRole}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Status Badge */}
         <div
-          className={`flex items-center space-x-1 rounded-full border px-2 py-1 font-mono text-xs font-bold ${statusInfo.color}`}
+          className={`flex items-center space-x-1 rounded-full border px-2 py-1 font-mono text-xs font-bold whitespace-nowrap ${statusInfo.color}`}
         >
           <span>{statusInfo.icon}</span>
           <span>{statusInfo.label}</span>
         </div>
       </div>
+
+      {/* Client Info for collaborators */}
+      {isCollaborator && clientName && (
+        <div className='mb-3 rounded border border-blue-400/20 bg-blue-400/5 p-2'>
+          <p className='font-mono text-xs text-blue-400'>
+            <span className='text-blue-400/60'>Client:</span> {clientName}
+          </p>
+          {item.type === ProjectItemType.PROJECT && item.clientEmail && (
+            <p className='font-mono text-xs text-blue-400/80'>
+              {item.clientEmail}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Description */}
       <p className='mb-4 line-clamp-2 font-mono text-sm text-green-300/80'>
@@ -144,18 +174,45 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
               <span className='font-mono text-green-400'>{item.timeline}</span>
             </div>
           )}
+
+        {/* Tech Stack for projects */}
+        {item.type === ProjectItemType.PROJECT &&
+          item.techStack &&
+          Array.isArray(item.techStack) &&
+          item.techStack.length > 0 && (
+            <div className='space-y-1'>
+              <span className='font-mono text-sm text-green-300/60'>
+                Tech Stack:
+              </span>
+              <div className='flex flex-wrap gap-1'>
+                {item.techStack.slice(0, 3).map((tech) => (
+                  <span
+                    key={tech}
+                    className='rounded bg-green-400/20 px-2 py-1 font-mono text-xs text-green-400'
+                  >
+                    {tech}
+                  </span>
+                ))}
+                {item.techStack.length > 3 && (
+                  <span className='rounded bg-green-400/10 px-2 py-1 font-mono text-xs text-green-400/60'>
+                    +{item.techStack.length - 3}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
       </div>
 
       {/* Action Links */}
-      <div className='mb-3 flex space-x-2'>
+      <div className='mb-3 flex flex-wrap gap-2'>
         {isProject && item.liveUrl && (
           <Link
             href={safeExternalUrl(item.liveUrl)}
             target='_blank'
             rel='noopener noreferrer'
-            className='flex-1 rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-center font-mono text-xs text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
+            className='min-w-0 flex-1 rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-center font-mono text-xs text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
           >
-            🌐 VIEW LIVE
+            🌐 LIVE
           </Link>
         )}
 
@@ -164,13 +221,24 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
             href={safeExternalUrl(item.stagingUrl)}
             target='_blank'
             rel='noopener noreferrer'
-            className='flex-1 rounded border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-center font-mono text-xs text-blue-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
+            className='min-w-0 flex-1 rounded border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-center font-mono text-xs text-blue-400 transition-all duration-300 hover:bg-blue-400 hover:text-black'
           >
-            🧪 VIEW STAGING
+            🧪 STAGING
           </Link>
         )}
 
-        <div className='flex-1 rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60'>
+        {item.type === ProjectItemType.PROJECT && item.repositoryUrl && (
+          <Link
+            href={safeExternalUrl(item.repositoryUrl)}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='min-w-0 flex-1 rounded border border-purple-400/30 bg-purple-400/10 px-3 py-2 text-center font-mono text-xs text-purple-400 transition-all duration-300 hover:bg-purple-400 hover:text-black'
+          >
+            📁 REPO
+          </Link>
+        )}
+
+        <div className='min-w-0 flex-1 rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60'>
           {isProject ? 'VIEW DETAILS' : 'VIEW REQUEST'}
         </div>
       </div>

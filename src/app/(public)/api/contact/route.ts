@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-import { ContactFormEmail } from '@/components/email'
+import { ContactFormEmail } from '@/emails'
 import { contactFormSchema } from '@/validations'
 
 // Lazy initialize Resend only when needed

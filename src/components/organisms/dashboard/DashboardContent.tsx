@@ -3,50 +3,144 @@
 import Link from 'next/link'
 
 import { CompactUserProfile } from '@/components/atoms'
-import { ProjectStatusCard } from '@/components/molecules'
-import { useMyProjects } from '@/hooks'
+import {
+  useAdminProjectRequests,
+  useAssignedProjects,
+  useAvailableProjects,
+  useCurrentUser,
+  useMyProjects,
+} from '@/hooks'
+
+import {
+  AdminDashboardSection,
+  DeveloperDashboardSection,
+  UserProjectsAndRequests,
+} from './sections'
 
 export const DashboardContent = () => {
-  const { items, summary, isLoading, error } = useMyProjects()
+  const { isAdmin, isDeveloper } = useCurrentUser()
+  const { summary, isLoading: myProjectsLoading } = useMyProjects()
+  const { projects: availableProjects, isLoading: availableLoading } =
+    useAvailableProjects()
+  const { projects: assignedProjects, isLoading: assignedLoading } =
+    useAssignedProjects()
+  const { requests: adminRequests, isLoading: adminLoading } =
+    useAdminProjectRequests({ enabled: isAdmin })
+
+  const getStatusCounts = () => {
+    const counts = {
+      all: adminRequests.length,
+      requested: adminRequests.filter((r) => r.status === 'requested').length,
+      in_review: adminRequests.filter((r) => r.status === 'in_review').length,
+    }
+    return counts
+  }
+
+  const statusCounts = getStatusCounts()
+
+  // Determine if we're still loading the main content data
+  const isContentLoading =
+    myProjectsLoading ||
+    (isAdmin && adminLoading) ||
+    (isDeveloper && (availableLoading || assignedLoading))
 
   return (
-    <div className='pb-8'>
-      {/* User Overview Section */}
-      <div className='mb-8 rounded-lg border border-green-400/20 bg-black/80 p-6 shadow-2xl backdrop-blur-sm'>
-        <div className='flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0'>
-          {/* Left: Compact User Profile */}
-          <div className='flex-1'>
-            <CompactUserProfile />
-          </div>
-
-          {/* Right: Quick Stats */}
-          <div className='lg:ml-8 lg:flex-shrink-0'>
-            <div className='text-center lg:text-right'>
-              <div className='mb-2 flex items-center justify-center space-x-3 lg:justify-end'>
-                <span className='font-mono text-sm text-green-300'>
-                  Status:
-                </span>
-                <span className='inline-flex rounded-full bg-green-400/20 px-3 py-1 font-mono text-xs font-bold text-green-400'>
-                  ONLINE
-                </span>
-              </div>
-              <div className='flex items-center justify-center space-x-3 lg:justify-end'>
-                <span className='font-mono text-sm text-green-300'>
-                  Projects:
-                </span>
-                <span className='font-mono text-sm font-bold text-green-400'>
-                  {summary.activeProjects} Active
-                </span>
-              </div>
-              <div className='flex items-center justify-center space-x-3 lg:justify-end'>
-                <span className='font-mono text-sm text-green-300'>
-                  Requests:
-                </span>
-                <span className='font-mono text-sm font-bold text-yellow-400'>
-                  {summary.pendingRequests} Pending
-                </span>
-              </div>
+    <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
+      {/* User Profile */}
+      <div className='mb-8 rounded-lg border border-green-400/20 bg-black/60 p-6 backdrop-blur-sm'>
+        <div className='flex flex-col items-center justify-between space-y-4 lg:flex-row lg:space-y-0'>
+          <CompactUserProfile />
+          <div className='grid gap-4 text-center lg:text-right'>
+            <div className='flex flex-wrap items-center justify-center gap-3 lg:justify-end'>
+              <span className='inline-flex rounded-full bg-green-400/10 px-3 py-1 font-mono text-xs font-bold text-green-400'>
+                ACTIVE
+              </span>
+              <span className='inline-flex rounded-full bg-green-400/20 px-3 py-1 font-mono text-xs font-bold text-green-400'>
+                ONLINE
+              </span>
             </div>
+            {isAdmin ? (
+              <>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Total Requests:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-green-400'>
+                    {statusCounts.all}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Pending Review:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-yellow-400'>
+                    {statusCounts.requested}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    In Review:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-blue-400'>
+                    {statusCounts.in_review}
+                  </span>
+                </div>
+              </>
+            ) : isDeveloper ? (
+              <>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Available:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-blue-400'>
+                    {availableProjects.length}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Assigned:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-green-400'>
+                    {assignedProjects.length}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Your Projects:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-yellow-400'>
+                    {summary.totalProjects + summary.totalRequests}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Projects:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-green-400'>
+                    {summary.totalProjects}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Requests:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-yellow-400'>
+                    {summary.totalRequests}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Active:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-blue-400'>
+                    {summary.activeProjects}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -61,86 +155,54 @@ export const DashboardContent = () => {
             href='/dashboard/request-project'
             className='block rounded border border-green-400/30 bg-green-400/10 px-4 py-3 text-center font-mono text-sm font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
           >
-            📝 REQUEST NEW PROJECT
+            ➕ REQUEST PROJECT
           </Link>
           <Link
             href='/dashboard/user-profile'
-            className='block rounded border border-green-400/30 bg-green-400/10 px-4 py-3 text-center font-mono text-sm font-bold text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
+            className='block rounded border border-blue-400/30 bg-blue-400/10 px-4 py-3 text-center font-mono text-sm font-bold text-blue-400 transition-all duration-300 hover:bg-blue-400 hover:text-black'
           >
-            ⚙️ MANAGE ACCOUNT
+            👤 PROFILE SETTINGS
           </Link>
         </div>
       </div>
 
-      {/* Projects Section */}
-      <div className='rounded-lg border border-green-400/20 bg-black/40 p-6 backdrop-blur-sm'>
-        <h3 className='mb-6 font-mono text-lg font-bold text-green-400'>
-          YOUR PROJECTS & REQUESTS
-        </h3>
+      {/* Admin Project Requests Management Section */}
+      {isAdmin && (
+        <div className='mb-8 rounded-lg border border-purple-400/20 bg-black/40 p-6 backdrop-blur-sm'>
+          <h3 className='mb-6 font-mono text-lg font-bold text-purple-400'>
+            🔧 PROJECT REQUESTS MANAGEMENT
+          </h3>
+          {isContentLoading ? (
+            <div className='flex items-center justify-center'>
+              <div className='h-6 w-6 animate-spin rounded-full border-2 border-purple-400 border-t-transparent'></div>
+              <span className='ml-3 font-mono text-purple-400'>
+                Loading requests...
+              </span>
+            </div>
+          ) : (
+            <AdminDashboardSection />
+          )}
+        </div>
+      )}
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+      {/* Main Projects & Requests Section */}
+      <div className='rounded-lg border border-green-400/20 bg-black/40 p-6 backdrop-blur-sm'>
+        {/* Role-specific Content */}
+        {isContentLoading ? (
+          <div className='flex items-center justify-center'>
+            <div className='h-6 w-6 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
             <span className='ml-3 font-mono text-green-400'>
               Loading projects...
             </span>
           </div>
-        )}
+        ) : (
+          <>
+            {/* Developer-specific sections (Available & Assigned Projects) */}
+            {(isDeveloper || isAdmin) && <DeveloperDashboardSection />}
 
-        {/* Error State */}
-        {error && (
-          <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-            <p className='font-mono text-red-400'>Error: {error}</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!isLoading && !error && items.length === 0 && (
-          <div className='flex flex-col items-center justify-center py-12 text-center'>
-            <div className='mb-4 text-4xl'>🚀</div>
-            <p className='mb-2 font-mono text-sm text-green-300'>
-              No projects or requests yet
-            </p>
-            <p className='font-mono text-xs text-green-300/60'>
-              Start by requesting your first project above
-            </p>
-          </div>
-        )}
-
-        {/* Projects Grid */}
-        {!isLoading && !error && items.length > 0 && (
-          <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-            {items.map((item) => (
-              <ProjectStatusCard key={`${item.type}-${item.id}`} item={item} />
-            ))}
-          </div>
-        )}
-
-        {/* Summary */}
-        {!isLoading && !error && items.length > 0 && (
-          <div className='mt-6 flex justify-center space-x-6 text-sm'>
-            <div className='text-center'>
-              <div className='font-mono font-bold text-green-400'>
-                {summary.activeProjects}
-              </div>
-              <div className='font-mono text-green-300/60'>Active Projects</div>
-            </div>
-            <div className='text-center'>
-              <div className='font-mono font-bold text-yellow-400'>
-                {summary.pendingRequests}
-              </div>
-              <div className='font-mono text-green-300/60'>
-                Pending Requests
-              </div>
-            </div>
-            <div className='text-center'>
-              <div className='font-mono font-bold text-blue-400'>
-                {summary.totalRequests}
-              </div>
-              <div className='font-mono text-green-300/60'>Total Requests</div>
-            </div>
-          </div>
+            {/* Common Projects & Requests sections for ALL users */}
+            <UserProjectsAndRequests />
+          </>
         )}
       </div>
     </div>

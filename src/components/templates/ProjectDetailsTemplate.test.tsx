@@ -15,7 +15,7 @@ vi.mock('next/image', () => ({
 const mockProject = {
   title: 'Test Project',
   overview: 'A test project for testing purposes',
-  tech: ['React', 'TypeScript', 'Tailwind'],
+  techStack: ['React', 'TypeScript', 'Tailwind'],
   status: 'COMPLETED',
   logo: '/test-logo.png',
   projectName: 'TestProject',
