@@ -1,12 +1,6 @@
 import { config } from 'dotenv'
 import { defineConfig } from 'drizzle-kit'
 
-// Skip migrations entirely for Vercel preview builds
-if (process.env.VERCEL_ENV === 'preview') {
-  // Preview builds shouldn't run migrations - provide empty DATABASE_URL to make migrate fail gracefully
-  process.env.DATABASE_URL = ''
-}
-
 // Load environment files for local builds only
 if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) {
   // Local production build - load production env files
