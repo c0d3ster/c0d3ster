@@ -63,16 +63,23 @@ export async function GET() {
         actualCompletionDate: projects.actualCompletionDate,
         liveUrl: projects.liveUrl,
         stagingUrl: projects.stagingUrl,
+        repositoryUrl: projects.repositoryUrl,
+        techStack: projects.techStack,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         collaboratorRole: projectCollaborators.role,
         clientId: projects.clientId,
+        // Client information
+        clientEmail: users.email,
+        clientFirstName: users.firstName,
+        clientLastName: users.lastName,
       })
       .from(projects)
       .leftJoin(
         projectCollaborators,
         eq(projectCollaborators.projectId, projects.id)
       )
+      .leftJoin(users, eq(projects.clientId, users.id))
       .where(
         or(
           eq(projects.clientId, user.id),

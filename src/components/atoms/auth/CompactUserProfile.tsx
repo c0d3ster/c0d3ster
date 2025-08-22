@@ -2,42 +2,14 @@
 
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
 
-type UserData = {
-  id: string
-  clerkId: string
-  email: string
-  firstName: string | null
-  lastName: string | null
-  avatarUrl: string | null
-  createdAt: string
-  updatedAt: string
-}
+import { useCurrentUser } from '@/hooks'
 
 export const CompactUserProfile = () => {
-  const { user, isLoaded } = useUser()
-  const [userData, setUserData] = useState<UserData | null>(null)
+  const { user: clerkUser, isLoaded } = useUser()
+  const { user: userData, isLoading, isAdmin } = useCurrentUser()
 
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch('/api/users')
-      if (response.ok) {
-        const data = await response.json()
-        setUserData(data)
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error)
-    }
-  }
-
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchUserData()
-    }
-  }, [isLoaded, user])
-
-  if (!isLoaded || !user) {
+  if (!isLoaded || isLoading || !clerkUser) {
     return (
       <div className='flex animate-pulse flex-col items-center space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4'>
         <div className='h-12 w-12 rounded-full bg-green-400/20'></div>
@@ -51,17 +23,17 @@ export const CompactUserProfile = () => {
 
   const displayName = userData
     ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() ||
-      user.emailAddresses[0]?.emailAddress ||
+      clerkUser.emailAddresses[0]?.emailAddress ||
       'User'
-    : user.fullName || user.emailAddresses[0]?.emailAddress || 'User'
+    : clerkUser.fullName || clerkUser.emailAddresses[0]?.emailAddress || 'User'
 
   return (
     <div className='flex flex-col items-center space-y-3 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4'>
       {/* Avatar */}
       <div className='relative h-12 w-12 overflow-hidden rounded-full border-2 border-green-400/30 sm:h-12 sm:w-12'>
-        {user.imageUrl ? (
+        {clerkUser.imageUrl ? (
           <Image
-            src={user.imageUrl}
+            src={clerkUser.imageUrl}
             alt={displayName}
             fill
             className='object-cover'
@@ -76,11 +48,18 @@ export const CompactUserProfile = () => {
 
       {/* Name and Email */}
       <div className='min-w-0 flex-1 text-center sm:text-left'>
-        <h2 className='truncate font-mono text-lg font-bold text-green-400'>
-          {displayName}
-        </h2>
+        <div className='flex items-center justify-center gap-2 sm:justify-start'>
+          <h2 className='truncate font-mono text-lg font-bold text-green-400'>
+            {displayName}
+          </h2>
+          {isAdmin && (
+            <span className='inline-flex rounded-full bg-purple-400/20 px-2 py-1 font-mono text-xs font-bold text-purple-400'>
+              ADMIN
+            </span>
+          )}
+        </div>
         <p className='truncate font-mono text-sm text-green-300/70'>
-          {user.emailAddresses[0]?.emailAddress}
+          {clerkUser.emailAddresses[0]?.emailAddress}
         </p>
       </div>
     </div>
