@@ -4,7 +4,7 @@ import type { ProjectItemType } from '@/types'
 
 import { useCurrentUser } from './useCurrentUser'
 
-export type AssignedProject = {
+type AssignedProject = {
   id: string
   title: string
   description: string

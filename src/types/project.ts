@@ -4,7 +4,7 @@ export enum ProjectItemType {
   PROJECT = 'project',
 }
 
-export type ProjectRequest = {
+type ProjectRequest = {
   id: string
   title: string
   description: string
@@ -17,7 +17,7 @@ export type ProjectRequest = {
   type: ProjectItemType.REQUEST
 }
 
-export type Project = {
+type Project = {
   id: string
   title: string
   description: string

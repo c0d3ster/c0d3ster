@@ -6,7 +6,7 @@ import { users } from '@/models/Schema'
 
 export type UserRole = 'client' | 'developer' | 'admin' | 'super_admin'
 
-export type AuthenticatedUser = {
+type AuthenticatedUser = {
   id: string
   clerkId: string
   email: string
@@ -18,7 +18,7 @@ export type AuthenticatedUser = {
 /**
  * Get the current authenticated user with role information
  */
-export const getCurrentUser = async (): Promise<AuthenticatedUser | null> => {
+const getCurrentUser = async (): Promise<AuthenticatedUser | null> => {
   const { userId: clerkId } = await auth()
 
   if (!clerkId) {
@@ -46,22 +46,8 @@ export const getCurrentUser = async (): Promise<AuthenticatedUser | null> => {
 /**
  * Check if user has admin privileges (admin or super_admin)
  */
-export const isAdmin = (user: AuthenticatedUser | null): boolean => {
+const isAdmin = (user: AuthenticatedUser | null): boolean => {
   return user?.role === 'admin' || user?.role === 'super_admin'
-}
-
-/**
- * Check if user has super admin privileges
- */
-export const isSuperAdmin = (user: AuthenticatedUser | null): boolean => {
-  return user?.role === 'super_admin'
-}
-
-/**
- * Check if user is a developer
- */
-export const isDeveloper = (user: AuthenticatedUser | null): boolean => {
-  return user?.role === 'developer'
 }
 
 /**
@@ -71,25 +57,6 @@ export const isDeveloperOrHigher = (
   user: AuthenticatedUser | null
 ): boolean => {
   return user?.role === 'developer' || isAdmin(user)
-}
-
-/**
- * Check if user has at least the specified role level
- */
-export const hasRoleLevel = (
-  user: AuthenticatedUser | null,
-  minimumRole: UserRole
-): boolean => {
-  if (!user) return false
-
-  const roleHierarchy: Record<UserRole, number> = {
-    client: 1,
-    developer: 2,
-    admin: 3,
-    super_admin: 4,
-  }
-
-  return roleHierarchy[user.role] >= roleHierarchy[minimumRole]
 }
 
 /**

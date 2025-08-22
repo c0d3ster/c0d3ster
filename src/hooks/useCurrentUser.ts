@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import type { UserRole } from '@/utils'
 
-export type CurrentUser = {
+type CurrentUser = {
   id: string
   clerkId: string
   email: string
