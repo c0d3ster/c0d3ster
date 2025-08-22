@@ -1,19 +1,9 @@
 import { useAuth } from '@clerk/nextjs'
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
-import type { UserRole } from '@/utils'
+import type { CurrentUser } from '@/services/api'
 
-type CurrentUser = {
-  id: string
-  clerkId: string
-  email: string
-  firstName: string | null
-  lastName: string | null
-  avatarUrl: string | null
-  role: UserRole
-  createdAt: string
-  updatedAt: string
-}
+import { fetchCurrentUser } from '@/services/api'
 
 type UseCurrentUserReturn = {
   user: CurrentUser | null
@@ -26,51 +16,36 @@ type UseCurrentUserReturn = {
 
 export const useCurrentUser = (): UseCurrentUserReturn => {
   const { isSignedIn } = useAuth()
-  const [user, setUser] = useState<CurrentUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchUser = async () => {
-    if (!isSignedIn) {
-      setUser(null)
-      setError(null)
-      setIsLoading(false)
-      return
-    }
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/users')
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data')
+  const {
+    data: user,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['current-user'],
+    queryFn: fetchCurrentUser,
+    enabled: isSignedIn,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        return false
       }
-
-      const userData = await response.json()
-      setUser(userData)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      setError(errorMessage)
-      console.error('Error fetching current user:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchUser()
-  }, [isSignedIn]) // eslint-disable-line react-hooks/exhaustive-deps
+      return failureCount < 1
+    },
+  })
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
   const isDeveloper = user?.role === 'developer'
 
   return {
-    user,
+    user: user || null,
     isLoading,
-    error,
-    refetch: fetchUser,
+    error: error instanceof Error ? error.message : null,
+    refetch: async () => {
+      await refetch()
+    },
     isAdmin,
     isDeveloper,
   }

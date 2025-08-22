@@ -1,4 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+
+import {
+  approveProjectRequest,
+  fetchAdminProjectRequests,
+  updateProjectRequestStatus,
+} from '@/services/api'
+
+import { useCurrentUser } from './useCurrentUser'
 
 export type ProjectRequestWithUser = {
   id: string
@@ -50,121 +58,79 @@ export const useAdminProjectRequests = (
   opts: UseAdminProjectRequestsOptions = {}
 ): UseAdminProjectRequestsReturn => {
   const { enabled = true } = opts
-  const [requests, setRequests] = useState<ProjectRequestWithUser[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { isAdmin, isLoading: userLoading } = useCurrentUser()
+  const queryClient = useQueryClient()
 
-  const fetchRequests = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await fetch('/api/admin/project-requests')
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized - please log in')
-        }
-        if (response.status === 403) {
-          throw new Error('Access denied - admin privileges required')
-        }
-        throw new Error('Failed to fetch project requests')
+  // Main query for fetching admin project requests
+  const {
+    data: requests = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['admin', 'project-requests'],
+    queryFn: fetchAdminProjectRequests,
+    enabled: enabled && !userLoading && isAdmin,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      if (
+        error instanceof Error &&
+        (error.message.includes('Unauthorized') ||
+          error.message.includes('Access denied'))
+      ) {
+        return false
       }
+      return failureCount < 1
+    },
+  })
 
-      const data = await response.json()
-      setRequests(data.requests || [])
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      setError(errorMessage)
-      console.error('Error fetching admin project requests:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // Mutation for updating request status
+  const updateStatusMutation = useMutation({
+    mutationFn: updateProjectRequestStatus,
+    onSuccess: () => {
+      // Invalidate and refetch admin project requests
+      queryClient.invalidateQueries({ queryKey: ['admin', 'project-requests'] })
+    },
+  })
 
-  const updateRequestStatus = async (
-    requestId: string,
-    status: string,
-    reviewNotes?: string
-  ) => {
-    try {
-      const response = await fetch('/api/admin/project-requests', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requestId,
-          status,
-          reviewNotes,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update request status')
-      }
-
-      // Refetch to get updated data
-      await fetchRequests()
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      setError(errorMessage)
-      throw err
-    }
-  }
-
-  const approveRequest = async (
-    requestId: string,
-    approvalData: {
-      startDate?: string
-      estimatedCompletionDate?: string
-      priority?: 'low' | 'medium' | 'high' | 'urgent'
-      techStack?: string[]
-      budget?: number
-      internalNotes?: string
-    }
-  ) => {
-    try {
-      const response = await fetch(
-        `/api/admin/project-requests/${requestId}/approve`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(approvalData),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to approve project request')
-      }
-
-      // Refetch to get updated data
-      await fetchRequests()
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      setError(errorMessage)
-      throw err
-    }
-  }
-
-  useEffect(() => {
-    if (!enabled) {
-      setIsLoading(false)
-      setRequests([])
-      setError(null)
-      return
-    }
-    fetchRequests()
-  }, [enabled])
+  // Mutation for approving requests
+  const approveMutation = useMutation({
+    mutationFn: approveProjectRequest,
+    onSuccess: () => {
+      // Invalidate multiple queries since approval creates a project
+      queryClient.invalidateQueries({ queryKey: ['admin', 'project-requests'] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['available-projects'] })
+    },
+  })
 
   return {
     requests,
     isLoading,
-    error,
-    refetch: fetchRequests,
-    updateRequestStatus,
-    approveRequest,
+    error: error instanceof Error ? error.message : null,
+    refetch: async () => {
+      await refetch()
+    },
+    updateRequestStatus: async (
+      requestId: string,
+      status: string,
+      reviewNotes?: string
+    ) => {
+      await updateStatusMutation.mutateAsync({ requestId, status, reviewNotes })
+    },
+    approveRequest: async (
+      requestId: string,
+      approvalData: {
+        startDate?: string
+        estimatedCompletionDate?: string
+        priority?: 'low' | 'medium' | 'high' | 'urgent'
+        techStack?: string[]
+        budget?: number
+        internalNotes?: string
+      }
+    ) => {
+      await approveMutation.mutateAsync({ requestId, ...approvalData })
+    },
   }
 }

@@ -1,8 +1,6 @@
 export * from './animations'
 export * from './auth'
 export * from './backgrounds'
-export { ClerkProvider } from './ClerkProvider'
 export * from './controls'
 export * from './feedback'
-export * from './feedback/CustomToast'
 export * from './layout'

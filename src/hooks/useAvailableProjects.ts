@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+
+import { assignToProject, fetchAvailableProjects } from '@/services/api'
 
 import { useCurrentUser } from './useCurrentUser'
 
@@ -22,79 +24,50 @@ export type AvailableProject = {
 
 export const useAvailableProjects = () => {
   const { isDeveloper, isLoading: userLoading } = useCurrentUser()
-  const [projects, setProjects] = useState<AvailableProject[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
 
-  const fetchProjects = useCallback(async () => {
-    // Wait for user data to load before making decisions
-    if (userLoading) {
-      return
-    }
-
-    if (!isDeveloper) {
-      setProjects([])
-      setIsLoading(false)
-      setError(null)
-      return
-    }
-
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await fetch('/api/developer/available-projects')
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch projects: ${response.statusText}`)
+  // Only fetch when user is confirmed to be a developer
+  const {
+    data: projects = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['available-projects'],
+    queryFn: fetchAvailableProjects,
+    enabled: !userLoading && isDeveloper,
+    staleTime: 30000,
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      if (
+        error instanceof Error &&
+        (error.message.includes('Unauthorized') ||
+          error.message.includes('Access denied'))
+      ) {
+        return false
       }
+      return failureCount < 1
+    },
+  })
 
-      const data = await response.json()
-      setProjects(data.projects || [])
-    } catch (error) {
-      console.error('Error fetching available projects:', error)
-      setError(
-        error instanceof Error ? error.message : 'Failed to fetch projects'
-      )
-    } finally {
-      setIsLoading(false)
-    }
-  }, [isDeveloper, userLoading])
-
-  const assignToProject = useCallback(async (projectId: string) => {
-    try {
-      const response = await fetch(
-        `/api/developer/available-projects/${projectId}/assign`,
-        {
-          method: 'PATCH',
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(`Failed to assign to project: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-
-      // Remove the assigned project from available projects
-      setProjects((prev) => prev.filter((p) => p.id !== projectId))
-
-      return data
-    } catch (error) {
-      console.error('Error assigning to project:', error)
-      throw error
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchProjects()
-  }, [fetchProjects])
+  // Mutation for assigning to a project
+  const assignMutation = useMutation({
+    mutationFn: assignToProject,
+    onSuccess: () => {
+      // Invalidate multiple queries since assignment affects multiple lists
+      queryClient.invalidateQueries({ queryKey: ['available-projects'] })
+      queryClient.invalidateQueries({ queryKey: ['assigned-projects'] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+    },
+  })
 
   return {
     projects,
-    isLoading,
-    error,
-    refetch: fetchProjects,
-    assignToProject,
+    isLoading: userLoading || isLoading,
+    error: error instanceof Error ? error.message : null,
+    refetch: async () => {
+      await refetch()
+    },
+    assignToProject: assignMutation.mutateAsync,
   }
 }

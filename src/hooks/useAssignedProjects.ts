@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
 import type { ProjectItemType } from '@/types'
 
+import { fetchAssignedProjects } from '@/services/api'
+
 import { useCurrentUser } from './useCurrentUser'
 
-type AssignedProject = {
+export type AssignedProject = {
   id: string
   title: string
   description: string
@@ -31,57 +33,37 @@ type AssignedProject = {
 
 export const useAssignedProjects = () => {
   const { isDeveloper, isLoading: userLoading } = useCurrentUser()
-  const [projects, setProjects] = useState<AssignedProject[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchProjects = useCallback(async () => {
-    // Wait for user data to load before making decisions
-    if (userLoading) {
-      return
-    }
-
-    if (!isDeveloper) {
-      setProjects([])
-      setIsLoading(false)
-      setError(null)
-      return
-    }
-
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const response = await fetch('/api/developer/assigned-projects')
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch assigned projects: ${response.statusText}`
-        )
+  // Only fetch when user is confirmed to be a developer
+  const {
+    data: projects = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['assigned-projects'],
+    queryFn: fetchAssignedProjects,
+    enabled: !userLoading && isDeveloper,
+    staleTime: 30000,
+    retry: (failureCount, error) => {
+      // Don't retry on auth errors
+      if (
+        error instanceof Error &&
+        (error.message.includes('Unauthorized') ||
+          error.message.includes('Access denied'))
+      ) {
+        return false
       }
-
-      const data = await response.json()
-      setProjects(data.projects || [])
-    } catch (error) {
-      console.error('Error fetching assigned projects:', error)
-      setError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to fetch assigned projects'
-      )
-    } finally {
-      setIsLoading(false)
-    }
-  }, [isDeveloper, userLoading])
-
-  useEffect(() => {
-    fetchProjects()
-  }, [fetchProjects])
+      return failureCount < 1
+    },
+  })
 
   return {
     projects,
-    isLoading,
-    error,
-    refetch: fetchProjects,
+    isLoading: userLoading || isLoading,
+    error: error instanceof Error ? error.message : null,
+    refetch: async () => {
+      await refetch()
+    },
   }
 }

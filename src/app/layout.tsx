@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 
-import { PostHogProvider } from '@/components/analytics/PostHogProvider'
-import { ClerkProvider, ToastContainer } from '@/components/atoms'
+import { PostHogProvider } from '@/analytics'
+import { ToastContainer } from '@/components/atoms'
+import { ClerkProvider, QueryProvider } from '@/providers'
 import '@/styles/global.css'
 
 export const metadata: Metadata = {
@@ -39,8 +40,10 @@ export default function RootLayout({
       <body>
         <ClerkProvider>
           <PostHogProvider>
-            {children}
-            <ToastContainer />
+            <QueryProvider>
+              {children}
+              <ToastContainer />
+            </QueryProvider>
           </PostHogProvider>
         </ClerkProvider>
       </body>
