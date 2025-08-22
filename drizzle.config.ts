@@ -1,24 +1,24 @@
 import { config } from 'dotenv'
 import { defineConfig } from 'drizzle-kit'
 
-// Load environment files based on NODE_ENV, test environment uses GitHub secrets
-if (
-  process.env.NODE_ENV === 'production' &&
-  process.env.VERCEL_ENV === 'production'
-) {
-  // Only in actual production deployment, load production env files
-  config({ path: '.env.production.local' }) // Needed for local production builds
-  config({ path: '.env.production' })
-  config({ path: '.env' })
-} else if (process.env.NODE_ENV === 'production') {
-  // For preview deployments or local production builds without VERCEL_ENV
-  // Use environment variables (Vercel preview uses different DATABASE_URL)
-  config({ path: '.env' })
-} else if (process.env.NODE_ENV === 'development') {
-  // In development, load .env.local first, then .env
-  config({ path: '.env.local' })
-  config({ path: '.env' })
+// Skip migrations entirely for Vercel preview builds
+if (process.env.VERCEL_ENV === 'preview') {
+  // Preview builds shouldn't run migrations - provide empty DATABASE_URL to make migrate fail gracefully
+  process.env.DATABASE_URL = ''
 }
+
+// Load environment files for local builds only
+if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) {
+  // Local production build - load production env files
+  config({ path: '.env.production.local' })
+  config({ path: '.env.production' })
+  config({ path: '.env' }) // Fallback for any missing vars
+} else if (!process.env.VERCEL_ENV && process.env.NODE_ENV !== 'test') {
+  // Local development build - load development env files
+  config({ path: '.env.local' })
+  config({ path: '.env' }) // Fallback for any missing vars
+}
+// Remote environments (CI: NODE_ENV=test, Vercel: VERCEL_ENV set) use environment variables only
 
 export default defineConfig({
   out: './migrations',
