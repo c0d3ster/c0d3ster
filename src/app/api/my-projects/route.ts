@@ -73,6 +73,7 @@ export async function GET() {
         clientEmail: users.email,
         clientFirstName: users.firstName,
         clientLastName: users.lastName,
+        developerId: projects.developerId,
       })
       .from(projects)
       .leftJoin(
@@ -97,7 +98,9 @@ export async function GET() {
           userRole:
             item.clientId === user.id
               ? 'client'
-              : item.collaboratorRole || 'viewer',
+              : item.developerId === user.id
+                ? 'developer'
+                : item.collaboratorRole || 'viewer',
         })
       }
       return acc

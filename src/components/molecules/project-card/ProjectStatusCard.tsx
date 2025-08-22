@@ -95,7 +95,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
     <div className='flex h-full min-h-[280px] flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
       {/* Header */}
       <div className='mb-3 flex items-start justify-between'>
-        <div className='flex-1'>
+        <div className='min-w-0 flex-1'>
           <h3 className='truncate font-mono text-lg font-bold text-green-400'>
             {item.title}
           </h3>
@@ -114,7 +114,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
 
         {/* Status Badge */}
         <div
-          className={`flex items-center space-x-1 rounded-full border px-2 py-1 font-mono text-xs font-bold ${statusInfo.color}`}
+          className={`flex items-center space-x-1 rounded-full border px-2 py-1 font-mono text-xs font-bold whitespace-nowrap ${statusInfo.color}`}
         >
           <span>{statusInfo.icon}</span>
           <span>{statusInfo.label}</span>

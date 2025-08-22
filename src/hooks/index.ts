@@ -1,4 +1,6 @@
 export * from './useAdminProjectRequests'
+export * from './useAssignedProjects'
+export * from './useAvailableProjects'
 export * from './useCurrentUser'
 export * from './useMyProjects'
 export * from './useToast'

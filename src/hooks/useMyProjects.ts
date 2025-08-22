@@ -29,7 +29,7 @@ export const useMyProjects = (): UseMyProjectsReturn => {
     pendingRequests: 0,
     activeProjects: 0,
   })
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchProjects = async () => {

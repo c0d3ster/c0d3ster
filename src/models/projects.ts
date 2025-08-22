@@ -48,6 +48,7 @@ export const projects = pgTable('projects', {
   clientId: uuid('client_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
+  developerId: uuid('developer_id').references(() => users.id, { onDelete: 'set null' }),
   title: varchar('title', { length: 255 }).notNull(),
   description: text('description').notNull(),
   projectType: projectTypeEnum('project_type').notNull(),

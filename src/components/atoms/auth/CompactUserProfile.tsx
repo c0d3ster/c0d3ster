@@ -7,7 +7,7 @@ import { useCurrentUser } from '@/hooks'
 
 export const CompactUserProfile = () => {
   const { user: clerkUser, isLoaded } = useUser()
-  const { user: userData, isLoading, isAdmin } = useCurrentUser()
+  const { user: userData, isLoading, isAdmin, isDeveloper } = useCurrentUser()
 
   if (!isLoaded || isLoading || !clerkUser) {
     return (
@@ -55,6 +55,11 @@ export const CompactUserProfile = () => {
           {isAdmin && (
             <span className='inline-flex rounded-full bg-purple-400/20 px-2 py-1 font-mono text-xs font-bold text-purple-400'>
               ADMIN
+            </span>
+          )}
+          {isDeveloper && !isAdmin && (
+            <span className='inline-flex rounded-full bg-blue-400/20 px-2 py-1 font-mono text-xs font-bold text-blue-400'>
+              DEV
             </span>
           )}
         </div>

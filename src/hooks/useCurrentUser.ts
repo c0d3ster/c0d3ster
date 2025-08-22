@@ -21,12 +21,13 @@ type UseCurrentUserReturn = {
   error: string | null
   refetch: () => Promise<void>
   isAdmin: boolean
+  isDeveloper: boolean
 }
 
 export const useCurrentUser = (): UseCurrentUserReturn => {
   const { isSignedIn } = useAuth()
   const [user, setUser] = useState<CurrentUser | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchUser = async () => {
@@ -61,6 +62,7 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
   }, [isSignedIn]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
+  const isDeveloper = user?.role === 'developer'
 
   return {
     user,
@@ -68,5 +70,6 @@ export const useCurrentUser = (): UseCurrentUserReturn => {
     error,
     refetch: fetchUser,
     isAdmin,
+    isDeveloper,
   }
 }
