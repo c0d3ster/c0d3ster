@@ -9,7 +9,7 @@ import { ProjectItemType } from '@/types'
 // Prefer allowing only http/https to avoid `javascript:` and similar schemes.
 const safeExternalUrl = (url: string) => (/^https?:\/\//i.test(url) ? url : '#')
 
-export type ProjectStatusCardProps = {
+type ProjectStatusCardProps = {
   item: ProjectItem
 }
 
