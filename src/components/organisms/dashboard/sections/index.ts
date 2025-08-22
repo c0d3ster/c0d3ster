@@ -1,3 +1,3 @@
 export { AdminDashboardSection } from './AdminDashboardSection'
-export { ClientDashboardSection } from './ClientDashboardSection'
 export { DeveloperDashboardSection } from './DeveloperDashboardSection'
+export { UserProjectsAndRequests } from './UserProjectsAndRequests'

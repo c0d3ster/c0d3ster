@@ -1,15 +1,9 @@
 'use client'
 
 import { AvailableProjectCard, ProjectStatusCard } from '@/components/molecules'
-import {
-  useAssignedProjects,
-  useAvailableProjects,
-  useMyProjects,
-  useToast,
-} from '@/hooks'
+import { useAssignedProjects, useAvailableProjects, useToast } from '@/hooks'
 
 export const DeveloperDashboardSection = () => {
-  const { items, isLoading, error } = useMyProjects()
   const {
     projects: assignedProjects,
     isLoading: assignedLoading,
@@ -103,15 +97,15 @@ export const DeveloperDashboardSection = () => {
 
       {/* Assigned Projects Section */}
       <div className='mb-8'>
-        <h3 className='mb-4 font-mono text-lg font-bold text-green-400'>
+        <h3 className='mb-4 font-mono text-lg font-bold text-orange-400'>
           ⚡ ASSIGNED PROJECTS
         </h3>
 
         {/* Assigned Projects Loading */}
         {assignedLoading && (
           <div className='flex items-center justify-center'>
-            <div className='h-6 w-6 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
-            <span className='ml-3 font-mono text-green-400'>
+            <div className='h-6 w-6 animate-spin rounded-full border-2 border-orange-400 border-t-transparent'></div>
+            <span className='ml-3 font-mono text-orange-400'>
               Loading assigned projects...
             </span>
           </div>
@@ -148,57 +142,11 @@ export const DeveloperDashboardSection = () => {
           assignedProjects.length === 0 && (
             <div className='flex flex-col items-center justify-center text-center'>
               <div className='mb-2 text-2xl'>⚡</div>
-              <p className='font-mono text-sm text-green-300/60'>
+              <p className='font-mono text-sm text-orange-300/60'>
                 No assigned projects yet
               </p>
             </div>
           )}
-      </div>
-
-      {/* Your Projects Section */}
-      <div>
-        <h3 className='mb-4 font-mono text-lg font-bold text-green-400'>
-          📋 YOUR PROJECTS
-        </h3>
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className='flex items-center justify-center'>
-            <div className='h-6 w-6 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
-            <span className='ml-3 font-mono text-green-400'>
-              Loading your projects...
-            </span>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-            <p className='font-mono text-red-400'>Error: {error}</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!isLoading &&
-          !error &&
-          items.length === 0 &&
-          availableProjects.length === 0 && (
-            <div className='flex flex-col items-center justify-center text-center'>
-              <div className='mb-2 text-2xl'>📋</div>
-              <p className='font-mono text-sm text-green-300/60'>
-                No projects created or shared with you yet
-              </p>
-            </div>
-          )}
-
-        {/* Projects Grid */}
-        {!isLoading && !error && items.length > 0 && (
-          <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-            {items.map((item) => (
-              <ProjectStatusCard key={`${item.type}-${item.id}`} item={item} />
-            ))}
-          </div>
-        )}
       </div>
     </>
   )

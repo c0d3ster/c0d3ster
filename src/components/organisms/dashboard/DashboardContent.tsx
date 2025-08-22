@@ -13,8 +13,8 @@ import {
 
 import {
   AdminDashboardSection,
-  ClientDashboardSection,
   DeveloperDashboardSection,
+  UserProjectsAndRequests,
 } from './sections'
 
 export const DashboardContent = () => {
@@ -166,12 +166,27 @@ export const DashboardContent = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className='rounded-lg border border-green-400/20 bg-black/40 p-6 backdrop-blur-sm'>
-        <h3 className='mb-6 font-mono text-lg font-bold text-green-400'>
-          {isAdmin ? 'PROJECT REQUESTS MANAGEMENT' : 'YOUR PROJECTS & REQUESTS'}
-        </h3>
+      {/* Admin Project Requests Management Section */}
+      {isAdmin && (
+        <div className='mb-8 rounded-lg border border-purple-400/20 bg-black/40 p-6 backdrop-blur-sm'>
+          <h3 className='mb-6 font-mono text-lg font-bold text-purple-400'>
+            🔧 PROJECT REQUESTS MANAGEMENT
+          </h3>
+          {isContentLoading ? (
+            <div className='flex items-center justify-center'>
+              <div className='h-6 w-6 animate-spin rounded-full border-2 border-purple-400 border-t-transparent'></div>
+              <span className='ml-3 font-mono text-purple-400'>
+                Loading requests...
+              </span>
+            </div>
+          ) : (
+            <AdminDashboardSection />
+          )}
+        </div>
+      )}
 
+      {/* Main Projects & Requests Section */}
+      <div className='rounded-lg border border-green-400/20 bg-black/40 p-6 backdrop-blur-sm'>
         {/* Role-specific Content */}
         {isContentLoading ? (
           <div className='flex items-center justify-center'>
@@ -182,14 +197,11 @@ export const DashboardContent = () => {
           </div>
         ) : (
           <>
-            {isAdmin && (
-              <>
-                <AdminDashboardSection />
-                <div className='mb-8'></div> {/* Spacer */}
-              </>
-            )}
-            {isDeveloper && <DeveloperDashboardSection />}
-            {!isDeveloper && <ClientDashboardSection />}
+            {/* Developer-specific sections (Available & Assigned Projects) */}
+            {(isDeveloper || isAdmin) && <DeveloperDashboardSection />}
+
+            {/* Common Projects & Requests sections for ALL users */}
+            <UserProjectsAndRequests />
           </>
         )}
       </div>
