@@ -9,6 +9,11 @@ export const userResolvers = {
   Query: {
     me: async () => {
       const currentUser = await getCurrentUser()
+      console.error('🚨 GET ME QUERY - CURRENT USER:', {
+        id: currentUser?.id,
+        role: currentUser?.role,
+        email: currentUser?.email,
+      })
       return currentUser
     },
 

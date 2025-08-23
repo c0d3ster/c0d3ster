@@ -1,5 +1,7 @@
 'use client'
 
+import type { Project, ProjectRequest } from '@/graphql/generated/graphql'
+
 import { useGetMyProjectRequests, useGetMyProjects } from '@/apiClients'
 import { ProjectStatusCard } from '@/components/molecules'
 
@@ -18,14 +20,8 @@ export const UserProjectsAndRequests = () => {
   const isLoading = projectsLoading || requestsLoading
   const error = projectsError || requestsError
   const items = [
-    ...(projects?.myProjects?.map((project: any) => ({
-      ...project,
-      type: 'project',
-    })) || []),
-    ...(requests?.myProjectRequests?.map((request: any) => ({
-      ...request,
-      type: 'request',
-    })) || []),
+    ...(projects?.myProjects || []),
+    ...(requests?.myProjectRequests || []),
   ]
 
   return (
@@ -56,7 +52,8 @@ export const UserProjectsAndRequests = () => {
         {/* Empty State */}
         {!isLoading &&
           !error &&
-          items.filter((item) => item.type === 'project').length === 0 && (
+          items.filter((item) => item.__typename === 'Project').length ===
+            0 && (
             <div className='flex flex-col items-center justify-center text-center'>
               <div className='mb-2 text-2xl'>🚀</div>
               <p className='font-mono text-sm text-green-300/60'>
@@ -68,14 +65,14 @@ export const UserProjectsAndRequests = () => {
         {/* Projects Grid */}
         {!isLoading &&
           !error &&
-          items.filter((item) => item.type === 'project').length > 0 && (
+          items.filter((item) => item.__typename === 'Project').length > 0 && (
             <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
               {items
-                .filter((item) => item.type === 'project')
+                .filter((item) => item.__typename === 'Project')
                 .map((item) => (
                   <ProjectStatusCard
-                    key={`${item.type}-${item.id}`}
-                    item={item}
+                    key={`${item.__typename}-${item.id}`}
+                    item={item as Project}
                   />
                 ))}
             </div>
@@ -108,7 +105,8 @@ export const UserProjectsAndRequests = () => {
         {/* Empty State */}
         {!isLoading &&
           !error &&
-          items.filter((item) => item.type === 'request').length === 0 && (
+          items.filter((item) => item.__typename === 'ProjectRequest')
+            .length === 0 && (
             <div className='flex flex-col items-center justify-center text-center'>
               <div className='mb-2 text-2xl'>📋</div>
               <p className='font-mono text-sm text-yellow-300/60'>
@@ -120,14 +118,15 @@ export const UserProjectsAndRequests = () => {
         {/* Requests Grid */}
         {!isLoading &&
           !error &&
-          items.filter((item) => item.type === 'request').length > 0 && (
+          items.filter((item) => item.__typename === 'ProjectRequest').length >
+            0 && (
             <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
               {items
-                .filter((item) => item.type === 'request')
+                .filter((item) => item.__typename === 'ProjectRequest')
                 .map((item) => (
                   <ProjectStatusCard
-                    key={`${item.type}-${item.id}`}
-                    item={item}
+                    key={`${item.__typename}-${item.id}`}
+                    item={item as ProjectRequest}
                   />
                 ))}
             </div>

@@ -9,6 +9,7 @@ import {
   useGetMyDashboard,
 } from '@/apiClients'
 import { CompactUserProfile } from '@/components/atoms'
+import { isAdminRole } from '@/utils/RoleConstants'
 
 import {
   AdminDashboardSection,
@@ -24,8 +25,17 @@ export const DashboardContent = () => {
   const { data: assignedProjectsData, loading: assignedLoading } =
     useGetAssignedProjects()
 
-  const isAdmin = userData?.me?.role === 'admin'
-  const isDeveloper = userData?.me?.role === 'developer'
+  const userRole = userData?.me?.role
+
+  // Debug logging
+  console.error('🚨 CLIENT DASHBOARD - USER DATA:', {
+    userData: userData?.me,
+    userRole,
+    isAdminCheck: userRole ? isAdminRole(userRole) : false,
+  })
+
+  const isAdmin = userRole ? isAdminRole(userRole) : false
+  const isDeveloper = userRole === 'developer'
   const summary = dashboardData?.myDashboard?.summary
   const availableProjects = availableProjectsData?.availableProjects
   const assignedProjects = assignedProjectsData?.assignedProjects

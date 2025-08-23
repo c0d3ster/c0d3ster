@@ -4,7 +4,9 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/libs/DB'
 import { users } from '@/models'
 
-export type UserRole = 'client' | 'developer' | 'admin' | 'super_admin'
+import type { UserRole } from './RoleConstants'
+
+import { isAdminRole, isDeveloperOrHigherRole } from './RoleConstants'
 
 type AuthenticatedUser = {
   id: string
@@ -47,14 +49,7 @@ const getCurrentUser = async (): Promise<AuthenticatedUser | null> => {
  * Check if user has admin privileges (admin or super_admin)
  */
 const isAdmin = (user: AuthenticatedUser | null): boolean => {
-  return user?.role === 'admin' || user?.role === 'super_admin'
-}
-
-/**
- * Check if role string is admin or super_admin
- */
-export const isAdminRole = (role: string): boolean => {
-  return role === 'admin' || role === 'super_admin'
+  return user?.role ? isAdminRole(user.role) : false
 }
 
 /**
@@ -63,14 +58,7 @@ export const isAdminRole = (role: string): boolean => {
 export const isDeveloperOrHigher = (
   user: AuthenticatedUser | null
 ): boolean => {
-  return user?.role === 'developer' || isAdmin(user)
-}
-
-/**
- * Check if role string is developer or higher (developer, admin, super_admin)
- */
-export const isDeveloperOrHigherRole = (role: string): boolean => {
-  return role === 'developer' || isAdminRole(role)
+  return user?.role ? isDeveloperOrHigherRole(user.role) : false
 }
 
 /**

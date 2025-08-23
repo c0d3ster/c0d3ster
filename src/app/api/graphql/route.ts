@@ -9,6 +9,10 @@ import { schema } from '@/graphql/schema'
 export async function POST(request: NextRequest) {
   try {
     const { query, variables, operationName } = await request.json()
+    console.error('🚨 GRAPHQL ROUTE HIT!!!', {
+      query: query?.substring(0, 100),
+      variables,
+    })
 
     const context = await createContext()
 
@@ -21,6 +25,7 @@ export async function POST(request: NextRequest) {
       operationName,
     })
 
+    console.error('🚨 GRAPHQL RESULT:', JSON.stringify(result, null, 2))
     return NextResponse.json(result)
   } catch (error) {
     console.error('GraphQL Error:', error)

@@ -63,7 +63,7 @@ export const ProjectRequestForm = () => {
     requirements: {
       hasDesign: false,
       needsHosting: false,
-      needsDomain: false,
+      hasDomain: false,
       needsMaintenance: false,
       needsContentCreation: false,
       needsSEO: false,
@@ -287,7 +287,7 @@ export const ProjectRequestForm = () => {
           {[
             { key: 'hasDesign', label: 'I already have a design' },
             { key: 'needsHosting', label: 'I need hosting setup' },
-            { key: 'needsDomain', label: 'I need domain management' },
+            { key: 'hasDomain', label: 'I already have a domain' },
             { key: 'needsMaintenance', label: 'I need ongoing maintenance' },
             { key: 'needsContentCreation', label: 'I need content creation' },
             { key: 'needsSEO', label: 'I need SEO optimization' },

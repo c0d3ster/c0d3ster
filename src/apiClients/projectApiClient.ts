@@ -44,12 +44,51 @@ export const GET_MY_PROJECTS = gql`
     myProjects {
       id
       title
+      description
+      projectType
+      budget
       status
+      progressPercentage
+      startDate
+      endDate
+      createdAt
+      updatedAt
+      techStack
+      client {
+        id
+        firstName
+        lastName
+        email
+      }
       developer {
         id
         firstName
         lastName
         email
+      }
+      collaborators {
+        id
+        role
+        joinedAt
+        user {
+          id
+          firstName
+          lastName
+          email
+        }
+      }
+      statusUpdates {
+        id
+        status
+        progressPercentage
+        notes
+        createdAt
+        updatedBy {
+          id
+          firstName
+          lastName
+          email
+        }
       }
     }
   }
@@ -80,12 +119,51 @@ export const GET_ASSIGNED_PROJECTS = gql`
     assignedProjects {
       id
       title
+      description
+      projectType
+      budget
       status
+      progressPercentage
+      startDate
+      endDate
+      createdAt
+      updatedAt
+      techStack
+      client {
+        id
+        firstName
+        lastName
+        email
+      }
       developer {
         id
         firstName
         lastName
         email
+      }
+      collaborators {
+        id
+        role
+        joinedAt
+        user {
+          id
+          firstName
+          lastName
+          email
+        }
+      }
+      statusUpdates {
+        id
+        status
+        progressPercentage
+        notes
+        createdAt
+        updatedBy {
+          id
+          firstName
+          lastName
+          email
+        }
       }
     }
   }

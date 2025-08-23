@@ -1,6 +1,7 @@
 import { desc, eq } from 'drizzle-orm'
 
 import { db } from '@/libs/DB'
+import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
 import { ProjectService } from '@/services'
 import { checkPermission, getCurrentUser } from '@/utils'
@@ -32,10 +33,7 @@ export const projectResolvers = {
     myProjects: async () => {
       const currentUser = await getCurrentUser()
 
-      return await projectService.getMyProjects(
-        currentUser.id,
-        currentUser.role
-      )
+      return await projectService.getMyProjects(currentUser.id)
     },
 
     availableProjects: async () => {
@@ -137,6 +135,78 @@ export const projectResolvers = {
       return await db.query.projectCollaborators.findMany({
         where: eq(schemas.projectCollaborators.projectId, parent.id),
       })
+    },
+
+    // Ensure date fields are properly formatted as strings
+    createdAt: (parent: any) => {
+      if (!parent.createdAt) {
+        logger.warn('Project createdAt is null/undefined for project', {
+          projectId: parent.id,
+        })
+        return null
+      }
+      try {
+        const date = new Date(parent.createdAt)
+        if (Number.isNaN(date.getTime())) {
+          logger.error('Invalid date value', { value: parent.createdAt })
+          return null
+        }
+        return date.toISOString()
+      } catch (error) {
+        logger.error('Error formatting createdAt', {
+          error: String(error),
+          value: parent.createdAt,
+        })
+        return null
+      }
+    },
+
+    updatedAt: (parent: any) => {
+      if (!parent.updatedAt) return null
+      try {
+        return new Date(parent.updatedAt).toISOString()
+      } catch (error) {
+        logger.error('Error formatting updatedAt', {
+          error: String(error),
+          value: parent.updatedAt,
+        })
+        return null
+      }
+    },
+
+    startDate: (parent: any) => {
+      if (!parent.startDate) return null
+      try {
+        return new Date(parent.startDate).toISOString()
+      } catch (error) {
+        logger.error('Error formatting startDate', {
+          error: String(error),
+          value: parent.startDate,
+        })
+        return null
+      }
+    },
+
+    endDate: (parent: any) => {
+      if (!parent.endDate) return null
+      try {
+        return new Date(parent.endDate).toISOString()
+      } catch (error) {
+        logger.error('Error formatting endDate', {
+          error: String(error),
+          value: parent.endDate,
+        })
+        return null
+      }
+    },
+
+    // Debug status field
+    status: (parent: any) => {
+      logger.warn('Project status resolver', {
+        parentStatus: parent.status,
+        type: typeof parent.status,
+      })
+      return parent.status || 'unknown'
     },
   },
 }

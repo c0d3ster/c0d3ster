@@ -5,6 +5,8 @@ import { GraphQLError } from 'graphql'
 import { db } from '@/libs/DB'
 import { schemas } from '@/models'
 
+import { isAdminRole, isDeveloperOrHigherRole } from './RoleConstants'
+
 // Helper function to get current user
 export const getCurrentUser = async () => {
   const { userId } = await auth()
@@ -29,9 +31,26 @@ export const getCurrentUser = async () => {
 
 // Helper function to check permissions
 export const checkPermission = (user: any, requiredRole: string) => {
-  if (user.role !== requiredRole && user.role !== 'super_admin') {
-    throw new GraphQLError('Insufficient permissions', {
-      extensions: { code: 'FORBIDDEN' },
-    })
+  const userRole = user.role as string
+
+  if (requiredRole === 'admin') {
+    if (!isAdminRole(userRole)) {
+      throw new GraphQLError('Admin permissions required', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+  } else if (requiredRole === 'developer') {
+    if (!isDeveloperOrHigherRole(userRole)) {
+      throw new GraphQLError('Developer permissions required', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+  } else {
+    // For specific role checks (client, etc.)
+    if (userRole !== requiredRole && !isAdminRole(userRole)) {
+      throw new GraphQLError(`${requiredRole} permissions required`, {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
   }
 }

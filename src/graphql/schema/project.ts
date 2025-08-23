@@ -3,20 +3,26 @@ import { gql } from 'graphql-tag'
 export const projectSchema = gql`
   # Project-related enums
   enum ProjectStatus {
+    requested
+    in_review
     approved
     in_progress
+    in_testing
+    ready_for_launch
+    live
     completed
     on_hold
     cancelled
   }
 
   enum ProjectType {
-    web_development
+    website
+    web_app
     mobile_app
-    ecommerce
-    saas
-    api_development
-    ui_ux_design
+    e_commerce
+    api
+    maintenance
+    consultation
     other
   }
 
@@ -27,7 +33,7 @@ export const projectSchema = gql`
     description: String!
     projectType: ProjectType!
     budget: Float
-    requirements: String
+    requirements: JSON
     techStack: [String!]
     status: ProjectStatus!
     progressPercentage: Int
@@ -39,6 +45,9 @@ export const projectSchema = gql`
     # Relationships
     client: User!
     developer: User
+    projectRequest: ProjectRequest
+    statusUpdates: [ProjectStatusUpdate!]!
+    collaborators: [ProjectCollaborator!]!
   }
 
   # Project summary types
@@ -55,13 +64,33 @@ export const projectSchema = gql`
     summary: ProjectSummary!
   }
 
+  # Project status update type
+  type ProjectStatusUpdate {
+    id: ID!
+    projectId: ID!
+    status: ProjectStatus!
+    progressPercentage: Int
+    notes: String
+    createdAt: String!
+    updatedBy: User!
+  }
+
+  # Project collaborator type
+  type ProjectCollaborator {
+    id: ID!
+    projectId: ID!
+    role: String!
+    joinedAt: String!
+    user: User!
+  }
+
   # Project input types
   input CreateProjectInput {
     title: String!
     description: String!
     projectType: ProjectType!
     budget: Float
-    requirements: String
+    requirements: JSON
     techStack: [String!]
     status: ProjectStatus!
     progressPercentage: Int
@@ -74,7 +103,7 @@ export const projectSchema = gql`
     description: String
     projectType: ProjectType
     budget: Float
-    requirements: String
+    requirements: JSON
     techStack: [String!]
     status: ProjectStatus
     progressPercentage: Int

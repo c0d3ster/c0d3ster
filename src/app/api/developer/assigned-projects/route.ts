@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { projects, users } from '@/models'
-import { ProjectItemType } from '@/types'
 import { isDeveloperOrHigher, requireAuth } from '@/utils'
 
 // GET /api/developer/assigned-projects - Get projects assigned to the developer
@@ -49,10 +48,9 @@ export async function GET() {
       .where(eq(projects.developerId, user.id))
       .orderBy(desc(projects.updatedAt))
 
-    // Add type and userRole fields for consistency with my-projects
+    // Add userRole field for consistency with my-projects
     const projectsWithType = assignedProjects.map((project) => ({
       ...project,
-      type: ProjectItemType.PROJECT,
       userRole: 'developer' as const,
     }))
 

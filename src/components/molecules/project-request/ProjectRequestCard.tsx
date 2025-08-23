@@ -78,8 +78,14 @@ export const ProjectRequestCard = ({
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Unknown Date'
+    try {
+      return new Date(dateString).toLocaleDateString()
+    } catch (error) {
+      console.error('Invalid date:', dateString, error)
+      return 'Invalid Date'
+    }
   }
 
   const userName =
@@ -116,9 +122,9 @@ export const ProjectRequestCard = ({
           </div>
         </div>
         <span
-          className={`rounded border px-3 py-1 font-mono text-xs font-bold uppercase ${getStatusColor(request.status)}`}
+          className={`rounded border px-3 py-1 font-mono text-xs font-bold uppercase ${getStatusColor(request.status || 'unknown')}`}
         >
-          {request.status.replace('_', ' ')}
+          {(request.status || 'unknown').replace('_', ' ')}
         </span>
       </div>
 

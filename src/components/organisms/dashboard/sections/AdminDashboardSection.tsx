@@ -125,7 +125,7 @@ export const AdminDashboardSection = () => {
           <p className='mb-2 font-mono text-sm text-green-300'>
             {statusFilter === 'all'
               ? 'No project requests found'
-              : `No ${statusFilter.replace('_', ' ')} requests`}
+              : `No ${(statusFilter || 'unknown').replace('_', ' ')} requests`}
           </p>
           <p className='font-mono text-xs text-green-300/60'>
             Requests will appear here when clients submit them

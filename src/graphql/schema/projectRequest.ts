@@ -9,7 +9,7 @@ export const projectRequestSchema = gql`
     projectType: ProjectType!
     budget: Float
     timeline: String
-    requirements: String
+    requirements: JSON
     contactPreference: String
     additionalInfo: String
     status: String!
@@ -18,6 +18,7 @@ export const projectRequestSchema = gql`
 
     # Relationships
     user: User!
+    reviewer: User
   }
 
   # Project request input types
@@ -27,7 +28,7 @@ export const projectRequestSchema = gql`
     projectType: ProjectType!
     budget: Float
     timeline: String
-    requirements: String
+    requirements: JSON
     contactPreference: String
     additionalInfo: String
   }

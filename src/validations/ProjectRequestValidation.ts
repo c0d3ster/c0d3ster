@@ -37,7 +37,7 @@ export const projectRequestSchema = z.object({
     .object({
       hasDesign: z.boolean().optional(),
       needsHosting: z.boolean().optional(),
-      needsDomain: z.boolean().optional(),
+      hasDomain: z.boolean().optional(),
       needsMaintenance: z.boolean().optional(),
       needsContentCreation: z.boolean().optional(),
       needsSEO: z.boolean().optional(),

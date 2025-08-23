@@ -10,7 +10,6 @@ import {
   projects,
   users,
 } from '@/models/Schema'
-import { ProjectItemType } from '@/types'
 
 // GET /api/my-projects - Get all projects and requests for the authenticated user
 export async function GET() {
@@ -107,16 +106,10 @@ export async function GET() {
     }, [] as any[])
 
     // Add type field and filter out approved requests (they become projects instead)
-    const pendingRequestsWithType = requests
-      .filter((r) => r.status !== 'approved') // Only show non-approved requests
-      .map((r) => ({
-        ...r,
-        type: ProjectItemType.REQUEST,
-      }))
-    const projectsWithType = uniqueProjects.map((p) => ({
-      ...p,
-      type: ProjectItemType.PROJECT,
-    }))
+    const pendingRequestsWithType = requests.filter(
+      (r) => r.status !== 'approved'
+    ) // Only show non-approved requests
+    const projectsWithType = uniqueProjects
 
     const allItems = [...pendingRequestsWithType, ...projectsWithType].sort(
       (a, b) =>

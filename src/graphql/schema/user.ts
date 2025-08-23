@@ -6,6 +6,7 @@ export const userSchema = gql`
     client
     developer
     admin
+    super_admin
   }
 
   # User type
@@ -25,6 +26,8 @@ export const userSchema = gql`
     updatedAt: String!
     # Reference to Project type (defined in project schema)
     projects: [Project!]!
+    # Reference to ProjectRequest type (defined in projectRequest schema)
+    projectRequests: [ProjectRequest!]!
   }
 
   # User input types
