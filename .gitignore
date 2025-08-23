@@ -54,3 +54,6 @@ build-archive.log
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# GraphQL Codegen
+src/graphql/generated/

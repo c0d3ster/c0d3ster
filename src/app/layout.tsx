@@ -1,34 +1,12 @@
-import type { Metadata } from 'next'
+'use client'
+
+import { ApolloProvider } from '@apollo/client/react'
 
 import { PostHogProvider } from '@/analytics'
 import { ToastContainer } from '@/components/atoms'
+import { apolloClient } from '@/libs/ApolloClient'
 import { ClerkProvider, QueryProvider } from '@/providers'
 import '@/styles/global.css'
-
-export const metadata: Metadata = {
-  icons: [
-    {
-      rel: 'apple-touch-icon',
-      url: '/apple-touch-icon.png',
-    },
-    {
-      rel: 'icon',
-      type: 'image/png',
-      sizes: '32x32',
-      url: '/favicon-32x32.png',
-    },
-    {
-      rel: 'icon',
-      type: 'image/png',
-      sizes: '16x16',
-      url: '/favicon-16x16.png',
-    },
-    {
-      rel: 'icon',
-      url: '/favicon.ico',
-    },
-  ],
-}
 
 export default function RootLayout({
   children,
@@ -40,10 +18,12 @@ export default function RootLayout({
       <body>
         <ClerkProvider>
           <PostHogProvider>
-            <QueryProvider>
-              {children}
-              <ToastContainer />
-            </QueryProvider>
+            <ApolloProvider client={apolloClient}>
+              <QueryProvider>
+                {children}
+                <ToastContainer />
+              </QueryProvider>
+            </ApolloProvider>
           </PostHogProvider>
         </ClerkProvider>
       </body>

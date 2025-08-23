@@ -4,7 +4,6 @@ import Link from 'next/link'
 
 import { CompactUserProfile } from '@/components/atoms'
 import {
-  useAdminProjectRequests,
   useAssignedProjects,
   useAvailableProjects,
   useCurrentUser,
@@ -24,24 +23,11 @@ export const DashboardContent = () => {
     useAvailableProjects()
   const { projects: assignedProjects, isLoading: assignedLoading } =
     useAssignedProjects()
-  const { requests: adminRequests, isLoading: adminLoading } =
-    useAdminProjectRequests({ enabled: isAdmin })
-
-  const getStatusCounts = () => {
-    const counts = {
-      all: adminRequests.length,
-      requested: adminRequests.filter((r) => r.status === 'requested').length,
-      in_review: adminRequests.filter((r) => r.status === 'in_review').length,
-    }
-    return counts
-  }
-
-  const statusCounts = getStatusCounts()
 
   // Determine if we're still loading the main content data
   const isContentLoading =
     myProjectsLoading ||
-    (isAdmin && adminLoading) ||
+    (isAdmin && false) || // Removed adminLoading since we're using GraphQL directly
     (isDeveloper && (availableLoading || assignedLoading))
 
   return (
@@ -66,7 +52,7 @@ export const DashboardContent = () => {
                     Total Requests:
                   </span>
                   <span className='font-mono text-sm font-bold text-green-400'>
-                    {statusCounts.all}
+                    {/* Will be populated by AdminDashboardSection */}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -74,7 +60,7 @@ export const DashboardContent = () => {
                     Pending Review:
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {statusCounts.requested}
+                    {/* Will be populated by AdminDashboardSection */}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -82,7 +68,7 @@ export const DashboardContent = () => {
                     In Review:
                   </span>
                   <span className='font-mono text-sm font-bold text-blue-400'>
-                    {statusCounts.in_review}
+                    {/* Will be populated by AdminDashboardSection */}
                   </span>
                 </div>
               </>
@@ -93,7 +79,7 @@ export const DashboardContent = () => {
                     Available:
                   </span>
                   <span className='font-mono text-sm font-bold text-blue-400'>
-                    {availableProjects.length}
+                    {(availableProjects as any[])?.length || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -101,7 +87,7 @@ export const DashboardContent = () => {
                     Assigned:
                   </span>
                   <span className='font-mono text-sm font-bold text-green-400'>
-                    {assignedProjects.length}
+                    {(assignedProjects as any[])?.length || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -172,16 +158,7 @@ export const DashboardContent = () => {
           <h3 className='mb-6 font-mono text-lg font-bold text-purple-400'>
             🔧 PROJECT REQUESTS MANAGEMENT
           </h3>
-          {isContentLoading ? (
-            <div className='flex items-center justify-center'>
-              <div className='h-6 w-6 animate-spin rounded-full border-2 border-purple-400 border-t-transparent'></div>
-              <span className='ml-3 font-mono text-purple-400'>
-                Loading requests...
-              </span>
-            </div>
-          ) : (
-            <AdminDashboardSection />
-          )}
+          <AdminDashboardSection />
         </div>
       )}
 

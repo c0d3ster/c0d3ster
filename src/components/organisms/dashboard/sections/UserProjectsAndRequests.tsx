@@ -1,10 +1,32 @@
 'use client'
 
+import { useGetMyProjectRequests, useGetMyProjects } from '@/apiClients'
 import { ProjectStatusCard } from '@/components/molecules'
-import { useMyProjects } from '@/hooks'
 
 export const UserProjectsAndRequests = () => {
-  const { items, isLoading, error } = useMyProjects()
+  const {
+    data: projects,
+    loading: projectsLoading,
+    error: projectsError,
+  } = useGetMyProjects()
+  const {
+    data: requests,
+    loading: requestsLoading,
+    error: requestsError,
+  } = useGetMyProjectRequests()
+
+  const isLoading = projectsLoading || requestsLoading
+  const error = projectsError || requestsError
+  const items = [
+    ...(projects?.myProjects?.map((project: any) => ({
+      ...project,
+      type: 'project',
+    })) || []),
+    ...(requests?.myProjectRequests?.map((request: any) => ({
+      ...request,
+      type: 'request',
+    })) || []),
+  ]
 
   return (
     <>

@@ -2,45 +2,56 @@
 
 import { useState } from 'react'
 
+import type { ProjectRequest } from '@/types'
+
+import { useApproveProjectRequest, useGetProjectRequests } from '@/apiClients'
 import { ProjectRequestCard } from '@/components/molecules'
-import { useAdminProjectRequests, useToast } from '@/hooks'
+import { useToast } from '@/hooks'
 
 export const AdminDashboardSection = () => {
+  // Use GraphQL hooks directly from the API client
   const {
-    requests: adminRequests,
-    isLoading: adminLoading,
+    data: projectRequestsData,
+    loading: adminLoading,
     error: adminError,
     refetch: adminRefetch,
-    updateRequestStatus,
-    approveRequest,
-  } = useAdminProjectRequests()
+  } = useGetProjectRequests()
+  const [approveMutation] = useApproveProjectRequest()
 
   const { showToast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
+  // Get the project requests directly from GraphQL
+  const adminRequests: ProjectRequest[] =
+    projectRequestsData?.projectRequests || []
+
   // Admin request handlers
-  const handleUpdateStatus = async (requestId: string, status: string) => {
+  const handleUpdateStatus = async (_requestId: string, _status: string) => {
     try {
-      await updateRequestStatus(requestId, status)
-      showToast('Request status updated successfully!', 'success')
+      // TODO: Implement updateProjectRequest mutation in GraphQL
+      showToast('Update status not yet implemented in GraphQL', 'error')
     } catch (error) {
       showToast('Failed to update request status', 'error')
       throw error
     }
   }
 
-  const handleApproveRequest = async (requestId: string, approvalData: any) => {
+  const handleApproveRequest = async (
+    requestId: string,
+    _approvalData: any
+  ) => {
     try {
-      await approveRequest(requestId, approvalData)
+      await approveMutation({ variables: { id: requestId } })
       showToast('Project request approved and project created!', 'success')
+      await adminRefetch()
     } catch (error) {
       showToast('Failed to approve request', 'error')
-      throw error
+      console.error('Approve request error:', error)
     }
   }
 
   // Admin request filtering
-  const filteredRequests = adminRequests.filter((request) => {
+  const filteredRequests = adminRequests.filter((request: ProjectRequest) => {
     if (statusFilter === 'all') return true
     return request.status === statusFilter
   })
@@ -48,10 +59,18 @@ export const AdminDashboardSection = () => {
   const getStatusCounts = () => {
     const counts = {
       all: adminRequests.length,
-      requested: adminRequests.filter((r) => r.status === 'requested').length,
-      in_review: adminRequests.filter((r) => r.status === 'in_review').length,
-      approved: adminRequests.filter((r) => r.status === 'approved').length,
-      cancelled: adminRequests.filter((r) => r.status === 'cancelled').length,
+      requested: adminRequests.filter(
+        (r: ProjectRequest) => r.status === 'requested'
+      ).length,
+      in_review: adminRequests.filter(
+        (r: ProjectRequest) => r.status === 'in_review'
+      ).length,
+      approved: adminRequests.filter(
+        (r: ProjectRequest) => r.status === 'approved'
+      ).length,
+      cancelled: adminRequests.filter(
+        (r: ProjectRequest) => r.status === 'cancelled'
+      ).length,
     }
     return counts
   }
@@ -95,7 +114,7 @@ export const AdminDashboardSection = () => {
       {/* Error State */}
       {adminError && (
         <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-          <p className='font-mono text-red-400'>Error: {adminError}</p>
+          <p className='font-mono text-red-400'>Error: {adminError.message}</p>
           <button
             type='button'
             onClick={() => adminRefetch()}
@@ -124,7 +143,7 @@ export const AdminDashboardSection = () => {
       {/* Requests Grid */}
       {!adminLoading && !adminError && filteredRequests.length > 0 && (
         <div className='grid gap-6 lg:grid-cols-2'>
-          {filteredRequests.map((request) => (
+          {filteredRequests.map((request: ProjectRequest) => (
             <ProjectRequestCard
               key={request.id}
               request={request}

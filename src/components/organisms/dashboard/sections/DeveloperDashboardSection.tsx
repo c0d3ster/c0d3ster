@@ -1,35 +1,55 @@
 'use client'
 
+import {
+  useAssignProject,
+  useGetAssignedProjects,
+  useGetAvailableProjects,
+  useGetMe,
+} from '@/apiClients'
 import { AvailableProjectCard, ProjectStatusCard } from '@/components/molecules'
-import { useAssignedProjects, useAvailableProjects, useToast } from '@/hooks'
+import { useToast } from '@/hooks'
 
 export const DeveloperDashboardSection = () => {
   const {
-    projects: assignedProjects,
-    isLoading: assignedLoading,
+    data: assignedData,
+    loading: assignedLoading,
     error: assignedError,
     refetch: refetchAssigned,
-  } = useAssignedProjects()
+  } = useGetAssignedProjects()
+
   const {
-    projects: availableProjects,
-    isLoading: availableLoading,
+    data: availableData,
+    loading: availableLoading,
     error: availableError,
     refetch: refetchAvailable,
-    assignToProject,
-  } = useAvailableProjects()
+  } = useGetAvailableProjects()
+
+  const { data: currentUserData } = useGetMe()
+  const [assignProject] = useAssignProject()
+
+  const assignedProjects = assignedData?.assignedProjects || []
+  const availableProjects = availableData?.availableProjects || []
+  const currentUser = currentUserData?.me
 
   const { showToast } = useToast()
 
   // Developer assignment handler
   const handleAssignToProject = async (projectId: string) => {
+    if (!currentUser?.id) {
+      showToast('User not authenticated', 'error')
+      return
+    }
+
     try {
-      await assignToProject(projectId)
+      await assignProject({
+        variables: { projectId, developerId: currentUser.id },
+      })
       showToast('Successfully assigned to project!', 'success')
       // Refetch both available projects and assigned projects
       await Promise.all([refetchAvailable(), refetchAssigned()])
     } catch (error) {
       showToast('Failed to assign to project', 'error')
-      throw error
+      console.error('Assign project error:', error)
     }
   }
 
@@ -72,7 +92,7 @@ export const DeveloperDashboardSection = () => {
           !availableError &&
           availableProjects.length > 0 && (
             <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-              {availableProjects.map((project) => (
+              {availableProjects.map((project: any) => (
                 <AvailableProjectCard
                   key={project.id}
                   project={project}
@@ -130,7 +150,7 @@ export const DeveloperDashboardSection = () => {
         {/* Assigned Projects Grid */}
         {!assignedLoading && !assignedError && assignedProjects.length > 0 && (
           <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-            {assignedProjects.map((project) => (
+            {assignedProjects.map((project: any) => (
               <ProjectStatusCard key={project.id} item={project} />
             ))}
           </div>
