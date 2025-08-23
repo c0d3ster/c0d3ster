@@ -80,9 +80,14 @@ export const projectResolvers = {
       { projectId, developerId }: { projectId: string; developerId: string }
     ) => {
       const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'admin')
+      // Permission check is now handled in the service layer
 
-      return await projectService.assignProject(projectId, developerId)
+      return await projectService.assignProject(
+        projectId,
+        developerId,
+        currentUser.id,
+        currentUser.role
+      )
     },
 
     updateProjectStatus: async (

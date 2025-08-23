@@ -1,9 +1,10 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
+import { isDeveloperOrHigherRole } from '@/utils'
 
 export class ProjectService {
   async getProjects(
@@ -108,7 +109,7 @@ export class ProjectService {
     return await db.query.projects.findMany({
       where: and(
         eq(schemas.projects.status, 'approved'),
-        eq(schemas.projects.developerId, null)
+        isNull(schemas.projects.developerId)
       ),
       orderBy: [desc(schemas.projects.createdAt)],
     })
@@ -136,6 +137,11 @@ export class ProjectService {
       })
       .returning()
 
+    if (!project) {
+      throw new GraphQLError('Failed to create project', {
+        extensions: { code: 'CREATION_FAILED' },
+      })
+    }
     logger.info(`Project created: ${project.id}`)
     return project
   }
@@ -185,7 +191,29 @@ export class ProjectService {
     return updatedProject
   }
 
-  async assignProject(projectId: string, developerId: string) {
+  async assignProject(
+    projectId: string,
+    developerId: string,
+    currentUserId?: string,
+    currentUserRole?: string
+  ) {
+    // Check permissions - developers can assign themselves, admins can assign anyone
+    if (!isDeveloperOrHigherRole(currentUserRole || '')) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
+    // Developers can only assign themselves unless they're admin
+    if (currentUserRole === 'developer' && developerId !== currentUserId) {
+      throw new GraphQLError(
+        'Developers can only assign themselves to projects',
+        {
+          extensions: { code: 'FORBIDDEN' },
+        }
+      )
+    }
+
     const project = await db.query.projects.findFirst({
       where: eq(schemas.projects.id, projectId),
     })
@@ -210,6 +238,12 @@ export class ProjectService {
       })
       .where(eq(schemas.projects.id, projectId))
       .returning()
+
+    if (!updatedProject) {
+      throw new GraphQLError('Failed to assign project', {
+        extensions: { code: 'ASSIGNMENT_FAILED' },
+      })
+    }
 
     logger.info(`Project assigned: ${projectId} to developer: ${developerId}`)
     return updatedProject

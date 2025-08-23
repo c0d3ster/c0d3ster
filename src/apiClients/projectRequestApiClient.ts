@@ -1,7 +1,9 @@
-import { gql } from '@apollo/client'
 import { useMutation } from '@apollo/client/react'
+import { gql } from 'graphql-tag'
 
 import type {
+  ApproveProjectRequestMutation,
+  ApproveProjectRequestMutationVariables,
   CreateProjectRequestMutation,
   CreateProjectRequestMutationVariables,
   GetMyProjectRequestsQuery,
@@ -156,11 +158,14 @@ export const createProjectRequest = async (
 }
 
 export const approveProjectRequest = async (id: string) => {
-  const result = await apolloClient.mutate({
+  const result = await apolloClient.mutate<
+    ApproveProjectRequestMutation,
+    ApproveProjectRequestMutationVariables
+  >({
     mutation: APPROVE_PROJECT_REQUEST,
     variables: { id },
   })
-  if (!result.data)
+  if (!result.data?.approveProjectRequest)
     throw new Error('No data returned from ApproveProjectRequest mutation')
   return result.data.approveProjectRequest
 }

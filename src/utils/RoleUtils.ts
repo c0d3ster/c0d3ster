@@ -51,12 +51,26 @@ const isAdmin = (user: AuthenticatedUser | null): boolean => {
 }
 
 /**
+ * Check if role string is admin or super_admin
+ */
+export const isAdminRole = (role: string): boolean => {
+  return role === 'admin' || role === 'super_admin'
+}
+
+/**
  * Check if user has developer-level access or higher (developer, admin, super_admin)
  */
 export const isDeveloperOrHigher = (
   user: AuthenticatedUser | null
 ): boolean => {
   return user?.role === 'developer' || isAdmin(user)
+}
+
+/**
+ * Check if role string is developer or higher (developer, admin, super_admin)
+ */
+export const isDeveloperOrHigherRole = (role: string): boolean => {
+  return role === 'developer' || isAdminRole(role)
 }
 
 /**

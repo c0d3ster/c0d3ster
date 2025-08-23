@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client'
 import { mergeTypeDefs } from '@graphql-tools/merge'
 import { makeExecutableSchema } from '@graphql-tools/schema'
+import { gql } from 'graphql-tag'
 
 import { resolvers } from '../resolvers'
 import { contactSchema } from './contact'

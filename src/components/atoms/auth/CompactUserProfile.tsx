@@ -23,8 +23,8 @@ export const CompactUserProfile = () => {
     )
   }
 
-  const displayName = userData
-    ? `${userData.firstName || ''} ${userData.lastName || ''}`.trim() ||
+  const displayName = userData?.me
+    ? `${userData.me.firstName || ''} ${userData.me.lastName || ''}`.trim() ||
       clerkUser.emailAddresses[0]?.emailAddress ||
       'User'
     : clerkUser.fullName || clerkUser.emailAddresses[0]?.emailAddress || 'User'

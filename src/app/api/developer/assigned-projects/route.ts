@@ -11,9 +11,11 @@ import { isDeveloperOrHigher, requireAuth } from '@/utils'
 export async function GET() {
   try {
     const user = await requireAuth()
-    
+
     if (!isDeveloperOrHigher(user)) {
-      logger.warn('Non-developer tried to access assigned projects', { userId: user.id })
+      logger.warn('Non-developer tried to access assigned projects', {
+        userId: user.id,
+      })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
@@ -54,9 +56,9 @@ export async function GET() {
       userRole: 'developer' as const,
     }))
 
-    logger.info('Fetched assigned projects for developer', { 
-      userId: user.id, 
-      projectCount: assignedProjects.length 
+    logger.info('Fetched assigned projects for developer', {
+      userId: user.id,
+      projectCount: assignedProjects.length,
     })
 
     return NextResponse.json({ projects: projectsWithType })

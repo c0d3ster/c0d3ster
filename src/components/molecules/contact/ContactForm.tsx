@@ -7,13 +7,12 @@ import { useForm } from 'react-hook-form'
 import type { ContactFormData } from '@/validations'
 
 import { Button } from '@/components/atoms'
-import { useToast } from '@/hooks'
+import { Toast } from '@/libs/Toast'
 import { contactFormSchema } from '@/validations'
 
 // Contact form component for handling user submissions
 export const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { showSuccess, showError } = useToast()
 
   const { register, handleSubmit, reset } = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
@@ -33,18 +32,18 @@ export const ContactForm = () => {
       })
 
       if (response.ok) {
-        showSuccess(
+        Toast.success(
           "Message sent successfully! I'll get back to you within 24 hours."
         )
         reset()
       } else {
         const errorData = await response.json()
-        showError(
+        Toast.error(
           errorData.error || 'Failed to send message. Please try again.'
         )
       }
     } catch {
-      showError('Network error. Please check your connection and try again.')
+      Toast.error('Network error. Please check your connection and try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -54,7 +53,7 @@ export const ContactForm = () => {
     const errorMessages = Object.values(errors)
       .map((err: any) => err.message)
       .join(', ')
-    showError(`Please fix the following errors: ${errorMessages}`)
+    Toast.error(`Please fix the following errors: ${errorMessages}`)
   }
 
   return (

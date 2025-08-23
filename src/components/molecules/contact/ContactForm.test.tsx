@@ -3,16 +3,15 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ContactForm } from './ContactForm'
 
-// Mock the useToast hook
+// Mock the Toast utility
 const mockShowSuccess = vi.fn()
 const mockShowError = vi.fn()
 
-vi.mock('@/hooks', () => ({
-  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
-  useToast: () => ({
-    showSuccess: mockShowSuccess,
-    showError: mockShowError,
-  }),
+vi.mock('@/libs', () => ({
+  Toast: {
+    success: mockShowSuccess,
+    error: mockShowError,
+  },
 }))
 
 // Mock the Button component

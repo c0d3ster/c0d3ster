@@ -49,7 +49,7 @@ export const UserProjectsAndRequests = () => {
         {/* Error State */}
         {error && (
           <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-            <p className='font-mono text-red-400'>Error: {error}</p>
+            <p className='font-mono text-red-400'>Error: {String(error)}</p>
           </div>
         )}
 
@@ -101,7 +101,7 @@ export const UserProjectsAndRequests = () => {
         {/* Error State */}
         {error && (
           <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-            <p className='font-mono text-red-400'>Error: {error}</p>
+            <p className='font-mono text-red-400'>Error: {String(error)}</p>
           </div>
         )}
 

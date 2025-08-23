@@ -7,7 +7,7 @@ import {
   useGetMe,
 } from '@/apiClients'
 import { AvailableProjectCard, ProjectStatusCard } from '@/components/molecules'
-import { useToast } from '@/hooks'
+import { Toast } from '@/libs/Toast'
 
 export const DeveloperDashboardSection = () => {
   const {
@@ -31,12 +31,10 @@ export const DeveloperDashboardSection = () => {
   const availableProjects = availableData?.availableProjects || []
   const currentUser = currentUserData?.me
 
-  const { showToast } = useToast()
-
   // Developer assignment handler
   const handleAssignToProject = async (projectId: string) => {
     if (!currentUser?.id) {
-      showToast('User not authenticated', 'error')
+      Toast.error('User not authenticated')
       return
     }
 
@@ -44,11 +42,11 @@ export const DeveloperDashboardSection = () => {
       await assignProject({
         variables: { projectId, developerId: currentUser.id },
       })
-      showToast('Successfully assigned to project!', 'success')
+      Toast.success('Successfully assigned to project!')
       // Refetch both available projects and assigned projects
       await Promise.all([refetchAvailable(), refetchAssigned()])
     } catch (error) {
-      showToast('Failed to assign to project', 'error')
+      Toast.error('Failed to assign to project')
       console.error('Assign project error:', error)
     }
   }
@@ -75,7 +73,7 @@ export const DeveloperDashboardSection = () => {
         {availableError && (
           <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
             <p className='font-mono text-red-400'>
-              Error loading available projects: {availableError}
+              Error loading available projects: {String(availableError)}
             </p>
             <button
               type='button'
@@ -135,7 +133,7 @@ export const DeveloperDashboardSection = () => {
         {assignedError && (
           <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
             <p className='font-mono text-red-400'>
-              Error loading assigned projects: {assignedError}
+              Error loading assigned projects: {String(assignedError)}
             </p>
             <button
               type='button'

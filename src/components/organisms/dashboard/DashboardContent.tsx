@@ -5,8 +5,9 @@ import Link from 'next/link'
 import {
   useGetAssignedProjects,
   useGetAvailableProjects,
-} from '@/apiClients/projectApiClient'
-import { useGetMe, useGetMyDashboard } from '@/apiClients/userApiClient'
+  useGetMe,
+  useGetMyDashboard,
+} from '@/apiClients'
 import { CompactUserProfile } from '@/components/atoms'
 
 import {
@@ -112,7 +113,7 @@ export const DashboardContent = () => {
                     Projects:
                   </span>
                   <span className='font-mono text-sm font-bold text-green-400'>
-                    {summary.totalProjects}
+                    {summary?.totalProjects || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -120,7 +121,7 @@ export const DashboardContent = () => {
                     Requests:
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {summary.totalRequests}
+                    {summary?.pendingRequests || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -128,7 +129,7 @@ export const DashboardContent = () => {
                     Active:
                   </span>
                   <span className='font-mono text-sm font-bold text-blue-400'>
-                    {summary.activeProjects}
+                    {summary?.activeProjects || 0}
                   </span>
                 </div>
               </>

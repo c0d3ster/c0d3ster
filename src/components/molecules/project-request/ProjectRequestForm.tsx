@@ -6,7 +6,7 @@ import { useRef, useState } from 'react'
 import type { ProjectRequestData } from '@/validations'
 
 import { Button } from '@/components/atoms'
-import { useToast } from '@/hooks'
+import { Toast } from '@/libs/Toast'
 import {
   contactPreferenceOptions,
   projectRequestSchema,
@@ -22,7 +22,6 @@ const ErrorMessage = ({ error }: { error?: string }) => (
 
 export const ProjectRequestForm = () => {
   const router = useRouter()
-  const { showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -140,13 +139,13 @@ export const ProjectRequestForm = () => {
         throw new Error(errorData.error || 'Failed to submit request')
       }
 
-      showToast('Project request submitted successfully!', 'success')
+      Toast.success('Project request submitted successfully!')
       router.push('/dashboard')
     } catch (error) {
       if (error instanceof Error) {
-        showToast(error.message, 'error')
+        Toast.error(error.message)
       } else {
-        showToast('Failed to submit request', 'error')
+        Toast.error('Failed to submit request')
       }
     } finally {
       setIsSubmitting(false)

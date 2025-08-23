@@ -1,19 +1,22 @@
-import { gql, useMutation } from '@apollo/client'
+import { useMutation } from '@apollo/client/react'
+import { gql } from 'graphql-tag'
 
 import type {
+  AssignProjectMutation,
+  AssignProjectMutationVariables,
   GetAssignedProjectsQuery,
-  GetAvailableProjectsQuery,
+  GetAvailableProjectsDetailedQuery,
   GetMyProjectsQuery,
   GetProjectsQuery,
 } from '@/graphql/generated/graphql'
 
 import {
   GetAssignedProjectsDocument,
-  GetAvailableProjectsDocument,
+  GetAvailableProjectsDetailedDocument,
   GetMyProjectsDocument,
   GetProjectsDocument,
   useGetAssignedProjectsQuery,
-  useGetAvailableProjectsQuery,
+  useGetAvailableProjectsDetailedQuery,
   useGetMyProjectsQuery,
   useGetProjectsQuery,
 } from '@/graphql/generated/graphql'
@@ -52,12 +55,22 @@ export const GET_MY_PROJECTS = gql`
   }
 `
 
-export const GET_AVAILABLE_PROJECTS = gql`
-  query GetAvailableProjects {
+export const GET_AVAILABLE_PROJECTS_DETAILED = gql`
+  query GetAvailableProjectsDetailed {
     availableProjects {
       id
       title
+      description
+      projectType
+      budget
+      techStack
       status
+      client {
+        id
+        firstName
+        lastName
+        email
+      }
     }
   }
 `
@@ -97,7 +110,8 @@ export const ASSIGN_PROJECT = gql`
 // Hooks for components
 export const useGetProjects = () => useGetProjectsQuery()
 export const useGetMyProjects = () => useGetMyProjectsQuery()
-export const useGetAvailableProjects = () => useGetAvailableProjectsQuery()
+export const useGetAvailableProjects = () =>
+  useGetAvailableProjectsDetailedQuery()
 export const useGetAssignedProjects = () => useGetAssignedProjectsQuery()
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
@@ -119,11 +133,11 @@ export const getMyProjects = async () => {
 }
 
 export const getAvailableProjects = async () => {
-  const result = await apolloClient.query<GetAvailableProjectsQuery>({
-    query: GetAvailableProjectsDocument,
+  const result = await apolloClient.query<GetAvailableProjectsDetailedQuery>({
+    query: GetAvailableProjectsDetailedDocument,
   })
   if (!result.data)
-    throw new Error('No data returned from GetAvailableProjects query')
+    throw new Error('No data returned from GetAvailableProjectsDetailed query')
   return result.data.availableProjects
 }
 
@@ -137,7 +151,10 @@ export const getAssignedProjects = async () => {
 }
 
 export const assignProject = async (projectId: string, developerId: string) => {
-  const result = await apolloClient.mutate({
+  const result = await apolloClient.mutate<
+    AssignProjectMutation,
+    AssignProjectMutationVariables
+  >({
     mutation: ASSIGN_PROJECT,
     variables: { projectId, developerId },
   })

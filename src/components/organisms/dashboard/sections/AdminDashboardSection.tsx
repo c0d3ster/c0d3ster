@@ -2,11 +2,10 @@
 
 import { useState } from 'react'
 
-import type { ProjectRequest } from '@/graphql/generated/graphql'
-
+// TODO: Fix type import when GraphQL types are properly generated
 import { useApproveProjectRequest, useGetProjectRequests } from '@/apiClients'
 import { ProjectRequestCard } from '@/components/molecules'
-import { useToast } from '@/hooks'
+import { Toast } from '@/libs/Toast'
 
 export const AdminDashboardSection = () => {
   // Use GraphQL hooks directly from the API client
@@ -18,20 +17,18 @@ export const AdminDashboardSection = () => {
   } = useGetProjectRequests()
   const [approveMutation] = useApproveProjectRequest()
 
-  const { showToast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   // Get the project requests directly from GraphQL
-  const adminRequests: ProjectRequest[] =
-    projectRequestsData?.projectRequests || []
+  const adminRequests = projectRequestsData?.projectRequests || []
 
   // Admin request handlers
   const handleUpdateStatus = async (_requestId: string, _status: string) => {
     try {
       // TODO: Implement updateProjectRequest mutation in GraphQL
-      showToast('Update status not yet implemented in GraphQL', 'error')
+      Toast.error('Update status not yet implemented in GraphQL')
     } catch (error) {
-      showToast('Failed to update request status', 'error')
+      Toast.error('Failed to update request status')
       throw error
     }
   }
@@ -42,16 +39,16 @@ export const AdminDashboardSection = () => {
   ) => {
     try {
       await approveMutation({ variables: { id: requestId } })
-      showToast('Project request approved and project created!', 'success')
+      Toast.success('Project request approved and project created!')
       await adminRefetch()
     } catch (error) {
-      showToast('Failed to approve request', 'error')
+      Toast.error('Failed to approve request')
       console.error('Approve request error:', error)
     }
   }
 
   // Admin request filtering
-  const filteredRequests = adminRequests.filter((request: ProjectRequest) => {
+  const filteredRequests = adminRequests.filter((request: any) => {
     if (statusFilter === 'all') return true
     return request.status === statusFilter
   })
@@ -59,18 +56,14 @@ export const AdminDashboardSection = () => {
   const getStatusCounts = () => {
     const counts = {
       all: adminRequests.length,
-      requested: adminRequests.filter(
-        (r: ProjectRequest) => r.status === 'requested'
-      ).length,
-      in_review: adminRequests.filter(
-        (r: ProjectRequest) => r.status === 'in_review'
-      ).length,
-      approved: adminRequests.filter(
-        (r: ProjectRequest) => r.status === 'approved'
-      ).length,
-      cancelled: adminRequests.filter(
-        (r: ProjectRequest) => r.status === 'cancelled'
-      ).length,
+      requested: adminRequests.filter((r: any) => r.status === 'requested')
+        .length,
+      in_review: adminRequests.filter((r: any) => r.status === 'in_review')
+        .length,
+      approved: adminRequests.filter((r: any) => r.status === 'approved')
+        .length,
+      cancelled: adminRequests.filter((r: any) => r.status === 'cancelled')
+        .length,
     }
     return counts
   }
@@ -143,7 +136,7 @@ export const AdminDashboardSection = () => {
       {/* Requests Grid */}
       {!adminLoading && !adminError && filteredRequests.length > 0 && (
         <div className='grid gap-6 lg:grid-cols-2'>
-          {filteredRequests.map((request: ProjectRequest) => (
+          {filteredRequests.map((request: any) => (
             <ProjectRequestCard
               key={request.id}
               request={request}

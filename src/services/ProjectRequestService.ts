@@ -4,6 +4,7 @@ import { GraphQLError } from 'graphql'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
+import { isAdminRole } from '@/utils'
 
 export class ProjectRequestService {
   async getProjectRequests(filter?: any) {
@@ -50,14 +51,11 @@ export class ProjectRequestService {
       })
     }
 
-    // Check access permissions
-    if (currentUserRole === 'client' && request.userId !== currentUserId) {
-      throw new GraphQLError('Access denied', {
-        extensions: { code: 'FORBIDDEN' },
-      })
-    }
-
-    if (currentUserRole === 'developer' && currentUserRole !== 'admin') {
+    // Check access permissions - allow if it's your own request OR you're an admin/super_admin
+    if (
+      request.userId !== currentUserId &&
+      !isAdminRole(currentUserRole || '')
+    ) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -93,6 +91,11 @@ export class ProjectRequestService {
       })
       .returning()
 
+    if (!request) {
+      throw new GraphQLError('Failed to create project request', {
+        extensions: { code: 'CREATION_FAILED' },
+      })
+    }
     logger.info(`Project request created: ${request.id}`)
     return request
   }
@@ -113,15 +116,19 @@ export class ProjectRequestService {
       })
     }
 
-    // Check permissions
-    if (currentUserRole === 'client' && request.userId !== currentUserId) {
+    // Check permissions - allow if it's your own request OR you're an admin/super_admin
+    if (
+      request.userId !== currentUserId &&
+      !isAdminRole(currentUserRole || '')
+    ) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
-    if (currentUserRole === 'developer' && currentUserRole !== 'admin') {
-      throw new GraphQLError('Access denied', {
+    // Only admins/super_admins can change status to approved
+    if (input.status === 'approved' && !isAdminRole(currentUserRole || '')) {
+      throw new GraphQLError('Only admins can approve project requests', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
@@ -180,6 +187,11 @@ export class ProjectRequestService {
       })
       .returning()
 
+    if (!project) {
+      throw new GraphQLError('Failed to create project from request', {
+        extensions: { code: 'PROJECT_CREATION_FAILED' },
+      })
+    }
     logger.info(`Project request approved and project created: ${project.id}`)
     return project
   }

@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client'
+import { gql } from 'graphql-tag'
 
 import type {
   GetMeQuery,
@@ -97,6 +97,16 @@ export const GET_MY_DASHBOARD = gql`
         completedProjects
         pendingRequests
       }
+    }
+  }
+`
+
+export const TEST_USER_QUERY = gql`
+  query TestUserQuery {
+    me {
+      id
+      email
+      firstName
     }
   }
 `
