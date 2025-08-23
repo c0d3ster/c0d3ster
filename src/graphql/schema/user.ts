@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client'
 
 export const userSchema = gql`
-  # User-related enums
+  # User-related enums - Watch mode test
   enum UserRole {
     client
     developer
@@ -23,6 +23,8 @@ export const userSchema = gql`
     availability: String
     createdAt: String!
     updatedAt: String!
+    # Reference to Project type (defined in project schema)
+    projects: [Project!]!
   }
 
   # User input types

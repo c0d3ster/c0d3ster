@@ -8,11 +8,10 @@ import { projectSchema } from './project'
 import { projectRequestSchema } from './projectRequest'
 import { userSchema } from './user'
 
-// Base schema with only base types and empty Query/Mutation
+// Base schema with root types that will be extended
 const baseSchema = gql`
   scalar JSON
 
-  # Base Query and Mutation types that will be extended
   type Query {
     _empty: String
   }
@@ -22,6 +21,7 @@ const baseSchema = gql`
   }
 `
 
+// Merge all the type definitions
 export const typeDefs = mergeTypeDefs([
   baseSchema,
   userSchema,

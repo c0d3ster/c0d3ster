@@ -56,15 +56,30 @@ export const projectSchema = gql`
   }
 
   # Project input types
-  input CreateProjectRequestInput {
+  input CreateProjectInput {
     title: String!
     description: String!
     projectType: ProjectType!
     budget: Float
-    timeline: String
     requirements: String
-    contactPreference: String
-    additionalInfo: String
+    techStack: [String!]
+    status: ProjectStatus!
+    progressPercentage: Int
+    startDate: String
+    endDate: String
+  }
+
+  input UpdateProjectInput {
+    title: String
+    description: String
+    projectType: ProjectType
+    budget: Float
+    requirements: String
+    techStack: [String!]
+    status: ProjectStatus
+    progressPercentage: Int
+    startDate: String
+    endDate: String
   }
 
   # Project queries
@@ -78,8 +93,8 @@ export const projectSchema = gql`
 
   # Project mutations
   extend type Mutation {
-    createProject(input: CreateProjectRequestInput!): Project!
-    updateProject(id: ID!, input: CreateProjectRequestInput!): Project!
+    createProject(input: CreateProjectInput!): Project!
+    updateProject(id: ID!, input: UpdateProjectInput!): Project!
     assignProject(projectId: ID!, developerId: ID!): Project!
     updateProjectStatus(
       id: ID!

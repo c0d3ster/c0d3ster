@@ -20,7 +20,19 @@ export const projectRequestSchema = gql`
     user: User!
   }
 
-  # Project request queries
+  # Project request input types
+  input CreateProjectRequestInput {
+    title: String!
+    description: String!
+    projectType: ProjectType!
+    budget: Float
+    timeline: String
+    requirements: String
+    contactPreference: String
+    additionalInfo: String
+  }
+
+  # Project request queries test
   extend type Query {
     projectRequests: [ProjectRequest!]!
     projectRequest(id: ID!): ProjectRequest

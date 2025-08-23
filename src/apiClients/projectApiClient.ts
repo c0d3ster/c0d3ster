@@ -1,5 +1,4 @@
-import { gql } from '@apollo/client'
-import { useMutation } from '@apollo/client/react'
+import { gql, useMutation } from '@apollo/client'
 
 import type {
   GetAssignedProjectsQuery,
