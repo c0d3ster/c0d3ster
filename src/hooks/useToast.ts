@@ -1,22 +1,25 @@
-import { showCustomError, showCustomSuccess } from '@/components/atoms'
+import { toast } from 'react-toastify'
 
-// eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
 export const useToast = () => {
-  const showToast = (message: string, type: 'success' | 'error') => {
-    if (type === 'success') {
-      showCustomSuccess(message)
-    } else {
-      showCustomError(message)
+  const showToast = (
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning'
+  ) => {
+    switch (type) {
+      case 'success':
+        toast.success(message)
+        break
+      case 'error':
+        toast.error(message)
+        break
+      case 'info':
+        toast.info(message)
+        break
+      case 'warning':
+        toast.warn(message)
+        break
     }
   }
 
-  const showSuccess = (message: string) => {
-    showCustomSuccess(message)
-  }
-
-  const showError = (message: string) => {
-    showCustomError(message)
-  }
-
-  return { showToast, showSuccess, showError }
+  return { showToast }
 }

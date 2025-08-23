@@ -1,8 +1,8 @@
 import type { CodegenConfig } from '@graphql-codegen/cli'
 
 const config: CodegenConfig = {
-  schema: 'src/graphql/schema/**/*.ts', // your GraphQL schemas
-  documents: 'src/apiClients/**/*.ts', // where gql`` queries live
+  schema: 'src/graphql/schema/index.ts', // your main schema file
+  documents: 'src/apiClients/**/*.ts', // all gql`` queries/mutations
   generates: {
     'src/graphql/generated/graphql.ts': {
       plugins: [
@@ -11,14 +11,12 @@ const config: CodegenConfig = {
         'typescript-react-apollo',
       ],
       config: {
-        reactApolloVersion: 4, // matches your @apollo/client v4
         withHooks: true,
         withHOC: false,
         withComponent: false,
-        reactApolloImportFrom: '@apollo/client',
         skipTypename: false,
         immutableTypes: true,
-        // no skipToken here
+        apolloReactHooksImportFrom: '@apollo/client/react',
       },
     },
   },

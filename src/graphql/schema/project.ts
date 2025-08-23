@@ -41,6 +41,32 @@ export const projectSchema = gql`
     developer: User
   }
 
+  # Project summary types
+  type ProjectSummary {
+    totalProjects: Int!
+    activeProjects: Int!
+    completedProjects: Int!
+    pendingRequests: Int!
+  }
+
+  type UserDashboard {
+    projects: [Project!]!
+    projectRequests: [ProjectRequest!]!
+    summary: ProjectSummary!
+  }
+
+  # Project input types
+  input CreateProjectRequestInput {
+    title: String!
+    description: String!
+    projectType: ProjectType!
+    budget: Float
+    timeline: String
+    requirements: String
+    contactPreference: String
+    additionalInfo: String
+  }
+
   # Project queries
   extend type Query {
     projects: [Project!]!

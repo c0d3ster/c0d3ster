@@ -1,9 +1,9 @@
+import { and, desc, eq } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
-import { eq, and, desc } from 'drizzle-orm'
 
 import { db } from '@/libs/DB'
-import { schemas } from '@/models'
 import { logger } from '@/libs/Logger'
+import { schemas } from '@/models'
 
 export class ProjectService {
   async getProjects(
@@ -11,7 +11,7 @@ export class ProjectService {
     currentUserId?: string,
     currentUserRole?: string
   ) {
-    let whereClause = undefined
+    let whereClause
     if (filter) {
       const conditions = []
       if (filter.status) {

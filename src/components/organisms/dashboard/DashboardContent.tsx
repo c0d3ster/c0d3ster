@@ -2,13 +2,12 @@
 
 import Link from 'next/link'
 
-import { CompactUserProfile } from '@/components/atoms'
 import {
-  useAssignedProjects,
-  useAvailableProjects,
-  useCurrentUser,
-  useMyProjects,
-} from '@/hooks'
+  useGetAssignedProjects,
+  useGetAvailableProjects,
+} from '@/apiClients/projectApiClient'
+import { useGetMe, useGetMyDashboard } from '@/apiClients/userApiClient'
+import { CompactUserProfile } from '@/components/atoms'
 
 import {
   AdminDashboardSection,
@@ -17,17 +16,23 @@ import {
 } from './sections'
 
 export const DashboardContent = () => {
-  const { isAdmin, isDeveloper } = useCurrentUser()
-  const { summary, isLoading: myProjectsLoading } = useMyProjects()
-  const { projects: availableProjects, isLoading: availableLoading } =
-    useAvailableProjects()
-  const { projects: assignedProjects, isLoading: assignedLoading } =
-    useAssignedProjects()
+  const { data: userData, loading: userLoading } = useGetMe()
+  const { data: dashboardData, loading: dashboardLoading } = useGetMyDashboard()
+  const { data: availableProjectsData, loading: availableLoading } =
+    useGetAvailableProjects()
+  const { data: assignedProjectsData, loading: assignedLoading } =
+    useGetAssignedProjects()
+
+  const isAdmin = userData?.me?.role === 'admin'
+  const isDeveloper = userData?.me?.role === 'developer'
+  const summary = dashboardData?.myDashboard?.summary
+  const availableProjects = availableProjectsData?.availableProjects
+  const assignedProjects = assignedProjectsData?.assignedProjects
 
   // Determine if we're still loading the main content data
   const isContentLoading =
-    myProjectsLoading ||
-    (isAdmin && false) || // Removed adminLoading since we're using GraphQL directly
+    userLoading ||
+    dashboardLoading ||
     (isDeveloper && (availableLoading || assignedLoading))
 
   return (
@@ -95,7 +100,8 @@ export const DashboardContent = () => {
                     Your Projects:
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {summary.totalProjects + summary.totalRequests}
+                    {(summary?.totalProjects || 0) +
+                      (summary?.pendingRequests || 0)}
                   </span>
                 </div>
               </>

@@ -1,4 +1,4 @@
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
+import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client'
 
 const httpLink = new HttpLink({
   uri: '/api/graphql', // your Apollo Server endpoint

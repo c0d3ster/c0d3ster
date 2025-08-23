@@ -1,18 +1,6 @@
 import { gql } from '@apollo/client'
 
 export const projectRequestSchema = gql`
-  # Project request input types
-  input CreateProjectRequestInput {
-    title: String!
-    description: String!
-    projectType: ProjectType!
-    budget: Float
-    timeline: String
-    requirements: String
-    contactPreference: String
-    additionalInfo: String
-  }
-
   # Project request type
   type ProjectRequest {
     id: ID!

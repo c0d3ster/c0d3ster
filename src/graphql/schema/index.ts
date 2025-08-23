@@ -1,60 +1,37 @@
 import { gql } from '@apollo/client'
+import { mergeTypeDefs } from '@graphql-tools/merge'
+import { makeExecutableSchema } from '@graphql-tools/schema'
 
+import { resolvers } from '../resolvers'
 import { contactSchema } from './contact'
 import { projectSchema } from './project'
 import { projectRequestSchema } from './projectRequest'
 import { userSchema } from './user'
 
-// Base schema for shared types / inputs
+// Base schema with only base types and empty Query/Mutation
 const baseSchema = gql`
   scalar JSON
 
-  type ProjectSummary {
-    totalProjects: Int!
-    activeProjects: Int!
-    completedProjects: Int!
-    pendingRequests: Int!
+  # Base Query and Mutation types that will be extended
+  type Query {
+    _empty: String
   }
 
-  type UserDashboard {
-    projects: [Project!]!
-    projectRequests: [ProjectRequest!]!
-    summary: ProjectSummary!
-  }
-
-  input CreateProjectRequestInput {
-    title: String!
-    description: String!
-    projectType: ProjectType!
-    budget: Float
-    timeline: String
-    requirements: String
-    contactPreference: String
-    additionalInfo: String
-  }
-
-  input ContactFormInput {
-    name: String!
-    email: String!
-    subject: String!
-    message: String!
+  type Mutation {
+    _empty: String
   }
 `
 
-// Combine all schemas into a single typeDefs
-export const typeDefs = gql`
-  ${baseSchema}
-  ${userSchema}
-  ${projectSchema}
-  ${projectRequestSchema}
-  ${contactSchema}
-`
-
-// Export individually if needed
-export {
+export const typeDefs = mergeTypeDefs([
   baseSchema,
-  contactSchema,
-  projectRequestSchema,
-  projectSchema,
   userSchema,
-}
+  projectSchema,
+  projectRequestSchema,
+  contactSchema,
+])
+
+// Create and export the executable schema
+export const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers,
+})

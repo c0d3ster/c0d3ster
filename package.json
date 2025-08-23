@@ -70,7 +70,7 @@
     "@graphql-codegen/cli": "^5.0.7",
     "@graphql-codegen/typescript": "^4.1.6",
     "@graphql-codegen/typescript-operations": "^4.6.1",
-    "@graphql-codegen/typescript-react-apollo": "^4.3.3",
+    "@graphql-codegen/typescript-react-apollo": "^3.2.2",
     "@next/bundle-analyzer": "^15.4.5",
     "@next/eslint-plugin-next": "^15.4.5",
     "@playwright/test": "^1.54.2",

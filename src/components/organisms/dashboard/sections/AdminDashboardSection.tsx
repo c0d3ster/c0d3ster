@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import type { ProjectRequest } from '@/types'
+import type { ProjectRequest } from '@/graphql/generated/graphql'
 
 import { useApproveProjectRequest, useGetProjectRequests } from '@/apiClients'
 import { ProjectRequestCard } from '@/components/molecules'

@@ -4,7 +4,6 @@ import { graphql } from 'graphql'
 import { NextResponse } from 'next/server'
 
 import { createContext } from '@/graphql/context'
-import { resolvers } from '@/graphql/resolvers'
 import { schema } from '@/graphql/schema'
 
 export async function POST(request: NextRequest) {
@@ -17,7 +16,6 @@ export async function POST(request: NextRequest) {
     const result = await graphql({
       schema,
       source: query,
-      rootValue: resolvers,
       contextValue: context,
       variableValues: variables,
       operationName,
