@@ -187,14 +187,27 @@ export const projectResolvers = {
       }
     },
 
-    endDate: (parent: any) => {
-      if (!parent.endDate) return null
+    estimatedCompletionDate: (parent: any) => {
+      if (!parent.estimatedCompletionDate) return null
       try {
-        return new Date(parent.endDate).toISOString()
+        return new Date(parent.estimatedCompletionDate).toISOString()
       } catch (error) {
-        logger.error('Error formatting endDate', {
+        logger.error('Error formatting estimatedCompletionDate', {
           error: String(error),
-          value: parent.endDate,
+          value: parent.estimatedCompletionDate,
+        })
+        return null
+      }
+    },
+
+    actualCompletionDate: (parent: any) => {
+      if (!parent.actualCompletionDate) return null
+      try {
+        return new Date(parent.actualCompletionDate).toISOString()
+      } catch (error) {
+        logger.error('Error formatting actualCompletionDate', {
+          error: String(error),
+          value: parent.actualCompletionDate,
         })
         return null
       }

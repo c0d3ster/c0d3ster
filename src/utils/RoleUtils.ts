@@ -6,7 +6,11 @@ import { users } from '@/models'
 
 import type { UserRole } from './RoleConstants'
 
-import { isAdminRole, isDeveloperOrHigherRole } from './RoleConstants'
+import {
+  isAdminRole,
+  isDeveloperOrHigherRole,
+  isUserRole,
+} from './RoleConstants'
 
 type AuthenticatedUser = {
   id: string
@@ -41,7 +45,7 @@ const getCurrentUser = async (): Promise<AuthenticatedUser | null> => {
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
-    role: user.role as UserRole,
+    role: isUserRole(user.role) ? user.role : 'client',
   }
 }
 

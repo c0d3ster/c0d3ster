@@ -31,7 +31,12 @@ export const getCurrentUser = async () => {
 
 // Helper function to check permissions
 export const checkPermission = (user: any, requiredRole: string) => {
-  const userRole = user.role as string
+  if (!user || typeof user.role !== 'string' || user.role.length === 0) {
+    throw new GraphQLError('Forbidden', {
+      extensions: { code: 'FORBIDDEN', reason: 'MISSING_OR_INVALID_ROLE' },
+    })
+  }
+  const userRole = user.role
 
   if (requiredRole === 'admin') {
     if (!isAdminRole(userRole)) {

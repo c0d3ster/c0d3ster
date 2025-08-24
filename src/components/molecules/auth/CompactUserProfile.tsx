@@ -4,11 +4,12 @@ import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 
 import { useGetMe } from '@/apiClients/userApiClient'
+import { isAdminRole } from '@/utils'
 
 export const CompactUserProfile = () => {
   const { user: clerkUser, isLoaded } = useUser()
   const { data: userData, loading: isLoading } = useGetMe()
-  const isAdmin = userData?.me?.role === 'admin'
+  const isAdmin = userData?.me?.role ? isAdminRole(userData.me.role) : false
   const isDeveloper = userData?.me?.role === 'developer'
 
   if (!isLoaded || isLoading || !clerkUser) {

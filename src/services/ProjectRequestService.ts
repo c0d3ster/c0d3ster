@@ -1,15 +1,15 @@
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
-import { isAdminRole } from '@/utils'
+import { isAdminRole, isUserRole } from '@/utils'
 
 export class ProjectRequestService {
   async getProjectRequests(filter?: any) {
     logger.error('🚀 SERVICE: getProjectRequests called', { filter })
-    
+
     let whereClause
     if (filter) {
       const conditions = []
@@ -28,25 +28,29 @@ export class ProjectRequestService {
         whereClause =
           conditions.length === 1
             ? conditions[0]
-            : conditions.reduce((acc, condition) => acc && condition)
+            : conditions
+                .slice(1)
+                .reduce((acc, condition) => and(acc, condition), conditions[0])
       }
     }
 
     logger.error('🚀 SERVICE: About to query database', { whereClause })
-    
+
     const results = await db.query.projectRequests.findMany({
       where: whereClause,
       orderBy: [desc(schemas.projectRequests.createdAt)],
     })
 
-    logger.error('🚀 SERVICE: Database query completed', { 
+    logger.error('🚀 SERVICE: Database query completed', {
       resultCount: results.length,
-      firstResult: results[0] ? {
-        id: results[0].id,
-        status: results[0].status,
-        createdAt: results[0].createdAt,
-        createdAtType: typeof results[0].createdAt
-      } : null
+      firstResult: results[0]
+        ? {
+            id: results[0].id,
+            status: results[0].status,
+            createdAt: results[0].createdAt,
+            createdAtType: typeof results[0].createdAt,
+          }
+        : null,
     })
 
     return results
@@ -70,7 +74,7 @@ export class ProjectRequestService {
     // Check access permissions - allow if it's your own request OR you're an admin/super_admin
     if (
       request.userId !== currentUserId &&
-      !isAdminRole(currentUserRole || '')
+      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
     ) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
@@ -135,7 +139,7 @@ export class ProjectRequestService {
     // Check permissions - allow if it's your own request OR you're an admin/super_admin
     if (
       request.userId !== currentUserId &&
-      !isAdminRole(currentUserRole || '')
+      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
     ) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
@@ -143,16 +147,38 @@ export class ProjectRequestService {
     }
 
     // Only admins/super_admins can change status to approved
-    if (input.status === 'approved' && !isAdminRole(currentUserRole || '')) {
+    if (
+      input.status === 'approved' &&
+      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
+    ) {
       throw new GraphQLError('Only admins can approve project requests', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedFields = [
+      'title',
+      'description',
+      'projectType',
+      'budget',
+      'timeline',
+      'requirements',
+      'contactPreference',
+      'additionalInfo',
+      'status',
+    ] as const
+
+    const sanitizedInput = Object.fromEntries(
+      Object.entries(input).filter(([key]) =>
+        allowedFields.includes(key as any)
+      )
+    )
+
     const [updatedRequest] = await db
       .update(schemas.projectRequests)
       .set({
-        ...input,
+        ...sanitizedInput,
         updatedAt: new Date(),
       })
       .where(eq(schemas.projectRequests.id, id))
@@ -162,7 +188,14 @@ export class ProjectRequestService {
     return updatedRequest
   }
 
-  async approveProjectRequest(id: string) {
+  async approveProjectRequest(id: string, currentUserRole?: string) {
+    // Optional: enforce at service layer as defense-in-depth
+    if (!isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
     const request = await db.query.projectRequests.findFirst({
       where: eq(schemas.projectRequests.id, id),
     })
@@ -173,41 +206,58 @@ export class ProjectRequestService {
       })
     }
 
-    if (request.status !== 'requested') {
-      throw new GraphQLError('Project request cannot be approved', {
+    // Align with route: require 'in_review' (or agree on a single status)
+    if (request.status !== 'in_review') {
+      throw new GraphQLError('Project request must be in review to approve', {
         extensions: { code: 'INVALID_STATUS' },
       })
     }
 
-    // Update request status
-    await db
-      .update(schemas.projectRequests)
-      .set({
-        status: 'approved',
-        reviewedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(schemas.projectRequests.id, id))
+    // Atomic transition + project creation
+    const project = await db.transaction(async (tx) => {
+      const updated = await tx
+        .update(schemas.projectRequests)
+        .set({
+          status: 'approved',
+          reviewedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schemas.projectRequests.id, id),
+            eq(schemas.projectRequests.status, 'in_review')
+          )
+        )
+        .returning({ id: schemas.projectRequests.id })
 
-    // Create project
-    const [project] = await db
-      .insert(schemas.projects)
-      .values({
-        requestId: id,
-        clientId: request.userId,
-        title: request.title,
-        description: request.description,
-        projectType: request.projectType,
-        budget: request.budget,
-        requirements: request.requirements,
-      })
-      .returning()
+      if (updated.length === 0) {
+        throw new GraphQLError('Request not in approvable state', {
+          extensions: { code: 'CONFLICT' },
+        })
+      }
 
-    if (!project) {
-      throw new GraphQLError('Failed to create project from request', {
-        extensions: { code: 'PROJECT_CREATION_FAILED' },
-      })
-    }
+      const [created] = await tx
+        .insert(schemas.projects)
+        .values({
+          requestId: id,
+          clientId: request.userId,
+          title: request.title,
+          description: request.description,
+          projectType: request.projectType,
+          budget: request.budget,
+          requirements: request.requirements,
+        })
+        .returning()
+
+      if (!created) {
+        throw new GraphQLError('Failed to create project from request', {
+          extensions: { code: 'PROJECT_CREATION_FAILED' },
+        })
+      }
+
+      return created
+    })
+
     logger.info(`Project request approved and project created: ${project.id}`)
     return project
   }

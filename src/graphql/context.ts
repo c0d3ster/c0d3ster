@@ -6,7 +6,7 @@ import { schemas } from '@/models'
 
 export type GraphQLContext = {
   userId?: string
-  user?: any
+  user?: typeof schemas.users.$inferSelect | null
   db: typeof db
   schemas: typeof schemas
 }
@@ -24,12 +24,13 @@ export async function createContext(): Promise<GraphQLContext> {
       where: eq(schemas.users.clerkId, userId),
     })
 
-    return {
-      userId,
-      user,
-      db,
-      schemas,
+    if (!user) {
+      // Optional: warn so we can fix onboarding/data sync issues
+      // logger.warn('Authenticated Clerk user not found in DB', { clerkId: userId })
+      return { db, schemas }
     }
+
+    return { userId, user, db, schemas }
   } catch (error) {
     console.error('Error creating GraphQL context:', error)
     return { db, schemas }

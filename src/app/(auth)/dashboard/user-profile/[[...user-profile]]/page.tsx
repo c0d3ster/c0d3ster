@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
-import { ExpandingUnderline, UserProfile } from '@/components/atoms'
-import { AnimatedHeading } from '@/components/molecules'
+import { ExpandingUnderline } from '@/components/atoms'
+import { AnimatedHeading, UserProfile } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
 
 export const metadata: Metadata = {

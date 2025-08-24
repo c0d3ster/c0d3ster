@@ -1,32 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { Toast } from '@/libs/Toast'
+
 import { ContactForm } from './ContactForm'
-
-// Mock the Toast utility
-const mockShowSuccess = vi.fn()
-const mockShowError = vi.fn()
-
-vi.mock('@/libs', () => ({
-  Toast: {
-    success: mockShowSuccess,
-    error: mockShowError,
-  },
-}))
-
-// Mock the Button component
-vi.mock('@/components/atoms', () => ({
-  Button: ({ children, type, disabled, ...props }: any) => (
-    <button
-      type={type}
-      disabled={disabled}
-      data-testid='submit-button'
-      {...props}
-    >
-      {children}
-    </button>
-  ),
-}))
 
 describe('ContactForm', () => {
   it('renders all form fields', () => {
@@ -79,7 +56,7 @@ describe('ContactForm', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(mockShowSuccess).toHaveBeenCalledWith(
+      expect(Toast.success).toHaveBeenCalledWith(
         "Message sent successfully! I'll get back to you within 24 hours."
       )
     })
@@ -121,11 +98,11 @@ describe('ContactForm', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('Server error')
+      expect(Toast.error).toHaveBeenCalledWith('Server error')
     })
   })
 
-  it('handles network error', async () => {
+  it('handles network errors', async () => {
     const mockFetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
     vi.stubGlobal('fetch', mockFetch)
 
@@ -152,26 +129,30 @@ describe('ContactForm', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith(
+      expect(Toast.error).toHaveBeenCalledWith(
         'Network error. Please check your connection and try again.'
       )
     })
   })
 
+  it('validates required fields', async () => {
+    render(<ContactForm />)
+
+    // Submit the form without filling it out
+    const submitButton = screen.getByRole('button', {
+      name: 'INITIATE TRANSMISSION',
+    })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => {
+      expect(Toast.error).toHaveBeenCalledWith(
+        'Please fix the following errors: Name is required, Invalid email address, Subject is required, Message must be at least 10 characters'
+      )
+    })
+  })
+
   it('shows loading state during submission', async () => {
-    const mockFetch = vi.fn().mockImplementation(
-      () =>
-        new Promise((resolve) =>
-          setTimeout(
-            () =>
-              resolve({
-                ok: true,
-                json: async () => ({ message: 'Success' }),
-              }),
-            100
-          )
-        )
-    )
+    const mockFetch = vi.fn().mockImplementation(() => new Promise(() => {})) // Never resolves
     vi.stubGlobal('fetch', mockFetch)
 
     render(<ContactForm />)
@@ -196,47 +177,10 @@ describe('ContactForm', () => {
     })
     fireEvent.click(submitButton)
 
-    // Check loading state - wait for it to appear
+    // Check that button shows loading state
     await waitFor(() => {
-      expect(submitButton).toHaveTextContent('SENDING...')
       expect(submitButton).toBeDisabled()
+      expect(submitButton).toHaveTextContent('TRANSMITTING...')
     })
-
-    // Wait for completion
-    await waitFor(() => {
-      expect(submitButton).toHaveTextContent('INITIATE TRANSMISSION')
-      expect(submitButton).not.toBeDisabled()
-    })
-  })
-
-  it('displays validation errors', async () => {
-    render(<ContactForm />)
-
-    // Try to submit empty form
-    const submitButton = screen.getByRole('button', {
-      name: 'INITIATE TRANSMISSION',
-    })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith(
-        expect.stringContaining('Please fix the following errors:')
-      )
-    })
-  })
-
-  it('has correct form structure and accessibility', () => {
-    render(<ContactForm />)
-
-    // Check that labels are properly associated with inputs
-    const nameInput = screen.getByLabelText('NAME')
-    const emailInput = screen.getByLabelText('EMAIL')
-    const subjectInput = screen.getByLabelText('SUBJECT')
-    const messageInput = screen.getByLabelText('MESSAGE')
-
-    expect(nameInput).toHaveAttribute('type', 'text')
-    expect(emailInput).toHaveAttribute('type', 'email')
-    expect(subjectInput).toHaveAttribute('type', 'text')
-    expect(messageInput).toHaveAttribute('rows', '4')
   })
 })

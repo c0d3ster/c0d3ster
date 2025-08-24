@@ -39,7 +39,10 @@ export const userResolvers = {
   },
 
   Mutation: {
-    updateUser: async (_: any, { id, input }: { id: string; input: any }) => {
+    updateUser: async (
+      _: any,
+      { id, input }: { id: string; input: Record<string, unknown> }
+    ) => {
       const currentUser = await getCurrentUser()
 
       // Users can only update themselves, or admins can update anyone
@@ -49,7 +52,33 @@ export const userResolvers = {
         })
       }
 
-      return await userService.updateUser(id, input)
+      const isAdmin = currentUser.role === 'admin'
+      const ALLOWED_SELF_UPDATE_FIELDS = [
+        'firstName',
+        'lastName',
+        'avatarUrl',
+        'bio',
+        'timezone',
+      ] as const
+      const PRIVILEGED_FIELDS = ['role', 'emailVerified', 'status'] as const
+
+      const sanitizedInput = Object.fromEntries(
+        Object.entries(input).filter(([key]) =>
+          isAdmin ? true : ALLOWED_SELF_UPDATE_FIELDS.includes(key as any)
+        )
+      )
+
+      // Extra guard: prevent privileged fields from slipping through for non-admins
+      if (
+        !isAdmin &&
+        Object.keys(input).some((k) => PRIVILEGED_FIELDS.includes(k as any))
+      ) {
+        throw new GraphQLError('Cannot modify restricted fields', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
+
+      return await userService.updateUser(id, sanitizedInput)
     },
   },
 

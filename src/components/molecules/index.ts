@@ -1,4 +1,5 @@
 export * from './animated-text'
+export * from './auth'
 export * from './contact'
 export * from './project-card'
 export * from './project-request'

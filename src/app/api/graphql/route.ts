@@ -8,7 +8,19 @@ import { schema } from '@/graphql/schema'
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, variables, operationName } = await request.json()
+    const body = await request.json().catch(() => null)
+    if (
+      !body ||
+      typeof body.query !== 'string' ||
+      body.query.trim().length === 0
+    ) {
+      return NextResponse.json(
+        { errors: [{ message: 'query must be a non-empty string' }] },
+        { status: 400 }
+      )
+    }
+    const { query, variables, operationName } = body
+
     console.error('🚨 GRAPHQL ROUTE HIT!!!', {
       query: query?.substring(0, 100),
       variables,

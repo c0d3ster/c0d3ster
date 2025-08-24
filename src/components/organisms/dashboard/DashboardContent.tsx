@@ -8,7 +8,7 @@ import {
   useGetMe,
   useGetMyDashboard,
 } from '@/apiClients'
-import { CompactUserProfile } from '@/components/atoms'
+import { CompactUserProfile } from '@/components/molecules'
 import { isAdminRole } from '@/utils/RoleConstants'
 
 import {

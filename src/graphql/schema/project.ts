@@ -38,7 +38,8 @@ export const projectSchema = gql`
     status: ProjectStatus!
     progressPercentage: Int
     startDate: String
-    endDate: String
+    estimatedCompletionDate: String
+    actualCompletionDate: String
     createdAt: String!
     updatedAt: String!
 
@@ -68,9 +69,11 @@ export const projectSchema = gql`
   type ProjectStatusUpdate {
     id: ID!
     projectId: ID!
-    status: ProjectStatus!
+    oldStatus: ProjectStatus
+    newStatus: ProjectStatus!
     progressPercentage: Int
-    notes: String
+    updateMessage: String!
+    isClientVisible: Boolean!
     createdAt: String!
     updatedBy: User!
   }
@@ -95,7 +98,8 @@ export const projectSchema = gql`
     status: ProjectStatus!
     progressPercentage: Int
     startDate: String
-    endDate: String
+    estimatedCompletionDate: String
+    actualCompletionDate: String
   }
 
   input UpdateProjectInput {
@@ -108,7 +112,8 @@ export const projectSchema = gql`
     status: ProjectStatus
     progressPercentage: Int
     startDate: String
-    endDate: String
+    estimatedCompletionDate: String
+    actualCompletionDate: String
   }
 
   # Project queries

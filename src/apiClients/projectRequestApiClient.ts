@@ -97,7 +97,8 @@ export const APPROVE_PROJECT_REQUEST = gql`
       status
       progressPercentage
       startDate
-      endDate
+      estimatedCompletionDate
+      actualCompletionDate
       createdAt
       updatedAt
       client {

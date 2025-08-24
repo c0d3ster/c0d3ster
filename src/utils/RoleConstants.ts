@@ -5,24 +5,40 @@
 
 export type UserRole = 'client' | 'developer' | 'admin' | 'super_admin'
 
+// Canonical list + runtime guard
+export const USER_ROLES = [
+  'client',
+  'developer',
+  'admin',
+  'super_admin',
+] as const
+export const isUserRole = (role: string | null | undefined): role is UserRole =>
+  !!role && (USER_ROLES as readonly string[]).includes(role)
+
 /**
  * Check if role string is admin or super_admin
  */
-export const isAdminRole = (role: string): boolean => {
+export const isAdminRole = (
+  role: UserRole | null | undefined
+): role is 'admin' | 'super_admin' => {
   return role === 'admin' || role === 'super_admin'
 }
 
 /**
  * Check if role string is developer or higher (developer, admin, super_admin)
  */
-export const isDeveloperOrHigherRole = (role: string): boolean => {
+export const isDeveloperOrHigherRole = (
+  role: UserRole | null | undefined
+): role is 'developer' | 'admin' | 'super_admin' => {
   return role === 'developer' || isAdminRole(role)
 }
 
 /**
  * Check if role string is client
  */
-export const isClientRole = (role: string): boolean => {
+export const isClientRole = (
+  role: UserRole | null | undefined
+): role is 'client' => {
   return role === 'client'
 }
 

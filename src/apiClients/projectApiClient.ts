@@ -50,7 +50,8 @@ export const GET_MY_PROJECTS = gql`
       status
       progressPercentage
       startDate
-      endDate
+      estimatedCompletionDate
+      actualCompletionDate
       createdAt
       updatedAt
       techStack
@@ -79,9 +80,11 @@ export const GET_MY_PROJECTS = gql`
       }
       statusUpdates {
         id
-        status
+        oldStatus
+        newStatus
         progressPercentage
-        notes
+        updateMessage
+        isClientVisible
         createdAt
         updatedBy {
           id
@@ -125,7 +128,8 @@ export const GET_ASSIGNED_PROJECTS = gql`
       status
       progressPercentage
       startDate
-      endDate
+      estimatedCompletionDate
+      actualCompletionDate
       createdAt
       updatedAt
       techStack
@@ -154,9 +158,11 @@ export const GET_ASSIGNED_PROJECTS = gql`
       }
       statusUpdates {
         id
-        status
+        oldStatus
+        newStatus
         progressPercentage
-        notes
+        updateMessage
+        isClientVisible
         createdAt
         updatedBy {
           id

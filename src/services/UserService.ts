@@ -1,4 +1,6 @@
-import { desc, eq } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
+
+import { and, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
@@ -24,9 +26,9 @@ export class UserService {
   }
 
   async getUsers(filter?: { role?: string; email?: string }) {
-    let whereClause
+    let whereClause: SQL | undefined
     if (filter) {
-      const conditions = []
+      const conditions: SQL[] = []
       if (filter.role) {
         conditions.push(eq(schemas.users.role, filter.role as any))
       }
@@ -35,9 +37,7 @@ export class UserService {
       }
       if (conditions.length > 0) {
         whereClause =
-          conditions.length === 1
-            ? conditions[0]
-            : conditions.reduce((acc, condition) => acc && condition)
+          conditions.length === 1 ? conditions[0] : and(...conditions)
       }
     }
 
@@ -48,14 +48,43 @@ export class UserService {
   }
 
   async updateUser(id: string, input: any) {
+    // Whitelist fields
+    const {
+      firstName,
+      lastName,
+      role,
+      email,
+      avatarUrl,
+      bio,
+      skills,
+      portfolio,
+      hourlyRate,
+      availability,
+    } = input
+    const updatePayload = {
+      ...(firstName !== undefined && { firstName }),
+      ...(lastName !== undefined && { lastName }),
+      ...(role !== undefined && { role }),
+      ...(email !== undefined && { email }),
+      ...(avatarUrl !== undefined && { avatarUrl }),
+      ...(bio !== undefined && { bio }),
+      ...(skills !== undefined && { skills }),
+      ...(portfolio !== undefined && { portfolio }),
+      ...(hourlyRate !== undefined && { hourlyRate }),
+      ...(availability !== undefined && { availability }),
+      updatedAt: new Date(),
+    }
+
     const [updatedUser] = await db
       .update(schemas.users)
-      .set({
-        ...input,
-        updatedAt: new Date(),
-      })
+      .set(updatePayload)
       .where(eq(schemas.users.id, id))
       .returning()
+
+    if (!updatedUser) {
+      logger.warn(`User update failed (not found): ${id}`)
+      throw new Error('User not found')
+    }
 
     logger.info(`User updated: ${id}`)
     return updatedUser

@@ -82,17 +82,20 @@ export const AvailableProjectCard = ({
               Tech Stack:
             </span>
             <div className='flex flex-wrap gap-1'>
-              {project.techStack.slice(0, 3).map((tech) => (
-                <span
-                  key={tech}
-                  className='rounded bg-blue-400/20 px-2 py-1 font-mono text-xs text-blue-400'
-                >
-                  {tech}
-                </span>
-              ))}
-              {project.techStack.length > 3 && (
+              {(project.techStack ?? [])
+                .filter((t): t is string => Boolean(t))
+                .slice(0, 3)
+                .map((tech: string) => (
+                  <span
+                    key={tech}
+                    className='rounded bg-blue-400/20 px-2 py-1 font-mono text-xs text-blue-400'
+                  >
+                    {tech}
+                  </span>
+                ))}
+              {(project.techStack?.filter(Boolean).length ?? 0) > 3 && (
                 <span className='rounded bg-blue-400/10 px-2 py-1 font-mono text-xs text-blue-400/60'>
-                  +{project.techStack.length - 3}
+                  +{(project.techStack?.filter(Boolean).length ?? 0) - 3}
                 </span>
               )}
             </div>

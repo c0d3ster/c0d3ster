@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 
 import type { ContactFormData } from '@/validations'
 
-import { Button } from '@/components/atoms'
+import { Button } from '@/components/atoms/controls/Button'
 import { Toast } from '@/libs/Toast'
 import { contactFormSchema } from '@/validations'
 
@@ -135,7 +135,7 @@ export const ContactForm = () => {
 
           <div className='text-center'>
             <Button type='submit' size='md' disabled={isSubmitting}>
-              {isSubmitting ? 'SENDING...' : 'INITIATE TRANSMISSION'}
+              {isSubmitting ? 'TRANSMITTING...' : 'INITIATE TRANSMISSION'}
             </Button>
           </div>
         </form>

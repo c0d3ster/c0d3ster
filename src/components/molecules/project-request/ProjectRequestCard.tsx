@@ -36,7 +36,7 @@ export const ProjectRequestCard = ({
     estimatedCompletionDate: '',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
     techStack: [] as string[],
-    budget: request.budget || undefined,
+    budget: request.budget ?? undefined,
     internalNotes: '',
   })
 
@@ -306,7 +306,7 @@ export const ProjectRequestCard = ({
                 id='budget'
                 type='number'
                 step='0.01'
-                value={approvalData.budget || ''}
+                value={approvalData.budget ?? ''}
                 onChange={(e) =>
                   setApprovalData({
                     ...approvalData,

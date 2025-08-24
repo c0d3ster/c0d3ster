@@ -1,5 +1,6 @@
 export * from './AppConfig'
 export * from './AuthUtils'
 export * from './Helpers'
+export * from './object'
 export * from './RoleConstants'
 export * from './RoleUtils'

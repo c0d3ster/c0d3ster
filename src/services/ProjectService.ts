@@ -4,7 +4,7 @@ import { GraphQLError } from 'graphql'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
-import { isDeveloperOrHigherRole } from '@/utils'
+import { isDeveloperOrHigherRole, isUserRole } from '@/utils'
 
 export class ProjectService {
   async getProjects(
@@ -34,7 +34,9 @@ export class ProjectService {
         whereClause =
           conditions.length === 1
             ? conditions[0]
-            : conditions.reduce((acc, condition) => acc && condition)
+            : conditions
+                .slice(1)
+                .reduce((acc, condition) => and(acc, condition), conditions[0])
       }
     }
 
@@ -68,6 +70,11 @@ export class ProjectService {
       throw new GraphQLError('Project not found', {
         extensions: { code: 'PROJECT_NOT_FOUND' },
       })
+    }
+
+    // Admins can access all projects
+    if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
+      return project
     }
 
     // Check access permissions
@@ -228,7 +235,11 @@ export class ProjectService {
     currentUserRole?: string
   ) {
     // Check permissions - developers can assign themselves, admins can assign anyone
-    if (!isDeveloperOrHigherRole(currentUserRole || '')) {
+    if (
+      !isDeveloperOrHigherRole(
+        isUserRole(currentUserRole) ? currentUserRole : null
+      )
+    ) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -264,9 +275,16 @@ export class ProjectService {
       .update(schemas.projects)
       .set({
         developerId,
+        status: 'in_progress',
         updatedAt: new Date(),
       })
-      .where(eq(schemas.projects.id, projectId))
+      .where(
+        and(
+          eq(schemas.projects.id, projectId),
+          eq(schemas.projects.status, 'approved'),
+          isNull(schemas.projects.developerId)
+        )
+      )
       .returning()
 
     if (!updatedProject) {
@@ -285,6 +303,12 @@ export class ProjectService {
     currentUserId?: string,
     currentUserRole?: string
   ) {
+    if (!currentUserId) {
+      throw new GraphQLError('Unauthorized', {
+        extensions: { code: 'UNAUTHORIZED' },
+      })
+    }
+
     const project = await db.query.projects.findFirst({
       where: eq(schemas.projects.id, id),
     })

@@ -1,13 +1,8 @@
 import { Resend } from 'resend'
 
-import { ContactFormEmail } from './ContactFormEmail'
+import type { ContactFormData } from '@/validations/ContactValidation'
 
-type ContactFormData = {
-  name: string
-  email: string
-  subject: string
-  message: string
-}
+import { ContactFormEmail } from './ContactFormEmail'
 
 export async function sendContactFormEmail(data: ContactFormData) {
   const apiKey = process.env.RESEND_API_KEY
