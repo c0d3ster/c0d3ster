@@ -1,6 +1,6 @@
 import type { SQL } from 'drizzle-orm'
 
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, ne } from 'drizzle-orm'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
@@ -90,10 +90,63 @@ export class UserService {
     return updatedUser
   }
 
+  // TODO: This method is currently unused but will be needed for user profiles
+  // It returns projects where the user is the client (owner) or a collaborator
   async getUserProjects(userId: string) {
-    return await db.query.projects.findMany({
+    // Get client projects (where user owns the project)
+    const clientProjects = await db.query.projects.findMany({
       where: eq(schemas.projects.clientId, userId),
+      orderBy: [desc(schemas.projects.createdAt)],
     })
+
+    // Get collaborator projects (where user is a collaborator but NOT the main developer)
+    const collaboratorProjects = await db
+      .select()
+      .from(schemas.projects)
+      .innerJoin(
+        schemas.projectCollaborators,
+        eq(schemas.projects.id, schemas.projectCollaborators.projectId)
+      )
+      .where(
+        and(
+          eq(schemas.projectCollaborators.userId, userId),
+          // Exclude projects where user is the main developer (those go in assigned projects)
+          ne(schemas.projects.developerId, userId)
+        )
+      )
+      .orderBy(desc(schemas.projects.createdAt))
+
+    // Combine and deduplicate (in case user is both client and collaborator)
+    const allProjects = [
+      ...clientProjects.map((project) => ({
+        ...project,
+        userRole: 'client' as const,
+      })),
+      ...collaboratorProjects.map((item) => ({
+        ...item.projects,
+        userRole: 'collaborator' as const,
+      })),
+    ]
+
+    // Remove duplicates by ID, prioritizing client role over collaborator
+    const uniqueProjects = allProjects.reduce((acc, project) => {
+      const existingIndex = acc.findIndex((p) => p.id === project.id)
+      if (existingIndex === -1) {
+        acc.push(project)
+      } else if (
+        project.userRole === 'client' &&
+        acc[existingIndex].userRole === 'collaborator'
+      ) {
+        // Replace collaborator with client if user is both
+        acc[existingIndex] = project
+      }
+      return acc
+    }, [] as any[])
+
+    return uniqueProjects.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
   }
 
   async getUserProjectRequests(userId: string) {

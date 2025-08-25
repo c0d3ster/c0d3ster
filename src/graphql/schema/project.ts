@@ -50,11 +50,11 @@ export const projectSchema = gql`
     # Relationships - these will be resolved by field resolvers
     clientId: ID!
     developerId: ID
-    projectRequestId: ID
+    requestId: ID
 
     # Resolved relationships (via field resolvers)
-    client: User!
-    developer: User
+    client: DisplayUser!
+    developer: DisplayUser
     projectRequest: ProjectRequest
     statusUpdates: [ProjectStatusUpdate!]!
     collaborators: [ProjectCollaborator!]!
@@ -63,29 +63,27 @@ export const projectSchema = gql`
   # Project status update type
   type ProjectStatusUpdate {
     id: ID!
-    projectId: ID!
+    projectId: ID
     oldStatus: ProjectStatus
     newStatus: ProjectStatus!
     progressPercentage: Int
     updateMessage: String!
     isClientVisible: Boolean!
     createdAt: String!
-    updatedById: ID!
+    updatedById: ID
 
     # Resolved relationships (via field resolvers)
-    updatedBy: User!
+    updatedBy: DisplayUser!
   }
 
   # Project collaborator type
   type ProjectCollaborator {
     id: ID!
-    projectId: ID!
     role: String!
     joinedAt: String!
-    userId: ID!
 
     # Resolved relationships (via field resolvers)
-    user: User!
+    user: DisplayUser!
   }
 
   # Project input types

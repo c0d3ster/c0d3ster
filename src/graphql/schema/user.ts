@@ -1,7 +1,7 @@
 import { gql } from 'graphql-tag'
 
 export const userSchema = gql`
-  # User-related enums - Watch mode test
+  # User-related enums
   enum UserRole {
     client
     developer

@@ -7,6 +7,11 @@ const userService = new UserService()
 
 export const projectResolvers = {
   Project: {
+    // Ensure requestId is properly exposed
+    requestId: (parent: any) => {
+      return parent.requestId || null
+    },
+
     client: async (parent: any) => {
       return await userService.getUserById(parent.clientId)
     },

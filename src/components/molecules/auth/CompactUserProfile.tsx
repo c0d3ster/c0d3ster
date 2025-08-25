@@ -4,6 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 
 import { useGetMe } from '@/apiClients/userApiClient'
+import { AdminBadge, ClientBadge, DevBadge } from '@/components/atoms'
 import { isAdminRole } from '@/utils'
 
 export const CompactUserProfile = () => {
@@ -55,16 +56,9 @@ export const CompactUserProfile = () => {
           <h2 className='truncate font-mono text-lg font-bold text-green-400'>
             {displayName}
           </h2>
-          {isAdmin && (
-            <span className='inline-flex rounded-full bg-purple-400/20 px-2 py-1 font-mono text-xs font-bold text-purple-400'>
-              ADMIN
-            </span>
-          )}
-          {isDeveloper && !isAdmin && (
-            <span className='inline-flex rounded-full bg-blue-400/20 px-2 py-1 font-mono text-xs font-bold text-blue-400'>
-              DEV
-            </span>
-          )}
+          {isAdmin && <AdminBadge />}
+          {isDeveloper && !isAdmin && <DevBadge />}
+          {!isAdmin && !isDeveloper && <ClientBadge />}
         </div>
         <p className='truncate font-mono text-sm text-green-300/70'>
           {clerkUser.emailAddresses[0]?.emailAddress}

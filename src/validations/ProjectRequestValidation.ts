@@ -1,5 +1,7 @@
 import z from 'zod'
 
+import { ProjectType } from '@/graphql/generated/graphql'
+
 // Project request form validation schema
 export const projectRequestSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
@@ -7,19 +9,9 @@ export const projectRequestSchema = z.object({
     .string()
     .min(20, 'Description must be at least 20 characters')
     .max(2000, 'Description too long'),
-  projectType: z.enum(
-    [
-      'website',
-      'web_app',
-      'mobile_app',
-      'e_commerce',
-      'api',
-      'maintenance',
-      'consultation',
-      'other',
-    ],
-    { message: 'Please select a project type' }
-  ),
+  projectType: z.nativeEnum(ProjectType, {
+    message: 'Please select a project type',
+  }),
   budget: z
     .string()
     .optional()
@@ -49,17 +41,26 @@ export const projectRequestSchema = z.object({
 // Infer the TypeScript type from the schema
 export type ProjectRequestData = z.infer<typeof projectRequestSchema>
 
-// Project type options for the form
-export const projectTypeOptions = [
-  { value: 'website', label: 'Website' },
-  { value: 'web_app', label: 'Web Application' },
-  { value: 'mobile_app', label: 'Mobile App' },
-  { value: 'e_commerce', label: 'E-commerce Store' },
-  { value: 'api', label: 'API Development' },
-  { value: 'maintenance', label: 'Website Maintenance' },
-  { value: 'consultation', label: 'Consultation' },
-  { value: 'other', label: 'Other' },
-] as const
+// Project type options for the form - automatically generated from enum
+export const projectTypeOptions = Object.values(ProjectType).map((value) => ({
+  value,
+  label: value
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .replace(/([A-Z])/g, ' $1') // Add space before capital letters (for camelCase)
+    .replace(/^./, (str) => str.toUpperCase()) // Capitalize first letter
+    .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+    .trim(), // Remove leading/trailing spaces
+}))
+
+// Expected output:
+// website -> "Website"
+// web_app -> "Web App"
+// mobile_app -> "Mobile App"
+// e_commerce -> "E Commerce"
+// api -> "Api"
+// maintenance -> "Maintenance"
+// consultation -> "Consultation"
+// other -> "Other"
 
 // Contact preference options
 export const contactPreferenceOptions = [

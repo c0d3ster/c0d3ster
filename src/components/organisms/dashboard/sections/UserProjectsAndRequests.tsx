@@ -1,28 +1,59 @@
 'use client'
 
-import type { Project, ProjectRequest } from '@/graphql/generated/graphql'
+import type { GetMyDashboardQuery } from '@/graphql/generated/graphql'
 
-import { useGetMyProjectRequests, useGetMyProjects } from '@/apiClients'
 import { ProjectStatusCard } from '@/components/molecules'
 
-export const UserProjectsAndRequests = () => {
-  const {
-    data: projects,
-    loading: projectsLoading,
-    error: projectsError,
-  } = useGetMyProjects()
-  const {
-    data: requests,
-    loading: requestsLoading,
-    error: requestsError,
-  } = useGetMyProjectRequests()
+// Create a union type that matches what the GraphQL query returns
+type DashboardProject = NonNullable<
+  GetMyDashboardQuery['myDashboard']
+>['projects'][0]
+type DashboardProjectRequest = NonNullable<
+  GetMyDashboardQuery['myDashboard']
+>['projectRequests'][0]
 
-  const isLoading = projectsLoading || requestsLoading
-  const error = projectsError || requestsError
-  const items = [
-    ...(projects?.myProjects || []),
-    ...(requests?.myProjectRequests || []),
-  ]
+type UserProjectsAndRequestsProps = {
+  projects?: NonNullable<GetMyDashboardQuery['myDashboard']>['projects']
+  projectRequests?: NonNullable<
+    GetMyDashboardQuery['myDashboard']
+  >['projectRequests']
+}
+
+export const UserProjectsAndRequests = ({
+  projects,
+  projectRequests,
+}: UserProjectsAndRequestsProps) => {
+  const projectsList = projects || []
+  const projectRequestsList = projectRequests || []
+
+  // Filter out project requests that have been approved (i.e., exist as projects)
+  // This prevents showing the same request in both sections
+  const approvedProjectRequestIds = projectsList
+    .map((project) => project.requestId)
+    .filter(Boolean) // Remove undefined/null values
+
+  const filteredProjectRequests = projectRequestsList.filter(
+    (request) => !approvedProjectRequestIds.includes(request.id)
+  )
+
+  // Temporary debugging
+  console.warn(
+    '🔍 DEBUG - Projects:',
+    projectsList.map((p) => ({
+      id: p.id,
+      title: p.title,
+      requestId: p.requestId,
+    }))
+  )
+  console.warn(
+    '🔍 DEBUG - ProjectRequests:',
+    projectRequestsList.map((r) => ({ id: r.id, title: r.title }))
+  )
+  console.warn('🔍 DEBUG - Approved IDs:', approvedProjectRequestIds)
+  console.warn(
+    '🔍 DEBUG - Filtered Requests:',
+    filteredProjectRequests.map((r) => ({ id: r.id, title: r.title }))
+  )
 
   return (
     <>
@@ -32,51 +63,27 @@ export const UserProjectsAndRequests = () => {
           🚀 YOUR PROJECTS
         </h3>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className='flex items-center justify-center'>
-            <div className='h-6 w-6 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
-            <span className='ml-3 font-mono text-green-400'>
-              Loading your projects...
-            </span>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-            <p className='font-mono text-red-400'>Error: {String(error)}</p>
-          </div>
-        )}
-
         {/* Empty State */}
-        {!isLoading &&
-          !error &&
-          items.filter((item) => item.__typename === 'Project').length ===
-            0 && (
-            <div className='flex flex-col items-center justify-center text-center'>
-              <div className='mb-2 text-2xl'>🚀</div>
-              <p className='font-mono text-sm text-green-300/60'>
-                No projects yet
-              </p>
-            </div>
-          )}
+        {projectsList.length === 0 && (
+          <div className='flex flex-col items-center justify-center text-center'>
+            <div className='mb-2 text-2xl'>🚀</div>
+            <p className='font-mono text-sm text-green-300/60'>
+              No projects yet
+            </p>
+          </div>
+        )}
 
         {/* Projects Grid */}
-        {!isLoading &&
-          !error &&
-          items.filter((item) => item.__typename === 'Project').length > 0 && (
-            <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-              {items
-                .filter((item) => item.__typename === 'Project')
-                .map((item) => (
-                  <ProjectStatusCard
-                    key={`${item.__typename}-${item.id}`}
-                    item={item as Project}
-                  />
-                ))}
-            </div>
-          )}
+        {projectsList.length > 0 && (
+          <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+            {projectsList.map((item) => (
+              <ProjectStatusCard
+                key={`${item.__typename}-${item.id}`}
+                item={item as DashboardProject}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Your Requests Section */}
@@ -85,52 +92,27 @@ export const UserProjectsAndRequests = () => {
           📋 YOUR REQUESTS
         </h3>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className='flex items-center justify-center'>
-            <div className='h-6 w-6 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent'></div>
-            <span className='ml-3 font-mono text-yellow-400'>
-              Loading your requests...
-            </span>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-            <p className='font-mono text-red-400'>Error: {String(error)}</p>
-          </div>
-        )}
-
         {/* Empty State */}
-        {!isLoading &&
-          !error &&
-          items.filter((item) => item.__typename === 'ProjectRequest')
-            .length === 0 && (
-            <div className='flex flex-col items-center justify-center text-center'>
-              <div className='mb-2 text-2xl'>📋</div>
-              <p className='font-mono text-sm text-yellow-300/60'>
-                No pending requests
-              </p>
-            </div>
-          )}
+        {filteredProjectRequests.length === 0 && (
+          <div className='flex flex-col items-center justify-center text-center'>
+            <div className='mb-2 text-2xl'>📋</div>
+            <p className='font-mono text-sm text-yellow-300/60'>
+              No pending requests
+            </p>
+          </div>
+        )}
 
         {/* Requests Grid */}
-        {!isLoading &&
-          !error &&
-          items.filter((item) => item.__typename === 'ProjectRequest').length >
-            0 && (
-            <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
-              {items
-                .filter((item) => item.__typename === 'ProjectRequest')
-                .map((item) => (
-                  <ProjectStatusCard
-                    key={`${item.__typename}-${item.id}`}
-                    item={item as ProjectRequest}
-                  />
-                ))}
-            </div>
-          )}
+        {filteredProjectRequests.length > 0 && (
+          <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+            {filteredProjectRequests.map((item) => (
+              <ProjectStatusCard
+                key={`${item.__typename}-${item.id}`}
+                item={item as DashboardProjectRequest}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </>
   )

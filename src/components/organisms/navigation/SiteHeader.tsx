@@ -142,13 +142,14 @@ export const SiteHeader = ({
   }, [])
 
   // Header animation: fade in when scrolling down, fade out when at top
+  // Only fade for guests, signed-in users always see the header
   const fadeStart = 50 // Start fading in at 50px scroll
   const fadeEnd = 225 // Fully visible at 150px scroll
   const fadeProgress = Math.max(
     0,
     Math.min(1, (scrollY - fadeStart) / (fadeEnd - fadeStart))
   )
-  const opacity = shouldFade ? fadeProgress : 1
+  const opacity = shouldFade && !(isLoaded && user) ? fadeProgress : 1
 
   // Generate the actual navigation items with custom route logic
   const renderMenuItems = () => {

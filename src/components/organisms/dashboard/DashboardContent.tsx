@@ -192,7 +192,12 @@ export const DashboardContent = () => {
             )}
 
             {/* Common Projects & Requests sections for ALL users */}
-            <UserProjectsAndRequests />
+            <UserProjectsAndRequests
+              projects={dashboardData?.myDashboard?.projects || []}
+              projectRequests={
+                dashboardData?.myDashboard?.projectRequests || []
+              }
+            />
           </>
         )}
       </div>

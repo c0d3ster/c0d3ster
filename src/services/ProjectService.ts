@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, ne } from 'drizzle-orm'
+import { and, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import { db } from '@/libs/DB'
@@ -103,43 +103,40 @@ export class ProjectService {
     // It should NOT include projects where they're the main assigned developer
     // (those go in "Assigned Projects")
 
-    const clientProjects = await db.query.projects.findMany({
-      where: eq(schemas.projects.clientId, currentUserId),
-      orderBy: [desc(schemas.projects.createdAt)],
-    })
+    logger.info(`Getting projects for user: ${currentUserId}`)
 
-    const collaboratorProjects = await db
+    // Single query using OR conditions
+    const projects = await db
       .select()
       .from(schemas.projects)
-      .innerJoin(
-        schemas.projectCollaborators,
-        eq(schemas.projects.id, schemas.projectCollaborators.projectId)
-      )
       .where(
-        and(
-          eq(schemas.projectCollaborators.userId, currentUserId),
-          // Exclude projects where user is the main developer (those go in assigned projects)
-          ne(schemas.projects.developerId, currentUserId)
+        or(
+          // User is the client
+          eq(schemas.projects.clientId, currentUserId),
+          // User is a collaborator but NOT the main developer
+          and(
+            exists(
+              db
+                .select()
+                .from(schemas.projectCollaborators)
+                .where(
+                  and(
+                    eq(
+                      schemas.projectCollaborators.projectId,
+                      schemas.projects.id
+                    ),
+                    eq(schemas.projectCollaborators.userId, currentUserId)
+                  )
+                )
+            ),
+            ne(schemas.projects.developerId, currentUserId)
+          )
         )
       )
       .orderBy(desc(schemas.projects.createdAt))
 
-    // Combine and deduplicate (in case user is both client and collaborator)
-    const allProjects = [
-      ...clientProjects,
-      ...collaboratorProjects.map((item) => item.projects),
-    ]
-
-    // Remove duplicates by ID
-    const uniqueProjects = allProjects.filter(
-      (project, index, self) =>
-        index === self.findIndex((p) => p.id === project.id)
-    )
-
-    return uniqueProjects.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
+    logger.info(`Found ${projects.length} projects for user ${currentUserId}`)
+    return projects
   }
 
   async getAvailableProjects() {

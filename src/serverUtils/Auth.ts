@@ -51,10 +51,18 @@ export const checkPermission = (user: any, requiredRole: string) => {
     }
   } else {
     // For specific role checks (client, etc.)
+    // Allow users with higher roles to access lower role permissions
     if (userRole !== requiredRole && !isAdminRole(userRole)) {
-      throw new GraphQLError(`${requiredRole} permissions required`, {
-        extensions: { code: 'FORBIDDEN' },
-      })
+      // Check if user has a higher role than required
+      const roleHierarchy = ['client', 'developer', 'admin', 'super_admin']
+      const userRoleIndex = roleHierarchy.indexOf(userRole)
+      const requiredRoleIndex = roleHierarchy.indexOf(requiredRole)
+
+      if (userRoleIndex < requiredRoleIndex) {
+        throw new GraphQLError(`${requiredRole} permissions required`, {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
     }
   }
 }

@@ -2,22 +2,12 @@
 
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
-type UserData = {
-  id: string
-  clerkId: string
-  email: string
-  firstName: string | null
-  lastName: string | null
-  avatarUrl: string | null
-  createdAt: string
-  updatedAt: string
-}
+import { useGetMe, useUpdateUser } from '@/apiClients'
 
 export const UserProfile = () => {
   const { user, isLoaded } = useUser()
-  const [userData, setUserData] = useState<UserData | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
@@ -25,45 +15,37 @@ export const UserProfile = () => {
   })
   const [isLoading, setIsLoading] = useState(false)
 
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch('/api/users')
-      if (response.ok) {
-        const data = await response.json()
-        setUserData(data)
-        setFormData({
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error)
-    }
-  }
+  // GraphQL hooks
+  const { data: meData, refetch: refetchMe } = useGetMe()
+  const [updateUser] = useUpdateUser()
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchUserData()
-    }
-  }, [isLoaded, user])
+  // Set form data when user data is loaded
+  if (meData?.me && formData.firstName === '' && formData.lastName === '') {
+    setFormData({
+      firstName: meData.me.firstName || '',
+      lastName: meData.me.lastName || '',
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+      if (!meData?.me?.id) {
+        throw new Error('User ID not found')
+      }
+
+      await updateUser({
+        variables: {
+          id: meData.me.id,
+          input: formData,
         },
-        body: JSON.stringify(formData),
       })
 
-      if (response.ok) {
-        await fetchUserData()
-        setIsEditing(false)
-      }
+      // Refetch user data and reset form
+      await refetchMe()
+      setIsEditing(false)
     } catch (error) {
       console.error('Error updating user:', error)
     } finally {
@@ -71,7 +53,7 @@ export const UserProfile = () => {
     }
   }
 
-  if (!isLoaded) {
+  if (!isLoaded || !meData?.me) {
     return (
       <div className='flex items-center justify-center py-8'>
         <div className='font-mono text-green-400'>LOADING...</div>
@@ -102,12 +84,12 @@ export const UserProfile = () => {
         )}
         <div>
           <h2 className='font-mono text-2xl font-bold text-green-400'>
-            {userData?.firstName && userData?.lastName
-              ? `${userData.firstName} ${userData.lastName}`
+            {meData?.me?.firstName && meData?.me?.lastName
+              ? `${meData.me.firstName} ${meData.me.lastName}`
               : 'COMPLETE YOUR PROFILE'}
           </h2>
           <p className='font-mono text-green-300/80'>
-            {userData?.email || user.primaryEmailAddress?.emailAddress}
+            {meData?.me?.email || user.primaryEmailAddress?.emailAddress}
           </p>
         </div>
       </div>
@@ -120,7 +102,7 @@ export const UserProfile = () => {
                 FIRST NAME
               </span>
               <p className='mt-2 font-mono text-lg text-green-400'>
-                {userData?.firstName || 'Not set'}
+                {meData?.me?.firstName || 'Not set'}
               </p>
             </div>
             <div>
@@ -128,7 +110,7 @@ export const UserProfile = () => {
                 LAST NAME
               </span>
               <p className='mt-2 font-mono text-lg text-green-400'>
-                {userData?.lastName || 'Not set'}
+                {meData?.me?.lastName || 'Not set'}
               </p>
             </div>
           </div>
@@ -137,9 +119,24 @@ export const UserProfile = () => {
               MEMBER SINCE
             </span>
             <p className='mt-2 font-mono text-lg text-green-400'>
-              {userData?.createdAt
-                ? new Date(userData.createdAt).toLocaleDateString()
-                : 'N/A'}
+              {(() => {
+                if (!meData?.me?.createdAt) return 'N/A'
+
+                try {
+                  const date = new Date(meData.me.createdAt)
+                  // Check if the date is valid
+                  if (Number.isNaN(date.getTime())) {
+                    return 'N/A'
+                  }
+                  return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                } catch {
+                  return 'N/A'
+                }
+              })()}
             </p>
           </div>
           <button

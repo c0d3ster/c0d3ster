@@ -84,15 +84,12 @@ export class ProjectRequestService {
     return request
   }
 
-  async getMyProjectRequests(currentUserId: string, currentUserRole: string) {
-    if (currentUserRole === 'client') {
-      return await db.query.projectRequests.findMany({
-        where: eq(schemas.projectRequests.userId, currentUserId),
-        orderBy: [desc(schemas.projectRequests.createdAt)],
-      })
-    }
-
-    return []
+  async getMyProjectRequests(currentUserId: string, _currentUserRole: string) {
+    // Allow users with any role to see their own project requests
+    return await db.query.projectRequests.findMany({
+      where: eq(schemas.projectRequests.userId, currentUserId),
+      orderBy: [desc(schemas.projectRequests.createdAt)],
+    })
   }
 
   async createProjectRequest(input: any, currentUserId: string) {

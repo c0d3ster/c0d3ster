@@ -6,13 +6,15 @@ import { useForm } from 'react-hook-form'
 
 import type { ContactFormData } from '@/validations'
 
-import { Button } from '@/components/atoms/controls/Button'
+import { useSubmitContactForm } from '@/apiClients'
+import { Button } from '@/components/atoms'
 import { Toast } from '@/libs/Toast'
 import { contactFormSchema } from '@/validations'
 
 // Contact form component for handling user submissions
 export const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitContactForm] = useSubmitContactForm()
 
   const { register, handleSubmit, reset } = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
@@ -23,27 +25,23 @@ export const ContactForm = () => {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      const result = await submitContactForm({
+        variables: { input: data },
       })
 
-      if (response.ok) {
+      if (result.data?.submitContactForm) {
         Toast.success(
           "Message sent successfully! I'll get back to you within 24 hours."
         )
         reset()
       } else {
-        const errorData = await response.json()
-        Toast.error(
-          errorData.error || 'Failed to send message. Please try again.'
-        )
+        Toast.error('Failed to send message. Please try again.')
       }
-    } catch {
-      Toast.error('Network error. Please check your connection and try again.')
+    } catch (error: any) {
+      Toast.error(
+        error.message ||
+          'Network error. Please check your connection and try again.'
+      )
     } finally {
       setIsSubmitting(false)
     }

@@ -101,6 +101,13 @@ export const GET_MY_DASHBOARD = gql`
         createdAt
         updatedAt
         techStack
+        requestId
+        clientId
+        developerId
+        requirements
+        repositoryUrl
+        liveUrl
+        stagingUrl
         client {
           id
           firstName
@@ -153,6 +160,12 @@ export const GET_MY_DASHBOARD = gql`
         status
         createdAt
         updatedAt
+        user {
+          id
+          firstName
+          lastName
+          email
+        }
       }
       availableProjects {
         id

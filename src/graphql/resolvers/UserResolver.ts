@@ -1,11 +1,13 @@
 import { GraphQLError } from 'graphql'
 
+import { logger } from '@/libs/Logger'
 import { checkPermission, getCurrentUser } from '@/serverUtils'
-import { ProjectService, UserService } from '@/services'
+import { ProjectRequestService, ProjectService, UserService } from '@/services'
 import { isDeveloperOrHigherRole } from '@/utils'
 
 const userService = new UserService()
 const projectService = new ProjectService()
+const projectRequestService = new ProjectRequestService()
 
 export const userResolvers = {
   Query: {
@@ -84,13 +86,61 @@ export const userResolvers = {
     },
   },
 
-  UserDashboard: {
-    projects: async (parent: any) => {
-      return await userService.getUserProjects(parent.userId)
+  User: {
+    // Ensure date fields are properly formatted as strings
+    createdAt: (parent: any) => {
+      if (!parent.createdAt) return null
+      try {
+        const date = new Date(parent.createdAt)
+        if (Number.isNaN(date.getTime())) {
+          logger.error('Invalid date value for createdAt', {
+            value: parent.createdAt,
+          })
+          return null
+        }
+        return date.toISOString()
+      } catch (error) {
+        logger.error('Error formatting createdAt', {
+          error: String(error),
+          value: parent.createdAt,
+        })
+        return null
+      }
     },
 
-    projectRequests: async (parent: any) => {
-      return await userService.getUserProjectRequests(parent.userId)
+    updatedAt: (parent: any) => {
+      if (!parent.updatedAt) return null
+      try {
+        const date = new Date(parent.updatedAt)
+        if (Number.isNaN(date.getTime())) {
+          logger.error('Invalid date value for updatedAt', {
+            value: parent.updatedAt,
+          })
+          return null
+        }
+        return date.toISOString()
+      } catch (error) {
+        logger.error('Error formatting updatedAt', {
+          error: String(error),
+          value: parent.updatedAt,
+        })
+        return null
+      }
+    },
+  },
+
+  UserDashboard: {
+    projects: async (_parent: any) => {
+      const currentUser = await getCurrentUser()
+      return await projectService.getMyProjects(currentUser.id)
+    },
+
+    projectRequests: async (_parent: any) => {
+      const currentUser = await getCurrentUser()
+      return await projectRequestService.getMyProjectRequests(
+        currentUser.id,
+        currentUser.role
+      )
     },
 
     availableProjects: async (_parent: any) => {
@@ -109,10 +159,14 @@ export const userResolvers = {
       return await projectService.getAssignedProjects(currentUser.id)
     },
 
-    summary: async (parent: any) => {
+    summary: async (_parent: any) => {
+      const currentUser = await getCurrentUser()
       const [projects, projectRequests] = await Promise.all([
-        userService.getUserProjects(parent.userId),
-        userService.getUserProjectRequests(parent.userId),
+        projectService.getMyProjects(currentUser.id),
+        projectRequestService.getMyProjectRequests(
+          currentUser.id,
+          currentUser.role
+        ),
       ])
 
       const totalProjects = projects.length

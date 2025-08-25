@@ -17,8 +17,8 @@ export const projectRequestSchema = gql`
     updatedAt: String!
 
     # Relationships
-    user: User!
-    reviewer: User
+    user: DisplayUser!
+    reviewer: DisplayUser
   }
 
   # Project request input types

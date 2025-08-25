@@ -151,6 +151,17 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
 
       {/* Project Details - grows to fill space */}
       <div className='mb-4 flex-1 space-y-2'>
+        {/* Additional Info for Project Requests */}
+        {item.__typename === 'ProjectRequest' &&
+          'additionalInfo' in item &&
+          item.additionalInfo && (
+            <div className='mb-2'>
+              <p className='font-mono text-sm text-green-300/70 italic'>
+                {item.additionalInfo}
+              </p>
+            </div>
+          )}
+
         {item.budget && (
           <div className='flex justify-between text-sm'>
             <span className='font-mono text-green-300/60'>Budget:</span>
