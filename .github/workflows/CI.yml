@@ -110,7 +110,7 @@ jobs:
       - name: Run unit tests
         uses: docker://mcr.microsoft.com/playwright:v1.54.0
         with:
-          args: npm run test -- --coverage
+          args: npm run test -- --run --project=unit --coverage
         env:
           # Required Clerk variables
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
