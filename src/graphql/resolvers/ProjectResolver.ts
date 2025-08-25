@@ -1,5 +1,4 @@
 import { logger } from '@/libs/Logger'
-import { checkPermission, getCurrentUser } from '@/serverUtils'
 import { ProjectService, UserService } from '@/services'
 
 const projectService = new ProjectService()
@@ -115,41 +114,39 @@ export const projectResolvers = {
 
   Query: {
     projects: async (_: any, { filter }: { filter?: any }) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectService.getProjects(
         filter,
-        currentUser.id,
-        currentUser.role
+        currentUser.role === 'admin' ? undefined : currentUser.id
       )
     },
 
     project: async (_: any, { id }: { id: string }) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectService.getProjectById(
         id,
-        currentUser.id,
-        currentUser.role
+        currentUser.role === 'admin' ? undefined : currentUser.id
       )
     },
 
     myProjects: async () => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectService.getMyProjects(currentUser.id)
     },
 
     availableProjects: async () => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'developer')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'developer')
 
       return await projectService.getAvailableProjects()
     },
 
     assignedProjects: async () => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'developer')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'developer')
 
       return await projectService.getAssignedProjects(currentUser.id)
     },
@@ -157,8 +154,8 @@ export const projectResolvers = {
 
   Mutation: {
     createProject: async (_: any, { input }: { input: any }) => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'admin')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'admin')
 
       return await projectService.createProject(input)
     },
@@ -167,13 +164,12 @@ export const projectResolvers = {
       _: any,
       { id, input }: { id: string; input: any }
     ) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectService.updateProject(
         id,
         input,
-        currentUser.id,
-        currentUser.role
+        currentUser.role === 'admin' ? undefined : currentUser.id
       )
     },
 
@@ -181,28 +177,20 @@ export const projectResolvers = {
       _: any,
       { projectId, developerId }: { projectId: string; developerId: string }
     ) => {
-      const currentUser = await getCurrentUser()
       // Permission check is now handled in the service layer
-
-      return await projectService.assignProject(
-        projectId,
-        developerId,
-        currentUser.id,
-        currentUser.role
-      )
+      return await projectService.assignProject(projectId, developerId)
     },
 
     updateProjectStatus: async (
       _: any,
       { id, input }: { id: string; input: any }
     ) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectService.updateProjectStatus(
         id,
         input,
-        currentUser.id,
-        currentUser.role
+        currentUser.role === 'admin' ? undefined : currentUser.id
       )
     },
   },

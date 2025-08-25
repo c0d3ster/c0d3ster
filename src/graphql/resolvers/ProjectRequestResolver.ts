@@ -3,19 +3,19 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
-import { checkPermission, getCurrentUser } from '@/serverUtils'
-import { ProjectRequestService } from '@/services'
+import { ProjectRequestService, UserService } from '@/services'
 
 const projectRequestService = new ProjectRequestService()
+const userService = new UserService()
 
 export const projectRequestResolvers = {
   Query: {
     projectRequests: async (_: any, { filter }: { filter?: any }) => {
       console.error('🚨 PROJECT REQUESTS QUERY CALLED!!!', filter)
       try {
-        const currentUser = await getCurrentUser()
+        const currentUser = await userService.getCurrentUserWithAuth()
         console.error('🚨 CURRENT USER:', currentUser)
-        checkPermission(currentUser, 'admin')
+        userService.checkPermission(currentUser, 'admin')
         console.error('🚨 PERMISSION CHECK PASSED')
 
         const results = await projectRequestService.getProjectRequests(filter)
@@ -32,7 +32,7 @@ export const projectRequestResolvers = {
     },
 
     projectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectRequestService.getProjectRequestById(
         id,
@@ -42,7 +42,7 @@ export const projectRequestResolvers = {
     },
 
     myProjectRequests: async () => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectRequestService.getMyProjectRequests(
         currentUser.id,
@@ -53,8 +53,8 @@ export const projectRequestResolvers = {
 
   Mutation: {
     createProjectRequest: async (_: any, { input }: { input: any }) => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'client')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'client')
 
       return await projectRequestService.createProjectRequest(
         input,
@@ -66,7 +66,7 @@ export const projectRequestResolvers = {
       _: any,
       { id, input }: { id: string; input: any }
     ) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectRequestService.updateProjectRequest(
         id,
@@ -77,15 +77,15 @@ export const projectRequestResolvers = {
     },
 
     approveProjectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'admin')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'admin')
 
       return await projectRequestService.approveProjectRequest(id)
     },
 
     rejectProjectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'admin')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'admin')
 
       return await projectRequestService.rejectProjectRequest(id)
     },

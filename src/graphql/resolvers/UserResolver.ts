@@ -1,7 +1,6 @@
 import { GraphQLError } from 'graphql'
 
 import { logger } from '@/libs/Logger'
-import { checkPermission, getCurrentUser } from '@/serverUtils'
 import { ProjectRequestService, ProjectService, UserService } from '@/services'
 import { isDeveloperOrHigherRole } from '@/utils'
 
@@ -12,7 +11,7 @@ const projectRequestService = new ProjectRequestService()
 export const userResolvers = {
   Query: {
     me: async () => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
       console.error('🚨 GET ME QUERY - CURRENT USER:', {
         id: currentUser?.id,
         role: currentUser?.role,
@@ -22,21 +21,21 @@ export const userResolvers = {
     },
 
     user: async (_: any, { id }: { id: string }) => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'admin')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'admin')
 
       return await userService.getUserById(id)
     },
 
     users: async (_: any, { filter }: { filter?: any }) => {
-      const currentUser = await getCurrentUser()
-      checkPermission(currentUser, 'admin')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'admin')
 
       return await userService.getUsers(filter)
     },
 
     myDashboard: async () => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
       // Return a placeholder object - the actual data will be resolved by field resolvers
       return { userId: currentUser.id }
     },
@@ -47,7 +46,7 @@ export const userResolvers = {
       _: any,
       { id, input }: { id: string; input: Record<string, unknown> }
     ) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
 
       // Users can only update themselves, or admins can update anyone
       if (currentUser.id !== id && currentUser.role !== 'admin') {
@@ -131,12 +130,12 @@ export const userResolvers = {
 
   UserDashboard: {
     projects: async (_parent: any) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
       return await projectService.getMyProjects(currentUser.id)
     },
 
     projectRequests: async (_parent: any) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
       return await projectRequestService.getMyProjectRequests(
         currentUser.id,
         currentUser.role
@@ -144,7 +143,7 @@ export const userResolvers = {
     },
 
     availableProjects: async (_parent: any) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
       if (!isDeveloperOrHigherRole(currentUser.role)) {
         return []
       }
@@ -152,7 +151,7 @@ export const userResolvers = {
     },
 
     assignedProjects: async (_parent: any) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
       if (!isDeveloperOrHigherRole(currentUser.role)) {
         return []
       }
@@ -160,7 +159,7 @@ export const userResolvers = {
     },
 
     summary: async (_parent: any) => {
-      const currentUser = await getCurrentUser()
+      const currentUser = await userService.getCurrentUserWithAuth()
       const [projects, projectRequests] = await Promise.all([
         projectService.getMyProjects(currentUser.id),
         projectRequestService.getMyProjectRequests(
