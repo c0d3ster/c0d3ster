@@ -10,6 +10,14 @@ vi.mock('@/apiClients/userApiClient', () => ({
   useGetMyDashboard: vi.fn(),
 }))
 
+// Mock contact API client specifically
+vi.mock('@/apiClients/contactApiClient', () => ({
+  useSubmitContactForm: vi.fn(() => [
+    vi.fn().mockResolvedValue({ data: { submitContactForm: { id: '1' } } }),
+    { loading: false, error: null },
+  ]),
+}))
+
 // Set Buffer for browser environment with full polyfill
 // eslint-disable-next-line node/prefer-global/buffer
 if (typeof globalThis.Buffer === 'undefined') {
@@ -67,29 +75,30 @@ vi.mock('@/libs/Toast', () => ({
   },
 }))
 
-// Mock GraphQL generated types - mock everything with a proxy
-vi.mock('@/graphql/generated/graphql', () => ({
-  GetMeDocument: {},
-  GetMyDashboardDocument: {},
-  GetUserDocument: {},
-  UpdateUserDocument: {},
-  useGetMeQuery: vi.fn(),
-  useGetMyDashboardQuery: vi.fn(),
-  useGetUserQuery: vi.fn(),
-  useUpdateUserMutation: vi.fn(),
-  GetMeQuery: {},
-  GetMyDashboardQuery: {},
-  GetUserQuery: {},
-  UpdateUserMutation: {},
-  GetUserQueryVariables: {},
-  UpdateUserMutationVariables: {},
-}))
+// // Mock GraphQL generated types - mock everything with a proxy
+// vi.mock('@/graphql/generated/graphql', () => ({
+//   GetMeDocument: {},
+//   GetMyDashboardDocument: {},
+//   GetUserDocument: {},
+//   UpdateUserDocument: {},
+//   useGetMeQuery: vi.fn(),
+//   useGetMyDashboardQuery: vi.fn(),
+//   useGetUserQuery: vi.fn(),
+//   useUpdateUserMutation: vi.fn(),
+//   GetMeQuery: {},
+//   GetMyDashboardQuery: {},
+//   GetUserQuery: {},
+//   UpdateUserMutation: {},
+//   GetUserQueryVariables: {},
+//   UpdateUserMutationVariables: {},
+//   ProjectType: {},
+// }))
 
-// Mock GraphQL main folder to prevent resolver imports
-vi.mock('@/graphql', () => ({
-  resolvers: {},
-  typeDefs: {},
-}))
+// // Mock GraphQL main folder to prevent resolver imports
+// vi.mock('@/graphql', () => ({
+//   resolvers: {},
+//   typeDefs: {},
+// }))
 
 // Mock database-related modules to prevent Drizzle ORM imports
 vi.mock('@/models', () => ({
@@ -101,13 +110,13 @@ vi.mock('@/models', () => ({
   projectCollaborators: {},
 }))
 
-// Mock apiClients to prevent GraphQL imports
-vi.mock('@/apiClients', () => ({
-  useGetMe: vi.fn(() => ({ data: { me: null }, loading: false })),
-  useGetUser: vi.fn(),
-  useUpdateUser: vi.fn(),
-  useGetMyDashboard: vi.fn(),
-}))
+// // Mock apiClients to prevent GraphQL imports
+// vi.mock('@/apiClients', () => ({
+//   useGetMe: vi.fn(() => ({ data: { me: null }, loading: false })),
+//   useGetUser: vi.fn(),
+//   useUpdateUser: vi.fn(),
+//   useGetMyDashboard: vi.fn(),
+// }))
 
 vi.mock('@/libs/Env', () => ({
   Env: {
