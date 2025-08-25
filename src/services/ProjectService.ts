@@ -362,4 +362,23 @@ export class ProjectService {
     logger.info(`Project status updated: ${id} to ${input.newStatus}`)
     return statusUpdate
   }
+
+  async getProjectStatusUpdates(projectId: string) {
+    return await db.query.projectStatusUpdates.findMany({
+      where: eq(schemas.projectStatusUpdates.projectId, projectId),
+      orderBy: [desc(schemas.projectStatusUpdates.createdAt)],
+    })
+  }
+
+  async getProjectCollaborators(projectId: string) {
+    return await db.query.projectCollaborators.findMany({
+      where: eq(schemas.projectCollaborators.projectId, projectId),
+    })
+  }
+
+  async getProjectRequestById(projectRequestId: string) {
+    return await db.query.projectRequests.findFirst({
+      where: eq(schemas.projectRequests.id, projectRequestId),
+    })
+  }
 }

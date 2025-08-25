@@ -4,8 +4,7 @@ import { GraphQLError } from 'graphql'
 
 import { db } from '@/libs/DB'
 import { schemas } from '@/models'
-
-import { isAdminRole, isDeveloperOrHigherRole } from './RoleConstants'
+import { isAdminRole, isDeveloperOrHigherRole } from '@/utils'
 
 // Helper function to get current user
 export const getCurrentUser = async () => {

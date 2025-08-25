@@ -1,14 +1,113 @@
-import { desc, eq } from 'drizzle-orm'
-
-import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
-import { schemas } from '@/models'
-import { ProjectService } from '@/services'
-import { checkPermission, getCurrentUser } from '@/utils'
+import { checkPermission, getCurrentUser } from '@/serverUtils'
+import { ProjectService, UserService } from '@/services'
 
 const projectService = new ProjectService()
+const userService = new UserService()
 
 export const projectResolvers = {
+  Project: {
+    client: async (parent: any) => {
+      return await userService.getUserById(parent.clientId)
+    },
+
+    developer: async (parent: any) => {
+      if (!parent.developerId) return null
+      return await userService.getUserById(parent.developerId)
+    },
+
+    projectRequest: async (parent: any) => {
+      if (!parent.projectRequestId) return null
+      return await projectService.getProjectRequestById(parent.projectRequestId)
+    },
+
+    statusUpdates: async (parent: any) => {
+      return await projectService.getProjectStatusUpdates(parent.id)
+    },
+
+    collaborators: async (parent: any) => {
+      return await projectService.getProjectCollaborators(parent.id)
+    },
+
+    // Ensure date fields are properly formatted as strings
+    createdAt: (parent: any) => {
+      if (!parent.createdAt) return null
+      try {
+        return new Date(parent.createdAt).toISOString()
+      } catch (error) {
+        logger.error('Error formatting createdAt', {
+          error: String(error),
+          value: parent.createdAt,
+        })
+        return null
+      }
+    },
+
+    updatedAt: (parent: any) => {
+      if (!parent.updatedAt) return null
+      try {
+        return new Date(parent.updatedAt).toISOString()
+      } catch (error) {
+        logger.error('Error formatting updatedAt', {
+          error: String(error),
+          value: parent.updatedAt,
+        })
+        return null
+      }
+    },
+
+    startDate: (parent: any) => {
+      if (!parent.startDate) return null
+      try {
+        return new Date(parent.startDate).toISOString()
+      } catch (error) {
+        logger.error('Error formatting startDate', {
+          error: String(error),
+          value: parent.startDate,
+        })
+        return null
+      }
+    },
+
+    estimatedCompletionDate: (parent: any) => {
+      if (!parent.estimatedCompletionDate) return null
+      try {
+        return new Date(parent.estimatedCompletionDate).toISOString()
+      } catch (error) {
+        logger.error('Error formatting estimatedCompletionDate', {
+          error: String(error),
+          value: parent.estimatedCompletionDate,
+        })
+        return null
+      }
+    },
+
+    actualCompletionDate: (parent: any) => {
+      if (!parent.actualCompletionDate) return null
+      try {
+        return new Date(parent.actualCompletionDate).toISOString()
+      } catch (error) {
+        logger.error('Error formatting actualCompletionDate', {
+          error: String(error),
+          value: parent.actualCompletionDate,
+        })
+        return null
+      }
+    },
+  },
+
+  ProjectStatusUpdate: {
+    updatedBy: async (parent: any) => {
+      return await userService.getUserById(parent.updatedById)
+    },
+  },
+
+  ProjectCollaborator: {
+    user: async (parent: any) => {
+      return await userService.getUserById(parent.userId)
+    },
+  },
+
   Query: {
     projects: async (_: any, { filter }: { filter?: any }) => {
       const currentUser = await getCurrentUser()
@@ -100,126 +199,6 @@ export const projectResolvers = {
         currentUser.id,
         currentUser.role
       )
-    },
-  },
-
-  Project: {
-    projectRequest: async (parent: any) => {
-      if (!parent.requestId) return null
-      return await db.query.projectRequests.findFirst({
-        where: eq(schemas.projectRequests.id, parent.requestId),
-      })
-    },
-
-    client: async (parent: any) => {
-      return await db.query.users.findFirst({
-        where: eq(schemas.users.id, parent.clientId),
-      })
-    },
-
-    developer: async (parent: any) => {
-      if (!parent.developerId) return null
-      return await db.query.users.findFirst({
-        where: eq(schemas.users.id, parent.developerId),
-      })
-    },
-
-    statusUpdates: async (parent: any) => {
-      return await db.query.projectStatusUpdates.findMany({
-        where: eq(schemas.projectStatusUpdates.projectId, parent.id),
-        orderBy: [desc(schemas.projectStatusUpdates.createdAt)],
-      })
-    },
-
-    collaborators: async (parent: any) => {
-      return await db.query.projectCollaborators.findMany({
-        where: eq(schemas.projectCollaborators.projectId, parent.id),
-      })
-    },
-
-    // Ensure date fields are properly formatted as strings
-    createdAt: (parent: any) => {
-      if (!parent.createdAt) {
-        logger.warn('Project createdAt is null/undefined for project', {
-          projectId: parent.id,
-        })
-        return null
-      }
-      try {
-        const date = new Date(parent.createdAt)
-        if (Number.isNaN(date.getTime())) {
-          logger.error('Invalid date value', { value: parent.createdAt })
-          return null
-        }
-        return date.toISOString()
-      } catch (error) {
-        logger.error('Error formatting createdAt', {
-          error: String(error),
-          value: parent.createdAt,
-        })
-        return null
-      }
-    },
-
-    updatedAt: (parent: any) => {
-      if (!parent.updatedAt) return null
-      try {
-        return new Date(parent.updatedAt).toISOString()
-      } catch (error) {
-        logger.error('Error formatting updatedAt', {
-          error: String(error),
-          value: parent.updatedAt,
-        })
-        return null
-      }
-    },
-
-    startDate: (parent: any) => {
-      if (!parent.startDate) return null
-      try {
-        return new Date(parent.startDate).toISOString()
-      } catch (error) {
-        logger.error('Error formatting startDate', {
-          error: String(error),
-          value: parent.startDate,
-        })
-        return null
-      }
-    },
-
-    estimatedCompletionDate: (parent: any) => {
-      if (!parent.estimatedCompletionDate) return null
-      try {
-        return new Date(parent.estimatedCompletionDate).toISOString()
-      } catch (error) {
-        logger.error('Error formatting estimatedCompletionDate', {
-          error: String(error),
-          value: parent.estimatedCompletionDate,
-        })
-        return null
-      }
-    },
-
-    actualCompletionDate: (parent: any) => {
-      if (!parent.actualCompletionDate) return null
-      try {
-        return new Date(parent.actualCompletionDate).toISOString()
-      } catch (error) {
-        logger.error('Error formatting actualCompletionDate', {
-          error: String(error),
-          value: parent.actualCompletionDate,
-        })
-        return null
-      }
-    },
-
-    // Debug status field
-    status: (parent: any) => {
-      logger.warn('Project status resolver', {
-        parentStatus: parent.status,
-        type: typeof parent.status,
-      })
-      return parent.status || 'unknown'
     },
   },
 }

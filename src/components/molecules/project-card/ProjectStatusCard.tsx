@@ -86,19 +86,17 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
   )
   const isProject = item.__typename === 'Project'
 
-  // Check if user is working on someone else's project (developer on a client's project)
-  const isCollaborator =
-    isProject &&
-    'developer' in item &&
-    'client' in item &&
-    item.developer &&
-    item.client
-  const clientName =
+  // Check if this is a project with client information
+  const hasClientInfo =
     item.__typename === 'Project' && 'client' in item && item.client
-      ? `${item.client.firstName || ''} ${item.client.lastName || ''}`.trim() ||
-        item.client.email ||
-        'Unknown Client'
-      : null
+  const clientName = hasClientInfo
+    ? `${item.client.firstName || ''} ${item.client.lastName || ''}`.trim() ||
+      item.client.email ||
+      'Unknown Client'
+    : null
+
+  // Check if this is an assigned project (has a developer)
+  const isAssignedProject = isProject && 'developer' in item && item.developer
 
   return (
     <div className='flex h-full min-h-[280px] flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
@@ -111,11 +109,11 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           <p className='font-mono text-xs tracking-wide text-green-300/60 uppercase'>
             {(item.projectType || 'unknown').replace('_', ' ')}
           </p>
-          {/* Role indicator for collaborators */}
-          {isCollaborator && (
+          {/* Role indicator for assigned projects */}
+          {isAssignedProject && (
             <div className='mt-1 flex flex-wrap gap-1'>
               <span className='inline-flex rounded-full bg-blue-400/20 px-3 py-1 font-mono text-xs font-bold text-blue-400'>
-                DEV
+                ASSIGNED
               </span>
             </div>
           )}
@@ -130,8 +128,8 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
         </div>
       </div>
 
-      {/* Client Info for collaborators */}
-      {isCollaborator && clientName && (
+      {/* Client Info for projects */}
+      {hasClientInfo && clientName && (
         <div className='mb-3 rounded border border-blue-400/20 bg-blue-400/5 p-2'>
           <p className='font-mono text-xs text-blue-400'>
             <span className='text-blue-400/60'>Client:</span> {clientName}

@@ -1,16 +1,11 @@
 import { auth } from '@clerk/nextjs/server'
 import { eq } from 'drizzle-orm'
 
+import type { UserRole } from '@/utils'
+
 import { db } from '@/libs/DB'
 import { users } from '@/models'
-
-import type { UserRole } from './RoleConstants'
-
-import {
-  isAdminRole,
-  isDeveloperOrHigherRole,
-  isUserRole,
-} from './RoleConstants'
+import { isAdminRole, isDeveloperOrHigherRole, isUserRole } from '@/utils'
 
 type AuthenticatedUser = {
   id: string

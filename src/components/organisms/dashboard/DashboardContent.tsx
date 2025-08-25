@@ -2,12 +2,7 @@
 
 import Link from 'next/link'
 
-import {
-  useGetAssignedProjects,
-  useGetAvailableProjects,
-  useGetMe,
-  useGetMyDashboard,
-} from '@/apiClients'
+import { useGetMe, useGetMyDashboard } from '@/apiClients'
 import { CompactUserProfile } from '@/components/molecules'
 import { isAdminRole } from '@/utils/RoleConstants'
 
@@ -20,10 +15,6 @@ import {
 export const DashboardContent = () => {
   const { data: userData, loading: userLoading } = useGetMe()
   const { data: dashboardData, loading: dashboardLoading } = useGetMyDashboard()
-  const { data: availableProjectsData, loading: availableLoading } =
-    useGetAvailableProjects()
-  const { data: assignedProjectsData, loading: assignedLoading } =
-    useGetAssignedProjects()
 
   const userRole = userData?.me?.role
 
@@ -37,14 +28,11 @@ export const DashboardContent = () => {
   const isAdmin = userRole ? isAdminRole(userRole) : false
   const isDeveloper = userRole === 'developer'
   const summary = dashboardData?.myDashboard?.summary
-  const availableProjects = availableProjectsData?.availableProjects
-  const assignedProjects = assignedProjectsData?.assignedProjects
+  const availableProjects = dashboardData?.myDashboard?.availableProjects || []
+  const assignedProjects = dashboardData?.myDashboard?.assignedProjects || []
 
   // Determine if we're still loading the main content data
-  const isContentLoading =
-    userLoading ||
-    dashboardLoading ||
-    (isDeveloper && (availableLoading || assignedLoading))
+  const isContentLoading = userLoading || dashboardLoading
 
   return (
     <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
@@ -192,7 +180,16 @@ export const DashboardContent = () => {
         ) : (
           <>
             {/* Developer-specific sections (Available & Assigned Projects) */}
-            {(isDeveloper || isAdmin) && <DeveloperDashboardSection />}
+            {(isDeveloper || isAdmin) && (
+              <DeveloperDashboardSection
+                availableProjects={availableProjects}
+                assignedProjects={assignedProjects}
+                onDataRefresh={() => {
+                  // Refetch the dashboard data
+                  window.location.reload()
+                }}
+              />
+            )}
 
             {/* Common Projects & Requests sections for ALL users */}
             <UserProjectsAndRequests />

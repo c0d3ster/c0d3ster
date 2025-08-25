@@ -81,21 +81,123 @@ export const UPDATE_USER = gql`
 export const GET_MY_DASHBOARD = gql`
   query GetMyDashboard {
     myDashboard {
-      projects {
-        id
-        title
-        status
-      }
-      projectRequests {
-        id
-        title
-        status
-      }
       summary {
         totalProjects
         activeProjects
         completedProjects
         pendingRequests
+      }
+      projects {
+        id
+        title
+        description
+        projectType
+        budget
+        status
+        progressPercentage
+        startDate
+        estimatedCompletionDate
+        actualCompletionDate
+        createdAt
+        updatedAt
+        techStack
+        client {
+          id
+          firstName
+          lastName
+          email
+        }
+        developer {
+          id
+          firstName
+          lastName
+          email
+        }
+        collaborators {
+          id
+          role
+          joinedAt
+          user {
+            id
+            firstName
+            lastName
+            email
+          }
+        }
+        statusUpdates {
+          id
+          oldStatus
+          newStatus
+          progressPercentage
+          updateMessage
+          isClientVisible
+          createdAt
+          updatedBy {
+            id
+            firstName
+            lastName
+            email
+          }
+        }
+      }
+      projectRequests {
+        id
+        title
+        description
+        projectType
+        budget
+        timeline
+        requirements
+        contactPreference
+        additionalInfo
+        status
+        createdAt
+        updatedAt
+      }
+      availableProjects {
+        id
+        title
+        description
+        projectType
+        budget
+        priority
+        techStack
+        repositoryUrl
+        startDate
+        estimatedCompletionDate
+        createdAt
+        updatedAt
+        client {
+          id
+          firstName
+          lastName
+          email
+        }
+      }
+      assignedProjects {
+        id
+        title
+        description
+        projectType
+        budget
+        status
+        priority
+        progressPercentage
+        startDate
+        estimatedCompletionDate
+        actualCompletionDate
+        liveUrl
+        stagingUrl
+        repositoryUrl
+        techStack
+        createdAt
+        updatedAt
+        client {
+          id
+          firstName
+          lastName
+          email
+        }
       }
     }
   }

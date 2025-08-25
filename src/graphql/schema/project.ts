@@ -37,32 +37,27 @@ export const projectSchema = gql`
     techStack: [String!]
     status: ProjectStatus!
     progressPercentage: Int
+    priority: String
     startDate: String
     estimatedCompletionDate: String
     actualCompletionDate: String
+    repositoryUrl: String
+    liveUrl: String
+    stagingUrl: String
     createdAt: String!
     updatedAt: String!
 
-    # Relationships
+    # Relationships - these will be resolved by field resolvers
+    clientId: ID!
+    developerId: ID
+    projectRequestId: ID
+
+    # Resolved relationships (via field resolvers)
     client: User!
     developer: User
     projectRequest: ProjectRequest
     statusUpdates: [ProjectStatusUpdate!]!
     collaborators: [ProjectCollaborator!]!
-  }
-
-  # Project summary types
-  type ProjectSummary {
-    totalProjects: Int!
-    activeProjects: Int!
-    completedProjects: Int!
-    pendingRequests: Int!
-  }
-
-  type UserDashboard {
-    projects: [Project!]!
-    projectRequests: [ProjectRequest!]!
-    summary: ProjectSummary!
   }
 
   # Project status update type
@@ -75,6 +70,9 @@ export const projectSchema = gql`
     updateMessage: String!
     isClientVisible: Boolean!
     createdAt: String!
+    updatedById: ID!
+
+    # Resolved relationships (via field resolvers)
     updatedBy: User!
   }
 
@@ -84,6 +82,9 @@ export const projectSchema = gql`
     projectId: ID!
     role: String!
     joinedAt: String!
+    userId: ID!
+
+    # Resolved relationships (via field resolvers)
     user: User!
   }
 

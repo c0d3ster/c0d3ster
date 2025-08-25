@@ -3,8 +3,8 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
+import { checkPermission, getCurrentUser } from '@/serverUtils'
 import { ProjectRequestService } from '@/services'
-import { checkPermission, getCurrentUser } from '@/utils'
 
 const projectRequestService = new ProjectRequestService()
 

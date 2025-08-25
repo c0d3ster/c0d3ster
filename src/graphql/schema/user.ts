@@ -24,10 +24,22 @@ export const userSchema = gql`
     availability: String
     createdAt: String!
     updatedAt: String!
-    # Reference to Project type (defined in project schema)
+  }
+
+  # Project summary types
+  type ProjectSummary {
+    totalProjects: Int!
+    activeProjects: Int!
+    completedProjects: Int!
+    pendingRequests: Int!
+  }
+
+  type UserDashboard {
     projects: [Project!]!
-    # Reference to ProjectRequest type (defined in projectRequest schema)
     projectRequests: [ProjectRequest!]!
+    summary: ProjectSummary!
+    availableProjects: [Project!]!
+    assignedProjects: [Project!]!
   }
 
   # User input types

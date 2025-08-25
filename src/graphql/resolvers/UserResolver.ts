@@ -1,9 +1,11 @@
 import { GraphQLError } from 'graphql'
 
-import { UserService } from '@/services'
-import { checkPermission, getCurrentUser } from '@/utils'
+import { checkPermission, getCurrentUser } from '@/serverUtils'
+import { ProjectService, UserService } from '@/services'
+import { isDeveloperOrHigherRole } from '@/utils'
 
 const userService = new UserService()
+const projectService = new ProjectService()
 
 export const userResolvers = {
   Query: {
@@ -82,16 +84,6 @@ export const userResolvers = {
     },
   },
 
-  User: {
-    projects: async (parent: any) => {
-      return await userService.getUserProjects(parent.id)
-    },
-
-    projectRequests: async (parent: any) => {
-      return await userService.getUserProjectRequests(parent.id)
-    },
-  },
-
   UserDashboard: {
     projects: async (parent: any) => {
       return await userService.getUserProjects(parent.userId)
@@ -99,6 +91,22 @@ export const userResolvers = {
 
     projectRequests: async (parent: any) => {
       return await userService.getUserProjectRequests(parent.userId)
+    },
+
+    availableProjects: async (_parent: any) => {
+      const currentUser = await getCurrentUser()
+      if (!isDeveloperOrHigherRole(currentUser.role)) {
+        return []
+      }
+      return await projectService.getAvailableProjects()
+    },
+
+    assignedProjects: async (_parent: any) => {
+      const currentUser = await getCurrentUser()
+      if (!isDeveloperOrHigherRole(currentUser.role)) {
+        return []
+      }
+      return await projectService.getAssignedProjects(currentUser.id)
     },
 
     summary: async (parent: any) => {
