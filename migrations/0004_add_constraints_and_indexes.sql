@@ -20,10 +20,10 @@ ALTER TABLE project_requests
   CHECK (budget IS NULL OR budget >= 0);
 
 -- Add indexes for performance
-CREATE INDEX CONCURRENTLY IF NOT EXISTS projects_client_id_idx ON projects (client_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS projects_status_idx ON projects (status);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS projects_updated_at_idx ON projects (updated_at);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS project_collaborators_project_id_idx ON project_collaborators (project_id);
+CREATE INDEX IF NOT EXISTS projects_client_id_idx ON projects (client_id);
+CREATE INDEX IF NOT EXISTS projects_status_idx ON projects (status);
+CREATE INDEX IF NOT EXISTS projects_updated_at_idx ON projects (updated_at);
+CREATE INDEX IF NOT EXISTS project_collaborators_project_id_idx ON project_collaborators (project_id);
 
 -- Add unique constraint to prevent duplicate collaborators
 ALTER TABLE project_collaborators
