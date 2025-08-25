@@ -2,7 +2,11 @@
 
 import { useState } from 'react'
 
-import type { AvailableProject } from '@/hooks/useAvailableProjects'
+import type { GetAvailableProjectsDetailedQuery } from '@/graphql/generated/graphql'
+
+type AvailableProject = NonNullable<
+  GetAvailableProjectsDetailedQuery['availableProjects']
+>[0]
 
 type AvailableProjectCardProps = {
   project: AvailableProject
@@ -26,28 +30,8 @@ export const AvailableProjectCard = ({
     }
   }
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Not set'
-    return new Date(dateString).toLocaleDateString()
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'urgent':
-        return 'text-red-400 bg-red-400/10 border-red-400/30'
-      case 'high':
-        return 'text-orange-400 bg-orange-400/10 border-orange-400/30'
-      case 'medium':
-        return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30'
-      case 'low':
-        return 'text-green-400 bg-green-400/10 border-green-400/30'
-      default:
-        return 'text-gray-400 bg-gray-400/10 border-gray-400/30'
-    }
-  }
-
   const clientName =
-    `${project.clientFirstName || ''} ${project.clientLastName || ''}`.trim() ||
+    `${project.client.firstName || ''} ${project.client.lastName || ''}`.trim() ||
     'Unknown Client'
 
   return (
@@ -57,10 +41,8 @@ export const AvailableProjectCard = ({
         <h3 className='font-mono text-lg font-bold text-blue-400'>
           {project.title}
         </h3>
-        <span
-          className={`rounded border px-2 py-1 font-mono text-xs font-bold uppercase ${getPriorityColor(project.priority)}`}
-        >
-          {project.priority}
+        <span className='rounded border border-blue-400/30 bg-blue-400/10 px-2 py-1 font-mono text-xs font-bold text-blue-400 uppercase'>
+          {project.status}
         </span>
       </div>
 
@@ -69,7 +51,9 @@ export const AvailableProjectCard = ({
         <p className='font-mono text-xs text-blue-400'>
           <span className='text-blue-400/60'>Client:</span> {clientName}
         </p>
-        <p className='font-mono text-xs text-blue-400/80'>{project.clientEmail}</p>
+        <p className='font-mono text-xs text-blue-400/80'>
+          {project.client.email}
+        </p>
       </div>
 
       {/* Description */}
@@ -83,7 +67,7 @@ export const AvailableProjectCard = ({
           <span className='text-blue-300/60'>Type:</span>
           <span className='text-blue-400'>{project.projectType}</span>
         </div>
-        
+
         {project.budget && (
           <div className='flex justify-between font-mono text-xs'>
             <span className='text-blue-300/60'>Budget:</span>
@@ -91,36 +75,27 @@ export const AvailableProjectCard = ({
           </div>
         )}
 
-        {project.startDate && (
-          <div className='flex justify-between font-mono text-xs'>
-            <span className='text-blue-300/60'>Start Date:</span>
-            <span className='text-blue-400'>{formatDate(project.startDate)}</span>
-          </div>
-        )}
-
-        {project.estimatedCompletionDate && (
-          <div className='flex justify-between font-mono text-xs'>
-            <span className='text-blue-300/60'>Due Date:</span>
-            <span className='text-blue-400'>{formatDate(project.estimatedCompletionDate)}</span>
-          </div>
-        )}
-
         {/* Tech Stack */}
         {project.techStack && project.techStack.length > 0 && (
           <div className='space-y-1'>
-            <span className='font-mono text-xs text-blue-300/60'>Tech Stack:</span>
+            <span className='font-mono text-xs text-blue-300/60'>
+              Tech Stack:
+            </span>
             <div className='flex flex-wrap gap-1'>
-              {project.techStack.slice(0, 3).map((tech) => (
-                <span
-                  key={tech}
-                  className='rounded bg-blue-400/20 px-2 py-1 font-mono text-xs text-blue-400'
-                >
-                  {tech}
-                </span>
-              ))}
-              {project.techStack.length > 3 && (
+              {(project.techStack ?? [])
+                .filter((t): t is string => Boolean(t))
+                .slice(0, 3)
+                .map((tech: string) => (
+                  <span
+                    key={tech}
+                    className='rounded bg-blue-400/20 px-2 py-1 font-mono text-xs text-blue-400'
+                  >
+                    {tech}
+                  </span>
+                ))}
+              {(project.techStack?.filter(Boolean).length ?? 0) > 3 && (
                 <span className='rounded bg-blue-400/10 px-2 py-1 font-mono text-xs text-blue-400/60'>
-                  +{project.techStack.length - 3}
+                  +{(project.techStack?.filter(Boolean).length ?? 0) - 3}
                 </span>
               )}
             </div>

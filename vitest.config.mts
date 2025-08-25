@@ -5,12 +5,21 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  define: {
+    global: 'globalThis',
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer', // ensure the package is resolvable
+    },
+  },
   test: {
+    setupFiles: ['tests/setup.ts'],
+    env: loadEnv('', process.cwd(), ''),
     coverage: {
       include: ['src/**/*'],
       exclude: ['src/**/*.stories.{js,jsx,ts,tsx}'],
     },
-    setupFiles: ['tests/setup.ts'],
     projects: [
       {
         extends: true,
@@ -18,7 +27,7 @@ export default defineConfig({
           name: 'unit',
           include: ['src/**/*.test.{js,ts}'],
           exclude: ['src/hooks/**/*.test.ts'],
-          environment: 'node',
+          environment: 'jsdom',
         },
       },
       {
@@ -29,13 +38,12 @@ export default defineConfig({
           browser: {
             enabled: true,
             headless: true,
-            provider: 'playwright', // or 'webdriverio'
+            provider: 'playwright',
             screenshotDirectory: 'vitest-test-results',
             instances: [{ browser: 'chromium' }],
           },
         },
       },
     ],
-    env: loadEnv('', process.cwd(), ''),
   },
 })

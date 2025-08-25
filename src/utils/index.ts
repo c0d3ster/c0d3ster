@@ -1,3 +1,3 @@
 export * from './AppConfig'
 export * from './Helpers'
-export * from './RoleUtils'
+export * from './RoleConstants'

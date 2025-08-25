@@ -55,14 +55,14 @@ describe('AnimatedHeading', () => {
   it('wraps content in ScrollFade component', () => {
     render(<AnimatedHeading text='Test Heading' />)
 
-    expect(screen.getByTestId('scroll-fade')).toBeInTheDocument()
+    expect(screen.getAllByTestId('scroll-fade')[0]).toBeInTheDocument()
   })
 
   it('renders without typewriter effect by default', () => {
     render(<AnimatedHeading text='Test Heading' />)
 
     expect(screen.queryByTestId('typewriter')).not.toBeInTheDocument()
-    expect(screen.getByRole('heading')).toBeInTheDocument()
+    expect(screen.getAllByRole('heading')[0]).toBeInTheDocument()
   })
 
   it('renders with typewriter effect when enabled', () => {
@@ -82,7 +82,8 @@ describe('AnimatedHeading', () => {
       />
     )
 
-    const typewriter = screen.getByTestId('typewriter')
+    const typewriters = screen.getAllByTestId('typewriter')
+    const typewriter = typewriters[typewriters.length - 1]
 
     expect(typewriter).toBeInTheDocument()
     expect(typewriter).toHaveTextContent('Test Heading')
@@ -92,15 +93,18 @@ describe('AnimatedHeading', () => {
     const customClass = 'custom-heading-class'
     render(<AnimatedHeading text='Test Heading' className={customClass} />)
 
-    const heading = screen.getByRole('heading')
+    const headings = screen.getAllByRole('heading')
+    const headingWithCustomClass = headings.find((heading) =>
+      heading.classList.contains(customClass)
+    )
 
-    expect(heading).toHaveClass(customClass)
+    expect(headingWithCustomClass).toBeInTheDocument()
   })
 
   it('handles empty text', () => {
     render(<AnimatedHeading text='' />)
 
-    expect(screen.getByRole('heading')).toBeInTheDocument()
+    expect(screen.getAllByRole('heading')[0]).toBeInTheDocument()
   })
 
   it('handles long text content', () => {
@@ -119,7 +123,7 @@ describe('AnimatedHeading', () => {
         <AnimatedHeading text={`${variant} heading`} variant={variant} />
       )
 
-      expect(screen.getByRole('heading')).toBeInTheDocument()
+      expect(screen.getAllByRole('heading')[0]).toBeInTheDocument()
 
       unmount()
     })

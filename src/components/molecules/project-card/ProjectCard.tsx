@@ -59,14 +59,16 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
 
         {/* Tech Stack */}
         <div className='mb-4 flex flex-wrap gap-1'>
-          {project.techStack.map((tech) => (
-            <span
-              key={tech}
-              className='rounded border border-green-400/30 bg-green-400/10 px-2 py-1 font-mono text-xs text-green-400'
-            >
-              {tech}
-            </span>
-          ))}
+          {(project.techStack ?? [])
+            .filter((t): t is string => Boolean(t))
+            .map((tech: string) => (
+              <span
+                key={tech}
+                className='rounded border border-green-400/30 bg-green-400/10 px-2 py-1 font-mono text-xs text-green-400'
+              >
+                {tech}
+              </span>
+            ))}
         </div>
 
         {/* Status */}

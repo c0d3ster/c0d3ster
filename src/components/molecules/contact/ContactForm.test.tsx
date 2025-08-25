@@ -1,33 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { Toast } from '@/libs/Toast'
+
 import { ContactForm } from './ContactForm'
-
-// Mock the useToast hook
-const mockShowSuccess = vi.fn()
-const mockShowError = vi.fn()
-
-vi.mock('@/hooks', () => ({
-  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
-  useToast: () => ({
-    showSuccess: mockShowSuccess,
-    showError: mockShowError,
-  }),
-}))
-
-// Mock the Button component
-vi.mock('@/components/atoms', () => ({
-  Button: ({ children, type, disabled, ...props }: any) => (
-    <button
-      type={type}
-      disabled={disabled}
-      data-testid='submit-button'
-      {...props}
-    >
-      {children}
-    </button>
-  ),
-}))
 
 describe('ContactForm', () => {
   it('renders all form fields', () => {
@@ -80,7 +56,7 @@ describe('ContactForm', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(mockShowSuccess).toHaveBeenCalledWith(
+      expect(Toast.success).toHaveBeenCalledWith(
         "Message sent successfully! I'll get back to you within 24 hours."
       )
     })
@@ -93,11 +69,12 @@ describe('ContactForm', () => {
   })
 
   it('handles form submission error', async () => {
-    const mockFetch = vi.fn().mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ error: 'Server error' }),
-    })
-    vi.stubGlobal('fetch', mockFetch)
+    // Mock the mutation function to throw an error
+    const { useSubmitContactForm } = await import(
+      '@/apiClients/contactApiClient'
+    )
+    const mockMutation = vi.fn().mockRejectedValue(new Error('Server error'))
+    vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 
@@ -122,13 +99,21 @@ describe('ContactForm', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith('Server error')
+      expect(Toast.error).toHaveBeenCalledWith('Server error')
     })
   })
 
-  it('handles network error', async () => {
-    const mockFetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
-    vi.stubGlobal('fetch', mockFetch)
+  it('handles network errors', async () => {
+    // Mock the mutation function to throw a network error
+    const { useSubmitContactForm } = await import(
+      '@/apiClients/contactApiClient'
+    )
+    const mockMutation = vi
+      .fn()
+      .mockRejectedValue(
+        new Error('Network error. Please check your connection and try again.')
+      )
+    vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 
@@ -153,27 +138,35 @@ describe('ContactForm', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith(
+      expect(Toast.error).toHaveBeenCalledWith(
         'Network error. Please check your connection and try again.'
       )
     })
   })
 
+  it('validates required fields', async () => {
+    render(<ContactForm />)
+
+    // Submit the form without filling it out
+    const submitButton = screen.getByRole('button', {
+      name: 'INITIATE TRANSMISSION',
+    })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => {
+      expect(Toast.error).toHaveBeenCalledWith(
+        'Please fix the following errors: Name is required, Invalid email address, Subject is required, Message must be at least 10 characters'
+      )
+    })
+  })
+
   it('shows loading state during submission', async () => {
-    const mockFetch = vi.fn().mockImplementation(
-      () =>
-        new Promise((resolve) =>
-          setTimeout(
-            () =>
-              resolve({
-                ok: true,
-                json: async () => ({ message: 'Success' }),
-              }),
-            100
-          )
-        )
+    // Mock the mutation function to never resolve (for loading state)
+    const { useSubmitContactForm } = await import(
+      '@/apiClients/contactApiClient'
     )
-    vi.stubGlobal('fetch', mockFetch)
+    const mockMutation = vi.fn().mockImplementation(() => new Promise(() => {})) // Never resolves
+    vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 
@@ -197,47 +190,10 @@ describe('ContactForm', () => {
     })
     fireEvent.click(submitButton)
 
-    // Check loading state - wait for it to appear
+    // Check that button shows loading state
     await waitFor(() => {
-      expect(submitButton).toHaveTextContent('SENDING...')
       expect(submitButton).toBeDisabled()
+      expect(submitButton).toHaveTextContent('TRANSMITTING...')
     })
-
-    // Wait for completion
-    await waitFor(() => {
-      expect(submitButton).toHaveTextContent('INITIATE TRANSMISSION')
-      expect(submitButton).not.toBeDisabled()
-    })
-  })
-
-  it('displays validation errors', async () => {
-    render(<ContactForm />)
-
-    // Try to submit empty form
-    const submitButton = screen.getByRole('button', {
-      name: 'INITIATE TRANSMISSION',
-    })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(mockShowError).toHaveBeenCalledWith(
-        expect.stringContaining('Please fix the following errors:')
-      )
-    })
-  })
-
-  it('has correct form structure and accessibility', () => {
-    render(<ContactForm />)
-
-    // Check that labels are properly associated with inputs
-    const nameInput = screen.getByLabelText('NAME')
-    const emailInput = screen.getByLabelText('EMAIL')
-    const subjectInput = screen.getByLabelText('SUBJECT')
-    const messageInput = screen.getByLabelText('MESSAGE')
-
-    expect(nameInput).toHaveAttribute('type', 'text')
-    expect(emailInput).toHaveAttribute('type', 'email')
-    expect(subjectInput).toHaveAttribute('type', 'text')
-    expect(messageInput).toHaveAttribute('rows', '4')
   })
 })

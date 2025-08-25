@@ -6,14 +6,15 @@ import { useForm } from 'react-hook-form'
 
 import type { ContactFormData } from '@/validations'
 
+import { useSubmitContactForm } from '@/apiClients'
 import { Button } from '@/components/atoms'
-import { useToast } from '@/hooks'
+import { Toast } from '@/libs/Toast'
 import { contactFormSchema } from '@/validations'
 
 // Contact form component for handling user submissions
 export const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { showSuccess, showError } = useToast()
+  const [submitContactForm] = useSubmitContactForm()
 
   const { register, handleSubmit, reset } = useForm<ContactFormData>({
     resolver: zodResolver(contactFormSchema),
@@ -24,27 +25,23 @@ export const ContactForm = () => {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      const result = await submitContactForm({
+        variables: { input: data },
       })
 
-      if (response.ok) {
-        showSuccess(
+      if (result.data?.submitContactForm) {
+        Toast.success(
           "Message sent successfully! I'll get back to you within 24 hours."
         )
         reset()
       } else {
-        const errorData = await response.json()
-        showError(
-          errorData.error || 'Failed to send message. Please try again.'
-        )
+        Toast.error('Failed to send message. Please try again.')
       }
-    } catch {
-      showError('Network error. Please check your connection and try again.')
+    } catch (error: any) {
+      Toast.error(
+        error.message ||
+          'Network error. Please check your connection and try again.'
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -54,7 +51,7 @@ export const ContactForm = () => {
     const errorMessages = Object.values(errors)
       .map((err: any) => err.message)
       .join(', ')
-    showError(`Please fix the following errors: ${errorMessages}`)
+    Toast.error(`Please fix the following errors: ${errorMessages}`)
   }
 
   return (
@@ -136,7 +133,7 @@ export const ContactForm = () => {
 
           <div className='text-center'>
             <Button type='submit' size='md' disabled={isSubmitting}>
-              {isSubmitting ? 'SENDING...' : 'INITIATE TRANSMISSION'}
+              {isSubmitting ? 'TRANSMITTING...' : 'INITIATE TRANSMISSION'}
             </Button>
           </div>
         </form>

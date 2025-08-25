@@ -2,14 +2,9 @@
 
 import Link from 'next/link'
 
-import { CompactUserProfile } from '@/components/atoms'
-import {
-  useAdminProjectRequests,
-  useAssignedProjects,
-  useAvailableProjects,
-  useCurrentUser,
-  useMyProjects,
-} from '@/hooks'
+import { useGetMe, useGetMyDashboard } from '@/apiClients'
+import { CompactUserProfile } from '@/components/molecules'
+import { isAdminRole } from '@/utils/RoleConstants'
 
 import {
   AdminDashboardSection,
@@ -18,31 +13,26 @@ import {
 } from './sections'
 
 export const DashboardContent = () => {
-  const { isAdmin, isDeveloper } = useCurrentUser()
-  const { summary, isLoading: myProjectsLoading } = useMyProjects()
-  const { projects: availableProjects, isLoading: availableLoading } =
-    useAvailableProjects()
-  const { projects: assignedProjects, isLoading: assignedLoading } =
-    useAssignedProjects()
-  const { requests: adminRequests, isLoading: adminLoading } =
-    useAdminProjectRequests({ enabled: isAdmin })
+  const { data: userData, loading: userLoading } = useGetMe()
+  const { data: dashboardData, loading: dashboardLoading } = useGetMyDashboard()
 
-  const getStatusCounts = () => {
-    const counts = {
-      all: adminRequests.length,
-      requested: adminRequests.filter((r) => r.status === 'requested').length,
-      in_review: adminRequests.filter((r) => r.status === 'in_review').length,
-    }
-    return counts
-  }
+  const userRole = userData?.me?.role
 
-  const statusCounts = getStatusCounts()
+  // Debug logging
+  console.error('🚨 CLIENT DASHBOARD - USER DATA:', {
+    userData: userData?.me,
+    userRole,
+    isAdminCheck: userRole ? isAdminRole(userRole) : false,
+  })
+
+  const isAdmin = userRole ? isAdminRole(userRole) : false
+  const isDeveloper = userRole === 'developer'
+  const summary = dashboardData?.myDashboard?.summary
+  const availableProjects = dashboardData?.myDashboard?.availableProjects || []
+  const assignedProjects = dashboardData?.myDashboard?.assignedProjects || []
 
   // Determine if we're still loading the main content data
-  const isContentLoading =
-    myProjectsLoading ||
-    (isAdmin && adminLoading) ||
-    (isDeveloper && (availableLoading || assignedLoading))
+  const isContentLoading = userLoading || dashboardLoading
 
   return (
     <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
@@ -66,7 +56,7 @@ export const DashboardContent = () => {
                     Total Requests:
                   </span>
                   <span className='font-mono text-sm font-bold text-green-400'>
-                    {statusCounts.all}
+                    {/* Will be populated by AdminDashboardSection */}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -74,7 +64,7 @@ export const DashboardContent = () => {
                     Pending Review:
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {statusCounts.requested}
+                    {/* Will be populated by AdminDashboardSection */}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -82,7 +72,7 @@ export const DashboardContent = () => {
                     In Review:
                   </span>
                   <span className='font-mono text-sm font-bold text-blue-400'>
-                    {statusCounts.in_review}
+                    {/* Will be populated by AdminDashboardSection */}
                   </span>
                 </div>
               </>
@@ -93,7 +83,7 @@ export const DashboardContent = () => {
                     Available:
                   </span>
                   <span className='font-mono text-sm font-bold text-blue-400'>
-                    {availableProjects.length}
+                    {(availableProjects as any[])?.length || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -101,7 +91,7 @@ export const DashboardContent = () => {
                     Assigned:
                   </span>
                   <span className='font-mono text-sm font-bold text-green-400'>
-                    {assignedProjects.length}
+                    {(assignedProjects as any[])?.length || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -109,7 +99,8 @@ export const DashboardContent = () => {
                     Your Projects:
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {summary.totalProjects + summary.totalRequests}
+                    {(summary?.totalProjects || 0) +
+                      (summary?.pendingRequests || 0)}
                   </span>
                 </div>
               </>
@@ -120,7 +111,7 @@ export const DashboardContent = () => {
                     Projects:
                   </span>
                   <span className='font-mono text-sm font-bold text-green-400'>
-                    {summary.totalProjects}
+                    {summary?.totalProjects || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -128,7 +119,7 @@ export const DashboardContent = () => {
                     Requests:
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {summary.totalRequests}
+                    {summary?.pendingRequests || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -136,7 +127,7 @@ export const DashboardContent = () => {
                     Active:
                   </span>
                   <span className='font-mono text-sm font-bold text-blue-400'>
-                    {summary.activeProjects}
+                    {summary?.activeProjects || 0}
                   </span>
                 </div>
               </>
@@ -172,16 +163,7 @@ export const DashboardContent = () => {
           <h3 className='mb-6 font-mono text-lg font-bold text-purple-400'>
             🔧 PROJECT REQUESTS MANAGEMENT
           </h3>
-          {isContentLoading ? (
-            <div className='flex items-center justify-center'>
-              <div className='h-6 w-6 animate-spin rounded-full border-2 border-purple-400 border-t-transparent'></div>
-              <span className='ml-3 font-mono text-purple-400'>
-                Loading requests...
-              </span>
-            </div>
-          ) : (
-            <AdminDashboardSection />
-          )}
+          <AdminDashboardSection />
         </div>
       )}
 
@@ -198,10 +180,24 @@ export const DashboardContent = () => {
         ) : (
           <>
             {/* Developer-specific sections (Available & Assigned Projects) */}
-            {(isDeveloper || isAdmin) && <DeveloperDashboardSection />}
+            {(isDeveloper || isAdmin) && (
+              <DeveloperDashboardSection
+                availableProjects={availableProjects}
+                assignedProjects={assignedProjects}
+                onDataRefresh={() => {
+                  // Refetch the dashboard data
+                  window.location.reload()
+                }}
+              />
+            )}
 
             {/* Common Projects & Requests sections for ALL users */}
-            <UserProjectsAndRequests />
+            <UserProjectsAndRequests
+              projects={dashboardData?.myDashboard?.projects || []}
+              projectRequests={
+                dashboardData?.myDashboard?.projectRequests || []
+              }
+            />
           </>
         )}
       </div>

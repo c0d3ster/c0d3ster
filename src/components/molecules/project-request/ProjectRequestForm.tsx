@@ -5,8 +5,10 @@ import { useRef, useState } from 'react'
 
 import type { ProjectRequestData } from '@/validations'
 
+import { useCreateProjectRequest } from '@/apiClients'
 import { Button } from '@/components/atoms'
-import { useToast } from '@/hooks'
+import { ProjectType } from '@/graphql/generated/graphql'
+import { Toast } from '@/libs/Toast'
 import {
   contactPreferenceOptions,
   projectRequestSchema,
@@ -22,9 +24,11 @@ const ErrorMessage = ({ error }: { error?: string }) => (
 
 export const ProjectRequestForm = () => {
   const router = useRouter()
-  const { showToast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ProjectRequestData, string>>
+  >({})
+  const [createProjectRequest] = useCreateProjectRequest()
 
   // Refs for form fields to enable focusing
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
@@ -56,7 +60,7 @@ export const ProjectRequestForm = () => {
   const [formData, setFormData] = useState<ProjectRequestData>({
     title: '',
     description: '',
-    projectType: 'website',
+    projectType: ProjectType.Website,
     budget: '',
     timeline: '',
     contactPreference: 'email',
@@ -64,7 +68,7 @@ export const ProjectRequestForm = () => {
     requirements: {
       hasDesign: false,
       needsHosting: false,
-      needsDomain: false,
+      hasDomain: false,
       needsMaintenance: false,
       needsContentCreation: false,
       needsSEO: false,
@@ -74,7 +78,7 @@ export const ProjectRequestForm = () => {
 
   const handleInputChange = (
     field: keyof ProjectRequestData,
-    value: string | boolean
+    value: string | boolean | ProjectType
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -111,12 +115,14 @@ export const ProjectRequestForm = () => {
       // Validate form data
       const result = projectRequestSchema.safeParse(formData)
       if (!result.success) {
-        const validationErrors: Record<string, string> = {}
+        const validationErrors: Partial<
+          Record<keyof ProjectRequestData, string>
+        > = {}
         // Set all validation errors for field highlighting
         for (const issue of result.error.issues) {
-          const pathKey = issue.path.join('.') || 'form'
+          const pathKey = issue.path[0] as keyof ProjectRequestData
           // Only keep the first error per field
-          if (!validationErrors[pathKey]) {
+          if (pathKey && !validationErrors[pathKey]) {
             validationErrors[pathKey] = issue.message
           }
         }
@@ -126,28 +132,26 @@ export const ProjectRequestForm = () => {
       }
       const validatedData = result.data
 
-      // Submit to API
-      const response = await fetch('/api/project-requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Submit via GraphQL
+      const graphqlResult = await createProjectRequest({
+        variables: {
+          input: {
+            ...validatedData,
+            budget: validatedData.budget
+              ? Number.parseFloat(validatedData.budget)
+              : undefined,
+          },
         },
-        body: JSON.stringify(validatedData),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to submit request')
-      }
-
-      showToast('Project request submitted successfully!', 'success')
-      router.push('/dashboard')
-    } catch (error) {
-      if (error instanceof Error) {
-        showToast(error.message, 'error')
+      if (graphqlResult.data?.createProjectRequest) {
+        Toast.success('Project request submitted successfully!')
+        router.push('/dashboard')
       } else {
-        showToast('Failed to submit request', 'error')
+        throw new Error('Failed to submit request')
       }
+    } catch (error: any) {
+      Toast.error(error.message || 'Failed to submit request')
     } finally {
       setIsSubmitting(false)
     }
@@ -288,7 +292,7 @@ export const ProjectRequestForm = () => {
           {[
             { key: 'hasDesign', label: 'I already have a design' },
             { key: 'needsHosting', label: 'I need hosting setup' },
-            { key: 'needsDomain', label: 'I need domain management' },
+            { key: 'hasDomain', label: 'I already have a domain' },
             { key: 'needsMaintenance', label: 'I need ongoing maintenance' },
             { key: 'needsContentCreation', label: 'I need content creation' },
             { key: 'needsSEO', label: 'I need SEO optimization' },

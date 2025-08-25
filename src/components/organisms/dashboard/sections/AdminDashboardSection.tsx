@@ -2,45 +2,53 @@
 
 import { useState } from 'react'
 
+// TODO: Fix type import when GraphQL types are properly generated
+import { useApproveProjectRequest, useGetProjectRequests } from '@/apiClients'
 import { ProjectRequestCard } from '@/components/molecules'
-import { useAdminProjectRequests, useToast } from '@/hooks'
+import { Toast } from '@/libs/Toast'
 
 export const AdminDashboardSection = () => {
+  // Use GraphQL hooks directly from the API client
   const {
-    requests: adminRequests,
-    isLoading: adminLoading,
+    data: projectRequestsData,
+    loading: adminLoading,
     error: adminError,
     refetch: adminRefetch,
-    updateRequestStatus,
-    approveRequest,
-  } = useAdminProjectRequests()
+  } = useGetProjectRequests()
+  const [approveMutation] = useApproveProjectRequest()
 
-  const { showToast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
+  // Get the project requests directly from GraphQL
+  const adminRequests = projectRequestsData?.projectRequests || []
+
   // Admin request handlers
-  const handleUpdateStatus = async (requestId: string, status: string) => {
+  const handleUpdateStatus = async (_requestId: string, _status: string) => {
     try {
-      await updateRequestStatus(requestId, status)
-      showToast('Request status updated successfully!', 'success')
+      // TODO: Implement updateProjectRequest mutation in GraphQL
+      Toast.error('Update status not yet implemented in GraphQL')
     } catch (error) {
-      showToast('Failed to update request status', 'error')
+      Toast.error('Failed to update request status')
       throw error
     }
   }
 
-  const handleApproveRequest = async (requestId: string, approvalData: any) => {
+  const handleApproveRequest = async (
+    requestId: string,
+    _approvalData: any
+  ) => {
     try {
-      await approveRequest(requestId, approvalData)
-      showToast('Project request approved and project created!', 'success')
+      await approveMutation({ variables: { id: requestId } })
+      Toast.success('Project request approved and project created!')
+      await adminRefetch()
     } catch (error) {
-      showToast('Failed to approve request', 'error')
-      throw error
+      Toast.error('Failed to approve request')
+      console.error('Approve request error:', error)
     }
   }
 
   // Admin request filtering
-  const filteredRequests = adminRequests.filter((request) => {
+  const filteredRequests = adminRequests.filter((request: any) => {
     if (statusFilter === 'all') return true
     return request.status === statusFilter
   })
@@ -48,10 +56,14 @@ export const AdminDashboardSection = () => {
   const getStatusCounts = () => {
     const counts = {
       all: adminRequests.length,
-      requested: adminRequests.filter((r) => r.status === 'requested').length,
-      in_review: adminRequests.filter((r) => r.status === 'in_review').length,
-      approved: adminRequests.filter((r) => r.status === 'approved').length,
-      cancelled: adminRequests.filter((r) => r.status === 'cancelled').length,
+      requested: adminRequests.filter((r: any) => r.status === 'requested')
+        .length,
+      in_review: adminRequests.filter((r: any) => r.status === 'in_review')
+        .length,
+      approved: adminRequests.filter((r: any) => r.status === 'approved')
+        .length,
+      cancelled: adminRequests.filter((r: any) => r.status === 'cancelled')
+        .length,
     }
     return counts
   }
@@ -95,7 +107,7 @@ export const AdminDashboardSection = () => {
       {/* Error State */}
       {adminError && (
         <div className='rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-center'>
-          <p className='font-mono text-red-400'>Error: {adminError}</p>
+          <p className='font-mono text-red-400'>Error: {adminError.message}</p>
           <button
             type='button'
             onClick={() => adminRefetch()}
@@ -113,7 +125,7 @@ export const AdminDashboardSection = () => {
           <p className='mb-2 font-mono text-sm text-green-300'>
             {statusFilter === 'all'
               ? 'No project requests found'
-              : `No ${statusFilter.replace('_', ' ')} requests`}
+              : `No ${(statusFilter || 'unknown').replace('_', ' ')} requests`}
           </p>
           <p className='font-mono text-xs text-green-300/60'>
             Requests will appear here when clients submit them
@@ -124,7 +136,7 @@ export const AdminDashboardSection = () => {
       {/* Requests Grid */}
       {!adminLoading && !adminError && filteredRequests.length > 0 && (
         <div className='grid gap-6 lg:grid-cols-2'>
-          {filteredRequests.map((request) => (
+          {filteredRequests.map((request: any) => (
             <ProjectRequestCard
               key={request.id}
               request={request}

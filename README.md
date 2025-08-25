@@ -10,14 +10,6 @@ I'm a software contractor specializing in modern web development and full-stack 
 - **Performance Optimization** - Making applications fast and scalable
 - **Technical Consulting** - Code reviews, architecture guidance
 
-## 🛠️ Tech Stack
-
-![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=black&style=flat)
-![Next.js](https://img.shields.io/badge/-Next.js-000000?logo=next.js&logoColor=white&style=flat)
-![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white&style=flat)
-![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white&style=flat)
-![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-336791?logo=postgresql&logoColor=white&style=flat)
-
 ## 💼 Recent Projects
 
 - **E-commerce platforms** - Complete online store solutions
@@ -25,6 +17,44 @@ I'm a software contractor specializing in modern web development and full-stack 
 - **Data visualization dashboards** - Making data actionable
 - **Real-time applications** - Live updates and collaboration
 - **Mobile-responsive web apps** - Works everywhere
+
+## 🎯 Project Showcase
+
+This repository showcases:
+
+- **Modern Architecture**: Clean separation of concerns with GraphQL, services, and React
+- **Type Safety**: Full TypeScript coverage with automatic GraphQL type generation
+- **Testing Strategy**: Comprehensive testing with Vitest and Playwright
+- **Developer Experience**: Automated workflows, code quality tools, and clear documentation
+- **Performance**: Optimized builds, efficient data fetching, and modern React patterns
+
+## 🛠️ Tech Stack
+
+![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=black&style=flat)
+![Next.js](https://img.shields.io/badge/-Next.js-000000?logo=next.js&logoColor=white&style=flat)
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white&style=flat)
+![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white&style=flat)
+![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-336791?logo=postgresql&logoColor=white&style=flat)
+![GraphQL](https://img.shields.io/badge/-GraphQL-E10098?logo=graphql&logoColor=white&style=flat)
+
+## 🏗️ Project Architecture
+
+This project demonstrates modern web development practices with a clean, layered architecture:
+
+- **Frontend**: React components with TypeScript and Tailwind CSS
+- **API Layer**: GraphQL with Apollo Client and automatic code generation
+- **Business Logic**: Service layer with authentication and permission handling
+- **Data Layer**: PostgreSQL with Drizzle ORM
+- **Authentication**: Clerk for user management and authentication
+- **Testing**: Vitest for unit tests, Playwright for E2E tests
+
+**[📋 View Detailed Architecture →](./ARCHITECTURE.md)**
+
+## ⚙️ Development Setup
+
+Want to run this project locally?
+
+**[🔧 Get Development Setup Guide →](./DEVELOPMENT.md)**
 
 ## 📫 Let's Connect
 

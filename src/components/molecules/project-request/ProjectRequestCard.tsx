@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 
-import type { ProjectRequestWithUser } from '@/hooks/useAdminProjectRequests'
+import type { ProjectRequest } from '@/graphql/generated/graphql'
 
 type ProjectRequestCardProps = {
-  request: ProjectRequestWithUser
+  request: ProjectRequest
   updateStatusAction: (
     requestId: string,
     status: string,
@@ -36,7 +36,7 @@ export const ProjectRequestCard = ({
     estimatedCompletionDate: '',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
     techStack: [] as string[],
-    budget: request.budget ? Number.parseFloat(request.budget) : undefined,
+    budget: request.budget ?? undefined,
     internalNotes: '',
   })
 
@@ -78,12 +78,18 @@ export const ProjectRequestCard = ({
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Unknown Date'
+    try {
+      return new Date(dateString).toLocaleDateString()
+    } catch (error) {
+      console.error('Invalid date:', dateString, error)
+      return 'Invalid Date'
+    }
   }
 
   const userName =
-    `${request.userFirstName || ''} ${request.userLastName || ''}`.trim() ||
+    `${request.user.firstName || ''} ${request.user.lastName || ''}`.trim() ||
     'Unknown User'
 
   return (
@@ -97,7 +103,7 @@ export const ProjectRequestCard = ({
           <div className='space-y-1 text-sm'>
             <p className='text-green-300'>
               <span className='text-green-300/60'>Client:</span> {userName} (
-              {request.userEmail})
+              {request.user.email})
             </p>
             <p className='text-green-300'>
               <span className='text-green-300/60'>Type:</span>{' '}
@@ -116,9 +122,9 @@ export const ProjectRequestCard = ({
           </div>
         </div>
         <span
-          className={`rounded border px-3 py-1 font-mono text-xs font-bold uppercase ${getStatusColor(request.status)}`}
+          className={`rounded border px-3 py-1 font-mono text-xs font-bold uppercase ${getStatusColor(request.status || 'unknown')}`}
         >
-          {request.status.replace('_', ' ')}
+          {(request.status || 'unknown').replace('_', ' ')}
         </span>
       </div>
 
@@ -300,7 +306,7 @@ export const ProjectRequestCard = ({
                 id='budget'
                 type='number'
                 step='0.01'
-                value={approvalData.budget || ''}
+                value={approvalData.budget ?? ''}
                 onChange={(e) =>
                   setApprovalData({
                     ...approvalData,

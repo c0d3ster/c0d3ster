@@ -33,7 +33,29 @@ describe('Helpers', () => {
 
   describe('isServer function', () => {
     it('should return true when running on server', () => {
+      // Mock window as undefined to simulate server environment
+      const originalWindow = globalThis.window
+
+      // Use Object.defineProperty to safely mock window as undefined
+      Object.defineProperty(globalThis, 'window', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      })
+
       expect(isServer()).toBe(true)
+
+      // Restore window
+      Object.defineProperty(globalThis, 'window', {
+        value: originalWindow,
+        writable: true,
+        configurable: true,
+      })
+    })
+
+    it('should return false when running in browser', () => {
+      // Ensure window is defined for browser environment test
+      expect(isServer()).toBe(false)
     })
   })
 })

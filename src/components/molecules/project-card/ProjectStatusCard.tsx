@@ -1,19 +1,19 @@
 'use client'
 
-import Link from 'next/link'
+// import Link from 'next/link'
 
-import type { ProjectItem } from '@/types'
+import type { Project, ProjectRequest } from '@/graphql/generated/graphql'
 
-import { ProjectItemType } from '@/types'
+type ProjectItem = Project | ProjectRequest
 
 // Prefer allowing only http/https to avoid `javascript:` and similar schemes.
-const safeExternalUrl = (url: string) => (/^https?:\/\//i.test(url) ? url : '#')
+// const safeExternalUrl = (url: string) => (/^https?:\/\//i.test(url) ? url : '#')
 
 type ProjectStatusCardProps = {
   item: ProjectItem
 }
 
-const getStatusInfo = (status: string, _type: ProjectItemType) => {
+const getStatusInfo = (status: string | undefined, _typename: string) => {
   const statusMap = {
     // Request statuses
     requested: {
@@ -72,7 +72,7 @@ const getStatusInfo = (status: string, _type: ProjectItemType) => {
 
   return (
     statusMap[status as keyof typeof statusMap] || {
-      label: status,
+      label: status || 'unknown',
       color: 'bg-gray-400/20 text-gray-400 border-gray-400/30',
       icon: '❓',
     }
@@ -80,16 +80,23 @@ const getStatusInfo = (status: string, _type: ProjectItemType) => {
 }
 
 export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
-  const statusInfo = getStatusInfo(item.status, item.type)
-  const isProject = item.type === ProjectItemType.PROJECT
+  const statusInfo = getStatusInfo(
+    item.status || 'unknown',
+    item.__typename || ''
+  )
+  const isProject = item.__typename === 'Project'
 
-  // Check if user is working on someone else's project
-  const isCollaborator = isProject && item.userRole !== 'client'
-  const clientName =
-    item.type === ProjectItemType.PROJECT
-      ? `${item.clientFirstName || ''} ${item.clientLastName || ''}`.trim() ||
-        'Unknown Client'
-      : null
+  // Check if this is a project with client information
+  const hasClientInfo =
+    item.__typename === 'Project' && 'client' in item && item.client
+  const clientName = hasClientInfo
+    ? `${item.client.firstName || ''} ${item.client.lastName || ''}`.trim() ||
+      item.client.email ||
+      'Unknown Client'
+    : null
+
+  // Check if this is an assigned project (has a developer)
+  const isAssignedProject = isProject && 'developer' in item && item.developer
 
   return (
     <div className='flex h-full min-h-[280px] flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
@@ -100,13 +107,13 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
             {item.title}
           </h3>
           <p className='font-mono text-xs tracking-wide text-green-300/60 uppercase'>
-            {item.projectType.replace('_', ' ')}
+            {(item.projectType || 'unknown').replace('_', ' ')}
           </p>
-          {/* Role indicator for collaborators */}
-          {isCollaborator && (
+          {/* Role indicator for assigned projects */}
+          {isAssignedProject && (
             <div className='mt-1 flex flex-wrap gap-1'>
-              <span className='rounded bg-purple-400/20 px-2 py-1 font-mono text-xs text-purple-400'>
-                {item.userRole}
+              <span className='inline-flex rounded-full bg-blue-400/20 px-3 py-1 font-mono text-xs font-bold text-blue-400'>
+                ASSIGNED
               </span>
             </div>
           )}
@@ -121,17 +128,19 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
         </div>
       </div>
 
-      {/* Client Info for collaborators */}
-      {isCollaborator && clientName && (
+      {/* Client Info for projects */}
+      {hasClientInfo && clientName && (
         <div className='mb-3 rounded border border-blue-400/20 bg-blue-400/5 p-2'>
           <p className='font-mono text-xs text-blue-400'>
             <span className='text-blue-400/60'>Client:</span> {clientName}
           </p>
-          {item.type === ProjectItemType.PROJECT && item.clientEmail && (
-            <p className='font-mono text-xs text-blue-400/80'>
-              {item.clientEmail}
-            </p>
-          )}
+          {item.__typename === 'Project' &&
+            'client' in item &&
+            item.client?.email && (
+              <p className='font-mono text-xs text-blue-400/80'>
+                {item.client.email}
+              </p>
+            )}
         </div>
       )}
 
@@ -142,6 +151,17 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
 
       {/* Project Details - grows to fill space */}
       <div className='mb-4 flex-1 space-y-2'>
+        {/* Additional Info for Project Requests */}
+        {item.__typename === 'ProjectRequest' &&
+          'additionalInfo' in item &&
+          item.additionalInfo && (
+            <div className='mb-2'>
+              <p className='font-mono text-sm text-green-300/70 italic'>
+                {item.additionalInfo}
+              </p>
+            </div>
+          )}
+
         {item.budget && (
           <div className='flex justify-between text-sm'>
             <span className='font-mono text-green-300/60'>Budget:</span>
@@ -166,7 +186,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           </div>
         )}
 
-        {item.type === ProjectItemType.REQUEST &&
+        {item.__typename === 'ProjectRequest' &&
           'timeline' in item &&
           item.timeline && (
             <div className='flex justify-between text-sm'>
@@ -176,7 +196,8 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           )}
 
         {/* Tech Stack for projects */}
-        {item.type === ProjectItemType.PROJECT &&
+        {item.__typename === 'Project' &&
+          'techStack' in item &&
           item.techStack &&
           Array.isArray(item.techStack) &&
           item.techStack.length > 0 && (
@@ -205,7 +226,8 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
 
       {/* Action Links */}
       <div className='mb-3 flex flex-wrap gap-2'>
-        {isProject && item.liveUrl && (
+        {/* TODO: Add back when liveUrl, stagingUrl, repositoryUrl are added to GraphQL schema
+        {isProject && 'liveUrl' in item && item.liveUrl && (
           <Link
             href={safeExternalUrl(item.liveUrl)}
             target='_blank'
@@ -216,7 +238,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           </Link>
         )}
 
-        {isProject && item.stagingUrl && (
+        {isProject && 'stagingUrl' in item && item.stagingUrl && (
           <Link
             href={safeExternalUrl(item.stagingUrl)}
             target='_blank'
@@ -227,16 +249,19 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           </Link>
         )}
 
-        {item.type === ProjectItemType.PROJECT && item.repositoryUrl && (
-          <Link
-            href={safeExternalUrl(item.repositoryUrl)}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='min-w-0 flex-1 rounded border border-purple-400/30 bg-purple-400/10 px-3 py-2 text-center font-mono text-xs text-purple-400 transition-all duration-300 hover:bg-purple-400 hover:text-black'
-          >
-            📁 REPO
-          </Link>
-        )}
+        {item.__typename === 'Project' &&
+          'repositoryUrl' in item &&
+          item.repositoryUrl && (
+            <Link
+              href={safeExternalUrl(item.repositoryUrl)}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='min-w-0 flex-1 rounded border border-purple-400/30 bg-purple-400/10 px-3 py-2 text-center font-mono text-xs text-purple-400 transition-all duration-300 hover:bg-purple-400 hover:text-black'
+            >
+              📁 REPO
+            </Link>
+          )}
+        */}
 
         <div className='min-w-0 flex-1 rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60'>
           {isProject ? 'VIEW DETAILS' : 'VIEW REQUEST'}
@@ -245,8 +270,10 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
 
       {/* Footer - pinned to bottom */}
       <div className='border-t border-green-400/10 pt-3 font-mono text-xs text-green-300/50'>
-        {item.type === ProjectItemType.PROJECT ? 'Project' : 'Request'} •{' '}
-        {new Date(item.createdAt).toLocaleDateString()}
+        {item.__typename === 'Project' ? 'Project' : 'Request'} •{' '}
+        {item.createdAt
+          ? new Date(item.createdAt).toLocaleDateString()
+          : 'Unknown Date'}
       </div>
     </div>
   )

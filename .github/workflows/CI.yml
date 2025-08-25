@@ -110,7 +110,7 @@ jobs:
       - name: Run unit tests
         uses: docker://mcr.microsoft.com/playwright:v1.54.0
         with:
-          args: npm run test -- --coverage
+          args: npm run test -- --run --project=unit --coverage
         env:
           # Required Clerk variables
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
@@ -144,6 +144,24 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           restore-nextjs-cache: true
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next
+          key: nextjs-build-${{ matrix.node-version }}-${{ github.sha }}
+
+      - name: Build Next.js for E2E tests
+        run: npm run build:ci
+        env:
+          # Required Clerk variables
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          # Database
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Build environment
+          NODE_ENV: production
 
       - name: Run E2E tests
         uses: docker://mcr.microsoft.com/playwright:v1.54.0
