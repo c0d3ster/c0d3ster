@@ -2,7 +2,11 @@ import type { KnipConfig } from 'knip'
 
 const config: KnipConfig = {
   // Files to exclude from Knip analysis
-  ignore: ['tests/**/*.ts'],
+  ignore: [
+    'tests/**/*.ts',
+    'src/apiClients/**/*.ts', // Ignore API clients - used by GraphQL codegen
+    'src/graphql/**/*.ts', // Ignore GraphQL files - used by codegen
+  ],
   // Dependencies to ignore during analysis
   ignoreDependencies: [
     '@commitlint/types',
