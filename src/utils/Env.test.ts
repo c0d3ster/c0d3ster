@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { getBaseUrl, isServer } from './Helpers'
+import { getBaseUrl, isServer } from './Env'
 
 describe('Helpers', () => {
   // Snapshot/restore environment for each test to avoid cross-test bleed

@@ -41,11 +41,9 @@ describe('MatrixBackground', () => {
     const canvas = container.querySelector('canvas')
 
     expect(canvas).toHaveClass('fixed', 'inset-0')
-    expect(canvas).toHaveStyle({
-      background: 'black',
-      width: '100vw',
-      height: '100vh',
-    })
+    expect(canvas?.style.width).toBe('100vw')
+    expect(canvas?.style.height).toBe('100vh')
+    expect(canvas?.style.background).toBe('black')
   })
 
   it('initializes canvas context on mount', () => {

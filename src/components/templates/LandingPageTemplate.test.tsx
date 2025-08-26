@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { LandingPageTemplate } from './LandingPageTemplate'
 
@@ -10,15 +10,6 @@ vi.mock('@/components/atoms', () => ({
 }))
 
 describe('LandingPageTemplate', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    cleanup()
-  })
-
-  afterEach(() => {
-    cleanup()
-  })
-
   it('renders children correctly', () => {
     const testContent = 'Test landing page content'
     render(
