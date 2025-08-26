@@ -2,67 +2,36 @@ import { expect, test } from '@playwright/test'
 
 test.describe('Contact Form', () => {
   test.beforeEach(async ({ page }) => {
-    // Intercept the contact API to prevent real emails from being sent
-    await page.route('/api/contact', async (route) => {
+    // Intercept the GraphQL API to prevent real emails from being sent
+    await page.route('/api/graphql', async (route) => {
       const request = route.request()
       const postData = request.postDataJSON()
 
-      // Simulate API response with validation
-      if (postData) {
-        // Basic validation (same as the real API)
-        if (
-          !postData.name ||
-          !postData.subject ||
-          !postData.message ||
-          postData.message.length < 10
-        ) {
-          await route.fulfill({
-            status: 400,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              error: 'Validation failed',
-              details: [
-                ...(!postData.name ? [{ message: 'Name is required' }] : []),
-                ...(!postData.subject
-                  ? [{ message: 'Subject is required' }]
-                  : []),
-                ...(!postData.message || postData.message.length < 10
-                  ? [{ message: 'Message must be at least 10 characters' }]
-                  : []),
-              ],
-            }),
-          })
-          return
-        }
+      // Check if this is a contact form submission
+      if (postData?.query?.includes('SubmitContactForm')) {
+        const variables = postData.variables?.input
 
-        if (
-          !postData.email ||
-          !postData.email.includes('@') ||
-          !postData.email.includes('.')
-        ) {
-          await route.fulfill({
-            status: 400,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              error: 'Validation failed',
-              details: [{ message: 'Invalid email address' }],
-            }),
-          })
-          return
-        }
-
-        // Success response
+        // Success response for valid submissions
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ message: 'Message sent successfully!' }),
+          body: JSON.stringify({
+            data: {
+              submitContactForm: {
+                id: `contact_${Date.now()}`,
+                name: variables.name,
+                email: variables.email,
+                subject: variables.subject,
+                message: variables.message,
+                submittedAt: new Date().toISOString(),
+              },
+            },
+            errors: null,
+          }),
         })
       } else {
-        await route.fulfill({
-          status: 400,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'No data provided' }),
-        })
+        // For other GraphQL queries, pass through
+        await route.continue()
       }
     })
   })
