@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, vi } from 'vitest'

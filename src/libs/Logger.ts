@@ -8,7 +8,7 @@ import {
   getLogger,
 } from '@logtape/logtape'
 
-import { isServer } from '@/utils/Helpers'
+import { isServer } from '@/utils/Env'
 
 import { Env } from './Env'
 
