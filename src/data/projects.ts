@@ -10,6 +10,7 @@ export const defaultFeaturedProjects: Project[] = [
     projectName: 'BALLZ',
     liveUrl: '/ballz',
     repositoryUrl: 'https://github.com/c0d3ster/ballz',
+    featured: true,
     description:
       'BALLZ is an immersive 3D action game that combines fast-paced gameplay with strategic elements. Built using Unity Engine, this cross-platform title features dynamic 3D environments, responsive controls, and engaging gameplay mechanics that challenge players to think quickly while maintaining precision.',
   },
@@ -21,6 +22,7 @@ export const defaultFeaturedProjects: Project[] = [
     logo: '/assets/images/KaiberLogo.png',
     projectName: 'Kaiber.ai',
     liveUrl: 'https://kaiber.ai',
+    featured: true,
     description:
       'Made for artists, by artists, we are an AI creative lab on a mission to unlock creativity through powerful and intuitive generative audio and video. Built to enable creativity, not replace it, Kaiber explores the intersection of artistry and technology, with endless possibilities.',
   },
@@ -34,6 +36,7 @@ export const defaultFeaturedProjects: Project[] = [
     projectName: 'Fractaleyez',
     liveUrl: 'https://fractaleyez.com',
     repositoryUrl: 'https://github.com/c0d3ster/fractaleyez',
+    featured: true,
     description:
       'Fractaleyez is an easy-to-use, fully configurable, realtime music visualizer that transforms audio into stunning visual experiences. Built with modern web technologies, it provides artists and creators with powerful tools to create immersive audio-visual performances and installations.',
   },
