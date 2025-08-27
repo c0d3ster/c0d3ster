@@ -21,6 +21,34 @@ type ProjectDetailsTemplateProps = {
 export const ProjectDetailsTemplate = ({
   project,
 }: ProjectDetailsTemplateProps) => {
+  // Format status for display
+  const formatStatus = (status: string) => {
+    return status
+      .split('_')
+      .map((word) => word.toUpperCase())
+      .join(' ')
+  }
+
+  // Get status styling
+  const getStatusStyling = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'border-green-400/40 bg-green-400/20 text-green-400'
+      case 'in_progress':
+      case 'in_testing':
+      case 'ready_for_launch':
+        return 'border-yellow-400/40 bg-yellow-400/20 text-yellow-400'
+      case 'requested':
+      case 'in_review':
+      case 'approved':
+        return 'border-blue-400/40 bg-blue-400/20 text-blue-400'
+      case 'cancelled':
+        return 'border-red-400/40 bg-red-400/20 text-red-400'
+      default:
+        return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
+    }
+  }
+
   return (
     <CleanPageTemplate>
       <BackButton href='/projects' text='BACK TO PROJECTS' />
@@ -29,14 +57,14 @@ export const ProjectDetailsTemplate = ({
         <ScrollFade>
           <div className='mb-16 text-center'>
             <AnimatedHeading
-              text={project.projectName || project.title}
+              text={project.projectName}
               level='h1'
               variant='section'
               className='mb-4'
             />
             <ExpandingUnderline />
             <p className='mt-6 font-mono text-lg text-green-300 opacity-80'>
-              {project.title}
+              {project.title ?? project.projectName}
             </p>
             <p className='mt-4 font-mono text-base text-green-400 opacity-70'>
               {project.overview}
@@ -53,7 +81,7 @@ export const ProjectDetailsTemplate = ({
                 <div className='relative'>
                   <Image
                     src={project.logo}
-                    alt={`${project.title} logo`}
+                    alt={`${project.title ?? project.projectName} logo`}
                     width={300}
                     height={300}
                     className='rounded-lg border border-green-400/20 bg-black/80 p-8'
@@ -64,13 +92,9 @@ export const ProjectDetailsTemplate = ({
               {/* Status Badge */}
               <div className='text-center'>
                 <span
-                  className={`inline-block rounded-full px-6 py-3 font-mono text-sm font-bold ${
-                    project.status === 'COMPLETED'
-                      ? 'border border-green-400/40 bg-green-400/20 text-green-400'
-                      : 'border border-yellow-400/40 bg-yellow-400/20 text-yellow-400'
-                  }`}
+                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusStyling(project.status)}`}
                 >
-                  {project.status}
+                  {formatStatus(project.status)}
                 </span>
               </div>
             </div>
@@ -112,12 +136,12 @@ export const ProjectDetailsTemplate = ({
         </div>
 
         {/* Access Project Button */}
-        {project.projectUrl && (
+        {project.liveUrl && (
           <ScrollFade>
             <div className='mt-16 text-center'>
               <Button
-                href={project.projectUrl}
-                external={project.projectUrl.startsWith('http')}
+                href={project.liveUrl}
+                external={project.liveUrl.startsWith('http')}
                 size='md'
               >
                 ACCESS PROJECT

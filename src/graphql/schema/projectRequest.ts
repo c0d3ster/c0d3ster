@@ -4,7 +4,8 @@ export const projectRequestSchema = gql`
   # Project request type
   type ProjectRequest {
     id: ID!
-    title: String!
+    projectName: String!
+    title: String
     description: String!
     projectType: ProjectType!
     budget: Float
@@ -23,7 +24,8 @@ export const projectRequestSchema = gql`
 
   # Project request input types
   input CreateProjectRequestInput {
-    title: String!
+    projectName: String!
+    title: String
     description: String!
     projectType: ProjectType!
     budget: Float

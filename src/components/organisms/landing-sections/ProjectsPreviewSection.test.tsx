@@ -34,7 +34,9 @@ describe('ProjectsPreviewSection', () => {
 
     // Use the actual data instead of hardcoded values
     defaultFeaturedProjects.forEach((project) => {
-      expect(screen.getByText(project.title)).toBeInTheDocument()
+      expect(
+        screen.getByText(project.title ?? project.projectName)
+      ).toBeInTheDocument()
     })
   })
 
@@ -85,8 +87,8 @@ describe('ProjectsPreviewSection', () => {
   it('renders project statuses', () => {
     render(<ProjectsPreviewSection />)
 
-    expect(screen.getAllByText('COMPLETED')).toHaveLength(2)
-    expect(screen.getByText('IN PROGRESS')).toBeInTheDocument()
+    expect(screen.getAllByText('completed')).toHaveLength(2)
+    expect(screen.getByText('in_progress')).toBeInTheDocument()
   })
 
   it('renders view all projects button', () => {
@@ -139,7 +141,7 @@ describe('ProjectsPreviewSection', () => {
         title: 'Simple Project Type',
         overview: 'Simple overview',
         techStack: ['React'],
-        status: 'COMPLETED',
+        status: 'completed',
         projectName: 'Simple Project',
       },
       {
@@ -153,7 +155,7 @@ describe('ProjectsPreviewSection', () => {
           'Node.js',
           'PostgreSQL',
         ],
-        status: 'IN PROGRESS',
+        status: 'in_progress',
         projectName: 'Complex Project',
       },
     ]

@@ -29,7 +29,8 @@ export const projectSchema = gql`
   # Project type
   type Project {
     id: ID!
-    title: String!
+    title: String
+    projectName: String!
     description: String!
     projectType: ProjectType!
     budget: Float
@@ -88,7 +89,8 @@ export const projectSchema = gql`
 
   # Project input types
   input CreateProjectInput {
-    title: String!
+    title: String
+    projectName: String!
     description: String!
     projectType: ProjectType!
     budget: Float
@@ -103,6 +105,7 @@ export const projectSchema = gql`
 
   input UpdateProjectInput {
     title: String
+    projectName: String
     description: String
     projectType: ProjectType
     budget: Float

@@ -4,7 +4,10 @@ import { ProjectType } from '@/graphql/generated/graphql'
 
 // Project request form validation schema
 export const projectRequestSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
+  projectName: z
+    .string()
+    .min(1, 'Project name is required')
+    .max(255, 'Project name too long'),
   description: z
     .string()
     .min(20, 'Description must be at least 20 characters')

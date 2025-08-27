@@ -4,14 +4,6 @@ import type { GetMyDashboardQuery } from '@/graphql/generated/graphql'
 
 import { ProjectStatusCard } from '@/components/molecules'
 
-// Create a union type that matches what the GraphQL query returns
-type DashboardProject = NonNullable<
-  GetMyDashboardQuery['myDashboard']
->['projects'][0]
-type DashboardProjectRequest = NonNullable<
-  GetMyDashboardQuery['myDashboard']
->['projectRequests'][0]
-
 type UserProjectsAndRequestsProps = {
   projects?: NonNullable<GetMyDashboardQuery['myDashboard']>['projects']
   projectRequests?: NonNullable<
@@ -79,7 +71,7 @@ export const UserProjectsAndRequests = ({
             {projectsList.map((item) => (
               <ProjectStatusCard
                 key={`${item.__typename}-${item.id}`}
-                item={item as DashboardProject}
+                item={item}
               />
             ))}
           </div>
@@ -108,7 +100,7 @@ export const UserProjectsAndRequests = ({
             {filteredProjectRequests.map((item) => (
               <ProjectStatusCard
                 key={`${item.__typename}-${item.id}`}
-                item={item as DashboardProjectRequest}
+                item={item}
               />
             ))}
           </div>

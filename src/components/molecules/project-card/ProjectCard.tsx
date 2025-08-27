@@ -3,16 +3,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-import { projectNameToSlug } from '@/data/projects'
-
 export type Project = {
-  title: string
+  title?: string
   overview: string
   techStack: string[]
   status: string
   logo?: string
-  projectName?: string
-  projectUrl?: string
+  projectName: string
+  liveUrl?: string
+  repositoryUrl?: string
   description?: string
 }
 
@@ -21,15 +20,51 @@ type ProjectCardProps = {
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {
-  // Generate the project URL based on project name
+  // Generate slug from project title or projectName
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  }
+
+  // Format status for display
+  const formatStatus = (status: string) => {
+    return status
+      .split('_')
+      .map((word) => word.toUpperCase())
+      .join(' ')
+  }
+
+  // Get status styling
+  const getStatusStyling = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'text-green-400'
+      case 'in_progress':
+      case 'in_testing':
+      case 'ready_for_launch':
+        return 'text-yellow-400'
+      case 'requested':
+      case 'in_review':
+      case 'approved':
+        return 'text-blue-400'
+      case 'cancelled':
+        return 'text-red-400'
+      default:
+        return 'text-gray-400'
+    }
+  }
+
+  // Use liveUrl if available, otherwise generate from project name
   const getProjectUrl = (projectName?: string) => {
     if (!projectName) return '/projects'
 
-    const slug = projectNameToSlug[projectName]
-    return slug ? `/projects/${slug}` : '/projects'
+    const slug = generateSlug(projectName)
+    return `/projects/${slug}`
   }
 
-  const projectUrl = getProjectUrl(project.projectName)
+  const projectUrl = project.liveUrl || getProjectUrl(project.projectName)
 
   return (
     <Link href={projectUrl} className='block'>
@@ -39,7 +74,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className='absolute top-4 right-4'>
             <Image
               src={project.logo}
-              alt={`${project.title} logo`}
+              alt={`${project.title ?? project.projectName} logo`}
               width={60}
               height={60}
               className='opacity-70 transition-opacity duration-300 group-hover:opacity-100'
@@ -74,13 +109,9 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
         {/* Status */}
         <div className='flex items-center justify-between'>
           <span
-            className={`font-mono text-xs font-bold ${
-              project.status === 'COMPLETED'
-                ? 'text-green-400'
-                : 'text-yellow-400'
-            }`}
+            className={`font-mono text-xs font-bold ${getStatusStyling(project.status)}`}
           >
-            {project.status}
+            {formatStatus(project.status)}
           </span>
 
           {/* Matrix-style decorative elements */}

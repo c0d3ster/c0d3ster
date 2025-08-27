@@ -8,9 +8,7 @@ export const projectStatusEnum = pgEnum('project_status', [
   'in_progress',
   'in_testing',
   'ready_for_launch',
-  'live',
   'completed',
-  'on_hold',
   'cancelled',
 ])
 

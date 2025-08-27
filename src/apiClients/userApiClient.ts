@@ -90,6 +90,7 @@ export const GET_MY_DASHBOARD = gql`
       projects {
         id
         title
+        projectName
         description
         projectType
         budget
@@ -149,6 +150,7 @@ export const GET_MY_DASHBOARD = gql`
       }
       projectRequests {
         id
+        projectName
         title
         description
         projectType
@@ -170,6 +172,7 @@ export const GET_MY_DASHBOARD = gql`
       availableProjects {
         id
         title
+        projectName
         description
         projectType
         budget
@@ -190,6 +193,7 @@ export const GET_MY_DASHBOARD = gql`
       assignedProjects {
         id
         title
+        projectName
         description
         projectType
         budget

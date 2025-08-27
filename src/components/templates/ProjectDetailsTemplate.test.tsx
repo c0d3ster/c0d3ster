@@ -16,10 +16,10 @@ const mockProject = {
   title: 'Test Project',
   overview: 'A test project for testing purposes',
   techStack: ['React', 'TypeScript', 'Tailwind'],
-  status: 'COMPLETED',
+  status: 'completed',
   logo: '/test-logo.png',
   projectName: 'TestProject',
-  projectUrl: 'https://testproject.com',
+  liveUrl: 'https://testproject.com',
   description: 'This is a detailed description of the test project.',
 }
 
@@ -29,6 +29,21 @@ describe('ProjectDetailsTemplate', () => {
 
     expect(screen.getByText('TestProject')).toBeInTheDocument()
     expect(screen.getByText('Test Project')).toBeInTheDocument()
+    expect(
+      screen.getByText('A test project for testing purposes')
+    ).toBeInTheDocument()
+  })
+
+  it('renders project header with projectName when title is not available', () => {
+    const projectWithoutTitle = { ...mockProject, title: undefined }
+    render(<ProjectDetailsTemplate project={projectWithoutTitle} />)
+
+    // Check that projectName appears in the h1 heading
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'TestProject'
+    )
+    // Check that projectName appears in the subtitle paragraph (there are 2 elements with this text)
+    expect(screen.getAllByText('TestProject')).toHaveLength(2)
     expect(
       screen.getByText('A test project for testing purposes')
     ).toBeInTheDocument()
@@ -46,7 +61,7 @@ describe('ProjectDetailsTemplate', () => {
   it('renders status badge with correct styling', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
-    const statusBadge = screen.getByText('COMPLETED')
+    const statusBadge = screen.getByText('completed')
 
     expect(statusBadge).toBeInTheDocument()
     expect(statusBadge).toHaveClass(
@@ -74,7 +89,7 @@ describe('ProjectDetailsTemplate', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders access project button when projectUrl is available', () => {
+  it('renders access project button when liveUrl is available', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
     const accessButton = screen.getByRole('link', { name: 'ACCESS PROJECT' })
@@ -85,8 +100,8 @@ describe('ProjectDetailsTemplate', () => {
     expect(accessButton).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
-  it('does not render access project button when projectUrl is not available', () => {
-    const projectWithoutUrl = { ...mockProject, projectUrl: undefined }
+  it('does not render access project button when liveUrl is not available', () => {
+    const projectWithoutUrl = { ...mockProject, liveUrl: undefined }
     render(<ProjectDetailsTemplate project={projectWithoutUrl} />)
 
     expect(
@@ -120,10 +135,10 @@ describe('ProjectDetailsTemplate', () => {
   })
 
   it('renders in-progress status with correct styling', () => {
-    const inProgressProject = { ...mockProject, status: 'IN PROGRESS' }
+    const inProgressProject = { ...mockProject, status: 'in_progress' }
     render(<ProjectDetailsTemplate project={inProgressProject} />)
 
-    const statusBadge = screen.getByText('IN PROGRESS')
+    const statusBadge = screen.getByText('in_progress')
 
     expect(statusBadge).toHaveClass(
       'border-yellow-400/40',
