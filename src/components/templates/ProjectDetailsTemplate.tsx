@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 
-import type { Project } from '@/components/molecules'
+import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
 
 import {
   BackButton,
@@ -13,6 +13,8 @@ import {
 import { AnimatedHeading } from '@/components/molecules'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
+
+type Project = NonNullable<GetFeaturedProjectsQuery['featuredProjects']>[0]
 
 type ProjectDetailsTemplateProps = {
   project: Project
@@ -110,7 +112,9 @@ export const ProjectDetailsTemplate = ({
                 </h3>
                 <div className='flex flex-wrap gap-3'>
                   {(project.techStack ?? [])
-                    .filter((t): t is string => Boolean(t))
+                    .filter((t: string | null | undefined): t is string =>
+                      Boolean(t)
+                    )
                     .map((tech: string) => (
                       <span
                         key={tech}

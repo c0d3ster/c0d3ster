@@ -149,6 +149,23 @@ export class ProjectService {
     })
   }
 
+  async getFeaturedProjects(userId?: string) {
+    let whereClause: any = eq(schemas.projects.featured, true)
+
+    // If a user is specified, filter by that user's projects
+    if (userId) {
+      whereClause = and(
+        eq(schemas.projects.featured, true),
+        eq(schemas.projects.clientId, userId)
+      )
+    }
+
+    return await db.query.projects.findMany({
+      where: whereClause,
+      orderBy: [desc(schemas.projects.createdAt)],
+    })
+  }
+
   async getAssignedProjects(developerId: string) {
     return await db.query.projects.findMany({
       where: eq(schemas.projects.developerId, developerId),
@@ -163,11 +180,14 @@ export class ProjectService {
         clientId: input.clientId,
         requestId: input.requestId,
         title: input.title,
+        projectName: input.projectName,
         description: input.description,
         projectType: input.projectType,
         budget: input.budget,
         requirements: input.requirements,
         techStack: input.techStack,
+        status: input.status,
+        featured: false,
       })
       .returning()
 

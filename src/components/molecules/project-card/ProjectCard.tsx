@@ -3,17 +3,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 
-export type Project = {
-  title?: string
-  overview: string
-  techStack: string[]
-  status: string
-  logo?: string
-  projectName: string
-  liveUrl?: string
-  repositoryUrl?: string
-  description?: string
-}
+import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
+
+type Project = NonNullable<GetFeaturedProjectsQuery['featuredProjects']>[0]
 
 type ProjectCardProps = {
   project: Project
@@ -89,7 +81,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
 
         {/* Project Description */}
         <p className='mb-4 pr-12 font-mono text-sm text-green-300 opacity-80'>
-          {project.overview}
+          {project.overview || project.description}
         </p>
 
         {/* Tech Stack */}

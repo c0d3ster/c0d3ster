@@ -6,6 +6,7 @@ import type {
   AssignProjectMutationVariables,
   GetAssignedProjectsQuery,
   GetAvailableProjectsDetailedQuery,
+  GetFeaturedProjectsQuery,
   GetMyProjectsQuery,
   GetProjectsQuery,
 } from '@/graphql/generated/graphql'
@@ -13,10 +14,12 @@ import type {
 import {
   GetAssignedProjectsDocument,
   GetAvailableProjectsDetailedDocument,
+  GetFeaturedProjectsDocument,
   GetMyProjectsDocument,
   GetProjectsDocument,
   useGetAssignedProjectsQuery,
   useGetAvailableProjectsDetailedQuery,
+  useGetFeaturedProjectsQuery,
   useGetMyProjectsQuery,
   useGetProjectsQuery,
 } from '@/graphql/generated/graphql'
@@ -55,6 +58,7 @@ export const GET_MY_PROJECTS = gql`
       createdAt
       updatedAt
       techStack
+      featured
       client {
         id
         firstName
@@ -107,6 +111,7 @@ export const GET_AVAILABLE_PROJECTS_DETAILED = gql`
       budget
       techStack
       status
+      featured
       client {
         id
         firstName
@@ -175,6 +180,24 @@ export const GET_ASSIGNED_PROJECTS = gql`
   }
 `
 
+export const GET_FEATURED_PROJECTS = gql`
+  query GetFeaturedProjects($userEmail: String) {
+    featuredProjects(userEmail: $userEmail) {
+      id
+      title
+      projectName
+      description
+      overview
+      techStack
+      status
+      logo
+      liveUrl
+      repositoryUrl
+      featured
+    }
+  }
+`
+
 export const ASSIGN_PROJECT = gql`
   mutation AssignProject($projectId: ID!, $developerId: ID!) {
     assignProject(projectId: $projectId, developerId: $developerId) {
@@ -197,6 +220,10 @@ export const useGetMyProjects = () => useGetMyProjectsQuery()
 export const useGetAvailableProjects = () =>
   useGetAvailableProjectsDetailedQuery()
 export const useGetAssignedProjects = () => useGetAssignedProjectsQuery()
+export const useGetFeaturedProjects = (userEmail?: string) =>
+  useGetFeaturedProjectsQuery({
+    variables: userEmail ? { userEmail } : undefined,
+  })
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
 // Async functions for SSR / non-hook usage
@@ -232,6 +259,16 @@ export const getAssignedProjects = async () => {
   if (!result.data)
     throw new Error('No data returned from GetAssignedProjects query')
   return result.data.assignedProjects
+}
+
+export const getFeaturedProjects = async (userEmail?: string) => {
+  const result = await apolloClient.query<GetFeaturedProjectsQuery>({
+    query: GetFeaturedProjectsDocument,
+    variables: userEmail ? { userEmail } : undefined,
+  })
+  if (!result.data)
+    throw new Error('No data returned from GetFeaturedProjects query')
+  return result.data.featuredProjects
 }
 
 export const assignProject = async (projectId: string, developerId: string) => {

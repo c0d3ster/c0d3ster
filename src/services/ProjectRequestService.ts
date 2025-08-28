@@ -95,17 +95,18 @@ export class ProjectRequestService {
   async createProjectRequest(input: any, currentUserId: string) {
     const [request] = await db
       .insert(schemas.projectRequests)
-      .values({
-        userId: currentUserId,
-        title: input.title,
-        description: input.description,
-        projectType: input.projectType,
-        budget: input.budget,
-        timeline: input.timeline,
-        requirements: input.requirements,
-        contactPreference: input.contactPreference,
-        additionalInfo: input.additionalInfo,
-      })
+             .values({
+         userId: currentUserId,
+         projectName: input.projectName,
+         title: input.title,
+         description: input.description,
+         projectType: input.projectType,
+         budget: input.budget,
+         timeline: input.timeline,
+         requirements: input.requirements,
+         contactPreference: input.contactPreference,
+         additionalInfo: input.additionalInfo,
+       })
       .returning()
 
     if (!request) {
@@ -236,13 +237,15 @@ export class ProjectRequestService {
       const [created] = await tx
         .insert(schemas.projects)
         .values({
-          requestId: id,
           clientId: request.userId,
+          projectName: request.projectName,
           title: request.title,
           description: request.description,
           projectType: request.projectType,
           budget: request.budget,
           requirements: request.requirements,
+          status: 'approved',
+          featured: false,
         })
         .returning()
 

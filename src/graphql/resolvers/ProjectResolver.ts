@@ -150,6 +150,16 @@ export const projectResolvers = {
 
       return await projectService.getAssignedProjects(currentUser.id)
     },
+
+    featuredProjects: async (_: any, { userEmail }: { userEmail?: string }) => {
+      if (userEmail) {
+        const user = await userService.getUserByEmail(userEmail)
+        if (user) {
+          return await projectService.getFeaturedProjects(user.id)
+        }
+      }
+      return await projectService.getFeaturedProjects()
+    },
   },
 
   Mutation: {

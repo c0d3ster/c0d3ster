@@ -23,7 +23,8 @@ export const projectRequests = pgTable('project_requests', {
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  title: varchar('title', { length: 255 }).notNull(),
+  projectName: varchar('project_name', { length: 255 }).notNull(),
+  title: varchar('title', { length: 255 }),
   description: text('description').notNull(),
   projectType: projectTypeEnum('project_type').notNull(),
   budget: decimal('budget', { precision: 10, scale: 2 }),
@@ -48,9 +49,14 @@ export const projects = pgTable('projects', {
   clientId: uuid('client_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
-  developerId: uuid('developer_id').references(() => users.id, { onDelete: 'set null' }),
-  title: varchar('title', { length: 255 }).notNull(),
+  developerId: uuid('developer_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  projectName: varchar('project_name', { length: 255 }).notNull(),
+  title: varchar('title', { length: 255 }),
   description: text('description').notNull(),
+  overview: text('overview'),
+  logo: text('logo'),
   projectType: projectTypeEnum('project_type').notNull(),
   status: projectStatusEnum('status').notNull().default('approved'),
   priority: projectPriorityEnum('priority').notNull().default('medium'),
@@ -67,6 +73,7 @@ export const projects = pgTable('projects', {
   clientNotes: text('client_notes'),
   internalNotes: text('internal_notes'),
   progressPercentage: integer('progress_percentage').default(0),
+  featured: boolean('featured').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()

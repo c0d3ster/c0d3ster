@@ -29,9 +29,10 @@ export const projectSchema = gql`
   # Project type
   type Project {
     id: ID!
-    title: String
     projectName: String!
     description: String!
+    title: String
+    overview: String
     projectType: ProjectType!
     budget: Float
     requirements: JSON
@@ -45,6 +46,8 @@ export const projectSchema = gql`
     repositoryUrl: String
     liveUrl: String
     stagingUrl: String
+    featured: Boolean!
+    logo: String
     createdAt: String!
     updatedAt: String!
 
@@ -116,6 +119,7 @@ export const projectSchema = gql`
     startDate: String
     estimatedCompletionDate: String
     actualCompletionDate: String
+    featured: Boolean
   }
 
   # Project queries
@@ -125,6 +129,7 @@ export const projectSchema = gql`
     myProjects: [Project!]!
     availableProjects: [Project!]!
     assignedProjects: [Project!]!
+    featuredProjects(userEmail: String): [Project!]!
   }
 
   # Project mutations

@@ -1,57 +1,28 @@
-import type { Metadata } from 'next'
-
 import Link from 'next/link'
 
+import { getFeaturedProjects } from '@/apiClients'
 import { ProjectDetailsTemplate } from '@/components/templates'
-import { defaultFeaturedProjects, projectNameToSlug } from '@/data/projects'
+import { SUPPORT_EMAIL } from '@/constants'
 
 type IPortfolioDetailProps = {
   params: Promise<{ slug: string }>
 }
 
-// Create a map of slugs to projects
-const projectsData = defaultFeaturedProjects.reduce(
-  (acc, project) => {
-    if (project.projectName) {
-      const slug = projectNameToSlug[project.projectName]
-      if (slug) {
-        acc[slug] = project
-      }
-    }
-    return acc
-  },
-  {} as Record<string, (typeof defaultFeaturedProjects)[0]>
-)
-
-export function generateStaticParams() {
-  return Object.keys(projectsData).map((slug) => ({
-    slug,
-  }))
-}
-
-export async function generateMetadata(
-  props: IPortfolioDetailProps
-): Promise<Metadata> {
-  const { slug } = await props.params
-  const project = projectsData[slug]
-
-  if (!project) {
-    return {
-      title: 'Project Not Found',
-      description: 'The requested project could not be found',
-    }
-  }
-
-  return {
-    title: `${project.projectName} - ${project.title} | Portfolio`,
-    description: project.overview,
-  }
+// Helper function to create slug from project name
+const createSlug = (projectName: string) => {
+  return projectName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
 }
 
 export default async function PortfolioDetail(props: IPortfolioDetailProps) {
   const { slug } = await props.params
 
-  const project = projectsData[slug]
+  const projects = await getFeaturedProjects(SUPPORT_EMAIL)
+
+  // Find project by slug
+  const project = projects?.find((p) => createSlug(p.projectName) === slug)
 
   if (!project) {
     return (
@@ -84,5 +55,3 @@ export default async function PortfolioDetail(props: IPortfolioDetailProps) {
     </>
   )
 }
-
-export const dynamicParams = false

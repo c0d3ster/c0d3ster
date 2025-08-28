@@ -109,6 +109,7 @@ export const GET_MY_DASHBOARD = gql`
         repositoryUrl
         liveUrl
         stagingUrl
+        featured
         client {
           id
           firstName
@@ -183,6 +184,7 @@ export const GET_MY_DASHBOARD = gql`
         estimatedCompletionDate
         createdAt
         updatedAt
+        featured
         client {
           id
           firstName
@@ -209,6 +211,7 @@ export const GET_MY_DASHBOARD = gql`
         techStack
         createdAt
         updatedAt
+        featured
         client {
           id
           firstName

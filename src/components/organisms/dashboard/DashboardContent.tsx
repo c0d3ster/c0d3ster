@@ -184,7 +184,7 @@ export const DashboardContent = () => {
               <DeveloperDashboardSection
                 availableProjects={availableProjects}
                 assignedProjects={assignedProjects}
-                onDataRefresh={() => {
+                onDataRefreshAction={() => {
                   // Refetch the dashboard data
                   window.location.reload()
                 }}

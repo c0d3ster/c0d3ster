@@ -13,20 +13,21 @@ import {
   ContactForm,
   ContactMethodCard,
 } from '@/components/molecules'
+import { GITHUB_URL, GITHUB_USERNAME, SUPPORT_EMAIL } from '@/constants'
 
 export const ContactSection = () => {
   const contactMethods: ContactMethod[] = [
     {
       title: 'EMAIL',
-      value: 'support@c0d3ster.com',
+      value: SUPPORT_EMAIL,
       icon: '📧',
-      link: 'mailto:support@c0d3ster.com',
+      link: `mailto:${SUPPORT_EMAIL}`,
     },
     {
       title: 'GITHUB',
-      value: 'github.com/c0d3ster',
+      value: `github.com/${GITHUB_USERNAME}`,
       icon: '💻',
-      link: 'https://github.com/c0d3ster',
+      link: GITHUB_URL,
     },
     {
       title: 'LINKEDIN',
