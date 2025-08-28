@@ -1,6 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { GITHUB_USERNAME, LINKEDIN_USERNAME, SUPPORT_EMAIL } from '@/constants'
+
 import { ContactSection } from './ContactSection'
 
 describe('ContactSection', () => {
@@ -22,10 +24,12 @@ describe('ContactSection', () => {
   it('renders contact method values', () => {
     render(<ContactSection />)
 
-    expect(screen.getByText('support@c0d3ster.com')).toBeInTheDocument()
-    expect(screen.getByText('github.com/c0d3ster')).toBeInTheDocument()
+    expect(screen.getByText(SUPPORT_EMAIL)).toBeInTheDocument()
     expect(
-      screen.getByText('linkedin.com/in/cody-douglass')
+      screen.getByText(`github.com/${GITHUB_USERNAME}`)
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(`linkedin.com/in/${LINKEDIN_USERNAME}`)
     ).toBeInTheDocument()
   })
 

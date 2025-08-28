@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
 
 import { ExpandingUnderline } from '@/components/atoms'
-import { AnimatedHeading, ProjectRequestForm  } from '@/components/molecules'
+import { AnimatedHeading, ProjectRequestForm } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
+import { BRAND_NAME } from '@/constants'
 
 export const metadata: Metadata = {
-  title: 'Request Project - c0d3ster',
+  title: `Request Project - ${BRAND_NAME}`,
   description: 'Submit a new project request',
 }
 

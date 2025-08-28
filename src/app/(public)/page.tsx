@@ -6,9 +6,10 @@ import {
   ProjectsPreviewSection,
 } from '@/components/organisms'
 import { LandingPageTemplate } from '@/components/templates'
+import { BRAND_NAME } from '@/constants'
 
 export const metadata: Metadata = {
-  title: 'c0d3ster - Software Contractor',
+  title: `${BRAND_NAME} - Software Contractor`,
   description:
     'Full-stack software development contractor specializing in React, Next.js, TypeScript, and Node.js',
 }

@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
+import { BRAND_NAME, LOGO_PATH } from '@/constants'
+
 export type NavItem = { label: string; href: string }
 
 type SiteHeaderProps = {
@@ -25,8 +27,7 @@ export const SiteHeader = ({
   const { user, isLoaded } = useUser()
 
   // Determine if header should fade based on route
-  const shouldFade =
-    pathname === '/' || pathname.endsWith('/en') || pathname.endsWith('/fr')
+  const shouldFade = pathname === '/'
 
   useEffect(() => {
     // Check initial scroll position on mount
@@ -276,8 +277,8 @@ export const SiteHeader = ({
         <div className='flex items-center space-x-4'>
           <Link href='/'>
             <Image
-              src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
-              alt='c0d3ster Logo'
+              src={LOGO_PATH}
+              alt={`${BRAND_NAME} Logo`}
               width={32}
               height={32}
               className='h-8 w-auto transition-opacity duration-300 hover:opacity-80 sm:h-10'

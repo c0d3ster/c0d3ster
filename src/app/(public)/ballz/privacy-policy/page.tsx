@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { BackButton, ExpandingUnderline } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
+import { GITHUB_USERNAME, SUPPORT_EMAIL } from '@/constants'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - BALLZ',
@@ -190,8 +191,8 @@ export default function PrivacyPolicy() {
               practices, please contact us at:
             </p>
             <div className='font-mono text-sm text-green-300 opacity-80'>
-              <p>Email: support@c0d3ster.com</p>
-              <p>GitHub: github.com/c0d3ster</p>
+              <p>Email: {SUPPORT_EMAIL}</p>
+              <p>GitHub: github.com/{GITHUB_USERNAME}</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
+import { BRAND_NAME, SUPPORT_EMAIL } from '@/constants'
 import { ContactFormEmail } from '@/emails'
 import { contactFormSchema } from '@/validations'
 
@@ -31,8 +32,8 @@ export async function POST(request: Request) {
     // Send email using Resend
     const resend = getResend()
     const { error } = await resend.emails.send({
-      from: 'c0d3ster <support@c0d3ster.com>',
-      to: ['support@c0d3ster.com'],
+      from: `${BRAND_NAME} <${SUPPORT_EMAIL}>`,
+      to: [SUPPORT_EMAIL],
       subject: `New Contact Form: ${subject}`,
       react: ContactFormEmail({
         name,

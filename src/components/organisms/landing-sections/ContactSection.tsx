@@ -13,7 +13,7 @@ import {
   ContactForm,
   ContactMethodCard,
 } from '@/components/molecules'
-import { GITHUB_URL, GITHUB_USERNAME, SUPPORT_EMAIL } from '@/constants'
+import { GITHUB_URL, GITHUB_USERNAME, LINKEDIN_URL, LINKEDIN_USERNAME, SUPPORT_EMAIL } from '@/constants'
 
 export const ContactSection = () => {
   const contactMethods: ContactMethod[] = [
@@ -31,9 +31,9 @@ export const ContactSection = () => {
     },
     {
       title: 'LINKEDIN',
-      value: 'linkedin.com/in/cody-douglass',
+      value: `linkedin.com/in/${LINKEDIN_USERNAME}`,
       icon: '🔗',
-      link: 'https://linkedin.com/in/cody-douglass',
+      link: LINKEDIN_URL,
     },
   ]
 
