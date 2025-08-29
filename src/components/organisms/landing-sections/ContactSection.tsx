@@ -13,7 +13,13 @@ import {
   ContactForm,
   ContactMethodCard,
 } from '@/components/molecules'
-import { GITHUB_URL, GITHUB_USERNAME, LINKEDIN_URL, LINKEDIN_USERNAME, SUPPORT_EMAIL } from '@/constants'
+import {
+  GITHUB_URL,
+  GITHUB_USERNAME,
+  LINKEDIN_URL,
+  LINKEDIN_USERNAME,
+  SUPPORT_EMAIL,
+} from '@/constants'
 
 export const ContactSection = () => {
   const contactMethods: ContactMethod[] = [

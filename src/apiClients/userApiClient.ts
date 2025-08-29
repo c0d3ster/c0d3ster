@@ -158,11 +158,9 @@ export const GET_MY_DASHBOARD = gql`
         budget
         timeline
         requirements
-        contactPreference
         additionalInfo
         status
         createdAt
-        updatedAt
         user {
           id
           firstName

@@ -11,24 +11,11 @@ const userService = new UserService()
 export const projectRequestResolvers = {
   Query: {
     projectRequests: async (_: any, { filter }: { filter?: any }) => {
-      console.error('🚨 PROJECT REQUESTS QUERY CALLED!!!', filter)
-      try {
-        const currentUser = await userService.getCurrentUserWithAuth()
-        console.error('🚨 CURRENT USER:', currentUser)
-        userService.checkPermission(currentUser, 'admin')
-        console.error('🚨 PERMISSION CHECK PASSED')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'admin')
 
-        const results = await projectRequestService.getProjectRequests(filter)
-        console.error(
-          '🚨 PROJECT REQUESTS QUERY RESULTS!!!',
-          results.length,
-          results[0]
-        )
-        return results
-      } catch (error) {
-        console.error('🚨 ERROR IN PROJECT REQUESTS QUERY:', error)
-        throw error
-      }
+      const results = await projectRequestService.getProjectRequests(filter)
+      return results
     },
 
     projectRequest: async (_: any, { id }: { id: string }) => {
@@ -107,14 +94,7 @@ export const projectRequestResolvers = {
 
     // Ensure date fields are properly formatted as strings
     createdAt: (parent: any) => {
-      logger.warn('ProjectRequest createdAt resolver', {
-        parentCreatedAt: parent.createdAt,
-        type: typeof parent.createdAt,
-      })
       if (!parent.createdAt) {
-        logger.warn('ProjectRequest createdAt is null/undefined for request', {
-          requestId: parent.id,
-        })
         return null
       }
       try {
@@ -146,12 +126,7 @@ export const projectRequestResolvers = {
       }
     },
 
-    // Debug status field
     status: (parent: any) => {
-      logger.warn('ProjectRequest status resolver', {
-        parentStatus: parent.status,
-        type: typeof parent.status,
-      })
       return parent.status || 'unknown'
     },
   },

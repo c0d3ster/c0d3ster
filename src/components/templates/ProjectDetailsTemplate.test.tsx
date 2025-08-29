@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import type {
+  Project,
+  ProjectStatus,
+  ProjectType,
+} from '@/graphql/generated/graphql'
+
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
 // Mock next/image
@@ -12,15 +18,43 @@ vi.mock('next/image', () => ({
 }))
 
 // Mock the Project type
-const mockProject = {
+const mockProject: Project = {
+  id: '1',
   title: 'Test Project',
   overview: 'A test project for testing purposes',
   techStack: ['React', 'TypeScript', 'Tailwind'],
-  status: 'completed',
+  status: 'completed' as ProjectStatus,
   logo: '/test-logo.png',
   projectName: 'TestProject',
   liveUrl: 'https://testproject.com',
   description: 'This is a detailed description of the test project.',
+  featured: true,
+  projectType: 'web_app' as ProjectType,
+  budget: 5000,
+  requirements: { requirement1: 'test' },
+  progressPercentage: 100,
+  startDate: '2024-01-01',
+  estimatedCompletionDate: '2024-03-01',
+  actualCompletionDate: '2024-02-28',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
+  clientId: 'client1',
+  developerId: 'dev1',
+  requestId: 'req1',
+  client: {
+    id: 'client1',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+  },
+  developer: {
+    id: 'dev1',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane@example.com',
+  },
+  collaborators: [],
+  statusUpdates: [],
 }
 
 describe('ProjectDetailsTemplate', () => {
@@ -61,7 +95,7 @@ describe('ProjectDetailsTemplate', () => {
   it('renders status badge with correct styling', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
-    const statusBadge = screen.getByText('completed')
+    const statusBadge = screen.getByText('COMPLETED')
 
     expect(statusBadge).toBeInTheDocument()
     expect(statusBadge).toHaveClass(
@@ -126,7 +160,7 @@ describe('ProjectDetailsTemplate', () => {
   })
 
   it('renders project without description with fallback text', () => {
-    const projectWithoutDescription = { ...mockProject, description: undefined }
+    const projectWithoutDescription = { ...mockProject, description: '' }
     render(<ProjectDetailsTemplate project={projectWithoutDescription} />)
 
     expect(
@@ -135,10 +169,13 @@ describe('ProjectDetailsTemplate', () => {
   })
 
   it('renders in-progress status with correct styling', () => {
-    const inProgressProject = { ...mockProject, status: 'in_progress' }
+    const inProgressProject = {
+      ...mockProject,
+      status: 'in_progress' as ProjectStatus,
+    }
     render(<ProjectDetailsTemplate project={inProgressProject} />)
 
-    const statusBadge = screen.getByText('in_progress')
+    const statusBadge = screen.getByText('IN PROGRESS')
 
     expect(statusBadge).toHaveClass(
       'border-yellow-400/40',

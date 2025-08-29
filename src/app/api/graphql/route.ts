@@ -21,11 +21,6 @@ export async function POST(request: NextRequest) {
     }
     const { query, variables, operationName } = body
 
-    console.error('🚨 GRAPHQL ROUTE HIT!!!', {
-      query: query?.substring(0, 100),
-      variables,
-    })
-
     const context = await createContext()
 
     // Execute the query using the executable schema
@@ -37,7 +32,6 @@ export async function POST(request: NextRequest) {
       operationName,
     })
 
-    console.error('🚨 GRAPHQL RESULT:', JSON.stringify(result, null, 2))
     return NextResponse.json(result)
   } catch (error) {
     console.error('GraphQL Error:', error)

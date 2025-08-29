@@ -8,8 +8,6 @@ import { isAdminRole, isUserRole } from '@/utils'
 
 export class ProjectRequestService {
   async getProjectRequests(filter?: any) {
-    logger.error('🚀 SERVICE: getProjectRequests called', { filter })
-
     let whereClause
     if (filter) {
       const conditions = []
@@ -34,23 +32,9 @@ export class ProjectRequestService {
       }
     }
 
-    logger.error('🚀 SERVICE: About to query database', { whereClause })
-
     const results = await db.query.projectRequests.findMany({
       where: whereClause,
       orderBy: [desc(schemas.projectRequests.createdAt)],
-    })
-
-    logger.error('🚀 SERVICE: Database query completed', {
-      resultCount: results.length,
-      firstResult: results[0]
-        ? {
-            id: results[0].id,
-            status: results[0].status,
-            createdAt: results[0].createdAt,
-            createdAtType: typeof results[0].createdAt,
-          }
-        : null,
     })
 
     return results
@@ -95,18 +79,18 @@ export class ProjectRequestService {
   async createProjectRequest(input: any, currentUserId: string) {
     const [request] = await db
       .insert(schemas.projectRequests)
-             .values({
-         userId: currentUserId,
-         projectName: input.projectName,
-         title: input.title,
-         description: input.description,
-         projectType: input.projectType,
-         budget: input.budget,
-         timeline: input.timeline,
-         requirements: input.requirements,
-         contactPreference: input.contactPreference,
-         additionalInfo: input.additionalInfo,
-       })
+      .values({
+        userId: currentUserId,
+        projectName: input.projectName,
+        title: input.title,
+        description: input.description,
+        projectType: input.projectType,
+        budget: input.budget,
+        timeline: input.timeline,
+        requirements: input.requirements,
+        contactPreference: input.contactPreference,
+        additionalInfo: input.additionalInfo,
+      })
       .returning()
 
     if (!request) {

@@ -96,6 +96,51 @@ export class ProjectService {
     return project
   }
 
+  async getProjectBySlug(
+    slug: string,
+    currentUserId?: string,
+    currentUserRole?: string
+  ) {
+    // Convert slug back to project name (reverse of createSlug function)
+    const projectName = slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+
+    const project = await db.query.projects.findFirst({
+      where: eq(schemas.projects.projectName, projectName),
+    })
+
+    if (!project) {
+      throw new GraphQLError('Project not found', {
+        extensions: { code: 'PROJECT_NOT_FOUND' },
+      })
+    }
+
+    // Admins can access all projects
+    if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
+      return project
+    }
+
+    // Check access permissions
+    if (currentUserRole === 'client' && project.clientId !== currentUserId) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
+    if (
+      currentUserRole === 'developer' &&
+      project.developerId !== currentUserId
+    ) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
+    return project
+  }
+
   async getMyProjects(currentUserId: string) {
     // "My Projects" should return projects where the user is:
     // 1. The CLIENT (they own the project)

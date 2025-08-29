@@ -26,6 +26,24 @@ export const projectSchema = gql`
     other
   }
 
+  # Project display type (subset for cards/lists)
+  type ProjectDisplay {
+    id: ID!
+    projectName: String!
+    title: String
+    overview: String
+    description: String
+    techStack: [String!]
+    status: ProjectStatus!
+    logo: String
+    liveUrl: String
+    repositoryUrl: String
+    featured: Boolean!
+    createdAt: String!
+    projectType: ProjectType!
+    budget: Float
+  }
+
   # Project type
   type Project {
     id: ID!
@@ -126,10 +144,11 @@ export const projectSchema = gql`
   extend type Query {
     projects: [Project!]!
     project(id: ID!): Project
+    projectBySlug(slug: String!): Project
     myProjects: [Project!]!
     availableProjects: [Project!]!
     assignedProjects: [Project!]!
-    featuredProjects(userEmail: String): [Project!]!
+    featuredProjects(userEmail: String): [ProjectDisplay!]!
   }
 
   # Project mutations

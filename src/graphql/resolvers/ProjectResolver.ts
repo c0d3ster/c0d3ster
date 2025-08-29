@@ -131,6 +131,15 @@ export const projectResolvers = {
       )
     },
 
+    projectBySlug: async (_: any, { slug }: { slug: string }) => {
+      const currentUser = await userService.getCurrentUserWithAuth()
+
+      return await projectService.getProjectBySlug(
+        slug,
+        currentUser.role === 'admin' ? undefined : currentUser.id
+      )
+    },
+
     myProjects: async () => {
       const currentUser = await userService.getCurrentUserWithAuth()
 

@@ -1,28 +1,16 @@
 import Link from 'next/link'
 
-import { getFeaturedProjects } from '@/apiClients'
+import { getProjectBySlug } from '@/apiClients/projectApiClient'
 import { ProjectDetailsTemplate } from '@/components/templates'
-import { SUPPORT_EMAIL } from '@/constants'
 
 type IPortfolioDetailProps = {
   params: Promise<{ slug: string }>
 }
 
-// Helper function to create slug from project name
-const createSlug = (projectName: string) => {
-  return projectName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-}
-
 export default async function PortfolioDetail(props: IPortfolioDetailProps) {
   const { slug } = await props.params
 
-  const projects = await getFeaturedProjects(SUPPORT_EMAIL)
-
-  // Find project by slug
-  const project = projects?.find((p) => createSlug(p.projectName) === slug)
+  const project = await getProjectBySlug(slug)
 
   if (!project) {
     return (

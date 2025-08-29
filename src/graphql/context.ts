@@ -25,14 +25,12 @@ export async function createContext(): Promise<GraphQLContext> {
     })
 
     if (!user) {
-      // Optional: warn so we can fix onboarding/data sync issues
-      // logger.warn('Authenticated Clerk user not found in DB', { clerkId: userId })
       return { db, schemas }
     }
 
     return { userId, user, db, schemas }
-  } catch (error) {
-    console.error('Error creating GraphQL context:', error)
+  } catch {
+    // Return empty context on error to prevent crashes
     return { db, schemas }
   }
 }

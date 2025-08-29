@@ -8,6 +8,7 @@ import type {
   GetAvailableProjectsDetailedQuery,
   GetFeaturedProjectsQuery,
   GetMyProjectsQuery,
+  GetProjectBySlugQuery,
   GetProjectsQuery,
 } from '@/graphql/generated/graphql'
 
@@ -16,6 +17,7 @@ import {
   GetAvailableProjectsDetailedDocument,
   GetFeaturedProjectsDocument,
   GetMyProjectsDocument,
+  GetProjectBySlugDocument,
   GetProjectsDocument,
   useGetAssignedProjectsQuery,
   useGetAvailableProjectsDetailedQuery,
@@ -180,6 +182,74 @@ export const GET_ASSIGNED_PROJECTS = gql`
   }
 `
 
+export const GET_PROJECT_BY_SLUG = gql`
+  query GetProjectBySlug($slug: String!) {
+    projectBySlug(slug: $slug) {
+      id
+      title
+      projectName
+      description
+      overview
+      techStack
+      status
+      logo
+      liveUrl
+      repositoryUrl
+      featured
+      projectType
+      budget
+      requirements
+      progressPercentage
+      startDate
+      estimatedCompletionDate
+      actualCompletionDate
+      createdAt
+      updatedAt
+      clientId
+      developerId
+      requestId
+      client {
+        id
+        firstName
+        lastName
+        email
+      }
+      developer {
+        id
+        firstName
+        lastName
+        email
+      }
+      collaborators {
+        id
+        role
+        joinedAt
+        user {
+          id
+          firstName
+          lastName
+          email
+        }
+      }
+      statusUpdates {
+        id
+        oldStatus
+        newStatus
+        progressPercentage
+        updateMessage
+        isClientVisible
+        createdAt
+        updatedBy {
+          id
+          firstName
+          lastName
+          email
+        }
+      }
+    }
+  }
+`
+
 export const GET_FEATURED_PROJECTS = gql`
   query GetFeaturedProjects($userEmail: String) {
     featuredProjects(userEmail: $userEmail) {
@@ -259,6 +329,16 @@ export const getAssignedProjects = async () => {
   if (!result.data)
     throw new Error('No data returned from GetAssignedProjects query')
   return result.data.assignedProjects
+}
+
+export const getProjectBySlug = async (slug: string) => {
+  const result = await apolloClient.query<GetProjectBySlugQuery>({
+    query: GetProjectBySlugDocument,
+    variables: { slug },
+  })
+  if (!result.data)
+    throw new Error('No data returned from GetProjectBySlug query')
+  return result.data.projectBySlug
 }
 
 export const getFeaturedProjects = async (userEmail?: string) => {

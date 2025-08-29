@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 
-import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
+import type { Project } from '@/graphql/generated/graphql'
 
 import {
   BackButton,
@@ -13,8 +13,6 @@ import {
 import { AnimatedHeading } from '@/components/molecules'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
-
-type Project = NonNullable<GetFeaturedProjectsQuery['featuredProjects']>[0]
 
 type ProjectDetailsTemplateProps = {
   project: Project

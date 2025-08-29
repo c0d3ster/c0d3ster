@@ -32,11 +32,9 @@ export const GET_PROJECT_REQUESTS = gql`
       budget
       timeline
       requirements
-      contactPreference
       additionalInfo
       status
       createdAt
-      updatedAt
       user {
         id
         firstName
@@ -58,11 +56,15 @@ export const GET_MY_PROJECT_REQUESTS = gql`
       budget
       timeline
       requirements
-      contactPreference
       additionalInfo
       status
       createdAt
-      updatedAt
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
     }
   }
 `
