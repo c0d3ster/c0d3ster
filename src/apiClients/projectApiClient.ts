@@ -29,17 +29,19 @@ import { apolloClient } from '@/libs/ApolloClient'
 
 // GraphQL Operations
 export const GET_PROJECTS = gql`
-  query GetProjects {
-    projects {
+  query GetProjects($filter: ProjectFilter, $userEmail: String) {
+    projects(filter: $filter, userEmail: $userEmail) {
       id
       title
+      projectName
+      description
+      overview
+      techStack
       status
-      developer {
-        id
-        firstName
-        lastName
-        email
-      }
+      logo
+      liveUrl
+      repositoryUrl
+      featured
     }
   }
 `
@@ -285,7 +287,13 @@ export const ASSIGN_PROJECT = gql`
 `
 
 // Hooks for components
-export const useGetProjects = () => useGetProjectsQuery()
+export const useGetProjects = (filter?: any, userEmail?: string) =>
+  useGetProjectsQuery({
+    variables: {
+      filter: filter || undefined,
+      userEmail: userEmail || undefined,
+    },
+  })
 export const useGetMyProjects = () => useGetMyProjectsQuery()
 export const useGetAvailableProjects = () =>
   useGetAvailableProjectsDetailedQuery()
@@ -297,9 +305,13 @@ export const useGetFeaturedProjects = (userEmail?: string) =>
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
 // Async functions for SSR / non-hook usage
-export const getProjects = async () => {
+export const getProjects = async (filter?: any, userEmail?: string) => {
   const result = await apolloClient.query<GetProjectsQuery>({
     query: GetProjectsDocument,
+    variables: {
+      filter: filter || undefined,
+      userEmail: userEmail || undefined,
+    },
   })
   if (!result.data) throw new Error('No data returned from GetProjects query')
   return result.data.projects

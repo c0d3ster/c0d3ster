@@ -140,9 +140,17 @@ export const projectSchema = gql`
     featured: Boolean
   }
 
+  input ProjectFilter {
+    status: ProjectStatus
+    projectType: ProjectType
+    priority: String
+    clientId: ID
+    developerId: ID
+  }
+
   # Project queries
   extend type Query {
-    projects: [Project!]!
+    projects(filter: ProjectFilter, userEmail: String): [ProjectDisplay!]!
     project(id: ID!): Project
     projectBySlug(slug: String!): Project
     myProjects: [Project!]!

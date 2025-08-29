@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 
-import { getFeaturedProjects } from '@/apiClients'
+import { getProjects } from '@/apiClients'
 import { ExpandingUnderline, ScrollFade } from '@/components/atoms'
 import { AnimatedHeading, ProjectCard } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 }
 
 export default async function Portfolio() {
-  const projects = await getFeaturedProjects(SUPPORT_EMAIL)
+  const projects = await getProjects(undefined, SUPPORT_EMAIL)
 
   return (
     <CleanPageTemplate>

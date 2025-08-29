@@ -2,8 +2,11 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { FaStar } from 'react-icons/fa'
 
 import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
+
+import { formatStatus, generateSlug, getStatusStyling } from '@/utils'
 
 type Project = NonNullable<GetFeaturedProjectsQuery['featuredProjects']>[0]
 
@@ -12,43 +15,7 @@ type ProjectCardProps = {
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {
-  // Generate slug from project title or projectName
-  const generateSlug = (text: string) => {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-  }
-
-  // Format status for display
-  const formatStatus = (status: string) => {
-    return status
-      .split('_')
-      .map((word) => word.toUpperCase())
-      .join(' ')
-  }
-
-  // Get status styling
-  const getStatusStyling = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-green-400'
-      case 'in_progress':
-      case 'in_testing':
-      case 'ready_for_launch':
-        return 'text-yellow-400'
-      case 'requested':
-      case 'in_review':
-      case 'approved':
-        return 'text-blue-400'
-      case 'cancelled':
-        return 'text-red-400'
-      default:
-        return 'text-gray-400'
-    }
-  }
-
-  // Use liveUrl if available, otherwise generate from project name
+  // Generate internal project detail URL
   const getProjectUrl = (projectName?: string) => {
     if (!projectName) return '/projects'
 
@@ -56,7 +23,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
     return `/projects/${slug}`
   }
 
-  const projectUrl = project.liveUrl || getProjectUrl(project.projectName)
+  const projectUrl = getProjectUrl(project.projectName)
 
   return (
     <Link href={projectUrl} className='block'>
@@ -106,12 +73,18 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
             {formatStatus(project.status)}
           </span>
 
-          {/* Matrix-style decorative elements */}
-          <div className='absolute right-[37px] bottom-6 flex space-x-1'>
-            <div className='h-4 w-1 bg-green-400 opacity-20' />
-            <div className='h-4 w-1 bg-green-500 opacity-40' />
-            <div className='h-4 w-1 bg-green-300 opacity-20' />
-          </div>
+          {/* Featured star or matrix-style decorative elements */}
+          {project.featured ? (
+            <div className='mr-[5px] flex space-x-1'>
+              <FaStar className='text-lg text-green-600' />
+            </div>
+          ) : (
+            <div className='mr-1 flex space-x-1'>
+              <div className='h-4 w-1 bg-green-400 opacity-20' />
+              <div className='h-4 w-1 bg-green-500 opacity-40' />
+              <div className='h-4 w-1 bg-green-300 opacity-20' />
+            </div>
+          )}
         </div>
       </div>
     </Link>

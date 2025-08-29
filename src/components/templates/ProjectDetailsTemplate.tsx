@@ -11,6 +11,7 @@ import {
   ScrollFade,
 } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
+import { formatStatus, getStatusCardStyling } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
 
@@ -21,34 +22,6 @@ type ProjectDetailsTemplateProps = {
 export const ProjectDetailsTemplate = ({
   project,
 }: ProjectDetailsTemplateProps) => {
-  // Format status for display
-  const formatStatus = (status: string) => {
-    return status
-      .split('_')
-      .map((word) => word.toUpperCase())
-      .join(' ')
-  }
-
-  // Get status styling
-  const getStatusStyling = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'border-green-400/40 bg-green-400/20 text-green-400'
-      case 'in_progress':
-      case 'in_testing':
-      case 'ready_for_launch':
-        return 'border-yellow-400/40 bg-yellow-400/20 text-yellow-400'
-      case 'requested':
-      case 'in_review':
-      case 'approved':
-        return 'border-blue-400/40 bg-blue-400/20 text-blue-400'
-      case 'cancelled':
-        return 'border-red-400/40 bg-red-400/20 text-red-400'
-      default:
-        return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
-    }
-  }
-
   return (
     <CleanPageTemplate>
       <BackButton href='/projects' text='BACK TO PROJECTS' />
@@ -77,8 +50,8 @@ export const ProjectDetailsTemplate = ({
           {/* Project Logo and Visual */}
           <ScrollFade>
             <div className='flex flex-col items-center space-y-8'>
-              {project.logo && (
-                <div className='relative'>
+              <div className='relative'>
+                {project.logo ? (
                   <Image
                     src={project.logo}
                     alt={`${project.title ?? project.projectName} logo`}
@@ -86,13 +59,21 @@ export const ProjectDetailsTemplate = ({
                     height={300}
                     className='rounded-lg border border-green-400/20 bg-black/80 p-8'
                   />
-                </div>
-              )}
+                ) : (
+                  <Image
+                    src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
+                    alt='c0d3ster logo'
+                    width={300}
+                    height={300}
+                    className='rounded-lg border border-green-400/20 bg-black/80 p-8 opacity-15'
+                  />
+                )}
+              </div>
 
               {/* Status Badge */}
               <div className='text-center'>
                 <span
-                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusStyling(project.status)}`}
+                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusCardStyling(project.status)}`}
                 >
                   {formatStatus(project.status)}
                 </span>
@@ -104,25 +85,29 @@ export const ProjectDetailsTemplate = ({
           <ScrollFade>
             <div className='space-y-8'>
               {/* Tech Stack */}
-              <div>
-                <h3 className='mb-4 font-mono text-xl font-bold text-green-400'>
-                  TECHNOLOGIES USED
-                </h3>
-                <div className='flex flex-wrap gap-3'>
-                  {(project.techStack ?? [])
-                    .filter((t: string | null | undefined): t is string =>
-                      Boolean(t)
-                    )
-                    .map((tech: string) => (
-                      <span
-                        key={tech}
-                        className='rounded border border-green-400/30 bg-green-400/10 px-4 py-2 font-mono text-sm text-green-400'
-                      >
-                        {tech}
-                      </span>
-                    ))}
+              {(project.techStack ?? []).filter(
+                (t: string | null | undefined): t is string => Boolean(t)
+              ).length > 0 && (
+                <div>
+                  <h3 className='mb-4 font-mono text-xl font-bold text-green-400'>
+                    TECHNOLOGIES USED
+                  </h3>
+                  <div className='flex flex-wrap gap-3'>
+                    {(project.techStack ?? [])
+                      .filter((t: string | null | undefined): t is string =>
+                        Boolean(t)
+                      )
+                      .map((tech: string) => (
+                        <span
+                          key={tech}
+                          className='rounded border border-green-400/30 bg-green-400/10 px-4 py-2 font-mono text-sm text-green-400'
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Project Description */}
               <div>
