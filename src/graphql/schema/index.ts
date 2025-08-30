@@ -4,6 +4,7 @@ import { gql } from 'graphql-tag'
 
 import { resolvers } from '../resolvers'
 import { contactSchema } from './contact'
+import { fileSchema } from './files'
 import { projectSchema } from './project'
 import { projectRequestSchema } from './projectRequest'
 import { sharedSchema } from './shared'
@@ -30,6 +31,7 @@ export const typeDefs = mergeTypeDefs([
   projectSchema,
   projectRequestSchema,
   contactSchema,
+  fileSchema,
 ])
 
 // Create and export the executable schema

@@ -1,4 +1,5 @@
 export { ContactService } from './ContactService'
+export { FileService } from './FileService'
 export { ProjectRequestService } from './ProjectRequestService'
 export { ProjectService } from './ProjectService'
 export { UserService } from './UserService'

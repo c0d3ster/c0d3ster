@@ -1,6 +1,7 @@
 import { mergeResolvers } from '@graphql-tools/merge'
 
 import { contactResolvers } from './ContactResolver'
+import { FileResolver } from './FileResolver'
 import { projectRequestResolvers } from './ProjectRequestResolver'
 import { projectResolvers } from './ProjectResolver'
 import { userResolvers } from './UserResolver'
@@ -11,4 +12,5 @@ export const resolvers = mergeResolvers([
   projectResolvers,
   projectRequestResolvers,
   contactResolvers,
+  FileResolver,
 ])

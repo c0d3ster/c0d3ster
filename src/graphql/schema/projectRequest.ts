@@ -55,7 +55,6 @@ export const projectRequestSchema = gql`
   extend type Query {
     projectRequests: [ProjectRequestDisplay!]!
     projectRequest(id: ID!): ProjectRequest
-    myProjectRequests: [ProjectRequestDisplay!]!
   }
 
   # Project request mutations

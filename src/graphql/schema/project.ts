@@ -150,12 +150,8 @@ export const projectSchema = gql`
 
   # Project queries
   extend type Query {
-    projects(filter: ProjectFilter, userEmail: String): [ProjectDisplay!]!
     project(id: ID!): Project
     projectBySlug(slug: String!): Project
-    myProjects: [Project!]!
-    availableProjects: [Project!]!
-    assignedProjects: [Project!]!
     featuredProjects(userEmail: String): [ProjectDisplay!]!
   }
 
