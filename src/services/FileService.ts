@@ -6,13 +6,15 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { eq } from 'drizzle-orm'
 
+import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
+import { schemas } from '@/models'
 
 export type FileUploadOptions = {
   fileName: string
   originalFileName: string
-  fileType: string
   fileSize: number
   contentType: string
   userId: string
@@ -24,7 +26,6 @@ export type FileMetadata = {
   key: string
   fileName: string
   originalFileName: string
-  fileType: string
   fileSize: number
   contentType: string
   uploadedBy: string
@@ -70,7 +71,6 @@ export class FileService {
       key,
       fileName: options.fileName,
       originalFileName: options.originalFileName,
-      fileType: options.fileType,
       fileSize: options.fileSize,
       contentType: options.contentType,
       uploadedBy: options.userId,
@@ -85,7 +85,6 @@ export class FileService {
       ContentType: options.contentType,
       Metadata: {
         originalFileName: options.originalFileName,
-        fileType: options.fileType,
         fileSize: options.fileSize.toString(),
         uploadedBy: options.userId,
         projectId: options.projectId || '',
@@ -103,6 +102,34 @@ export class FileService {
       key,
       metadata,
     }
+  }
+
+  // Enhanced method for project file uploads that creates database record
+  async generateProjectFileUploadUrl(
+    options: FileUploadOptions & {
+      fileType: 'design' | 'document' | 'image' | 'video' | 'code' | 'other'
+      isClientVisible?: boolean
+      description?: string
+    }
+  ) {
+    const result = await this.generatePresignedUploadUrl(options)
+
+    // If this is a project file, create the database record
+    if (options.projectId) {
+      await this.createProjectFileRecord({
+        projectId: options.projectId,
+        fileName: options.fileName,
+        originalFileName: options.originalFileName,
+        fileType: options.fileType,
+        fileSize: options.fileSize,
+        filePath: result.key, // Use the S3 key as the file path
+        uploadedBy: options.userId,
+        isClientVisible: options.isClientVisible ?? true,
+        description: options.description,
+      })
+    }
+
+    return result
   }
 
   async generatePresignedDownloadUrl(key: string): Promise<string> {
@@ -149,7 +176,6 @@ export class FileService {
         key,
         fileName: metadata.fileName || '',
         originalFileName: metadata.originalFileName || '',
-        fileType: metadata.fileType || '',
         fileSize: Number.parseInt(metadata.fileSize || '0'),
         contentType: response.ContentType || '',
         uploadedBy: metadata.uploadedBy || '',
@@ -161,5 +187,47 @@ export class FileService {
       console.error('Error getting file metadata:', error)
       return null
     }
+  }
+
+  // Database operations for project files
+  async createProjectFileRecord(options: {
+    projectId: string
+    fileName: string
+    originalFileName: string
+    fileType: 'design' | 'document' | 'image' | 'video' | 'code' | 'other'
+    fileSize?: number
+    filePath: string
+    uploadedBy: string
+    isClientVisible?: boolean
+    description?: string
+  }) {
+    const [projectFile] = await db
+      .insert(schemas.projectFiles)
+      .values({
+        projectId: options.projectId,
+        fileName: options.fileName,
+        originalFileName: options.originalFileName,
+        fileType: options.fileType,
+        fileSize: options.fileSize,
+        filePath: options.filePath,
+        uploadedBy: options.uploadedBy,
+        isClientVisible: options.isClientVisible ?? true,
+        description: options.description,
+      })
+      .returning()
+
+    return projectFile
+  }
+
+  async getProjectFiles(projectId: string) {
+    return await db.query.projectFiles.findMany({
+      where: eq(schemas.projectFiles.projectId, projectId),
+    })
+  }
+
+  async deleteProjectFileRecord(projectFileId: string) {
+    await db
+      .delete(schemas.projectFiles)
+      .where(eq(schemas.projectFiles.id, projectFileId))
   }
 }

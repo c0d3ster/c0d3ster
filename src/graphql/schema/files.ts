@@ -6,7 +6,6 @@ export const fileSchema = gql`
     key: String!
     fileName: String!
     originalFileName: String!
-    fileType: FileType!
     fileSize: Int!
     contentType: String!
     uploadedBy: User
@@ -17,15 +16,6 @@ export const fileSchema = gql`
     downloadUrl: String
   }
 
-  enum FileType {
-    DESIGN
-    DOCUMENT
-    IMAGE
-    VIDEO
-    CODE
-    OTHER
-  }
-
   enum Environment {
     DEV
     PROD
@@ -34,7 +24,6 @@ export const fileSchema = gql`
   input FileUploadInput {
     fileName: String!
     originalFileName: String!
-    fileType: FileType!
     fileSize: Int!
     contentType: String!
     projectId: ID
@@ -44,7 +33,7 @@ export const fileSchema = gql`
   input FileFilterInput {
     projectId: ID
     userId: ID
-    fileType: FileType
+    contentType: String
     environment: Environment
   }
 
@@ -56,13 +45,18 @@ export const fileSchema = gql`
   }
 
   extend type Mutation {
-    generateFileUploadUrl(input: FileUploadInput!): FileUploadResult!
+    uploadProjectLogo(
+      projectId: ID!
+      input: FileUploadInput!
+    ): ProjectLogoUploadResult!
+    generateFileDownloadUrl(key: String!): String!
     deleteFile(key: String!): Boolean!
   }
 
-  type FileUploadResult {
+  type ProjectLogoUploadResult {
     uploadUrl: String!
     key: String!
     metadata: File!
+    projectId: ID!
   }
 `

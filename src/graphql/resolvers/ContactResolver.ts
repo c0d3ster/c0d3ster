@@ -1,6 +1,6 @@
-import { ContactService } from '@/services'
+import { services } from '@/services'
 
-const contactService = new ContactService()
+const { contactService } = services
 
 export const contactResolvers = {
   Mutation: {

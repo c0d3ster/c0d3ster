@@ -138,6 +138,7 @@ export const projectSchema = gql`
     estimatedCompletionDate: String
     actualCompletionDate: String
     featured: Boolean
+    logo: String
   }
 
   input ProjectFilter {

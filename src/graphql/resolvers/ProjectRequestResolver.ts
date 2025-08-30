@@ -1,8 +1,7 @@
 import { logger } from '@/libs/Logger'
-import { ProjectRequestService, UserService } from '@/services'
+import { services } from '@/services'
 
-const projectRequestService = new ProjectRequestService()
-const userService = new UserService()
+const { projectRequestService, userService } = services
 
 export const projectRequestResolvers = {
   Query: {

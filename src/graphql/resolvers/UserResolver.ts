@@ -1,12 +1,10 @@
 import { GraphQLError } from 'graphql'
 
 import { logger } from '@/libs/Logger'
-import { ProjectRequestService, ProjectService, UserService } from '@/services'
+import { services } from '@/services'
 import { isDeveloperOrHigherRole } from '@/utils'
 
-const userService = new UserService()
-const projectService = new ProjectService()
-const projectRequestService = new ProjectRequestService()
+const { userService, projectService, projectRequestService } = services
 
 export const userResolvers = {
   Query: {

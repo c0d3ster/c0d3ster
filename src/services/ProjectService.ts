@@ -4,6 +4,7 @@ import { GraphQLError } from 'graphql'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
+import { services } from '@/services'
 import {
   findProjectBySlug,
   hasSlugConflict,
@@ -339,6 +340,26 @@ export class ProjectService {
           extensions: { code: 'INVALID_STATUS' },
         }
       )
+    }
+
+    // Handle logo update - create project_files entry if logo is provided
+    if (input.logo && input.logo !== project.logo) {
+      // Extract file information from the logo URL/path
+      const logoPath = input.logo
+      const fileName = logoPath.split('/').pop() || 'logo'
+      const originalFileName = fileName
+
+      // Use FileService to create project_files entry
+      await services.fileService.createProjectFileRecord({
+        projectId: id,
+        fileName,
+        originalFileName,
+        fileType: 'image',
+        filePath: logoPath,
+        uploadedBy: currentUserId || project.clientId, // Use current user or fallback to client
+        isClientVisible: true,
+        description: 'Project logo',
+      })
     }
 
     const [updatedProject] = await db

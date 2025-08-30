@@ -1,9 +1,8 @@
 import { SUPPORT_EMAIL } from '@/constants'
 import { logger } from '@/libs/Logger'
-import { ProjectService, UserService } from '@/services'
+import { services } from '@/services'
 
-const projectService = new ProjectService()
-const userService = new UserService()
+const { projectService, userService } = services
 
 export const projectResolvers = {
   Project: {
@@ -98,6 +97,62 @@ export const projectResolvers = {
         })
         return null
       }
+    },
+
+    logo: async (parent: any) => {
+      if (!parent.logo) return null
+
+      // If it's a public asset path, return as-is
+      if (parent.logo.startsWith('/assets/')) {
+        return parent.logo
+      }
+
+      // If it's an R2 bucket path (contains projects/), generate presigned URL
+      if (parent.logo.includes('projects/')) {
+        try {
+          return await services.fileService.generatePresignedDownloadUrl(
+            parent.logo
+          )
+        } catch (error) {
+          logger.error('Error generating presigned URL for logo', {
+            error: String(error),
+            logo: parent.logo,
+          })
+          return null
+        }
+      }
+
+      // Fallback: return as-is (could be external URL or other path)
+      return parent.logo
+    },
+  },
+
+  ProjectDisplay: {
+    logo: async (parent: any) => {
+      if (!parent.logo) return null
+
+      // If it's a public asset path, return as-is
+      if (parent.logo.startsWith('/assets/')) {
+        return parent.logo
+      }
+
+      // If it's an R2 bucket path (contains projects/), generate presigned URL
+      if (parent.logo.includes('projects/')) {
+        try {
+          return await services.fileService.generatePresignedDownloadUrl(
+            parent.logo
+          )
+        } catch (error) {
+          logger.error('Error generating presigned URL for logo', {
+            error: String(error),
+            logo: parent.logo,
+          })
+          return null
+        }
+      }
+
+      // Fallback: return as-is (could be external URL or other path)
+      return parent.logo
     },
   },
 

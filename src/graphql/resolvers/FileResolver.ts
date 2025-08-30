@@ -1,48 +1,43 @@
-import { FileService } from '@/services/FileService'
-import { ProjectService } from '@/services/ProjectService'
-import { UserService } from '@/services/UserService'
+import { services } from '@/services'
+
+const { fileService, projectService, userService } = services
 
 export const FileResolver = {
   Query: {
     files: async (_: any, { filter }: { filter?: any }) => {
-      const fileService = new FileService()
-
+      let prefix = ''
       if (filter?.projectId) {
-        return await fileService.listFiles(`*/projects/${filter.projectId}/*`)
+        prefix = `*/projects/${filter.projectId}/*`
+      } else if (filter?.userId) {
+        prefix = `*/users/${filter.userId}/*`
       }
 
-      if (filter?.userId) {
-        return await fileService.listFiles(`*/users/${filter.userId}/*`)
-      }
-
-      // Return all files (with pagination in production)
-      return await fileService.listFiles('')
-    },
-
-    file: async (_: any, { key }: { key: string }) => {
-      const fileService = new FileService()
-      return await fileService.getFileMetadata(key)
-    },
-
-    projectFiles: async (_: any, { projectId }: { projectId: string }) => {
-      const fileService = new FileService()
-      const files = await fileService.listFiles(`*/projects/${projectId}/*`)
+      // Get list of file keys
+      const fileKeys = await fileService.listFiles(prefix)
 
       // Get metadata for each file
       const fileMetadata = await Promise.all(
-        files.map((key) => fileService.getFileMetadata(key))
+        fileKeys.map((key: string) => fileService.getFileMetadata(key))
       )
 
       return fileMetadata.filter(Boolean)
     },
 
+    file: async (_: any, { key }: { key: string }) => {
+      return await fileService.getFileMetadata(key)
+    },
+
+    projectFiles: async (_: any, { projectId }: { projectId: string }) => {
+      // Get project files from database instead of S3
+      return await fileService.getProjectFiles(projectId)
+    },
+
     userFiles: async (_: any, { userId }: { userId: string }) => {
-      const fileService = new FileService()
       const files = await fileService.listFiles(`*/users/${userId}/*`)
 
       // Get metadata for each file
       const fileMetadata = await Promise.all(
-        files.map((key) => fileService.getFileMetadata(key))
+        files.map((key: string) => fileService.getFileMetadata(key))
       )
 
       return fileMetadata.filter(Boolean)
@@ -50,39 +45,53 @@ export const FileResolver = {
   },
 
   Mutation: {
-    generateFileUploadUrl: async (
+    // New mutation for project logo uploads that handles the complete flow
+    uploadProjectLogo: async (
       _: any,
-      { input }: { input: any },
+      { projectId, input }: { projectId: string; input: any },
       context: any
     ) => {
       // In a real app, you'd get userId from context
       const userId = context.userId || 'temp-user-id'
 
-      const fileService = new FileService()
-
+      // Generate the upload URL
       const result = await fileService.generatePresignedUploadUrl({
         fileName: input.fileName,
         originalFileName: input.originalFileName,
-        fileType: input.fileType.toLowerCase(),
         fileSize: input.fileSize,
         contentType: input.contentType,
         userId,
-        projectId: input.projectId,
-        environment: input.environment?.toLowerCase() || 'dev',
+        projectId,
+        environment: input.environment || 'DEV',
       })
+
+      // Get the current user to check permissions
+      const currentUser = await userService.getCurrentUserWithAuth()
+
+      // Update the project logo field - this will automatically create the project_files entry
+      await projectService.updateProject(
+        projectId,
+        { logo: result.key },
+        currentUser.id,
+        currentUser.role
+      )
 
       return {
         uploadUrl: result.uploadUrl,
         key: result.key,
         metadata: result.metadata,
+        projectId,
       }
+    },
+
+    generateFileDownloadUrl: async (_: any, { key }: { key: string }) => {
+      return await fileService.generatePresignedDownloadUrl(key)
     },
 
     deleteFile: async (_: any, { key }: { key: string }, context: any) => {
       // In a real app, you'd get userId from context and check permissions
       const userId = context.userId || 'temp-user-id'
 
-      const fileService = new FileService()
       const metadata = await fileService.getFileMetadata(key)
 
       if (!metadata || metadata.uploadedBy !== userId) {
@@ -97,16 +106,13 @@ export const FileResolver = {
   File: {
     id: (parent: any) => parent.key,
     uploadedBy: async (parent: any) => {
-      const userService = new UserService()
       return await userService.getUserById(parent.uploadedBy)
     },
     project: async (parent: any) => {
       if (!parent.projectId) return null
-      const projectService = new ProjectService()
       return await projectService.getProjectById(parent.projectId)
     },
     downloadUrl: async (parent: any) => {
-      const fileService = new FileService()
       return await fileService.generatePresignedDownloadUrl(parent.key)
     },
   },

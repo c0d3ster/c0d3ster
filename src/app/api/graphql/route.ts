@@ -26,6 +26,9 @@ const server = new ApolloServer({
   },
 })
 
+// Start the server
+server.startInBackgroundHandlingStartupErrorsByLoggingAndFailingAllRequests()
+
 // Create and export the handler
 export const GET = startServerAndCreateNextHandler(server, {
   context: async (_req: NextRequest) => {
