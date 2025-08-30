@@ -44,6 +44,11 @@ export const hasSlugConflict = (
  * @param slug - The slug to search for
  * @param projects - Array of projects to search through
  * @returns The matching project or undefined if not found
+ *
+ * @todo Performance improvement: This is currently O(n) array search.
+ * Consider adding a slug column to the database with a unique index
+ * and querying directly by slug instead of scanning all projects.
+ * This would improve performance and ensure slug uniqueness.
  */
 export const findProjectBySlug = <T extends { projectName: string }>(
   slug: string,

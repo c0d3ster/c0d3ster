@@ -6,6 +6,7 @@ import { ProjectType } from '@/graphql/generated/graphql'
 export const projectRequestSchema = z.object({
   projectName: z
     .string()
+    .trim()
     .min(1, 'Project name is required')
     .max(255, 'Project name too long'),
   description: z

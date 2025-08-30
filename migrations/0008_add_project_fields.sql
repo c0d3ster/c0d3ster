@@ -6,13 +6,13 @@
 ALTER TABLE projects 
   ADD COLUMN overview TEXT,
   ADD COLUMN logo TEXT,
-  ADD COLUMN project_name TEXT,
+  ADD COLUMN project_name VARCHAR(255),
   ADD COLUMN featured BOOLEAN DEFAULT FALSE NOT NULL;
 
 -- Move existing title data to project_name for all existing projects
 UPDATE projects 
-SET project_name = COALESCE(title, 'Untitled Project')
-WHERE project_name IS NULL;
+SET project_name = COALESCE(NULLIF(TRIM(title), ''), 'Untitled Project')
+WHERE project_name IS NULL OR project_name = '';
 
 -- Add constraints for the new fields
 ALTER TABLE projects 

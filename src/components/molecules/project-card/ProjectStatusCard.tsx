@@ -1,6 +1,6 @@
 'use client'
 
-// import Link from 'next/link'
+import Link from 'next/link'
 
 import type {
   Project,
@@ -8,6 +8,8 @@ import type {
   ProjectRequest,
   ProjectRequestDisplay,
 } from '@/graphql/generated/graphql'
+
+import { generateSlug } from '@/utils/Project'
 
 type ProjectItem =
   | Project
@@ -170,6 +172,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           item.additionalInfo && (
             <div className='mb-2'>
               <p className='font-mono text-sm text-green-300/70 italic'>
+                <span className='text-green-300/60'>Notes: </span>
                 {item.additionalInfo}
               </p>
             </div>
@@ -281,11 +284,14 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           )}
         */}
 
-        <div className='min-w-0 flex-1 rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60'>
+        <Link
+          href={`/projects/${generateSlug(item.projectName || item.title || 'untitled')}`}
+          className='min-w-0 flex-1 cursor-pointer rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60 transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/20 hover:text-green-400'
+        >
           {item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
             ? 'VIEW DETAILS'
             : 'VIEW REQUEST'}
-        </div>
+        </Link>
       </div>
 
       {/* Footer - pinned to bottom */}

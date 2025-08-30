@@ -17,6 +17,13 @@ vi.mock('next/image', () => ({
   ),
 }))
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    back: vi.fn(),
+  }),
+}))
+
 // Mock the Project type
 const mockProject: Project = {
   id: '1',
@@ -146,10 +153,10 @@ describe('ProjectDetailsTemplate', () => {
   it('renders back button with correct link', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
-    const backButton = screen.getByRole('link', { name: 'BACK TO PROJECTS' })
+    const backButton = screen.getByRole('link', { name: 'BACK' })
 
     expect(backButton).toBeInTheDocument()
-    expect(backButton).toHaveAttribute('href', '/projects')
+    expect(backButton).toHaveAttribute('href', '#')
   })
 
   it('renders project without logo gracefully', () => {

@@ -239,6 +239,7 @@ export class ProjectService {
 
   async getPublicProjects() {
     return await db.query.projects.findMany({
+      where: eq(schemas.projects.featured, true),
       orderBy: [desc(schemas.projects.createdAt)],
     })
   }
@@ -263,12 +264,9 @@ export class ProjectService {
     }
 
     // Validate project status
-    if (
-      input.status &&
-      !Object.values(projectStatusEnum).includes(input.status)
-    ) {
+    if (input.status && !projectStatusEnum.enumValues.includes(input.status)) {
       throw new GraphQLError(
-        `Invalid project status. Must be one of: ${Object.values(projectStatusEnum).join(', ')}`,
+        `Invalid project status. Must be one of: ${projectStatusEnum.enumValues.join(', ')}`,
         {
           extensions: { code: 'INVALID_STATUS' },
         }
@@ -334,12 +332,9 @@ export class ProjectService {
     }
 
     // Validate project status if it's being updated
-    if (
-      input.status &&
-      !Object.values(projectStatusEnum).includes(input.status)
-    ) {
+    if (input.status && !projectStatusEnum.enumValues.includes(input.status)) {
       throw new GraphQLError(
-        `Invalid project status. Must be one of: ${Object.values(projectStatusEnum).join(', ')}`,
+        `Invalid project status. Must be one of: ${projectStatusEnum.enumValues.join(', ')}`,
         {
           extensions: { code: 'INVALID_STATUS' },
         }

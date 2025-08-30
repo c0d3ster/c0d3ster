@@ -348,9 +348,12 @@ export const getProjectBySlug = async (slug: string) => {
     query: GetProjectBySlugDocument,
     variables: { slug },
   })
-  if (!result.data)
-    throw new Error('No data returned from GetProjectBySlug query')
-  return result.data.projectBySlug
+  if (result.error) {
+    throw new Error(result.error.message)
+  }
+  const project = result.data?.projectBySlug
+  if (!project) throw new Error('Project not found')
+  return project
 }
 
 export const getFeaturedProjects = async (userEmail?: string) => {
@@ -358,9 +361,12 @@ export const getFeaturedProjects = async (userEmail?: string) => {
     query: GetFeaturedProjectsDocument,
     variables: userEmail ? { userEmail } : undefined,
   })
-  if (!result.data)
-    throw new Error('No data returned from GetFeaturedProjects query')
-  return result.data.featuredProjects
+  if (result.error) {
+    throw new Error(result.error.message)
+  }
+  const projects = result.data?.featuredProjects
+  if (!projects) throw new Error('No featured projects returned')
+  return projects
 }
 
 export const assignProject = async (projectId: string, developerId: string) => {

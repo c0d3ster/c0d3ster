@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function PrivacyPolicy() {
   return (
     <CleanPageTemplate>
-      <BackButton href='/ballz' text='BACK TO PROJECTS' />
+      <BackButton href='/ballz' text='BACK TO PROJECT' />
       <div className='container mx-auto px-4'>
         {/* Page Header */}
         <div className='mb-16 text-center'>
