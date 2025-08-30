@@ -11,7 +11,7 @@
     "prebuild:next": "npm run codegen",
     "build:next": "next build",
     "build": "if [ \"$VERCEL_ENV\" != \"preview\" ]; then npm run db:migrate; fi && npm run build:next",
-    "build:ci": "npm run codegen && npm run build:next",
+    "build:ci": "npm run build:next",
     "build:prod": "cross-env NODE_ENV=production npm run build",
     "start": "next start",
     "build-stats": "cross-env ANALYZE=true npm run build",

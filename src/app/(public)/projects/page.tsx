@@ -12,6 +12,8 @@ export const metadata: Metadata = {
     'Complete project portfolio showcasing full-stack development work',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function Portfolio() {
   const projects = await getProjects(undefined, SUPPORT_EMAIL)
 
