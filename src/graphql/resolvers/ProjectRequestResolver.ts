@@ -1,35 +1,42 @@
+import type { ProjectRequestService, UserService } from '@/services'
+
 import { logger } from '@/libs/Logger'
-import { services } from '@/services'
 
-const { projectRequestService, userService } = services
+export class ProjectRequestResolver {
+  [key: string]: any
 
-export const projectRequestResolvers = {
-  Query: {
+  constructor(
+    private projectRequestService: ProjectRequestService,
+    private userService: UserService
+  ) {}
+
+  Query = {
     projectRequests: async (_: any, { filter }: { filter?: any }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      this.userService.checkPermission(currentUser, 'admin')
 
-      const results = await projectRequestService.getProjectRequests(filter)
+      const results =
+        await this.projectRequestService.getProjectRequests(filter)
       return results
     },
 
     projectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
 
-      return await projectRequestService.getProjectRequestById(
+      return await this.projectRequestService.getProjectRequestById(
         id,
         currentUser.id,
         currentUser.role
       )
     },
-  },
+  }
 
-  Mutation: {
+  Mutation = {
     createProjectRequest: async (_: any, { input }: { input: any }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'client')
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      this.userService.checkPermission(currentUser, 'client')
 
-      return await projectRequestService.createProjectRequest(
+      return await this.projectRequestService.createProjectRequest(
         input,
         currentUser.id
       )
@@ -39,9 +46,9 @@ export const projectRequestResolvers = {
       _: any,
       { id, input }: { id: string; input: any }
     ) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
 
-      return await projectRequestService.updateProjectRequest(
+      return await this.projectRequestService.updateProjectRequest(
         id,
         input,
         currentUser.id,
@@ -50,28 +57,28 @@ export const projectRequestResolvers = {
     },
 
     approveProjectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      this.userService.checkPermission(currentUser, 'admin')
 
-      return await projectRequestService.approveProjectRequest(id)
+      return await this.projectRequestService.approveProjectRequest(id)
     },
 
     rejectProjectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      this.userService.checkPermission(currentUser, 'admin')
 
-      return await projectRequestService.rejectProjectRequest(id)
+      return await this.projectRequestService.rejectProjectRequest(id)
     },
-  },
+  }
 
-  ProjectRequest: {
+  ProjectRequest = {
     user: async (parent: any) => {
-      return await userService.getUserById(parent.userId)
+      return await this.userService.getUserById(parent.userId)
     },
 
     reviewer: async (parent: any) => {
       if (!parent.reviewedBy) return null
-      return await userService.getUserById(parent.reviewedBy)
+      return await this.userService.getUserById(parent.reviewedBy)
     },
 
     // Ensure date fields are properly formatted as strings
@@ -98,7 +105,12 @@ export const projectRequestResolvers = {
     updatedAt: (parent: any) => {
       if (!parent.updatedAt) return null
       try {
-        return new Date(parent.updatedAt).toISOString()
+        const date = new Date(parent.updatedAt)
+        if (Number.isNaN(date.getTime())) {
+          logger.error('Invalid date value', { value: parent.updatedAt })
+          return null
+        }
+        return date.toISOString()
       } catch (error) {
         logger.error('Error formatting updatedAt', {
           error: String(error),
@@ -108,54 +120,22 @@ export const projectRequestResolvers = {
       }
     },
 
-    status: (parent: any) => {
-      return parent.status || 'unknown'
-    },
-  },
-
-  ProjectRequestDisplay: {
-    user: async (parent: any) => {
-      const user = await userService.getUserById(parent.userId)
-
-      if (!user) {
-        logger.error('User not found for project request', {
-          projectRequestId: parent.id,
-          userId: parent.userId,
-        })
-        throw new Error(`User not found for project request ${parent.id}`)
-      }
-
-      return {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      }
-    },
-
-    // Ensure date fields are properly formatted as strings
-    createdAt: (parent: any) => {
-      if (!parent.createdAt) {
-        return null
-      }
+    reviewedAt: (parent: any) => {
+      if (!parent.reviewedAt) return null
       try {
-        const date = new Date(parent.createdAt)
+        const date = new Date(parent.reviewedAt)
         if (Number.isNaN(date.getTime())) {
-          logger.error('Invalid date value', { value: parent.createdAt })
+          logger.error('Invalid date value', { value: parent.reviewedAt })
           return null
         }
         return date.toISOString()
       } catch (error) {
-        logger.error('Error formatting createdAt', {
+        logger.error('Error formatting reviewedAt', {
           error: String(error),
-          value: parent.createdAt,
+          value: parent.reviewedAt,
         })
         return null
       }
     },
-
-    status: (parent: any) => {
-      return parent.status || 'unknown'
-    },
-  },
+  }
 }

@@ -1,16 +1,46 @@
 import { mergeResolvers } from '@graphql-tools/merge'
 
-import { contactResolvers } from './ContactResolver'
+import {
+  contactService,
+  fileService,
+  projectRequestService,
+  projectService,
+  userService,
+} from '@/services'
+
+import { ContactResolver } from './ContactResolver'
 import { FileResolver } from './FileResolver'
-import { projectRequestResolvers } from './ProjectRequestResolver'
-import { projectResolvers } from './ProjectResolver'
-import { userResolvers } from './UserResolver'
+import { ProjectRequestResolver } from './ProjectRequestResolver'
+import { ProjectResolver } from './ProjectResolver'
+import { UserResolver } from './UserResolver'
+
+// Create resolver instances with dependency injection
+const projectResolver = new ProjectResolver(
+  projectService,
+  userService,
+  fileService
+)
+
+const userResolver = new UserResolver(
+  userService,
+  projectService,
+  projectRequestService
+)
+
+const projectRequestResolver = new ProjectRequestResolver(
+  projectRequestService,
+  userService
+)
+
+const contactResolver = new ContactResolver(contactService)
+
+const fileResolver = new FileResolver(fileService, projectService, userService)
 
 // Merge all resolvers using @graphql-tools
 export const resolvers = mergeResolvers([
-  userResolvers,
-  projectResolvers,
-  projectRequestResolvers,
-  contactResolvers,
-  FileResolver,
+  userResolver,
+  projectResolver,
+  projectRequestResolver,
+  contactResolver,
+  fileResolver,
 ])

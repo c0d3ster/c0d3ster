@@ -1,11 +1,13 @@
-import { services } from '@/services'
+import type { ContactService } from '@/services'
 
-const { contactService } = services
+export class ContactResolver {
+  [key: string]: any
 
-export const contactResolvers = {
-  Mutation: {
+  constructor(private contactService: ContactService) {}
+
+  Mutation = {
     submitContactForm: async (_: any, { input }: { input: any }) => {
-      return await contactService.submitContactForm(input)
+      return await this.contactService.submitContactForm(input)
     },
-  },
+  }
 }

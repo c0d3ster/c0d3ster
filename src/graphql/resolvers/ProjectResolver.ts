@@ -1,36 +1,46 @@
+import type { MutationAssignProjectArgs } from '@/graphql/generated/graphql'
+import type { FileService, ProjectService, UserService } from '@/services'
+
 import { SUPPORT_EMAIL } from '@/constants'
 import { logger } from '@/libs/Logger'
-import { services } from '@/services'
 
-const { projectService, userService } = services
+export class ProjectResolver {
+  [key: string]: any
 
-export const projectResolvers = {
-  Project: {
+  constructor(
+    private projectService: ProjectService,
+    private userService: UserService,
+    private fileService: FileService
+  ) {}
+
+  Project = {
     // Ensure requestId is properly exposed
     requestId: (parent: any) => {
       return parent.requestId || null
     },
 
     client: async (parent: any) => {
-      return await userService.getUserById(parent.clientId)
+      return await this.userService.getUserById(parent.clientId)
     },
 
     developer: async (parent: any) => {
       if (!parent.developerId) return null
-      return await userService.getUserById(parent.developerId)
+      return await this.userService.getUserById(parent.developerId)
     },
 
     projectRequest: async (parent: any) => {
       if (!parent.projectRequestId) return null
-      return await projectService.getProjectRequestById(parent.projectRequestId)
+      return await this.projectService.getProjectRequestById(
+        parent.projectRequestId
+      )
     },
 
     statusUpdates: async (parent: any) => {
-      return await projectService.getProjectStatusUpdates(parent.id)
+      return await this.projectService.getProjectStatusUpdates(parent.id)
     },
 
     collaborators: async (parent: any) => {
-      return await projectService.getProjectCollaborators(parent.id)
+      return await this.projectService.getProjectCollaborators(parent.id)
     },
 
     // Ensure date fields are properly formatted as strings
@@ -110,7 +120,7 @@ export const projectResolvers = {
       // If it's an R2 bucket path (contains projects/), generate presigned URL
       if (parent.logo.includes('projects/')) {
         try {
-          return await services.fileService.generatePresignedDownloadUrl(
+          return await this.fileService.generatePresignedDownloadUrl(
             parent.logo
           )
         } catch (error) {
@@ -125,9 +135,9 @@ export const projectResolvers = {
       // Fallback: return as-is (could be external URL or other path)
       return parent.logo
     },
-  },
+  }
 
-  ProjectDisplay: {
+  ProjectDisplay = {
     logo: async (parent: any) => {
       if (!parent.logo) return null
 
@@ -139,7 +149,7 @@ export const projectResolvers = {
       // If it's an R2 bucket path (contains projects/), generate presigned URL
       if (parent.logo.includes('projects/')) {
         try {
-          return await services.fileService.generatePresignedDownloadUrl(
+          return await this.fileService.generatePresignedDownloadUrl(
             parent.logo
           )
         } catch (error) {
@@ -154,25 +164,25 @@ export const projectResolvers = {
       // Fallback: return as-is (could be external URL or other path)
       return parent.logo
     },
-  },
+  }
 
-  ProjectStatusUpdate: {
+  ProjectStatusUpdate = {
     updatedBy: async (parent: any) => {
-      return await userService.getUserById(parent.updatedById)
+      return await this.userService.getUserById(parent.updatedById)
     },
-  },
+  }
 
-  ProjectCollaborator: {
+  ProjectCollaborator = {
     user: async (parent: any) => {
-      return await userService.getUserById(parent.userId)
+      return await this.userService.getUserById(parent.userId)
     },
-  },
+  }
 
-  Query: {
+  Query = {
     project: async (_: any, { id }: { id: string }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
 
-      return await projectService.getProjectById(
+      return await this.projectService.getProjectById(
         id,
         currentUser.role === 'admin' ? undefined : currentUser.id
       )
@@ -180,7 +190,7 @@ export const projectResolvers = {
 
     projectBySlug: async (_: any, { slug }: { slug: string }) => {
       // Allow public access to project details (no authentication required)
-      return await projectService.getProjectBySlug(slug)
+      return await this.projectService.getProjectBySlug(slug)
     },
 
     projects: async (
@@ -189,80 +199,88 @@ export const projectResolvers = {
     ) => {
       // Allow public access for SUPPORT_EMAIL without authentication
       if (userEmail === SUPPORT_EMAIL) {
-        return await projectService.getProjects(filter)
+        return await this.projectService.getProjects(filter)
       }
 
       // For other users, require authentication
-      await userService.getCurrentUserWithAuth()
+      await this.userService.getCurrentUserWithAuth()
 
       if (userEmail) {
-        const user = await userService.getUserByEmail(userEmail)
+        const user = await this.userService.getUserByEmail(userEmail)
         if (user) {
-          return await projectService.getProjects(filter, user.id)
+          return await this.projectService.getProjects(filter, user.id)
         }
       }
-      return await projectService.getProjects(filter)
+      return await this.projectService.getProjects(filter)
     },
 
     featuredProjects: async (_: any, { userEmail }: { userEmail?: string }) => {
-      // Allow access for SUPPORT_EMAIL without authentication
+      // Allow public access for SUPPORT_EMAIL without authentication
       if (userEmail === SUPPORT_EMAIL) {
-        return await projectService.getFeaturedProjects()
+        return await this.projectService.getFeaturedProjects()
       }
 
       // For other users, require authentication
-      await userService.getCurrentUserWithAuth()
+      await this.userService.getCurrentUserWithAuth()
 
       if (userEmail) {
-        const user = await userService.getUserByEmail(userEmail)
+        const user = await this.userService.getUserByEmail(userEmail)
         if (user) {
-          return await projectService.getFeaturedProjects(user.id)
+          return await this.projectService.getFeaturedProjects(user.id)
         }
       }
-      return await projectService.getFeaturedProjects()
+      return await this.projectService.getFeaturedProjects()
     },
-  },
+  }
 
-  Mutation: {
+  Mutation = {
     createProject: async (_: any, { input }: { input: any }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      this.userService.checkPermission(currentUser, 'admin')
 
-      return await projectService.createProject(input)
+      return await this.projectService.createProject(input)
     },
 
     updateProject: async (
       _: any,
       { id, input }: { id: string; input: any }
     ) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
 
-      return await projectService.updateProject(
+      return await this.projectService.updateProject(
         id,
         input,
-        currentUser.role === 'admin' ? undefined : currentUser.id
+        currentUser.id,
+        currentUser.role
       )
     },
 
     assignProject: async (
       _: any,
-      { projectId, developerId }: { projectId: string; developerId: string }
+      { projectId, developerId }: MutationAssignProjectArgs
     ) => {
-      // Permission check is now handled in the service layer
-      return await projectService.assignProject(projectId, developerId)
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+
+      return await this.projectService.assignProject(
+        projectId,
+        developerId,
+        currentUser.id, // developerId (self-assignment for now)
+        currentUser.role // currentUserRole
+      )
     },
 
     updateProjectStatus: async (
       _: any,
-      { id, input }: { id: string; input: any }
+      { projectId, status }: { projectId: string; status: string }
     ) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
 
-      return await projectService.updateProjectStatus(
-        id,
-        input,
-        currentUser.role === 'admin' ? undefined : currentUser.id
+      return await this.projectService.updateProjectStatus(
+        projectId,
+        status,
+        currentUser.id,
+        currentUser.role
       )
     },
-  },
+  }
 }

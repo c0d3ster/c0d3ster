@@ -76,6 +76,14 @@ export class ProjectRequestService {
     })
   }
 
+  async getProjectRequestsByUserId(userId: string) {
+    // Get project requests for a specific user
+    return await db.query.projectRequests.findMany({
+      where: eq(schemas.projectRequests.userId, userId),
+      orderBy: [desc(schemas.projectRequests.createdAt)],
+    })
+  }
+
   async createProjectRequest(input: any, currentUserId: string) {
     const [request] = await db
       .insert(schemas.projectRequests)

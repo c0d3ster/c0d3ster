@@ -4,7 +4,6 @@ import { GraphQLError } from 'graphql'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
-import { services } from '@/services'
 import {
   findProjectBySlug,
   hasSlugConflict,
@@ -12,7 +11,11 @@ import {
   isUserRole,
 } from '@/utils'
 
+import type { FileService } from './FileService'
+
 export class ProjectService {
+  constructor(private fileService: FileService) {}
+
   async getProjects(
     filter?: any,
     currentUserId?: string,
@@ -349,12 +352,21 @@ export class ProjectService {
       const fileName = logoPath.split('/').pop() || 'logo'
       const originalFileName = fileName
 
+      // Get file metadata to extract contentType
+      const fileMetadata = await this.fileService.getFileMetadata(logoPath)
+      if (!fileMetadata) {
+        throw new GraphQLError('Could not retrieve file metadata for logo', {
+          extensions: { code: 'FILE_METADATA_NOT_FOUND' },
+        })
+      }
+
       // Use FileService to create project_files entry
-      await services.fileService.createProjectFileRecord({
+      await this.fileService.createProjectFileRecord({
         projectId: id,
         fileName,
         originalFileName,
-        fileType: 'image',
+        contentType: fileMetadata.contentType,
+        fileSize: fileMetadata.fileSize,
         filePath: logoPath,
         uploadedBy: currentUserId || project.clientId, // Use current user or fallback to client
         isClientVisible: true,
@@ -378,8 +390,8 @@ export class ProjectService {
   async assignProject(
     projectId: string,
     developerId: string,
-    currentUserId?: string,
-    currentUserRole?: string
+    currentUserId: string,
+    currentUserRole: string
   ) {
     // Check permissions - developers can assign themselves, admins can assign anyone
     if (

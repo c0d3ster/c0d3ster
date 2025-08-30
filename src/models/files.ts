@@ -8,7 +8,6 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-import { fileTypeEnum } from './enums'
 import { projects } from './projects'
 import { users } from './users'
 
@@ -20,7 +19,7 @@ export const projectFiles = pgTable('project_files', {
     .references(() => projects.id, { onDelete: 'cascade' }),
   fileName: varchar('file_name', { length: 255 }).notNull(),
   originalFileName: varchar('original_file_name', { length: 255 }).notNull(),
-  fileType: fileTypeEnum('file_type').notNull(),
+  contentType: varchar('content_type', { length: 100 }).notNull(),
   fileSize: integer('file_size'), // in bytes
   filePath: text('file_path').notNull(),
   uploadedBy: uuid('uploaded_by')

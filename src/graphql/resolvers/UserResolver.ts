@@ -1,45 +1,55 @@
 import { GraphQLError } from 'graphql'
 
+import type {
+  ProjectRequestService,
+  ProjectService,
+  UserService,
+} from '@/services'
+
 import { logger } from '@/libs/Logger'
-import { services } from '@/services'
-import { isDeveloperOrHigherRole } from '@/utils'
 
-const { userService, projectService, projectRequestService } = services
+export class UserResolver {
+  [key: string]: any
 
-export const userResolvers = {
-  Query: {
+  constructor(
+    private userService: UserService,
+    private projectService: ProjectService,
+    private projectRequestService: ProjectRequestService
+  ) {}
+
+  Query = {
     me: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
       return currentUser
     },
 
     user: async (_: any, { id }: { id: string }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      this.userService.checkPermission(currentUser, 'admin')
 
-      return await userService.getUserById(id)
+      return await this.userService.getUserById(id)
     },
 
     users: async (_: any, { filter }: { filter?: any }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      this.userService.checkPermission(currentUser, 'admin')
 
-      return await userService.getUsers(filter)
+      return await this.userService.getUsers(filter)
     },
 
     myDashboard: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
       // Return a placeholder object - the actual data will be resolved by field resolvers
       return { userId: currentUser.id }
     },
-  },
+  }
 
-  Mutation: {
+  Mutation = {
     updateUser: async (
       _: any,
       { id, input }: { id: string; input: Record<string, unknown> }
     ) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+      const currentUser = await this.userService.getCurrentUserWithAuth()
 
       // Users can only update themselves, or admins can update anyone
       if (currentUser.id !== id && currentUser.role !== 'admin') {
@@ -74,11 +84,11 @@ export const userResolvers = {
         })
       }
 
-      return await userService.updateUser(id, sanitizedInput)
+      return await this.userService.updateUser(id, sanitizedInput)
     },
-  },
+  }
 
-  User: {
+  User = {
     // Ensure date fields are properly formatted as strings
     createdAt: (parent: any) => {
       if (!parent.createdAt) return null
@@ -119,65 +129,123 @@ export const userResolvers = {
         return null
       }
     },
-  },
 
-  UserDashboard: {
-    projects: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      return await projectService.getMyProjects(currentUser.id)
+    // Resolve user's projects
+    projects: async (parent: any) => {
+      return await this.projectService.getProjects(undefined, parent.id)
     },
 
-    projectRequests: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      return await projectRequestService.getMyProjectRequests(
-        currentUser.id,
-        currentUser.role
+    // Resolve user's project requests
+    projectRequests: async (parent: any) => {
+      return await this.projectRequestService.getProjectRequestsByUserId(
+        parent.id
       )
     },
 
-    availableProjects: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      if (!isDeveloperOrHigherRole(currentUser.role)) {
-        return []
-      }
-      return await projectService.getAvailableProjects()
+    // Resolve user's assigned projects (as developer)
+    assignedProjects: async (parent: any) => {
+      if (parent.role !== 'developer') return []
+      return await this.projectService.getAssignedProjects(parent.id)
     },
 
-    assignedProjects: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      if (!isDeveloperOrHigherRole(currentUser.role)) {
-        return []
-      }
-      return await projectService.getAssignedProjects(currentUser.id)
+    // Resolve user's available projects (as developer)
+    availableProjects: async (parent: any) => {
+      if (parent.role !== 'developer') return []
+      return await this.projectService.getAvailableProjects()
     },
 
-    summary: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      const [projects, projectRequests] = await Promise.all([
-        projectService.getMyProjects(currentUser.id),
-        projectRequestService.getMyProjectRequests(
-          currentUser.id,
-          currentUser.role
-        ),
-      ])
+    // Resolve user's featured projects
+    featuredProjects: async (parent: any) => {
+      return await this.projectService.getFeaturedProjects(parent.id)
+    },
 
-      const totalProjects = projects.length
-      const activeProjects = projects.filter(
-        (p) => p.status === 'in_progress'
-      ).length
-      const completedProjects = projects.filter(
-        (p) => p.status === 'completed'
-      ).length
-      const pendingRequests = projectRequests.filter(
-        (r) => r.status === 'requested'
-      ).length
+    // Resolve user's public projects
+    publicProjects: async (_parent: any) => {
+      return await this.projectService.getPublicProjects()
+    },
 
-      return {
-        totalProjects,
-        activeProjects,
-        completedProjects,
-        pendingRequests,
+    // Resolve user's my projects
+    myProjects: async (parent: any) => {
+      return await this.projectService.getMyProjects(parent.id)
+    },
+
+    // Resolve user's role display
+    roleDisplay: (parent: any) => {
+      switch (parent.role) {
+        case 'client':
+          return 'Client'
+        case 'developer':
+          return 'Developer'
+        case 'admin':
+          return 'Admin'
+        case 'super_admin':
+          return 'Super Admin'
+        default:
+          return 'Unknown'
       }
     },
-  },
+
+    // Resolve user's full name
+    fullName: (parent: any) => {
+      if (parent.firstName && parent.lastName) {
+        return `${parent.firstName} ${parent.lastName}`
+      }
+      if (parent.firstName) return parent.firstName
+      if (parent.lastName) return parent.lastName
+      return 'Unknown User'
+    },
+
+    // Resolve user's initials
+    initials: (parent: any) => {
+      if (parent.firstName && parent.lastName) {
+        return `${parent.firstName[0]}${parent.lastName[0]}`.toUpperCase()
+      }
+      if (parent.firstName) return parent.firstName[0].toUpperCase()
+      if (parent.lastName) return parent.lastName[0].toUpperCase()
+      return 'U'
+    },
+  }
+
+  Dashboard = {
+    // Resolve dashboard user
+    user: async (parent: any) => {
+      return await this.userService.getUserById(parent.userId)
+    },
+
+    // Resolve dashboard projects
+    projects: async (parent: any) => {
+      const user = await this.userService.getUserById(parent.userId)
+      if (!user) return []
+
+      if (user.role === 'client') {
+        return await this.projectService.getMyProjects(user.id)
+      } else if (user.role === 'developer') {
+        return await this.projectService.getAssignedProjects(user.id)
+      }
+
+      return []
+    },
+
+    // Resolve dashboard project requests
+    projectRequests: async (parent: any) => {
+      const user = await this.userService.getUserById(parent.userId)
+      if (!user) return []
+
+      if (user.role === 'client') {
+        return await this.projectRequestService.getProjectRequestsByUserId(
+          user.id
+        )
+      }
+
+      return []
+    },
+
+    // Resolve dashboard available projects (for developers)
+    availableProjects: async (parent: any) => {
+      const user = await this.userService.getUserById(parent.userId)
+      if (!user || user.role !== 'developer') return []
+
+      return await this.projectService.getAvailableProjects()
+    },
+  }
 }
