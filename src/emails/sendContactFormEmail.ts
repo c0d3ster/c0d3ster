@@ -2,6 +2,8 @@ import { Resend } from 'resend'
 
 import type { ContactFormData } from '@/validations/ContactValidation'
 
+import { BRAND_NAME, SUPPORT_EMAIL } from '@/constants'
+
 import { ContactFormEmail } from './ContactFormEmail'
 
 export async function sendContactFormEmail(data: ContactFormData) {
@@ -13,8 +15,8 @@ export async function sendContactFormEmail(data: ContactFormData) {
   const resend = new Resend(apiKey)
 
   const { error } = await resend.emails.send({
-    from: 'c0d3ster <support@c0d3ster.com>',
-    to: ['support@c0d3ster.com'],
+    from: `${BRAND_NAME} <${SUPPORT_EMAIL}>`,
+    to: [SUPPORT_EMAIL],
     subject: `New Contact Form: ${data.subject}`,
     react: ContactFormEmail({
       name: data.name,

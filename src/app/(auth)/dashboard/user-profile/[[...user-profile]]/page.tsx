@@ -3,9 +3,10 @@ import type { Metadata } from 'next'
 import { ExpandingUnderline } from '@/components/atoms'
 import { AnimatedHeading, UserProfile } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
+import { BRAND_NAME } from '@/constants'
 
 export const metadata: Metadata = {
-  title: 'User Profile - c0d3ster',
+  title: `User Profile - ${BRAND_NAME}`,
 }
 
 export default function UserProfilePage() {

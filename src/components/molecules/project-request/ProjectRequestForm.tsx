@@ -36,7 +36,7 @@ export const ProjectRequestForm = () => {
   // Function to focus on first field with error
   const focusFirstError = (validationErrors: Record<string, string>) => {
     const fieldOrder = [
-      'title',
+      'projectName',
       'projectType',
       'description',
       'budget',
@@ -58,7 +58,7 @@ export const ProjectRequestForm = () => {
   }
 
   const [formData, setFormData] = useState<ProjectRequestData>({
-    title: '',
+    projectName: '',
     description: '',
     projectType: ProjectType.Website,
     budget: '',
@@ -67,8 +67,8 @@ export const ProjectRequestForm = () => {
     additionalInfo: '',
     requirements: {
       hasDesign: false,
-      needsHosting: false,
       hasDomain: false,
+      needsHosting: false,
       needsMaintenance: false,
       needsContentCreation: false,
       needsSEO: false,
@@ -165,26 +165,26 @@ export const ProjectRequestForm = () => {
           PROJECT DETAILS
         </h3>
 
-        {/* Title */}
+        {/* Project Name */}
         <div>
           <label
-            htmlFor='title'
+            htmlFor='projectName'
             className='block font-mono text-sm font-medium text-green-300'
           >
-            PROJECT TITLE *
+            PROJECT NAME *
           </label>
           <input
-            id='title'
+            id='projectName'
             ref={(el) => {
-              fieldRefs.current.title = el
+              fieldRefs.current.projectName = el
             }}
             type='text'
-            value={formData.title}
-            onChange={(e) => handleInputChange('title', e.target.value)}
+            value={formData.projectName}
+            onChange={(e) => handleInputChange('projectName', e.target.value)}
             className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-            placeholder='e.g., E-commerce website for my business'
+            placeholder='e.g., My E-commerce Store'
           />
-          <ErrorMessage error={errors.title} />
+          <ErrorMessage error={errors.projectName} />
         </div>
 
         {/* Project Type */}

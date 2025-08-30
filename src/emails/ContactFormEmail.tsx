@@ -1,5 +1,7 @@
 import * as React from 'react'
 
+import { WEBSITE_URL } from '@/constants'
+
 type ContactFormEmailProps = {
   name: string
   email: string
@@ -71,7 +73,7 @@ export function ContactFormEmail({
         }}
       >
         <p>This email was sent from your website contact form.</p>
-        <p>Sent via c0d3ster.com contact form</p>
+        <p>Sent via {WEBSITE_URL} contact form</p>
       </div>
     </div>
   )

@@ -26,11 +26,31 @@ export const projectSchema = gql`
     other
   }
 
+  # Project display type (subset for cards/lists)
+  type ProjectDisplay {
+    id: ID!
+    projectName: String!
+    title: String
+    overview: String
+    description: String
+    techStack: [String!]
+    status: ProjectStatus!
+    logo: String
+    liveUrl: String
+    repositoryUrl: String
+    featured: Boolean!
+    createdAt: String!
+    projectType: ProjectType!
+    budget: Float
+  }
+
   # Project type
   type Project {
     id: ID!
-    title: String!
+    projectName: String!
     description: String!
+    title: String
+    overview: String
     projectType: ProjectType!
     budget: Float
     requirements: JSON
@@ -44,6 +64,8 @@ export const projectSchema = gql`
     repositoryUrl: String
     liveUrl: String
     stagingUrl: String
+    featured: Boolean!
+    logo: String
     createdAt: String!
     updatedAt: String!
 
@@ -88,7 +110,8 @@ export const projectSchema = gql`
 
   # Project input types
   input CreateProjectInput {
-    title: String!
+    title: String
+    projectName: String!
     description: String!
     projectType: ProjectType!
     budget: Float
@@ -103,6 +126,7 @@ export const projectSchema = gql`
 
   input UpdateProjectInput {
     title: String
+    projectName: String
     description: String
     projectType: ProjectType
     budget: Float
@@ -113,15 +137,26 @@ export const projectSchema = gql`
     startDate: String
     estimatedCompletionDate: String
     actualCompletionDate: String
+    featured: Boolean
+  }
+
+  input ProjectFilter {
+    status: ProjectStatus
+    projectType: ProjectType
+    priority: String
+    clientId: ID
+    developerId: ID
   }
 
   # Project queries
   extend type Query {
-    projects: [Project!]!
+    projects(filter: ProjectFilter, userEmail: String): [ProjectDisplay!]!
     project(id: ID!): Project
+    projectBySlug(slug: String!): Project
     myProjects: [Project!]!
     availableProjects: [Project!]!
     assignedProjects: [Project!]!
+    featuredProjects(userEmail: String): [ProjectDisplay!]!
   }
 
   # Project mutations

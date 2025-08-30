@@ -3,8 +3,13 @@ import { GraphQLError } from 'graphql'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
-import { schemas } from '@/models'
-import { isDeveloperOrHigherRole, isUserRole } from '@/utils'
+import { projectStatusEnum, schemas } from '@/models'
+import {
+  findProjectBySlug,
+  hasSlugConflict,
+  isDeveloperOrHigherRole,
+  isUserRole,
+} from '@/utils'
 
 export class ProjectService {
   async getProjects(
@@ -96,6 +101,72 @@ export class ProjectService {
     return project
   }
 
+  async getProjectBySlug(
+    slug: string,
+    currentUserId?: string,
+    currentUserRole?: string
+  ) {
+    // Get all projects and find the one that matches the slug
+    const allProjects = await db.query.projects.findMany()
+
+    const project = findProjectBySlug(slug, allProjects)
+
+    if (!project) {
+      throw new GraphQLError('Project not found', {
+        extensions: { code: 'PROJECT_NOT_FOUND' },
+      })
+    }
+
+    // If no user is provided (public access), only allow access to c0d3ster's projects
+    if (!currentUserId || !currentUserRole) {
+      // Get c0d3ster's user ID
+      const c0d3sterUser = await db.query.users.findFirst({
+        where: eq(schemas.users.email, 'support@c0d3ster.com'),
+      })
+
+      if (!c0d3sterUser) {
+        throw new GraphQLError('Access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
+
+      // Only allow public access if c0d3ster is the developer or the client
+      if (
+        project.developerId !== c0d3sterUser.id &&
+        project.clientId !== c0d3sterUser.id
+      ) {
+        throw new GraphQLError('Access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
+
+      return project
+    }
+
+    // Admins can access all projects
+    if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
+      return project
+    }
+
+    // Check access permissions
+    if (currentUserRole === 'client' && project.clientId !== currentUserId) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
+    if (
+      currentUserRole === 'developer' &&
+      project.developerId !== currentUserId
+    ) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
+    return project
+  }
+
   async getMyProjects(currentUserId: string) {
     // "My Projects" should return projects where the user is:
     // 1. The CLIENT (they own the project)
@@ -149,6 +220,30 @@ export class ProjectService {
     })
   }
 
+  async getFeaturedProjects(userId?: string) {
+    let whereClause: any = eq(schemas.projects.featured, true)
+
+    // If a user is specified, filter by that user's projects
+    if (userId) {
+      whereClause = and(
+        eq(schemas.projects.featured, true),
+        eq(schemas.projects.clientId, userId)
+      )
+    }
+
+    return await db.query.projects.findMany({
+      where: whereClause,
+      orderBy: [desc(schemas.projects.createdAt)],
+    })
+  }
+
+  async getPublicProjects() {
+    return await db.query.projects.findMany({
+      where: eq(schemas.projects.featured, true),
+      orderBy: [desc(schemas.projects.createdAt)],
+    })
+  }
+
   async getAssignedProjects(developerId: string) {
     return await db.query.projects.findMany({
       where: eq(schemas.projects.developerId, developerId),
@@ -157,17 +252,41 @@ export class ProjectService {
   }
 
   async createProject(input: any) {
+    // Check for slug conflicts before creating
+    const existingProjects = await db.query.projects.findMany({
+      columns: { id: true, projectName: true },
+    })
+
+    if (hasSlugConflict(input.projectName, existingProjects)) {
+      throw new GraphQLError('Project name would create a duplicate slug', {
+        extensions: { code: 'DUPLICATE_SLUG' },
+      })
+    }
+
+    // Validate project status
+    if (input.status && !projectStatusEnum.enumValues.includes(input.status)) {
+      throw new GraphQLError(
+        `Invalid project status. Must be one of: ${projectStatusEnum.enumValues.join(', ')}`,
+        {
+          extensions: { code: 'INVALID_STATUS' },
+        }
+      )
+    }
+
     const [project] = await db
       .insert(schemas.projects)
       .values({
         clientId: input.clientId,
         requestId: input.requestId,
         title: input.title,
+        projectName: input.projectName,
         description: input.description,
         projectType: input.projectType,
         budget: input.budget,
         requirements: input.requirements,
         techStack: input.techStack,
+        status: input.status,
+        featured: false,
       })
       .returning()
 
@@ -210,6 +329,16 @@ export class ProjectService {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
+    }
+
+    // Validate project status if it's being updated
+    if (input.status && !projectStatusEnum.enumValues.includes(input.status)) {
+      throw new GraphQLError(
+        `Invalid project status. Must be one of: ${projectStatusEnum.enumValues.join(', ')}`,
+        {
+          extensions: { code: 'INVALID_STATUS' },
+        }
+      )
     }
 
     const [updatedProject] = await db

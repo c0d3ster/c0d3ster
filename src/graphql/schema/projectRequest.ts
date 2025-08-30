@@ -1,10 +1,27 @@
 import { gql } from 'graphql-tag'
 
 export const projectRequestSchema = gql`
+  # Project request display type (subset for cards/lists)
+  type ProjectRequestDisplay {
+    id: ID!
+    projectName: String!
+    title: String
+    description: String!
+    projectType: ProjectType!
+    budget: Float
+    timeline: String
+    requirements: JSON
+    additionalInfo: String
+    status: String!
+    createdAt: String!
+    user: DisplayUser!
+  }
+
   # Project request type
   type ProjectRequest {
     id: ID!
-    title: String!
+    projectName: String!
+    title: String
     description: String!
     projectType: ProjectType!
     budget: Float
@@ -23,7 +40,8 @@ export const projectRequestSchema = gql`
 
   # Project request input types
   input CreateProjectRequestInput {
-    title: String!
+    projectName: String!
+    title: String
     description: String!
     projectType: ProjectType!
     budget: Float
@@ -35,9 +53,9 @@ export const projectRequestSchema = gql`
 
   # Project request queries test
   extend type Query {
-    projectRequests: [ProjectRequest!]!
+    projectRequests: [ProjectRequestDisplay!]!
     projectRequest(id: ID!): ProjectRequest
-    myProjectRequests: [ProjectRequest!]!
+    myProjectRequests: [ProjectRequestDisplay!]!
   }
 
   # Project request mutations

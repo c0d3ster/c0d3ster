@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import type {
+  Project,
+  ProjectStatus,
+  ProjectType,
+} from '@/graphql/generated/graphql'
+
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
 // Mock next/image
@@ -11,16 +17,51 @@ vi.mock('next/image', () => ({
   ),
 }))
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    back: vi.fn(),
+  }),
+}))
+
 // Mock the Project type
-const mockProject = {
+const mockProject: Project = {
+  id: '1',
   title: 'Test Project',
   overview: 'A test project for testing purposes',
   techStack: ['React', 'TypeScript', 'Tailwind'],
-  status: 'COMPLETED',
+  status: 'completed' as ProjectStatus,
   logo: '/test-logo.png',
   projectName: 'TestProject',
-  projectUrl: 'https://testproject.com',
+  liveUrl: 'https://testproject.com',
   description: 'This is a detailed description of the test project.',
+  featured: true,
+  projectType: 'web_app' as ProjectType,
+  budget: 5000,
+  requirements: { requirement1: 'test' },
+  progressPercentage: 100,
+  startDate: '2024-01-01',
+  estimatedCompletionDate: '2024-03-01',
+  actualCompletionDate: '2024-02-28',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
+  clientId: 'client1',
+  developerId: 'dev1',
+  requestId: 'req1',
+  client: {
+    id: 'client1',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+  },
+  developer: {
+    id: 'dev1',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane@example.com',
+  },
+  collaborators: [],
+  statusUpdates: [],
 }
 
 describe('ProjectDetailsTemplate', () => {
@@ -29,6 +70,21 @@ describe('ProjectDetailsTemplate', () => {
 
     expect(screen.getByText('TestProject')).toBeInTheDocument()
     expect(screen.getByText('Test Project')).toBeInTheDocument()
+    expect(
+      screen.getByText('A test project for testing purposes')
+    ).toBeInTheDocument()
+  })
+
+  it('renders project header with projectName when title is not available', () => {
+    const projectWithoutTitle = { ...mockProject, title: undefined }
+    render(<ProjectDetailsTemplate project={projectWithoutTitle} />)
+
+    // Check that projectName appears in the h1 heading
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'TestProject'
+    )
+    // Check that projectName appears in the subtitle paragraph (there are 2 elements with this text)
+    expect(screen.getAllByText('TestProject')).toHaveLength(2)
     expect(
       screen.getByText('A test project for testing purposes')
     ).toBeInTheDocument()
@@ -74,7 +130,7 @@ describe('ProjectDetailsTemplate', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders access project button when projectUrl is available', () => {
+  it('renders access project button when liveUrl is available', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
     const accessButton = screen.getByRole('link', { name: 'ACCESS PROJECT' })
@@ -85,8 +141,8 @@ describe('ProjectDetailsTemplate', () => {
     expect(accessButton).toHaveAttribute('rel', 'noopener noreferrer')
   })
 
-  it('does not render access project button when projectUrl is not available', () => {
-    const projectWithoutUrl = { ...mockProject, projectUrl: undefined }
+  it('does not render access project button when liveUrl is not available', () => {
+    const projectWithoutUrl = { ...mockProject, liveUrl: undefined }
     render(<ProjectDetailsTemplate project={projectWithoutUrl} />)
 
     expect(
@@ -97,10 +153,10 @@ describe('ProjectDetailsTemplate', () => {
   it('renders back button with correct link', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
-    const backButton = screen.getByRole('link', { name: 'BACK TO PROJECTS' })
+    const backButton = screen.getByRole('link', { name: 'BACK' })
 
     expect(backButton).toBeInTheDocument()
-    expect(backButton).toHaveAttribute('href', '/projects')
+    expect(backButton).toHaveAttribute('href', '#')
   })
 
   it('renders project without logo gracefully', () => {
@@ -111,7 +167,7 @@ describe('ProjectDetailsTemplate', () => {
   })
 
   it('renders project without description with fallback text', () => {
-    const projectWithoutDescription = { ...mockProject, description: undefined }
+    const projectWithoutDescription = { ...mockProject, description: '' }
     render(<ProjectDetailsTemplate project={projectWithoutDescription} />)
 
     expect(
@@ -120,7 +176,10 @@ describe('ProjectDetailsTemplate', () => {
   })
 
   it('renders in-progress status with correct styling', () => {
-    const inProgressProject = { ...mockProject, status: 'IN PROGRESS' }
+    const inProgressProject = {
+      ...mockProject,
+      status: 'in_progress' as ProjectStatus,
+    }
     render(<ProjectDetailsTemplate project={inProgressProject} />)
 
     const statusBadge = screen.getByText('IN PROGRESS')

@@ -6,17 +6,22 @@ import type {
   AssignProjectMutationVariables,
   GetAssignedProjectsQuery,
   GetAvailableProjectsDetailedQuery,
+  GetFeaturedProjectsQuery,
   GetMyProjectsQuery,
+  GetProjectBySlugQuery,
   GetProjectsQuery,
 } from '@/graphql/generated/graphql'
 
 import {
   GetAssignedProjectsDocument,
   GetAvailableProjectsDetailedDocument,
+  GetFeaturedProjectsDocument,
   GetMyProjectsDocument,
+  GetProjectBySlugDocument,
   GetProjectsDocument,
   useGetAssignedProjectsQuery,
   useGetAvailableProjectsDetailedQuery,
+  useGetFeaturedProjectsQuery,
   useGetMyProjectsQuery,
   useGetProjectsQuery,
 } from '@/graphql/generated/graphql'
@@ -24,17 +29,19 @@ import { apolloClient } from '@/libs/ApolloClient'
 
 // GraphQL Operations
 export const GET_PROJECTS = gql`
-  query GetProjects {
-    projects {
+  query GetProjects($filter: ProjectFilter, $userEmail: String) {
+    projects(filter: $filter, userEmail: $userEmail) {
       id
       title
+      projectName
+      description
+      overview
+      techStack
       status
-      developer {
-        id
-        firstName
-        lastName
-        email
-      }
+      logo
+      liveUrl
+      repositoryUrl
+      featured
     }
   }
 `
@@ -55,6 +62,7 @@ export const GET_MY_PROJECTS = gql`
       createdAt
       updatedAt
       techStack
+      featured
       client {
         id
         firstName
@@ -107,6 +115,7 @@ export const GET_AVAILABLE_PROJECTS_DETAILED = gql`
       budget
       techStack
       status
+      featured
       client {
         id
         firstName
@@ -175,6 +184,92 @@ export const GET_ASSIGNED_PROJECTS = gql`
   }
 `
 
+export const GET_PROJECT_BY_SLUG = gql`
+  query GetProjectBySlug($slug: String!) {
+    projectBySlug(slug: $slug) {
+      id
+      title
+      projectName
+      description
+      overview
+      techStack
+      status
+      logo
+      liveUrl
+      repositoryUrl
+      featured
+      projectType
+      budget
+      requirements
+      progressPercentage
+      startDate
+      estimatedCompletionDate
+      actualCompletionDate
+      createdAt
+      updatedAt
+      clientId
+      developerId
+      requestId
+      client {
+        id
+        firstName
+        lastName
+        email
+      }
+      developer {
+        id
+        firstName
+        lastName
+        email
+      }
+      collaborators {
+        id
+        role
+        joinedAt
+        user {
+          id
+          firstName
+          lastName
+          email
+        }
+      }
+      statusUpdates {
+        id
+        oldStatus
+        newStatus
+        progressPercentage
+        updateMessage
+        isClientVisible
+        createdAt
+        updatedBy {
+          id
+          firstName
+          lastName
+          email
+        }
+      }
+    }
+  }
+`
+
+export const GET_FEATURED_PROJECTS = gql`
+  query GetFeaturedProjects($userEmail: String) {
+    featuredProjects(userEmail: $userEmail) {
+      id
+      title
+      projectName
+      description
+      overview
+      techStack
+      status
+      logo
+      liveUrl
+      repositoryUrl
+      featured
+    }
+  }
+`
+
 export const ASSIGN_PROJECT = gql`
   mutation AssignProject($projectId: ID!, $developerId: ID!) {
     assignProject(projectId: $projectId, developerId: $developerId) {
@@ -192,17 +287,31 @@ export const ASSIGN_PROJECT = gql`
 `
 
 // Hooks for components
-export const useGetProjects = () => useGetProjectsQuery()
+export const useGetProjects = (filter?: any, userEmail?: string) =>
+  useGetProjectsQuery({
+    variables: {
+      filter: filter || undefined,
+      userEmail: userEmail || undefined,
+    },
+  })
 export const useGetMyProjects = () => useGetMyProjectsQuery()
 export const useGetAvailableProjects = () =>
   useGetAvailableProjectsDetailedQuery()
 export const useGetAssignedProjects = () => useGetAssignedProjectsQuery()
+export const useGetFeaturedProjects = (userEmail?: string) =>
+  useGetFeaturedProjectsQuery({
+    variables: userEmail ? { userEmail } : undefined,
+  })
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
 // Async functions for SSR / non-hook usage
-export const getProjects = async () => {
+export const getProjects = async (filter?: any, userEmail?: string) => {
   const result = await apolloClient.query<GetProjectsQuery>({
     query: GetProjectsDocument,
+    variables: {
+      filter: filter || undefined,
+      userEmail: userEmail || undefined,
+    },
   })
   if (!result.data) throw new Error('No data returned from GetProjects query')
   return result.data.projects
@@ -232,6 +341,32 @@ export const getAssignedProjects = async () => {
   if (!result.data)
     throw new Error('No data returned from GetAssignedProjects query')
   return result.data.assignedProjects
+}
+
+export const getProjectBySlug = async (slug: string) => {
+  const result = await apolloClient.query<GetProjectBySlugQuery>({
+    query: GetProjectBySlugDocument,
+    variables: { slug },
+  })
+  if (result.error) {
+    throw new Error(result.error.message)
+  }
+  const project = result.data?.projectBySlug
+  if (!project) throw new Error('Project not found')
+  return project
+}
+
+export const getFeaturedProjects = async (userEmail?: string) => {
+  const result = await apolloClient.query<GetFeaturedProjectsQuery>({
+    query: GetFeaturedProjectsDocument,
+    variables: userEmail ? { userEmail } : undefined,
+  })
+  if (result.error) {
+    throw new Error(result.error.message)
+  }
+  const projects = result.data?.featuredProjects
+  if (!projects) throw new Error('No featured projects returned')
+  return projects
 }
 
 export const assignProject = async (projectId: string, developerId: string) => {

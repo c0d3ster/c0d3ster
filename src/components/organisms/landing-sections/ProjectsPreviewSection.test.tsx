@@ -1,9 +1,18 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { defaultFeaturedProjects } from '@/data/projects'
-
-import { ProjectsPreviewSection } from './ProjectsPreviewSection'
+// Mock only the specific hook we need, not the entire module
+vi.mock('@/apiClients', async () => {
+  const actual = await vi.importActual('@/apiClients')
+  return {
+    ...actual,
+    useGetFeaturedProjects: vi.fn(() => ({
+      data: undefined,
+      loading: true,
+      error: undefined,
+    })),
+  }
+})
 
 // Mock next/link
 vi.mock('next/link', () => ({
@@ -16,182 +25,90 @@ vi.mock('next/link', () => ({
 }))
 
 describe('ProjectsPreviewSection', () => {
-  it('renders with default projects', () => {
+  it('renders loading state by default', async () => {
+    const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
+
     render(<ProjectsPreviewSection />)
 
     expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
+    expect(screen.getByText('LOADING PROJECTS...')).toBeInTheDocument()
   })
 
-  it('renders section header with underline', () => {
+  it('renders error state', async () => {
+    const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
+    const { useGetFeaturedProjects } = await import('@/apiClients')
+
+    vi.mocked(useGetFeaturedProjects).mockReturnValue({
+      data: undefined,
+      loading: false,
+      error: new Error('Failed to fetch'),
+    } as any)
+
+    render(<ProjectsPreviewSection />)
+
+    expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
+    expect(screen.getByText('ERROR LOADING PROJECTS')).toBeInTheDocument()
+  })
+
+  it('renders with featured projects', async () => {
+    const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
+    const { useGetFeaturedProjects } = await import('@/apiClients')
+
+    const mockProjects = [
+      {
+        id: '1',
+        title: 'Test Project 1',
+        projectName: 'Test Project 1',
+        description: 'Test description 1',
+        overview: 'Test overview 1',
+        techStack: ['React', 'TypeScript'],
+        status: 'completed',
+        logo: '/test-logo-1.png',
+        liveUrl: 'https://test1.com',
+        repositoryUrl: 'https://github.com/test1',
+        featured: true,
+      },
+    ]
+
+    vi.mocked(useGetFeaturedProjects).mockReturnValue({
+      data: { featuredProjects: mockProjects },
+      loading: false,
+      error: undefined,
+    } as any)
+
     render(<ProjectsPreviewSection />)
 
     expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
     expect(screen.getByText('INDIVIDUAL PROJECT SHOWCASE')).toBeInTheDocument()
+    expect(screen.getByText('Test Project 1')).toBeInTheDocument()
   })
 
-  it('renders default featured projects', () => {
+  it('handles empty projects array', async () => {
+    const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
+    const { useGetFeaturedProjects } = await import('@/apiClients')
+
+    vi.mocked(useGetFeaturedProjects).mockReturnValue({
+      data: { featuredProjects: [] },
+      loading: false,
+      error: undefined,
+    } as any)
+
     render(<ProjectsPreviewSection />)
-
-    // Use the actual data instead of hardcoded values
-    defaultFeaturedProjects.forEach((project) => {
-      expect(screen.getByText(project.title)).toBeInTheDocument()
-    })
-  })
-
-  it('renders custom featured projects', () => {
-    const customProjects = [
-      {
-        title: 'Custom Project Type 1',
-        overview: 'Custom overview 1',
-        techStack: ['React', 'TypeScript'],
-        status: 'COMPLETED',
-        projectName: 'Custom Project 1',
-      },
-      {
-        title: 'Custom Project Type 2',
-        overview: 'Custom overview 2',
-        techStack: ['Vue', 'JavaScript'],
-        status: 'IN PROGRESS',
-        projectName: 'Custom Project 2',
-      },
-    ]
-
-    render(<ProjectsPreviewSection featuredProjects={customProjects} />)
-
-    expect(screen.getByText('Custom Project Type 1')).toBeInTheDocument()
-    expect(screen.getByText('Custom Project Type 2')).toBeInTheDocument()
-    expect(screen.getByText('Custom overview 1')).toBeInTheDocument()
-    expect(screen.getByText('Custom overview 2')).toBeInTheDocument()
-  })
-
-  it('renders project tech stacks', () => {
-    const testProjects = [
-      {
-        title: 'Test Project Type',
-        overview: 'Test overview',
-        techStack: ['React', 'TypeScript', 'Tailwind'],
-        status: 'COMPLETED',
-        projectName: 'Test Project',
-      },
-    ]
-
-    render(<ProjectsPreviewSection featuredProjects={testProjects} />)
-
-    expect(screen.getByText('React')).toBeInTheDocument()
-    expect(screen.getByText('TypeScript')).toBeInTheDocument()
-    expect(screen.getByText('Tailwind')).toBeInTheDocument()
-  })
-
-  it('renders project statuses', () => {
-    render(<ProjectsPreviewSection />)
-
-    expect(screen.getAllByText('COMPLETED')).toHaveLength(2)
-    expect(screen.getByText('IN PROGRESS')).toBeInTheDocument()
-  })
-
-  it('renders view all projects button', () => {
-    render(<ProjectsPreviewSection />)
-
-    const viewAllButton = screen.getByRole('link', {
-      name: 'VIEW ALL PROJECTS',
-    })
-
-    expect(viewAllButton).toBeInTheDocument()
-    expect(viewAllButton).toHaveAttribute('href', '/projects')
-  })
-
-  it('updates project count in statistics based on props', () => {
-    const customProjects = [
-      {
-        title: 'Project Type 1',
-        overview: 'Overview 1',
-        techStack: ['React'],
-        status: 'COMPLETED',
-        projectName: 'Project 1',
-      },
-    ]
-
-    render(<ProjectsPreviewSection featuredProjects={customProjects} />)
-
-    // Just check that the component renders without crashing
-    expect(screen.getByText('Project Type 1')).toBeInTheDocument()
-  })
-
-  it('handles empty projects array', () => {
-    render(<ProjectsPreviewSection featuredProjects={[]} />)
 
     expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
-    // Don't check for statistics text since typewriter effects don't show it
+    expect(
+      screen.getByText('NO FEATURED PROJECTS AVAILABLE')
+    ).toBeInTheDocument()
   })
 
-  it('renders with correct section id', () => {
+  it('renders with correct section id', async () => {
+    const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
+
     render(<ProjectsPreviewSection />)
 
     const section = document.getElementById('portfolio')
 
     expect(section).toBeInTheDocument()
     expect(section).toHaveAttribute('id', 'portfolio')
-  })
-
-  it('handles projects with different tech stack lengths', () => {
-    const customProjects = [
-      {
-        title: 'Simple Project Type',
-        overview: 'Simple overview',
-        techStack: ['React'],
-        status: 'COMPLETED',
-        projectName: 'Simple Project',
-      },
-      {
-        title: 'Complex Project Type',
-        overview: 'Complex overview',
-        techStack: [
-          'React',
-          'Next.js',
-          'TypeScript',
-          'Tailwind',
-          'Node.js',
-          'PostgreSQL',
-        ],
-        status: 'IN PROGRESS',
-        projectName: 'Complex Project',
-      },
-    ]
-
-    render(<ProjectsPreviewSection featuredProjects={customProjects} />)
-
-    expect(screen.getByText('Simple Project Type')).toBeInTheDocument()
-    expect(screen.getByText('Complex Project Type')).toBeInTheDocument()
-    expect(screen.getByText('PostgreSQL')).toBeInTheDocument()
-  })
-
-  it('renders statistics information with typewriter effects', async () => {
-    render(<ProjectsPreviewSection />)
-
-    // Wait for TypewriterEffect texts to appear
-    await waitFor(
-      () => {
-        expect(screen.getByText('SUCCESS RATE: 100%')).toBeInTheDocument()
-      },
-      { timeout: 3000 }
-    )
-
-    await waitFor(
-      () => {
-        expect(
-          screen.getByText('CLIENT SATISFACTION: EXCELLENT')
-        ).toBeInTheDocument()
-      },
-      { timeout: 3000 }
-    )
-
-    // For the dynamic projects loaded text, we need to check the actual count
-    const expectedText = `PROJECTS LOADED: ${defaultFeaturedProjects.length}`
-    await waitFor(
-      () => {
-        expect(screen.getByText(expectedText)).toBeInTheDocument()
-      },
-      { timeout: 3000 }
-    )
   })
 })

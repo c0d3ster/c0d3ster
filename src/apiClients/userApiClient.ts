@@ -90,6 +90,7 @@ export const GET_MY_DASHBOARD = gql`
       projects {
         id
         title
+        projectName
         description
         projectType
         budget
@@ -108,6 +109,7 @@ export const GET_MY_DASHBOARD = gql`
         repositoryUrl
         liveUrl
         stagingUrl
+        featured
         client {
           id
           firstName
@@ -149,17 +151,16 @@ export const GET_MY_DASHBOARD = gql`
       }
       projectRequests {
         id
+        projectName
         title
         description
         projectType
         budget
         timeline
         requirements
-        contactPreference
         additionalInfo
         status
         createdAt
-        updatedAt
         user {
           id
           firstName
@@ -170,6 +171,7 @@ export const GET_MY_DASHBOARD = gql`
       availableProjects {
         id
         title
+        projectName
         description
         projectType
         budget
@@ -180,6 +182,7 @@ export const GET_MY_DASHBOARD = gql`
         estimatedCompletionDate
         createdAt
         updatedAt
+        featured
         client {
           id
           firstName
@@ -190,6 +193,7 @@ export const GET_MY_DASHBOARD = gql`
       assignedProjects {
         id
         title
+        projectName
         description
         projectType
         budget
@@ -205,6 +209,7 @@ export const GET_MY_DASHBOARD = gql`
         techStack
         createdAt
         updatedAt
+        featured
         client {
           id
           firstName

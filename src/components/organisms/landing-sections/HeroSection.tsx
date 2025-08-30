@@ -8,6 +8,7 @@ import {
   TypewriterEffect,
 } from '@/components/atoms'
 import { AnimatedHeading, AnimatedParagraph } from '@/components/molecules'
+import { BRAND_NAME } from '@/constants'
 
 type HeroSectionProps = {
   title?: string
@@ -17,7 +18,7 @@ type HeroSectionProps = {
 }
 
 export const HeroSection = ({
-  title = 'c0d3ster',
+  title = BRAND_NAME,
   subtitle = 'SOFTWARE CONTRACTOR',
   description = 'FULL-STACK DEVELOPMENT',
   techStack = 'REACT • NEXT.JS • TYPESCRIPT • NODE.JS',

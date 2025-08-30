@@ -4,9 +4,10 @@ import { ExpandingUnderline } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
 import { DashboardContent } from '@/components/organisms'
 import { CleanPageTemplate } from '@/components/templates'
+import { BRAND_NAME } from '@/constants'
 
 export const metadata: Metadata = {
-  title: 'Dashboard - c0d3ster',
+  title: `Dashboard - ${BRAND_NAME}`,
 }
 
 export default function Dashboard() {

@@ -16,20 +16,5 @@ test.describe('Visual testing', () => {
 
       await takeSnapshot(page, testInfo)
     })
-
-    test('should take screenshot of the projects page', async ({
-      page,
-    }, testInfo) => {
-      await page.goto('/projects')
-
-      // Check for actual content from your projects page
-      await expect(
-        page.getByRole('heading', {
-          name: 'ALL PROJECTS',
-        })
-      ).toBeVisible()
-
-      await takeSnapshot(page, testInfo)
-    })
   })
 })

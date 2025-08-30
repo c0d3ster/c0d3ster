@@ -1,10 +1,21 @@
 'use client'
 
-// import Link from 'next/link'
+import Link from 'next/link'
 
-import type { Project, ProjectRequest } from '@/graphql/generated/graphql'
+import type {
+  Project,
+  ProjectDisplay,
+  ProjectRequest,
+  ProjectRequestDisplay,
+} from '@/graphql/generated/graphql'
 
-type ProjectItem = Project | ProjectRequest
+import { generateSlug } from '@/utils/Project'
+
+type ProjectItem =
+  | Project
+  | ProjectRequest
+  | ProjectDisplay
+  | ProjectRequestDisplay
 
 // Prefer allowing only http/https to avoid `javascript:` and similar schemes.
 // const safeExternalUrl = (url: string) => (/^https?:\/\//i.test(url) ? url : '#')
@@ -84,11 +95,14 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
     item.status || 'unknown',
     item.__typename || ''
   )
-  const isProject = item.__typename === 'Project'
+  const isProject =
+    item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
 
   // Check if this is a project with client information
   const hasClientInfo =
-    item.__typename === 'Project' && 'client' in item && item.client
+    (item.__typename === 'Project' || item.__typename === 'ProjectDisplay') &&
+    'client' in item &&
+    item.client
   const clientName = hasClientInfo
     ? `${item.client.firstName || ''} ${item.client.lastName || ''}`.trim() ||
       item.client.email ||
@@ -152,11 +166,13 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
       {/* Project Details - grows to fill space */}
       <div className='mb-4 flex-1 space-y-2'>
         {/* Additional Info for Project Requests */}
-        {item.__typename === 'ProjectRequest' &&
+        {(item.__typename === 'ProjectRequest' ||
+          item.__typename === 'ProjectRequestDisplay') &&
           'additionalInfo' in item &&
           item.additionalInfo && (
             <div className='mb-2'>
               <p className='font-mono text-sm text-green-300/70 italic'>
+                <span className='text-green-300/60'>Notes: </span>
                 {item.additionalInfo}
               </p>
             </div>
@@ -169,24 +185,28 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           </div>
         )}
 
-        {isProject && item.progressPercentage !== null && (
-          <div className='space-y-1'>
-            <div className='flex justify-between text-sm'>
-              <span className='font-mono text-green-300/60'>Progress:</span>
-              <span className='font-mono text-green-400'>
-                {item.progressPercentage}%
-              </span>
+        {(item.__typename === 'Project' ||
+          item.__typename === 'ProjectDisplay') &&
+          'progressPercentage' in item &&
+          item.progressPercentage !== null && (
+            <div className='space-y-1'>
+              <div className='flex justify-between text-sm'>
+                <span className='font-mono text-green-300/60'>Progress:</span>
+                <span className='font-mono text-green-400'>
+                  {item.progressPercentage}%
+                </span>
+              </div>
+              <div className='h-2 w-full rounded-full bg-green-400/20'>
+                <div
+                  className='h-full rounded-full bg-green-400 transition-all duration-300'
+                  style={{ width: `${item.progressPercentage}%` }}
+                />
+              </div>
             </div>
-            <div className='h-2 w-full rounded-full bg-green-400/20'>
-              <div
-                className='h-full rounded-full bg-green-400 transition-all duration-300'
-                style={{ width: `${item.progressPercentage}%` }}
-              />
-            </div>
-          </div>
-        )}
+          )}
 
-        {item.__typename === 'ProjectRequest' &&
+        {(item.__typename === 'ProjectRequest' ||
+          item.__typename === 'ProjectRequestDisplay') &&
           'timeline' in item &&
           item.timeline && (
             <div className='flex justify-between text-sm'>
@@ -196,7 +216,8 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           )}
 
         {/* Tech Stack for projects */}
-        {item.__typename === 'Project' &&
+        {(item.__typename === 'Project' ||
+          item.__typename === 'ProjectDisplay') &&
           'techStack' in item &&
           item.techStack &&
           Array.isArray(item.techStack) &&
@@ -263,14 +284,22 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           )}
         */}
 
-        <div className='min-w-0 flex-1 rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60'>
-          {isProject ? 'VIEW DETAILS' : 'VIEW REQUEST'}
-        </div>
+        <Link
+          href={`/projects/${generateSlug(item.projectName || item.title || 'untitled')}`}
+          className='min-w-0 flex-1 cursor-pointer rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60 transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/20 hover:text-green-400'
+        >
+          {item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
+            ? 'VIEW DETAILS'
+            : 'VIEW REQUEST'}
+        </Link>
       </div>
 
       {/* Footer - pinned to bottom */}
       <div className='border-t border-green-400/10 pt-3 font-mono text-xs text-green-300/50'>
-        {item.__typename === 'Project' ? 'Project' : 'Request'} •{' '}
+        {item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
+          ? 'Project'
+          : 'Request'}{' '}
+        •{' '}
         {item.createdAt
           ? new Date(item.createdAt).toLocaleDateString()
           : 'Unknown Date'}

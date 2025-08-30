@@ -1,8 +1,4 @@
-import { eq } from 'drizzle-orm'
-
-import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
-import { schemas } from '@/models'
 import { ProjectRequestService, UserService } from '@/services'
 
 const projectRequestService = new ProjectRequestService()
@@ -11,24 +7,11 @@ const userService = new UserService()
 export const projectRequestResolvers = {
   Query: {
     projectRequests: async (_: any, { filter }: { filter?: any }) => {
-      console.error('🚨 PROJECT REQUESTS QUERY CALLED!!!', filter)
-      try {
-        const currentUser = await userService.getCurrentUserWithAuth()
-        console.error('🚨 CURRENT USER:', currentUser)
-        userService.checkPermission(currentUser, 'admin')
-        console.error('🚨 PERMISSION CHECK PASSED')
+      const currentUser = await userService.getCurrentUserWithAuth()
+      userService.checkPermission(currentUser, 'admin')
 
-        const results = await projectRequestService.getProjectRequests(filter)
-        console.error(
-          '🚨 PROJECT REQUESTS QUERY RESULTS!!!',
-          results.length,
-          results[0]
-        )
-        return results
-      } catch (error) {
-        console.error('🚨 ERROR IN PROJECT REQUESTS QUERY:', error)
-        throw error
-      }
+      const results = await projectRequestService.getProjectRequests(filter)
+      return results
     },
 
     projectRequest: async (_: any, { id }: { id: string }) => {
@@ -93,28 +76,17 @@ export const projectRequestResolvers = {
 
   ProjectRequest: {
     user: async (parent: any) => {
-      return await db.query.users.findFirst({
-        where: eq(schemas.users.id, parent.userId),
-      })
+      return await userService.getUserById(parent.userId)
     },
 
     reviewer: async (parent: any) => {
       if (!parent.reviewedBy) return null
-      return await db.query.users.findFirst({
-        where: eq(schemas.users.id, parent.reviewedBy),
-      })
+      return await userService.getUserById(parent.reviewedBy)
     },
 
     // Ensure date fields are properly formatted as strings
     createdAt: (parent: any) => {
-      logger.warn('ProjectRequest createdAt resolver', {
-        parentCreatedAt: parent.createdAt,
-        type: typeof parent.createdAt,
-      })
       if (!parent.createdAt) {
-        logger.warn('ProjectRequest createdAt is null/undefined for request', {
-          requestId: parent.id,
-        })
         return null
       }
       try {
@@ -146,12 +118,53 @@ export const projectRequestResolvers = {
       }
     },
 
-    // Debug status field
     status: (parent: any) => {
-      logger.warn('ProjectRequest status resolver', {
-        parentStatus: parent.status,
-        type: typeof parent.status,
-      })
+      return parent.status || 'unknown'
+    },
+  },
+
+  ProjectRequestDisplay: {
+    user: async (parent: any) => {
+      const user = await userService.getUserById(parent.userId)
+
+      if (!user) {
+        logger.error('User not found for project request', {
+          projectRequestId: parent.id,
+          userId: parent.userId,
+        })
+        throw new Error(`User not found for project request ${parent.id}`)
+      }
+
+      return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      }
+    },
+
+    // Ensure date fields are properly formatted as strings
+    createdAt: (parent: any) => {
+      if (!parent.createdAt) {
+        return null
+      }
+      try {
+        const date = new Date(parent.createdAt)
+        if (Number.isNaN(date.getTime())) {
+          logger.error('Invalid date value', { value: parent.createdAt })
+          return null
+        }
+        return date.toISOString()
+      } catch (error) {
+        logger.error('Error formatting createdAt', {
+          error: String(error),
+          value: parent.createdAt,
+        })
+        return null
+      }
+    },
+
+    status: (parent: any) => {
       return parent.status || 'unknown'
     },
   },

@@ -87,6 +87,12 @@ export class UserService {
     })
   }
 
+  async getUserByEmail(email: string) {
+    return await db.query.users.findFirst({
+      where: eq(schemas.users.email, email),
+    })
+  }
+
   async getUsers(filter?: { role?: string; email?: string }) {
     let whereClause: SQL | undefined
     if (filter) {

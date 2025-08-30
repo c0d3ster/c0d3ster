@@ -2,31 +2,25 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { FaStar } from 'react-icons/fa'
 
-import { projectNameToSlug } from '@/data/projects'
+import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
 
-export type Project = {
-  title: string
-  overview: string
-  techStack: string[]
-  status: string
-  logo?: string
-  projectName?: string
-  projectUrl?: string
-  description?: string
-}
+import { formatStatus, generateSlug, getStatusStyling } from '@/utils'
+
+type Project = NonNullable<GetFeaturedProjectsQuery['featuredProjects']>[0]
 
 type ProjectCardProps = {
   project: Project
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {
-  // Generate the project URL based on project name
+  // Generate internal project detail URL
   const getProjectUrl = (projectName?: string) => {
     if (!projectName) return '/projects'
 
-    const slug = projectNameToSlug[projectName]
-    return slug ? `/projects/${slug}` : '/projects'
+    const slug = generateSlug(projectName)
+    return `/projects/${slug}`
   }
 
   const projectUrl = getProjectUrl(project.projectName)
@@ -39,7 +33,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
           <div className='absolute top-4 right-4'>
             <Image
               src={project.logo}
-              alt={`${project.title} logo`}
+              alt={`${project.title ?? project.projectName} logo`}
               width={60}
               height={60}
               className='opacity-70 transition-opacity duration-300 group-hover:opacity-100'
@@ -54,7 +48,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
 
         {/* Project Description */}
         <p className='mb-4 pr-12 font-mono text-sm text-green-300 opacity-80'>
-          {project.overview}
+          {project.overview || project.description}
         </p>
 
         {/* Tech Stack */}
@@ -74,21 +68,23 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
         {/* Status */}
         <div className='flex items-center justify-between'>
           <span
-            className={`font-mono text-xs font-bold ${
-              project.status === 'COMPLETED'
-                ? 'text-green-400'
-                : 'text-yellow-400'
-            }`}
+            className={`font-mono text-xs font-bold ${getStatusStyling(project.status)}`}
           >
-            {project.status}
+            {formatStatus(project.status)}
           </span>
 
-          {/* Matrix-style decorative elements */}
-          <div className='absolute right-[37px] bottom-6 flex space-x-1'>
-            <div className='h-4 w-1 bg-green-400 opacity-20' />
-            <div className='h-4 w-1 bg-green-500 opacity-40' />
-            <div className='h-4 w-1 bg-green-300 opacity-20' />
-          </div>
+          {/* Featured star or matrix-style decorative elements */}
+          {project.featured ? (
+            <div className='mr-[5px] flex space-x-1'>
+              <FaStar className='text-lg text-green-600' />
+            </div>
+          ) : (
+            <div className='mr-1 flex space-x-1'>
+              <div className='h-4 w-1 bg-green-400 opacity-20' />
+              <div className='h-4 w-1 bg-green-500 opacity-40' />
+              <div className='h-4 w-1 bg-green-300 opacity-20' />
+            </div>
+          )}
         </div>
       </div>
     </Link>

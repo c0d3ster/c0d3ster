@@ -36,7 +36,7 @@ export const userSchema = gql`
 
   type UserDashboard {
     projects: [Project!]!
-    projectRequests: [ProjectRequest!]!
+    projectRequests: [ProjectRequestDisplay!]!
     summary: ProjectSummary!
     availableProjects: [Project!]!
     assignedProjects: [Project!]!

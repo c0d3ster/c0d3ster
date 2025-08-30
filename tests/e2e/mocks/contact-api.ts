@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 
+import { BRAND_NAME, SUPPORT_EMAIL } from '@/constants'
 import { contactFormSchema } from '@/validations'
 
 // Mock contact API for testing - prevents real emails from being sent
@@ -25,8 +26,8 @@ export async function POST(request: Request) {
     // Log the mock email for debugging (only in test environment)
     if (process.env.NODE_ENV === 'test') {
       console.warn('📧 MOCK EMAIL SENT:', {
-        from: 'c0d3ster <support@c0d3ster.com>',
-        to: ['support@c0d3ster.com'],
+        from: `${BRAND_NAME} <${SUPPORT_EMAIL}>`,
+        to: [SUPPORT_EMAIL],
         subject: `New Contact Form: ${subject}`,
         replyTo: email,
         name,

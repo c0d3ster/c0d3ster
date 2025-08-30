@@ -7,13 +7,13 @@ import { Toast } from '@/libs/Toast'
 type DeveloperDashboardSectionProps = {
   availableProjects: readonly any[]
   assignedProjects: readonly any[]
-  onDataRefresh: () => void
+  onDataRefreshAction: () => void
 }
 
 export const DeveloperDashboardSection = ({
   availableProjects,
   assignedProjects,
-  onDataRefresh,
+  onDataRefreshAction,
 }: DeveloperDashboardSectionProps) => {
   const { data: currentUserData } = useGetMe()
   const [assignProject] = useAssignProject()
@@ -33,7 +33,7 @@ export const DeveloperDashboardSection = ({
       })
       Toast.success('Successfully assigned to project!')
       // Refresh the dashboard data
-      onDataRefresh()
+      onDataRefreshAction()
     } catch (error) {
       Toast.error('Failed to assign to project')
       console.error('Assign project error:', error)

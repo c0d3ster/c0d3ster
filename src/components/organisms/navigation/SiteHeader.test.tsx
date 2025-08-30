@@ -2,6 +2,8 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { BRAND_NAME } from '@/constants'
+
 import type { NavItem } from './SiteHeader'
 
 import { SiteHeader } from './SiteHeader'
@@ -75,7 +77,7 @@ describe('SiteHeader', () => {
   it('renders logo image', () => {
     render(<SiteHeader menuItems={sampleMenuItems} />)
 
-    const logo = screen.getByAltText('c0d3ster Logo')
+    const logo = screen.getByAltText(`${BRAND_NAME} Logo`)
 
     expect(logo).toBeInTheDocument()
   })

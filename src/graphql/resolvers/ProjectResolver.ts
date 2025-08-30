@@ -1,3 +1,4 @@
+import { SUPPORT_EMAIL } from '@/constants'
 import { logger } from '@/libs/Logger'
 import { ProjectService, UserService } from '@/services'
 
@@ -113,7 +114,15 @@ export const projectResolvers = {
   },
 
   Query: {
-    projects: async (_: any, { filter }: { filter?: any }) => {
+    projects: async (
+      _: any,
+      { filter, userEmail }: { filter?: any; userEmail?: string }
+    ) => {
+      // Allow access for SUPPORT_EMAIL without authentication
+      if (userEmail === SUPPORT_EMAIL) {
+        return await projectService.getProjects(filter)
+      }
+
       const currentUser = await userService.getCurrentUserWithAuth()
 
       return await projectService.getProjects(
@@ -129,6 +138,11 @@ export const projectResolvers = {
         id,
         currentUser.role === 'admin' ? undefined : currentUser.id
       )
+    },
+
+    projectBySlug: async (_: any, { slug }: { slug: string }) => {
+      // Allow public access to project details (no authentication required)
+      return await projectService.getProjectBySlug(slug)
     },
 
     myProjects: async () => {
@@ -149,6 +163,24 @@ export const projectResolvers = {
       userService.checkPermission(currentUser, 'developer')
 
       return await projectService.getAssignedProjects(currentUser.id)
+    },
+
+    featuredProjects: async (_: any, { userEmail }: { userEmail?: string }) => {
+      // Allow access for SUPPORT_EMAIL without authentication
+      if (userEmail === SUPPORT_EMAIL) {
+        return await projectService.getFeaturedProjects()
+      }
+
+      // For other users, require authentication
+      await userService.getCurrentUserWithAuth()
+
+      if (userEmail) {
+        const user = await userService.getUserByEmail(userEmail)
+        if (user) {
+          return await projectService.getFeaturedProjects(user.id)
+        }
+      }
+      return await projectService.getFeaturedProjects()
     },
   },
 
