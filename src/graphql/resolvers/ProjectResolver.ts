@@ -117,7 +117,12 @@ export class ProjectResolver {
         return parent.logo
       }
 
-      // If it's an R2 bucket path (contains projects/), generate presigned URL
+      // If it's already an absolute URL (possibly a presigned one), return as-is
+      if (/^https?:\/\//i.test(parent.logo)) {
+        return parent.logo
+      }
+
+      // If it's an R2 object key (e.g., contains projects/), generate a presigned URL
       if (parent.logo.includes('projects/')) {
         try {
           return await this.fileService.generatePresignedDownloadUrl(
@@ -146,7 +151,12 @@ export class ProjectResolver {
         return parent.logo
       }
 
-      // If it's an R2 bucket path (contains projects/), generate presigned URL
+      // If it's already an absolute URL, return as-is
+      if (/^https?:\/\//i.test(parent.logo)) {
+        return parent.logo
+      }
+
+      // If it's an R2 key, generate presigned URL
       if (parent.logo.includes('projects/')) {
         try {
           return await this.fileService.generatePresignedDownloadUrl(

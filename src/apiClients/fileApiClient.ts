@@ -105,11 +105,11 @@ export const uploadProjectLogo = async (projectId: string, input: any) => {
     variables: { projectId, input },
   })
 
-  if (result.error) {
-    throw new Error(result.error.message)
-  }
-
-  return result.data?.uploadProjectLogo
+  if (result.error) throw new Error(result.error.message)
+  const payload = result.data?.uploadProjectLogo
+  if (!payload)
+    throw new Error('No data returned from UploadProjectLogo mutation')
+  return payload
 }
 
 export const generateFileDownloadUrl = async (key: string) => {
@@ -121,11 +121,10 @@ export const generateFileDownloadUrl = async (key: string) => {
     variables: { key },
   })
 
-  if (result.error) {
-    throw new Error(result.error.message)
-  }
-
-  return result.data?.generateFileDownloadUrl
+  if (result.error) throw new Error(result.error.message)
+  const url = result.data?.generateFileDownloadUrl
+  if (!url) throw new Error('No URL returned from GenerateFileDownloadUrl')
+  return url
 }
 
 export const deleteFile = async (key: string) => {
@@ -137,9 +136,8 @@ export const deleteFile = async (key: string) => {
     variables: { key },
   })
 
-  if (result.error) {
-    throw new Error(result.error.message)
-  }
-
-  return result.data?.deleteFile
+  if (result.error) throw new Error(result.error.message)
+  const success = result.data?.deleteFile
+  if (!success) throw new Error('No response from DeleteFile mutation')
+  return success
 }

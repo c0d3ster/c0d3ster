@@ -9,7 +9,7 @@ import { schema } from '@/graphql/schema'
 // Create Apollo Server instance
 const server = new ApolloServer({
   schema,
-  introspection: true, // Enable introspection for playground
+  introspection: process.env.NODE_ENV !== 'production',
   formatError: (error) => {
     // Log errors for debugging
     console.error('GraphQL Error:', error)
@@ -18,7 +18,7 @@ const server = new ApolloServer({
     if (process.env.NODE_ENV === 'production') {
       return {
         message: 'Internal server error',
-        code: 'INTERNAL_SERVER_ERROR',
+        extensions: { code: 'INTERNAL_SERVER_ERROR' },
       }
     }
 

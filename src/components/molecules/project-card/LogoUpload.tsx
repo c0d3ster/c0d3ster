@@ -69,15 +69,9 @@ export const LogoUpload = ({
       })
 
       if (uploadResponse.ok) {
-        setUploadStatus('Generating download URL...')
-        // Generate a presigned download URL using GraphQL
-        const downloadResult = await generateDownloadUrl({
-          variables: { key },
-        })
-        const downloadUrl = (downloadResult.data as any).generateFileDownloadUrl
-
-        setUploadStatus('Logo uploaded and project updated successfully!')
-        onLogoUploadedAction(downloadUrl)
+        setUploadStatus('Logo uploaded. Updating project…')
+        // Return the storage key; parent should persist key, not a presigned URL
+        onLogoUploadedAction(key)
         setFile(null)
       } else {
         throw new Error(`Upload failed: ${uploadResponse.statusText}`)

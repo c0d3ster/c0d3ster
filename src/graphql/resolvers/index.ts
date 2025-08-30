@@ -36,7 +36,7 @@ const contactResolver = new ContactResolver(contactService)
 
 const fileResolver = new FileResolver(fileService, projectService, userService)
 
-// Merge all resolvers using @graphql-tools
+// Use mergeResolvers with the actual resolver objects
 export const resolvers = mergeResolvers([
   userResolver,
   projectResolver,
