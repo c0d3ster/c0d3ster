@@ -9,7 +9,7 @@ export const fileSchema = gql`
     fileType: FileType!
     fileSize: Int!
     contentType: String!
-    uploadedBy: User!
+    uploadedBy: User
     projectId: ID
     project: Project
     environment: Environment!
@@ -64,13 +64,5 @@ export const fileSchema = gql`
     uploadUrl: String!
     key: String!
     metadata: File!
-  }
-
-  extend type Project {
-    files: [File!]!
-  }
-
-  extend type User {
-    files: [File!]!
   }
 `

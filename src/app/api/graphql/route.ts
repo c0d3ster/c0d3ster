@@ -31,10 +31,10 @@ export const GET = startServerAndCreateNextHandler(server, {
   context: async (_req: NextRequest) => {
     return await createContext()
   },
-})
+}) as any
 
 export const POST = startServerAndCreateNextHandler(server, {
   context: async (_req: NextRequest) => {
     return await createContext()
   },
-})
+}) as any

@@ -2,27 +2,23 @@
 
 import { useState } from 'react'
 
-import type { GetAvailableProjectsDetailedQuery } from '@/graphql/generated/graphql'
-
-type AvailableProject = NonNullable<
-  GetAvailableProjectsDetailedQuery['availableProjects']
->[0]
+import type { Project } from '@/graphql/generated/graphql'
 
 type AvailableProjectCardProps = {
-  project: AvailableProject
-  onAssign: (projectId: string) => Promise<void>
+  project: Project
+  onAssignAction: (projectId: string) => Promise<void>
 }
 
 export const AvailableProjectCard = ({
   project,
-  onAssign,
+  onAssignAction,
 }: AvailableProjectCardProps) => {
   const [isAssigning, setIsAssigning] = useState(false)
 
   const handleAssign = async () => {
     try {
       setIsAssigning(true)
-      await onAssign(project.id)
+      await onAssignAction(project.id)
     } catch (error) {
       console.error('Failed to assign to project:', error)
     } finally {

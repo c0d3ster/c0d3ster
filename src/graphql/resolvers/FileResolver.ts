@@ -110,30 +110,4 @@ export const FileResolver = {
       return await fileService.generatePresignedDownloadUrl(parent.key)
     },
   },
-
-  Project: {
-    files: async (parent: any) => {
-      const fileService = new FileService()
-      const files = await fileService.listFiles(`*/projects/${parent.id}/*`)
-
-      const fileMetadata = await Promise.all(
-        files.map((key) => fileService.getFileMetadata(key))
-      )
-
-      return fileMetadata.filter(Boolean)
-    },
-  },
-
-  User: {
-    files: async (parent: any) => {
-      const fileService = new FileService()
-      const files = await fileService.listFiles(`*/users/${parent.id}/*`)
-
-      const fileMetadata = await Promise.all(
-        files.map((key) => fileService.getFileMetadata(key))
-      )
-
-      return fileMetadata.filter(Boolean)
-    },
-  },
 }

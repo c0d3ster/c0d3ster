@@ -55,7 +55,7 @@ export const DeveloperDashboardSection = ({
               <AvailableProjectCard
                 key={project.id}
                 project={project}
-                onAssign={handleAssignToProject}
+                onAssignAction={handleAssignToProject}
               />
             ))}
           </div>

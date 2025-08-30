@@ -19,6 +19,7 @@ vi.mock('next/image', () => ({
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
+  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
   useRouter: () => ({
     back: vi.fn(),
   }),

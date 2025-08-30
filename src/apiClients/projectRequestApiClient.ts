@@ -6,16 +6,13 @@ import type {
   ApproveProjectRequestMutationVariables,
   CreateProjectRequestMutation,
   CreateProjectRequestMutationVariables,
-  GetMyProjectRequestsQuery,
   GetProjectRequestsQuery,
 } from '@/graphql/generated/graphql'
 
 import {
   CreateProjectRequestDocument,
-  GetMyProjectRequestsDocument,
   GetProjectRequestsDocument,
   useCreateProjectRequestMutation,
-  useGetMyProjectRequestsQuery,
   useGetProjectRequestsQuery,
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
@@ -24,30 +21,6 @@ import { apolloClient } from '@/libs/ApolloClient'
 export const GET_PROJECT_REQUESTS = gql`
   query GetProjectRequests {
     projectRequests {
-      id
-      projectName
-      title
-      description
-      projectType
-      budget
-      timeline
-      requirements
-      additionalInfo
-      status
-      createdAt
-      user {
-        id
-        firstName
-        lastName
-        email
-      }
-    }
-  }
-`
-
-export const GET_MY_PROJECT_REQUESTS = gql`
-  query GetMyProjectRequests {
-    myProjectRequests {
       id
       projectName
       title
@@ -124,7 +97,6 @@ export const APPROVE_PROJECT_REQUEST = gql`
 
 // Hooks for components
 export const useGetProjectRequests = () => useGetProjectRequestsQuery()
-export const useGetMyProjectRequests = () => useGetMyProjectRequestsQuery()
 export const useCreateProjectRequest = () => useCreateProjectRequestMutation()
 export const useApproveProjectRequest = () =>
   useMutation(APPROVE_PROJECT_REQUEST)
@@ -137,15 +109,6 @@ export const getProjectRequests = async () => {
   if (!result.data)
     throw new Error('No data returned from GetProjectRequests query')
   return result.data.projectRequests
-}
-
-export const getMyProjectRequests = async () => {
-  const result = await apolloClient.query<GetMyProjectRequestsQuery>({
-    query: GetMyProjectRequestsDocument,
-  })
-  if (!result.data)
-    throw new Error('No data returned from GetMyProjectRequests query')
-  return result.data.myProjectRequests
 }
 
 export const createProjectRequest = async (

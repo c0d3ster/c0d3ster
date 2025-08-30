@@ -114,23 +114,6 @@ export const projectResolvers = {
   },
 
   Query: {
-    projects: async (
-      _: any,
-      { filter, userEmail }: { filter?: any; userEmail?: string }
-    ) => {
-      // Allow access for SUPPORT_EMAIL without authentication
-      if (userEmail === SUPPORT_EMAIL) {
-        return await projectService.getProjects(filter)
-      }
-
-      const currentUser = await userService.getCurrentUserWithAuth()
-
-      return await projectService.getProjects(
-        filter,
-        currentUser.role === 'admin' ? undefined : currentUser.id
-      )
-    },
-
     project: async (_: any, { id }: { id: string }) => {
       const currentUser = await userService.getCurrentUserWithAuth()
 
@@ -145,24 +128,25 @@ export const projectResolvers = {
       return await projectService.getProjectBySlug(slug)
     },
 
-    myProjects: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+    projects: async (
+      _: any,
+      { filter, userEmail }: { filter?: any; userEmail?: string }
+    ) => {
+      // Allow public access for SUPPORT_EMAIL without authentication
+      if (userEmail === SUPPORT_EMAIL) {
+        return await projectService.getProjects(filter)
+      }
 
-      return await projectService.getMyProjects(currentUser.id)
-    },
+      // For other users, require authentication
+      await userService.getCurrentUserWithAuth()
 
-    availableProjects: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'developer')
-
-      return await projectService.getAvailableProjects()
-    },
-
-    assignedProjects: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'developer')
-
-      return await projectService.getAssignedProjects(currentUser.id)
+      if (userEmail) {
+        const user = await userService.getUserByEmail(userEmail)
+        if (user) {
+          return await projectService.getProjects(filter, user.id)
+        }
+      }
+      return await projectService.getProjects(filter)
     },
 
     featuredProjects: async (_: any, { userEmail }: { userEmail?: string }) => {

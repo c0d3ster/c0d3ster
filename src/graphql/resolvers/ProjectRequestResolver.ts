@@ -23,15 +23,6 @@ export const projectRequestResolvers = {
         currentUser.role
       )
     },
-
-    myProjectRequests: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-
-      return await projectRequestService.getMyProjectRequests(
-        currentUser.id,
-        currentUser.role
-      )
-    },
   },
 
   Mutation: {
