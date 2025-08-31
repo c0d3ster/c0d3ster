@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { and, desc, eq, ne } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
+import { UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
@@ -51,13 +52,13 @@ export class UserService {
     }
     const userRole = user.role
 
-    if (requiredRole === 'admin') {
+    if (requiredRole === UserRole.Admin) {
       if (!isAdminRole(userRole)) {
         throw new GraphQLError('Admin permissions required', {
           extensions: { code: 'FORBIDDEN' },
         })
       }
-    } else if (requiredRole === 'developer') {
+    } else if (requiredRole === UserRole.Developer) {
       if (!isDeveloperOrHigherRole(userRole)) {
         throw new GraphQLError('Developer permissions required', {
           extensions: { code: 'FORBIDDEN' },

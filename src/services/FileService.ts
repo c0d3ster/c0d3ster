@@ -9,9 +9,9 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { eq } from 'drizzle-orm'
 
-import type { FileUploadInput } from '@/graphql/generated/graphql'
+import type { FileUploadInput } from '@/graphql/schema'
 
-import { Environment } from '@/graphql/generated/graphql'
+import { Environment } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
 import { schemas } from '@/models'
@@ -47,7 +47,7 @@ export class FileService {
   private generateKey(options: FileUploadInput & { userId: string }): string {
     const timestamp = Date.now()
     const sanitizedFileName = options.fileName.replace(/[^a-z0-9.-]/gi, '_')
-    const env = options.environment || Environment.Dev
+    const env = options.environment || Environment.DEV
 
     if (options.projectId) {
       return `${env.toLowerCase()}/projects/${options.projectId}/${timestamp}_${sanitizedFileName}`
@@ -82,7 +82,7 @@ export class FileService {
       contentType: options.contentType,
       uploadedBy: options.userId,
       projectId: options.projectId || undefined,
-      environment: options.environment || Environment.Dev,
+      environment: options.environment || Environment.DEV,
       uploadedAt: new Date(),
     }
 
@@ -97,7 +97,7 @@ export class FileService {
         filesize: options.fileSize.toString(),
         uploadedby: options.userId,
         projectid: options.projectId || '',
-        environment: options.environment || Environment.Dev,
+        environment: options.environment || Environment.DEV,
         uploadedat: new Date().toISOString(),
       },
     })
@@ -204,7 +204,7 @@ export class FileService {
         contentType: response.ContentType || '',
         uploadedBy: meta.uploadedby || '',
         projectId: meta.projectid || undefined,
-        environment: (meta.environment as Environment) || Environment.Dev,
+        environment: (meta.environment as Environment) || Environment.DEV,
         uploadedAt: new Date(meta.uploadedat || Date.now()),
       }
     } catch (error) {

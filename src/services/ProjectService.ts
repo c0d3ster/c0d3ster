@@ -1,14 +1,15 @@
 import { and, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
+import { UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
 import {
   findProjectBySlug,
   hasSlugConflict,
+  isAdminRole,
   isDeveloperOrHigherRole,
-  isUserRole,
 } from '@/utils'
 
 import type { FileService } from './FileService'
@@ -50,11 +51,11 @@ export class ProjectService {
     }
 
     // Apply role-based filtering
-    if (currentUserRole === 'client' && currentUserId) {
+    if (currentUserRole === UserRole.Client && currentUserId) {
       whereClause = whereClause
         ? and(whereClause, eq(schemas.projects.clientId, currentUserId))
         : eq(schemas.projects.clientId, currentUserId)
-    } else if (currentUserRole === 'developer' && currentUserId) {
+    } else if (currentUserRole === UserRole.Developer && currentUserId) {
       whereClause = whereClause
         ? and(whereClause, eq(schemas.projects.developerId, currentUserId))
         : eq(schemas.projects.developerId, currentUserId)
@@ -82,19 +83,22 @@ export class ProjectService {
     }
 
     // Admins can access all projects
-    if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
+    if (isAdminRole(currentUserRole)) {
       return project
     }
 
     // Check access permissions
-    if (currentUserRole === 'client' && project.clientId !== currentUserId) {
+    if (
+      currentUserRole === UserRole.Client &&
+      project.clientId !== currentUserId
+    ) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {
@@ -148,7 +152,7 @@ export class ProjectService {
     }
 
     // Admins can access all projects
-    if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
+    if (isAdminRole(currentUserRole)) {
       return project
     }
 
@@ -160,7 +164,7 @@ export class ProjectService {
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {
@@ -327,7 +331,7 @@ export class ProjectService {
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {
@@ -391,21 +395,20 @@ export class ProjectService {
     projectId: string,
     developerId: string,
     currentUserId: string,
-    currentUserRole: string
+    currentUserRole?: string
   ) {
     // Check permissions - developers can assign themselves, admins can assign anyone
-    if (
-      !isDeveloperOrHigherRole(
-        isUserRole(currentUserRole) ? currentUserRole : null
-      )
-    ) {
+    if (!isDeveloperOrHigherRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
     // Developers can only assign themselves unless they're admin
-    if (currentUserRole === 'developer' && developerId !== currentUserId) {
+    if (
+      currentUserRole === UserRole.Developer &&
+      developerId !== currentUserId
+    ) {
       throw new GraphQLError(
         'Developers can only assign themselves to projects',
         {
@@ -486,7 +489,7 @@ export class ProjectService {
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {

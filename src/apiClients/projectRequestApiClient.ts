@@ -34,9 +34,9 @@ export const GET_PROJECT_REQUESTS = gql`
       createdAt
       user {
         id
+        email
         firstName
         lastName
-        email
       }
     }
   }
@@ -64,34 +64,7 @@ export const CREATE_PROJECT_REQUEST = gql`
 
 export const APPROVE_PROJECT_REQUEST = gql`
   mutation ApproveProjectRequest($id: ID!) {
-    approveProjectRequest(id: $id) {
-      id
-      projectName
-      description
-      projectType
-      budget
-      requirements
-      techStack
-      status
-      progressPercentage
-      startDate
-      estimatedCompletionDate
-      actualCompletionDate
-      createdAt
-      updatedAt
-      client {
-        id
-        firstName
-        lastName
-        email
-      }
-      developer {
-        id
-        firstName
-        lastName
-        email
-      }
-    }
+    approveProjectRequest(id: $id)
   }
 `
 

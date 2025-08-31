@@ -1,12 +1,14 @@
 'use client'
 
+import type { ProjectDisplay } from '@/graphql/generated/graphql'
+
 import { useAssignProject, useGetMe } from '@/apiClients'
 import { AvailableProjectCard, ProjectStatusCard } from '@/components/molecules'
 import { Toast } from '@/libs/Toast'
 
 type DeveloperDashboardSectionProps = {
-  availableProjects: readonly any[]
-  assignedProjects: readonly any[]
+  availableProjects: readonly ProjectDisplay[]
+  assignedProjects: readonly ProjectDisplay[]
   onDataRefreshAction: () => void
 }
 

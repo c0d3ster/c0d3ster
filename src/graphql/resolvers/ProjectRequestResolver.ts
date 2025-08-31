@@ -1,141 +1,197 @@
+import {
+  Arg,
+  FieldResolver,
+  ID,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+} from 'type-graphql'
+
 import type { ProjectRequestService, UserService } from '@/services'
 
+import {
+  CreateProjectRequestInput,
+  DisplayUser,
+  ProjectRequest,
+  ProjectRequestDisplay, 
+UserRole 
+} from '@/graphql/schema'
 import { logger } from '@/libs/Logger'
 
-export class ProjectRequestResolver {
-  [key: string]: any
 
+@Resolver(() => ProjectRequest)
+@Resolver(() => ProjectRequestDisplay)
+export class ProjectRequestResolver {
   constructor(
     private projectRequestService: ProjectRequestService,
     private userService: UserService
   ) {}
 
-  Query = {
-    projectRequests: async (_: any, { filter }: { filter?: any }) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-      this.userService.checkPermission(currentUser, 'admin')
+  @Query(() => [ProjectRequestDisplay])
+  async projectRequests(
+    @Arg('filter', () => Object, { nullable: true }) filter?: any
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
 
-      const results =
-        await this.projectRequestService.getProjectRequests(filter)
-      return results
-    },
-
-    projectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-
-      return await this.projectRequestService.getProjectRequestById(
-        id,
-        currentUser.id,
-        currentUser.role
-      )
-    },
+    const results = await this.projectRequestService.getProjectRequests(filter)
+    return results
   }
 
-  Mutation = {
-    createProjectRequest: async (_: any, { input }: { input: any }) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-      this.userService.checkPermission(currentUser, 'client')
-
-      return await this.projectRequestService.createProjectRequest(
-        input,
-        currentUser.id
-      )
-    },
-
-    updateProjectRequest: async (
-      _: any,
-      { id, input }: { id: string; input: any }
-    ) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-
-      return await this.projectRequestService.updateProjectRequest(
-        id,
-        input,
-        currentUser.id,
-        currentUser.role
-      )
-    },
-
-    approveProjectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-      this.userService.checkPermission(currentUser, 'admin')
-
-      return await this.projectRequestService.approveProjectRequest(id)
-    },
-
-    rejectProjectRequest: async (_: any, { id }: { id: string }) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-      this.userService.checkPermission(currentUser, 'admin')
-
-      return await this.projectRequestService.rejectProjectRequest(id)
-    },
+  @Query(() => ProjectRequest, { nullable: true })
+  async projectRequest(@Arg('id', () => ID) id: string) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectRequestService.getProjectRequestById(
+      id,
+      currentUser.id,
+      currentUser.role
+    )
   }
 
-  ProjectRequest = {
-    user: async (parent: any) => {
-      return await this.userService.getUserById(parent.userId)
-    },
+  @Mutation(() => ProjectRequest)
+  async createProjectRequest(
+    @Arg('input', () => CreateProjectRequestInput)
+    input: CreateProjectRequestInput
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Client)
 
-    reviewer: async (parent: any) => {
-      if (!parent.reviewedBy) return null
-      return await this.userService.getUserById(parent.reviewedBy)
-    },
+    return await this.projectRequestService.createProjectRequest(
+      input,
+      currentUser.id
+    )
+  }
 
-    // Ensure date fields are properly formatted as strings
-    createdAt: (parent: any) => {
-      if (!parent.createdAt) {
+  @Mutation(() => ProjectRequest)
+  async updateProjectRequest(
+    @Arg('id', () => ID) id: string,
+    @Arg('input', () => CreateProjectRequestInput)
+    input: CreateProjectRequestInput
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectRequestService.updateProjectRequest(
+      id,
+      input,
+      currentUser.id,
+      currentUser.role
+    )
+  }
+
+  @Mutation(() => ProjectRequest)
+  async updateProjectRequestStatus(
+    @Arg('id', () => ID) id: string,
+    @Arg('status', () => String) status: string
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+    return await this.projectRequestService.updateProjectRequest(
+      id,
+      { status },
+      currentUser.id,
+      currentUser.role
+    )
+  }
+
+  @Mutation(() => String)
+  async approveProjectRequest(@Arg('id', () => ID) id: string) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+
+    return await this.projectRequestService.approveProjectRequest(id)
+  }
+
+  @Mutation(() => String)
+  async rejectProjectRequest(@Arg('id', () => ID) id: string) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+
+    return await this.projectRequestService.rejectProjectRequest(id)
+  }
+
+  @FieldResolver(() => DisplayUser, { nullable: true })
+  async user(@Root() parent: any) {
+    const user = await this.userService.getUserById(parent.userId)
+    if (!user) return null
+
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    }
+  }
+
+  @FieldResolver(() => DisplayUser, { nullable: true })
+  async reviewer(@Root() parent: any) {
+    if (!parent.reviewedBy) return null
+    const user = await this.userService.getUserById(parent.reviewedBy)
+    if (!user) return null
+
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  createdAt(@Root() parent: any) {
+    if (!parent.createdAt) {
+      return null
+    }
+    try {
+      const date = new Date(parent.createdAt)
+      if (Number.isNaN(date.getTime())) {
+        logger.error('Invalid date value', { value: parent.createdAt })
         return null
       }
-      try {
-        const date = new Date(parent.createdAt)
-        if (Number.isNaN(date.getTime())) {
-          logger.error('Invalid date value', { value: parent.createdAt })
-          return null
-        }
-        return date.toISOString()
-      } catch (error) {
-        logger.error('Error formatting createdAt', {
-          error: String(error),
-          value: parent.createdAt,
-        })
-        return null
-      }
-    },
+      return date.toISOString()
+    } catch (error) {
+      logger.error('Error formatting createdAt', {
+        error: String(error),
+        value: parent.createdAt,
+      })
+      return null
+    }
+  }
 
-    updatedAt: (parent: any) => {
-      if (!parent.updatedAt) return null
-      try {
-        const date = new Date(parent.updatedAt)
-        if (Number.isNaN(date.getTime())) {
-          logger.error('Invalid date value', { value: parent.updatedAt })
-          return null
-        }
-        return date.toISOString()
-      } catch (error) {
-        logger.error('Error formatting updatedAt', {
-          error: String(error),
-          value: parent.updatedAt,
-        })
+  @FieldResolver(() => String, { nullable: true })
+  updatedAt(@Root() parent: any) {
+    if (!parent.updatedAt) return null
+    try {
+      const date = new Date(parent.updatedAt)
+      if (Number.isNaN(date.getTime())) {
+        logger.error('Invalid date value', { value: parent.updatedAt })
         return null
       }
-    },
+      return date.toISOString()
+    } catch (error) {
+      logger.error('Error formatting updatedAt', {
+        error: String(error),
+        value: parent.updatedAt,
+      })
+      return null
+    }
+  }
 
-    reviewedAt: (parent: any) => {
-      if (!parent.reviewedAt) return null
-      try {
-        const date = new Date(parent.reviewedAt)
-        if (Number.isNaN(date.getTime())) {
-          logger.error('Invalid date value', { value: parent.reviewedAt })
-          return null
-        }
-        return date.toISOString()
-      } catch (error) {
-        logger.error('Error formatting reviewedAt', {
-          error: String(error),
-          value: parent.reviewedAt,
-        })
+  @FieldResolver(() => String, { nullable: true })
+  reviewedAt(@Root() parent: any) {
+    if (!parent.reviewedAt) return null
+    try {
+      const date = new Date(parent.reviewedAt)
+      if (Number.isNaN(date.getTime())) {
+        logger.error('Invalid date value', { value: parent.reviewedAt })
         return null
       }
-    },
+      return date.toISOString()
+    } catch (error) {
+      logger.error('Error formatting reviewedAt', {
+        error: String(error),
+        value: parent.reviewedAt,
+      })
+      return null
+    }
   }
 }

@@ -5,13 +5,15 @@ import Image from 'next/image'
 
 import { useGetMe } from '@/apiClients/userApiClient'
 import { AdminBadge, ClientBadge, DevBadge } from '@/components/atoms'
+import { UserRole } from '@/graphql/generated/graphql'
 import { isAdminRole } from '@/utils'
 
 export const CompactUserProfile = () => {
   const { user: clerkUser, isLoaded } = useUser()
   const { data: userData, loading: isLoading } = useGetMe()
-  const isAdmin = userData?.me?.role ? isAdminRole(userData.me.role) : false
-  const isDeveloper = userData?.me?.role === 'developer'
+  const userRole = userData?.me?.role
+  const isAdmin = isAdminRole(userRole)
+  const isDeveloper = userRole === UserRole.Developer
 
   if (!isLoaded || isLoading || !clerkUser) {
     return (

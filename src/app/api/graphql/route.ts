@@ -3,16 +3,15 @@ import type { NextRequest } from 'next/server'
 import { ApolloServer } from '@apollo/server'
 import { startServerAndCreateNextHandler } from '@as-integrations/next'
 
-import { createContext } from '@/graphql/context'
-import { schema } from '@/graphql/schema'
+import { createContext, createSchema } from '@/graphql'
+import { logger } from '@/libs/Logger'
 
-// Create Apollo Server instance
 const server = new ApolloServer({
-  schema,
+  schema: await createSchema(),
   introspection: process.env.NODE_ENV !== 'production',
   formatError: (error) => {
     // Log errors for debugging
-    console.error('GraphQL Error:', error)
+    logger.error('GraphQL Error:', { error })
 
     // Return sanitized error in production
     if (process.env.NODE_ENV === 'production') {
@@ -26,18 +25,16 @@ const server = new ApolloServer({
   },
 })
 
-// Start the server
-server.startInBackgroundHandlingStartupErrorsByLoggingAndFailingAllRequests()
-
-// Create and export the handler
-export const GET = startServerAndCreateNextHandler(server, {
-  context: async (_req: NextRequest) => {
+const handler = startServerAndCreateNextHandler(server, {
+  context: async () => {
     return await createContext()
   },
-}) as any
+})
 
-export const POST = startServerAndCreateNextHandler(server, {
-  context: async (_req: NextRequest) => {
-    return await createContext()
-  },
-}) as any
+export const GET = async (req: NextRequest) => {
+  return handler(req)
+}
+
+export const POST = async (req: NextRequest) => {
+  return handler(req)
+}

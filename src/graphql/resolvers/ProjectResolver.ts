@@ -1,296 +1,337 @@
-import type { MutationAssignProjectArgs } from '@/graphql/generated/graphql'
+import {
+  Arg,
+  FieldResolver,
+  ID,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+} from 'type-graphql'
+
 import type { FileService, ProjectService, UserService } from '@/services'
 
 import { SUPPORT_EMAIL } from '@/constants'
+import {
+  CreateProjectInput,
+  Project,
+  ProjectCollaborator,
+  ProjectDisplay,
+  ProjectFilter,
+  UpdateProjectInput,
+  UserRole,
+} from '@/graphql/schema'
 import { logger } from '@/libs/Logger'
 
+@Resolver(() => Project)
+@Resolver(() => ProjectDisplay)
 export class ProjectResolver {
-  [key: string]: any
-
   constructor(
     private projectService: ProjectService,
     private userService: UserService,
     private fileService: FileService
   ) {}
 
-  Project = {
-    // Ensure requestId is properly exposed
-    requestId: (parent: any) => {
-      return parent.requestId || null
-    },
-
-    client: async (parent: any) => {
-      return await this.userService.getUserById(parent.clientId)
-    },
-
-    developer: async (parent: any) => {
-      if (!parent.developerId) return null
-      return await this.userService.getUserById(parent.developerId)
-    },
-
-    projectRequest: async (parent: any) => {
-      if (!parent.projectRequestId) return null
-      return await this.projectService.getProjectRequestById(
-        parent.projectRequestId
-      )
-    },
-
-    statusUpdates: async (parent: any) => {
-      return await this.projectService.getProjectStatusUpdates(parent.id)
-    },
-
-    collaborators: async (parent: any) => {
-      return await this.projectService.getProjectCollaborators(parent.id)
-    },
-
-    // Ensure date fields are properly formatted as strings
-    createdAt: (parent: any) => {
-      if (!parent.createdAt) return null
-      try {
-        return new Date(parent.createdAt).toISOString()
-      } catch (error) {
-        logger.error('Error formatting createdAt', {
-          error: String(error),
-          value: parent.createdAt,
-        })
-        return null
-      }
-    },
-
-    updatedAt: (parent: any) => {
-      if (!parent.updatedAt) return null
-      try {
-        return new Date(parent.updatedAt).toISOString()
-      } catch (error) {
-        logger.error('Error formatting updatedAt', {
-          error: String(error),
-          value: parent.updatedAt,
-        })
-        return null
-      }
-    },
-
-    startDate: (parent: any) => {
-      if (!parent.startDate) return null
-      try {
-        return new Date(parent.startDate).toISOString()
-      } catch (error) {
-        logger.error('Error formatting startDate', {
-          error: String(error),
-          value: parent.startDate,
-        })
-        return null
-      }
-    },
-
-    estimatedCompletionDate: (parent: any) => {
-      if (!parent.estimatedCompletionDate) return null
-      try {
-        return new Date(parent.estimatedCompletionDate).toISOString()
-      } catch (error) {
-        logger.error('Error formatting estimatedCompletionDate', {
-          error: String(error),
-          value: parent.estimatedCompletionDate,
-        })
-        return null
-      }
-    },
-
-    actualCompletionDate: (parent: any) => {
-      if (!parent.actualCompletionDate) return null
-      try {
-        return new Date(parent.actualCompletionDate).toISOString()
-      } catch (error) {
-        logger.error('Error formatting actualCompletionDate', {
-          error: String(error),
-          value: parent.actualCompletionDate,
-        })
-        return null
-      }
-    },
-
-    logo: async (parent: any) => {
-      if (!parent.logo) return null
-
-      // If it's a public asset path, return as-is
-      if (parent.logo.startsWith('/assets/')) {
-        return parent.logo
-      }
-
-      // If it's already an absolute URL (possibly a presigned one), return as-is
-      if (/^https?:\/\//i.test(parent.logo)) {
-        return parent.logo
-      }
-
-      // If it's an R2 object key (e.g., contains projects/), generate a presigned URL
-      if (parent.logo.includes('projects/')) {
-        try {
-          return await this.fileService.generatePresignedDownloadUrl(
-            parent.logo
-          )
-        } catch (error) {
-          logger.error('Error generating presigned URL for logo', {
-            error: String(error),
-            logo: parent.logo,
-          })
-          return null
-        }
-      }
-
-      // Fallback: return as-is (could be external URL or other path)
-      return parent.logo
-    },
-  }
-
-  ProjectDisplay = {
-    logo: async (parent: any) => {
-      if (!parent.logo) return null
-
-      // If it's a public asset path, return as-is
-      if (parent.logo.startsWith('/assets/')) {
-        return parent.logo
-      }
-
-      // If it's already an absolute URL, return as-is
-      if (/^https?:\/\//i.test(parent.logo)) {
-        return parent.logo
-      }
-
-      // If it's an R2 key, generate presigned URL
-      if (parent.logo.includes('projects/')) {
-        try {
-          return await this.fileService.generatePresignedDownloadUrl(
-            parent.logo
-          )
-        } catch (error) {
-          logger.error('Error generating presigned URL for logo', {
-            error: String(error),
-            logo: parent.logo,
-          })
-          return null
-        }
-      }
-
-      // Fallback: return as-is (could be external URL or other path)
-      return parent.logo
-    },
-  }
-
-  ProjectStatusUpdate = {
-    updatedBy: async (parent: any) => {
-      return await this.userService.getUserById(parent.updatedById)
-    },
-  }
-
-  ProjectCollaborator = {
-    user: async (parent: any) => {
-      return await this.userService.getUserById(parent.userId)
-    },
-  }
-
-  Query = {
-    project: async (_: any, { id }: { id: string }) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-
-      return await this.projectService.getProjectById(
-        id,
-        currentUser.role === 'admin' ? undefined : currentUser.id
-      )
-    },
-
-    projectBySlug: async (_: any, { slug }: { slug: string }) => {
-      // Allow public access to project details (no authentication required)
-      return await this.projectService.getProjectBySlug(slug)
-    },
-
-    projects: async (
-      _: any,
-      { filter, userEmail }: { filter?: any; userEmail?: string }
-    ) => {
-      // Allow public access for SUPPORT_EMAIL without authentication
-      if (userEmail === SUPPORT_EMAIL) {
-        return await this.projectService.getProjects(filter)
-      }
-
-      // For other users, require authentication
-      await this.userService.getCurrentUserWithAuth()
-
-      if (userEmail) {
-        const user = await this.userService.getUserByEmail(userEmail)
-        if (user) {
-          return await this.projectService.getProjects(filter, user.id)
-        }
-      }
+  @Query(() => [ProjectDisplay])
+  async projects(
+    @Arg('filter', () => ProjectFilter, { nullable: true })
+    filter?: ProjectFilter,
+    @Arg('userEmail', { nullable: true }) userEmail?: string
+  ) {
+    // Allow public access for SUPPORT_EMAIL without authentication
+    if (userEmail === SUPPORT_EMAIL) {
       return await this.projectService.getProjects(filter)
-    },
+    }
 
-    featuredProjects: async (_: any, { userEmail }: { userEmail?: string }) => {
-      // Allow public access for SUPPORT_EMAIL without authentication
-      if (userEmail === SUPPORT_EMAIL) {
-        return await this.projectService.getFeaturedProjects()
+    // For other users, require authentication
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+
+    if (userEmail) {
+      const user = await this.userService.getUserByEmail(userEmail)
+      if (user) {
+        return await this.projectService.getProjects(filter, user.id, user.role)
       }
-
-      // For other users, require authentication
-      await this.userService.getCurrentUserWithAuth()
-
-      if (userEmail) {
-        const user = await this.userService.getUserByEmail(userEmail)
-        if (user) {
-          return await this.projectService.getFeaturedProjects(user.id)
-        }
-      }
-      return await this.projectService.getFeaturedProjects()
-    },
+    }
+    return await this.projectService.getProjects(
+      filter,
+      currentUser.id,
+      currentUser.role
+    )
   }
 
-  Mutation = {
-    createProject: async (_: any, { input }: { input: any }) => {
+  @Query(() => Project, { nullable: true })
+  async project(@Arg('id', () => ID) id: string) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectService.getProjectById(
+      id,
+      currentUser.id,
+      currentUser.role
+    )
+  }
+
+  @Query(() => Project, { nullable: true })
+  async projectBySlug(@Arg('slug', () => String) slug: string) {
+    // Try to get current user if authenticated, but don't require it for public access
+    let currentUserId: string | undefined
+    let currentUserRole: string | undefined
+
+    try {
       const currentUser = await this.userService.getCurrentUserWithAuth()
-      this.userService.checkPermission(currentUser, 'admin')
+      currentUserId = currentUser.id
+      currentUserRole = currentUser.role
+    } catch {
+      // No auth - allow public access to c0d3ster projects only
+    }
 
-      return await this.projectService.createProject(input)
-    },
+    return await this.projectService.getProjectBySlug(
+      slug,
+      currentUserId,
+      currentUserRole
+    )
+  }
 
-    updateProject: async (
-      _: any,
-      { id, input }: { id: string; input: any }
-    ) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
+  @Query(() => [ProjectDisplay])
+  async featuredProjects(
+    @Arg('userEmail', { nullable: true }) userEmail?: string
+  ) {
+    // Allow public access for SUPPORT_EMAIL without authentication
+    if (userEmail === SUPPORT_EMAIL) {
+      return await this.projectService.getFeaturedProjects()
+    }
 
-      return await this.projectService.updateProject(
-        id,
-        input,
-        currentUser.id,
-        currentUser.role
-      )
-    },
+    // For other users, require authentication
+    await this.userService.getCurrentUserWithAuth()
 
-    assignProject: async (
-      _: any,
-      { projectId, developerId }: MutationAssignProjectArgs
-    ) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
+    if (userEmail) {
+      const user = await this.userService.getUserByEmail(userEmail)
+      if (user) {
+        return await this.projectService.getFeaturedProjects(user.id)
+      }
+    }
+    return await this.projectService.getFeaturedProjects()
+  }
 
-      return await this.projectService.assignProject(
-        projectId,
-        developerId,
-        currentUser.id, // developerId (self-assignment for now)
-        currentUser.role // currentUserRole
-      )
-    },
+  @Mutation(() => Project)
+  async createProject(
+    @Arg('input', () => CreateProjectInput) input: CreateProjectInput
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+    return await this.projectService.createProject(input)
+  }
 
-    updateProjectStatus: async (
-      _: any,
-      { projectId, status }: { projectId: string; status: string }
-    ) => {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
+  @Mutation(() => Project)
+  async updateProject(
+    @Arg('id', () => ID) id: string,
+    @Arg('input', () => UpdateProjectInput) input: UpdateProjectInput
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectService.updateProject(
+      id,
+      input,
+      currentUser.id,
+      currentUser.role
+    )
+  }
 
-      return await this.projectService.updateProjectStatus(
-        projectId,
-        status,
-        currentUser.id,
-        currentUser.role
-      )
-    },
+  @Mutation(() => Project)
+  async assignProject(
+    @Arg('projectId', () => ID) projectId: string,
+    @Arg('developerId', () => ID) developerId: string
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectService.assignProject(
+      projectId,
+      developerId,
+      currentUser.id,
+      currentUser.role
+    )
+  }
+
+  @Mutation(() => Project)
+  async updateProjectStatus(
+    @Arg('id', () => ID) id: string,
+    @Arg('status', () => String) status: string,
+    @Arg('progressPercentage', { nullable: true }) progressPercentage?: number
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectService.updateProjectStatus(
+      id,
+      {
+        newStatus: status,
+        progressPercentage,
+        updateMessage: `Status updated to ${status}`,
+        isClientVisible: true,
+      },
+      currentUser.id,
+      currentUser.role
+    )
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  requestId(@Root() parent: any) {
+    return parent.requestId || null
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  async client(@Root() parent: any) {
+    if (!parent.clientId) return null
+    return await this.userService.getUserById(parent.clientId)
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  async developer(@Root() parent: any) {
+    if (!parent.developerId) return null
+    return await this.userService.getUserById(parent.developerId)
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  async projectRequest(@Root() parent: any) {
+    if (!parent.projectRequestId) return null
+    return await this.projectService.getProjectRequestById(
+      parent.projectRequestId
+    )
+  }
+
+  @FieldResolver(() => [String], { nullable: true })
+  async statusUpdates(@Root() parent: any) {
+    const updates = await this.projectService.getProjectStatusUpdates(parent.id)
+    return updates || []
+  }
+
+  @FieldResolver(() => [ProjectCollaborator], { nullable: true })
+  async collaborators(@Root() _parent: any) {
+    // TODO: Implement collaborators functionality
+    // For now, always return empty array
+    return []
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  createdAt(@Root() parent: any) {
+    if (!parent.createdAt) return null
+    try {
+      return new Date(parent.createdAt).toISOString()
+    } catch (error) {
+      logger.error('Error formatting createdAt', {
+        error: String(error),
+        value: parent.createdAt,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  updatedAt(@Root() parent: any) {
+    if (!parent.updatedAt) return null
+    try {
+      return new Date(parent.updatedAt).toISOString()
+    } catch (error) {
+      logger.error('Error formatting updatedAt', {
+        error: String(error),
+        value: parent.updatedAt,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  startDate(@Root() parent: any) {
+    if (!parent.startDate) return null
+    try {
+      return new Date(parent.startDate).toISOString()
+    } catch (error) {
+      logger.error('Error formatting startDate', {
+        error: String(error),
+        value: parent.startDate,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  estimatedCompletionDate(@Root() parent: any) {
+    if (!parent.estimatedCompletionDate) return null
+    try {
+      return new Date(parent.estimatedCompletionDate).toISOString()
+    } catch (error) {
+      logger.error('Error formatting estimatedCompletionDate', {
+        error: String(error),
+        value: parent.estimatedCompletionDate,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  actualCompletionDate(@Root() parent: any) {
+    if (!parent.actualCompletionDate) return null
+    try {
+      return new Date(parent.actualCompletionDate).toISOString()
+    } catch (error) {
+      logger.error('Error formatting actualCompletionDate', {
+        error: String(error),
+        value: parent.actualCompletionDate,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => [String], { nullable: true })
+  techStack(@Root() parent: any) {
+    if (!parent.techStack) return null
+    try {
+      return Array.isArray(parent.techStack)
+        ? parent.techStack
+        : JSON.parse(parent.techStack)
+    } catch (error) {
+      logger.error('Error parsing techStack', {
+        value: parent.techStack,
+        error,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  requirements(@Root() parent: any) {
+    if (!parent.requirements) return null
+    try {
+      return typeof parent.requirements === 'string'
+        ? parent.requirements
+        : JSON.stringify(parent.requirements)
+    } catch (error) {
+      logger.error('Error formatting requirements', {
+        value: parent.requirements,
+        error,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  async logo(@Root() parent: any) {
+    if (!parent.logo) return null
+
+    // If it's a public asset path, return as-is
+    if (parent.logo.startsWith('/assets/')) {
+      return parent.logo
+    }
+
+    // If it's an R2 bucket path (contains projects/ or users/), generate presigned URL
+    if (parent.logo.includes('projects/') || parent.logo.includes('users/')) {
+      try {
+        const presignedUrl =
+          await this.fileService.generatePresignedDownloadUrl(parent.logo)
+        return presignedUrl
+      } catch (error) {
+        logger.error('Error generating presigned URL for logo', {
+          error: String(error),
+          logo: parent.logo,
+        })
+        return null
+      }
+    }
+
+    // Fallback: return as-is (could be external URL or other path)
+    return parent.logo
   }
 }

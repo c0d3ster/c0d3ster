@@ -1,8 +1,9 @@
 import type { CodegenConfig } from '@graphql-codegen/cli'
 
 const config: CodegenConfig = {
-  schema: 'src/graphql/schema/**/*.ts',
-  documents: ['src/apiClients/*.ts', 'src/apiClients/**/*.ts'], // all gql`` queries/mutations
+  schema: 'http://localhost:3000/api/graphql',
+  documents: ['src/apiClients/**/*.ts'], // all gql`` queries/mutations
+  ignoreNoDocuments: true, // Don't fail if no documents found initially
   generates: {
     'src/graphql/generated/graphql.ts': {
       plugins: [
@@ -25,8 +26,9 @@ const config: CodegenConfig = {
   },
   watch: false,
   hooks: {
-    afterOneFileWrite:
+    afterAllFileWrite: [
       'eslint --fix --no-ignore src/graphql/generated/graphql.ts',
+    ],
   },
 }
 

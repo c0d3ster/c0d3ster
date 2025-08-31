@@ -66,10 +66,13 @@ export const findProjectBySlug = <T extends { projectName: string }>(
  * @returns Formatted status string
  */
 export const formatStatus = (status: string): string => {
+  if (!status) return 'UNKNOWN'
+
+  // Handle PascalCase by inserting spaces before capital letters
   return status
-    .split('_')
-    .map((word) => word.toUpperCase())
-    .join(' ')
+    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+    .trim() // Remove leading space
+    .toUpperCase()
 }
 
 /**
@@ -77,20 +80,26 @@ export const formatStatus = (status: string): string => {
  * @param status - The project status
  * @returns CSS class string for styling
  */
-export const getStatusStyling = (status: string): string => {
+export const getStatusStyling = (status: string | undefined | null): string => {
+  if (!status) return 'text-gray-400'
+
   switch (status) {
-    case 'completed':
+    case 'Completed':
       return 'text-green-400'
-    case 'in_progress':
-    case 'in_testing':
-    case 'ready_for_launch':
+    case 'InProgress':
+    case 'InTesting':
+    case 'ReadyForLaunch':
       return 'text-yellow-400'
-    case 'requested':
-    case 'in_review':
-    case 'approved':
+    case 'Requested':
+    case 'InReview':
+    case 'Approved':
       return 'text-blue-400'
-    case 'cancelled':
+    case 'Cancelled':
       return 'text-red-400'
+    case 'Live':
+      return 'text-green-400'
+    case 'OnHold':
+      return 'text-gray-400'
     default:
       return 'text-gray-400'
   }
@@ -101,20 +110,28 @@ export const getStatusStyling = (status: string): string => {
  * @param status - The project status
  * @returns CSS class string for styling
  */
-export const getStatusCardStyling = (status: string): string => {
+export const getStatusCardStyling = (
+  status: string | undefined | null
+): string => {
+  if (!status) return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
+
   switch (status) {
-    case 'completed':
+    case 'Completed':
       return 'border-green-400/40 bg-green-400/20 text-green-400'
-    case 'in_progress':
-    case 'in_testing':
-    case 'ready_for_launch':
+    case 'InProgress':
+    case 'InTesting':
+    case 'ReadyForLaunch':
       return 'border-yellow-400/40 bg-yellow-400/20 text-yellow-400'
-    case 'requested':
-    case 'in_review':
-    case 'approved':
+    case 'Requested':
+    case 'InReview':
+    case 'Approved':
       return 'border-blue-400/40 bg-blue-400/20 text-blue-400'
-    case 'cancelled':
+    case 'Cancelled':
       return 'border-red-400/40 bg-red-400/20 text-red-400'
+    case 'Live':
+      return 'border-green-400/40 bg-green-400/20 text-green-400'
+    case 'OnHold':
+      return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
     default:
       return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
   }

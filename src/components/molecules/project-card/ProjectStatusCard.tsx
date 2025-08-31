@@ -9,7 +9,11 @@ import type {
   ProjectRequestDisplay,
 } from '@/graphql/generated/graphql'
 
-import { generateSlug } from '@/utils/Project'
+import {
+  formatStatus,
+  generateSlug,
+  getStatusCardStyling,
+} from '@/utils/Project'
 
 type ProjectItem =
   | Project
@@ -17,84 +21,32 @@ type ProjectItem =
   | ProjectDisplay
   | ProjectRequestDisplay
 
-// Prefer allowing only http/https to avoid `javascript:` and similar schemes.
-// const safeExternalUrl = (url: string) => (/^https?:\/\//i.test(url) ? url : '#')
-
 type ProjectStatusCardProps = {
   item: ProjectItem
 }
 
-const getStatusInfo = (status: string | undefined, _typename: string) => {
-  const statusMap = {
+const getStatusIcon = (status: string | undefined) => {
+  const iconMap = {
     // Request statuses
-    requested: {
-      label: 'Pending Review',
-      color: 'bg-yellow-400/20 text-yellow-400 border-yellow-400/30',
-      icon: '⏳',
-    },
-    in_review: {
-      label: 'Under Review',
-      color: 'bg-blue-400/20 text-blue-400 border-blue-400/30',
-      icon: '👀',
-    },
-    approved: {
-      label: 'Approved',
-      color: 'bg-green-400/20 text-green-400 border-green-400/30',
-      icon: '✅',
-    },
-    cancelled: {
-      label: 'Cancelled',
-      color: 'bg-red-400/20 text-red-400 border-red-400/30',
-      icon: '❌',
-    },
-
+    requested: '⏳',
+    in_review: '👀',
+    approved: '✅',
+    cancelled: '❌',
     // Project statuses
-    in_progress: {
-      label: 'In Progress',
-      color: 'bg-blue-400/20 text-blue-400 border-blue-400/30',
-      icon: '🚧',
-    },
-    in_testing: {
-      label: 'Testing',
-      color: 'bg-purple-400/20 text-purple-400 border-purple-400/30',
-      icon: '🧪',
-    },
-    ready_for_launch: {
-      label: 'Ready to Launch',
-      color: 'bg-orange-400/20 text-orange-400 border-orange-400/30',
-      icon: '🚀',
-    },
-    live: {
-      label: 'Live',
-      color: 'bg-green-400/20 text-green-400 border-green-400/30',
-      icon: '🌐',
-    },
-    completed: {
-      label: 'Completed',
-      color: 'bg-green-400/20 text-green-400 border-green-400/30',
-      icon: '✅',
-    },
-    on_hold: {
-      label: 'On Hold',
-      color: 'bg-gray-400/20 text-gray-400 border-gray-400/30',
-      icon: '⏸️',
-    },
+    in_progress: '🚧',
+    in_testing: '🧪',
+    ready_for_launch: '🚀',
+    live: '🌐',
+    completed: '✅',
+    on_hold: '⏸️',
   }
 
-  return (
-    statusMap[status as keyof typeof statusMap] || {
-      label: status || 'unknown',
-      color: 'bg-gray-400/20 text-gray-400 border-gray-400/30',
-      icon: '❓',
-    }
-  )
+  return iconMap[status as keyof typeof iconMap] || '❓'
 }
 
 export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
-  const statusInfo = getStatusInfo(
-    item.status || 'unknown',
-    item.__typename || ''
-  )
+  const status = item.status || 'unknown'
+  const statusIcon = getStatusIcon(status)
   const isProject =
     item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
 
@@ -104,9 +56,11 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
     'client' in item &&
     item.client
   const clientName = hasClientInfo
-    ? `${item.client.firstName || ''} ${item.client.lastName || ''}`.trim() ||
-      item.client.email ||
-      'Unknown Client'
+    ? typeof item.client === 'string'
+      ? item.client
+      : `${item.client.firstName || ''} ${item.client.lastName || ''}`.trim() ||
+        item.client.email ||
+        'Unknown Client'
     : null
 
   // Check if this is an assigned project (has a developer)
@@ -135,10 +89,10 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
 
         {/* Status Badge */}
         <div
-          className={`flex items-center space-x-1 rounded-full border px-2 py-1 font-mono text-xs font-bold whitespace-nowrap ${statusInfo.color}`}
+          className={`flex items-center space-x-1 rounded-full border px-2 py-1 font-mono text-xs font-bold whitespace-nowrap ${getStatusCardStyling(status)}`}
         >
-          <span>{statusInfo.icon}</span>
-          <span>{statusInfo.label}</span>
+          <span>{statusIcon}</span>
+          <span>{formatStatus(status)}</span>
         </div>
       </div>
 
@@ -247,43 +201,6 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
 
       {/* Action Links */}
       <div className='mb-3 flex flex-wrap gap-2'>
-        {/* TODO: Add back when liveUrl, stagingUrl, repositoryUrl are added to GraphQL schema
-        {isProject && 'liveUrl' in item && item.liveUrl && (
-          <Link
-            href={safeExternalUrl(item.liveUrl)}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='min-w-0 flex-1 rounded border border-green-400/30 bg-green-400/10 px-3 py-2 text-center font-mono text-xs text-green-400 transition-all duration-300 hover:bg-green-400 hover:text-black'
-          >
-            🌐 LIVE
-          </Link>
-        )}
-
-        {isProject && 'stagingUrl' in item && item.stagingUrl && (
-          <Link
-            href={safeExternalUrl(item.stagingUrl)}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='min-w-0 flex-1 rounded border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-center font-mono text-xs text-blue-400 transition-all duration-300 hover:bg-blue-400 hover:text-black'
-          >
-            🧪 STAGING
-          </Link>
-        )}
-
-        {item.__typename === 'Project' &&
-          'repositoryUrl' in item &&
-          item.repositoryUrl && (
-            <Link
-              href={safeExternalUrl(item.repositoryUrl)}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='min-w-0 flex-1 rounded border border-purple-400/30 bg-purple-400/10 px-3 py-2 text-center font-mono text-xs text-purple-400 transition-all duration-300 hover:bg-purple-400 hover:text-black'
-            >
-              📁 REPO
-            </Link>
-          )}
-        */}
-
         <Link
           href={`/projects/${generateSlug(item.projectName || item.title || 'untitled')}`}
           className='min-w-0 flex-1 cursor-pointer rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60 transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/20 hover:text-green-400'

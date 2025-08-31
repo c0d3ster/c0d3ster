@@ -4,19 +4,11 @@ import { gql } from 'graphql-tag'
 import type {
   DeleteFileMutation,
   DeleteFileMutationVariables,
-  GenerateFileDownloadUrlMutation,
-  GenerateFileDownloadUrlMutationVariables,
   UploadProjectLogoMutation,
   UploadProjectLogoMutationVariables,
 } from '@/graphql/generated/graphql'
 
 import { apolloClient } from '@/libs/ApolloClient'
-
-export const GENERATE_FILE_DOWNLOAD_URL = gql`
-  mutation GenerateFileDownloadUrl($key: String!) {
-    generateFileDownloadUrl(key: $key)
-  }
-`
 
 export const UPLOAD_PROJECT_LOGO = gql`
   mutation UploadProjectLogo($projectId: ID!, $input: FileUploadInput!) {
@@ -74,10 +66,6 @@ export const useUploadProjectLogo = () => {
   return useMutation(UPLOAD_PROJECT_LOGO)
 }
 
-export const useGenerateFileDownloadUrl = () => {
-  return useMutation(GENERATE_FILE_DOWNLOAD_URL)
-}
-
 export const useDeleteFile = () => {
   return useMutation(DELETE_FILE)
 }
@@ -110,21 +98,6 @@ export const uploadProjectLogo = async (projectId: string, input: any) => {
   if (!payload)
     throw new Error('No data returned from UploadProjectLogo mutation')
   return payload
-}
-
-export const generateFileDownloadUrl = async (key: string) => {
-  const result = await apolloClient.mutate<
-    GenerateFileDownloadUrlMutation,
-    GenerateFileDownloadUrlMutationVariables
-  >({
-    mutation: GENERATE_FILE_DOWNLOAD_URL,
-    variables: { key },
-  })
-
-  if (result.error) throw new Error(result.error.message)
-  const url = result.data?.generateFileDownloadUrl
-  if (!url) throw new Error('No URL returned from GenerateFileDownloadUrl')
-  return url
 }
 
 export const deleteFile = async (key: string) => {

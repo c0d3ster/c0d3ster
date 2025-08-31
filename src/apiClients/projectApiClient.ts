@@ -110,23 +110,7 @@ export const GET_PROJECT_BY_SLUG = gql`
           email
         }
       }
-      statusUpdates {
-        id
-        projectId
-        oldStatus
-        newStatus
-        progressPercentage
-        updateMessage
-        isClientVisible
-        createdAt
-        updatedById
-        updatedBy {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
+      statusUpdates
     }
   }
 `
@@ -166,21 +150,6 @@ export const ASSIGN_PROJECT = gql`
         role
         joinedAt
         user {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
-      statusUpdates {
-        id
-        oldStatus
-        newStatus
-        progressPercentage
-        updateMessage
-        isClientVisible
-        createdAt
-        updatedBy {
           id
           firstName
           lastName

@@ -4,7 +4,7 @@ import { GraphQLError } from 'graphql'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
-import { isAdminRole, isUserRole } from '@/utils'
+import { isAdminRole } from '@/utils'
 
 export class ProjectRequestService {
   async getProjectRequests(filter?: any) {
@@ -56,10 +56,7 @@ export class ProjectRequestService {
     }
 
     // Check access permissions - allow if it's your own request OR you're an admin/super_admin
-    if (
-      request.userId !== currentUserId &&
-      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
-    ) {
+    if (request.userId !== currentUserId && !isAdminRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -127,20 +124,14 @@ export class ProjectRequestService {
     }
 
     // Check permissions - allow if it's your own request OR you're an admin/super_admin
-    if (
-      request.userId !== currentUserId &&
-      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
-    ) {
+    if (request.userId !== currentUserId && !isAdminRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
     // Only admins/super_admins can change status to approved
-    if (
-      input.status === 'approved' &&
-      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
-    ) {
+    if (input.status === 'approved' && !isAdminRole(currentUserRole)) {
       throw new GraphQLError('Only admins can approve project requests', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -180,7 +171,7 @@ export class ProjectRequestService {
 
   async approveProjectRequest(id: string, currentUserRole?: string) {
     // Optional: enforce at service layer as defense-in-depth
-    if (!isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)) {
+    if (!isAdminRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })

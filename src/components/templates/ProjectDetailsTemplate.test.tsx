@@ -39,7 +39,7 @@ const mockProject: Project = {
   featured: true,
   projectType: 'web_app' as ProjectType,
   budget: 5000,
-  requirements: { requirement1: 'test' },
+  requirements: '{"requirement1": "test"}',
   progressPercentage: 100,
   startDate: '2024-01-01',
   estimatedCompletionDate: '2024-03-01',

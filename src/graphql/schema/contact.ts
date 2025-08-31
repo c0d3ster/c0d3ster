@@ -1,26 +1,37 @@
-import { gql } from 'graphql-tag'
+import { Field, ID, InputType, ObjectType } from 'type-graphql'
 
-export const contactSchema = gql`
-  # Contact form type
-  type ContactFormSubmission {
-    id: ID!
-    name: String!
-    email: String!
-    subject: String!
-    message: String!
-    submittedAt: String!
-  }
+@ObjectType()
+export class ContactFormSubmission {
+  @Field(() => ID)
+  id!: string
 
-  # Contact form input types
-  input ContactFormInput {
-    name: String!
-    email: String!
-    subject: String!
-    message: String!
-  }
+  @Field(() => String)
+  name!: string
 
-  # Contact form mutations
-  extend type Mutation {
-    submitContactForm(input: ContactFormInput!): ContactFormSubmission!
-  }
-`
+  @Field(() => String)
+  email!: string
+
+  @Field(() => String)
+  subject!: string
+
+  @Field(() => String)
+  message!: string
+
+  @Field(() => String)
+  submittedAt!: string
+}
+
+@InputType()
+export class ContactFormInput {
+  @Field(() => String)
+  name!: string
+
+  @Field(() => String)
+  email!: string
+
+  @Field(() => String)
+  subject!: string
+
+  @Field(() => String)
+  message!: string
+}

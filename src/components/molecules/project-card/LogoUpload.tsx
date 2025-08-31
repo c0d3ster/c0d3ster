@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { useGenerateFileDownloadUrl, useUploadProjectLogo } from '@/apiClients'
+import { useUploadProjectLogo } from '@/apiClients'
 import { Button } from '@/components/atoms'
 
 type LogoUploadProps = {
@@ -19,7 +19,6 @@ export const LogoUpload = ({
   const [isUploading, setIsUploading] = useState(false)
 
   const [uploadLogo] = useUploadProjectLogo()
-  const [generateDownloadUrl] = useGenerateFileDownloadUrl()
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0]

@@ -78,7 +78,9 @@ export const ProjectDetailsTemplate = ({
                     alt={`${project.title ?? project.projectName} logo`}
                     width={300}
                     height={300}
+                    sizes='300px'
                     className='rounded-lg border border-green-400/20 bg-black/80 p-8'
+                    priority
                   />
                 ) : !isLoaded ? (
                   <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>

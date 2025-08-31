@@ -140,6 +140,9 @@ export const ProjectRequestForm = () => {
             budget: validatedData.budget
               ? Number.parseFloat(validatedData.budget)
               : undefined,
+            requirements: validatedData.requirements
+              ? JSON.stringify(validatedData.requirements)
+              : undefined,
           },
         },
       })

@@ -4,6 +4,8 @@ import { useState } from 'react'
 
 import type { ProjectRequest } from '@/graphql/generated/graphql'
 
+import { formatStatus, getStatusCardStyling } from '@/utils/Project'
+
 type ProjectRequestCardProps = {
   request: ProjectRequest
   updateStatusAction: (
@@ -40,21 +42,6 @@ export const ProjectRequestCard = ({
     internalNotes: '',
   })
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'requested':
-        return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30'
-      case 'in_review':
-        return 'text-blue-400 bg-blue-400/10 border-blue-400/30'
-      case 'approved':
-        return 'text-green-400 bg-green-400/10 border-green-400/30'
-      case 'cancelled':
-        return 'text-red-400 bg-red-400/10 border-red-400/30'
-      default:
-        return 'text-gray-400 bg-gray-400/10 border-gray-400/30'
-    }
-  }
-
   const handleStatusUpdate = async (newStatus: string) => {
     try {
       setIsUpdating(true)
@@ -89,7 +76,7 @@ export const ProjectRequestCard = ({
   }
 
   const userName =
-    `${request.user.firstName || ''} ${request.user.lastName || ''}`.trim() ||
+    `${request.user?.firstName || ''} ${request.user?.lastName || ''}`.trim() ||
     'Unknown User'
 
   return (
@@ -103,7 +90,7 @@ export const ProjectRequestCard = ({
           <div className='space-y-1 text-sm'>
             <p className='text-green-300'>
               <span className='text-green-300/60'>Client:</span> {userName} (
-              {request.user.email})
+              {request.user?.email})
             </p>
             <p className='text-green-300'>
               <span className='text-green-300/60'>Type:</span>{' '}
@@ -122,9 +109,9 @@ export const ProjectRequestCard = ({
           </div>
         </div>
         <span
-          className={`rounded border px-3 py-1 font-mono text-xs font-bold uppercase ${getStatusColor(request.status || 'unknown')}`}
+          className={`rounded border px-3 py-1 font-mono text-xs font-bold uppercase ${getStatusCardStyling(request.status || 'unknown')}`}
         >
-          {(request.status || 'unknown').replace('_', ' ')}
+          {formatStatus(request.status || 'unknown')}
         </span>
       </div>
 

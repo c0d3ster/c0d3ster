@@ -1,62 +1,111 @@
-import { gql } from 'graphql-tag'
+import {
+  Field,
+  ID,
+  InputType,
+  ObjectType,
+  registerEnumType,
+} from 'type-graphql'
 
-export const fileSchema = gql`
-  type File {
-    id: ID!
-    key: String!
-    fileName: String!
-    originalFileName: String!
-    fileSize: Int!
-    contentType: String!
-    uploadedBy: User
-    projectId: ID
-    project: Project
-    environment: Environment!
-    uploadedAt: String!
-    downloadUrl: String
-  }
+export enum Environment {
+  DEV = 'DEV',
+  PROD = 'PROD',
+}
 
-  enum Environment {
-    DEV
-    PROD
-  }
+registerEnumType(Environment, {
+  name: 'Environment',
+  description: 'Environment for file storage',
+})
 
-  input FileUploadInput {
-    fileName: String!
-    originalFileName: String!
-    fileSize: Int!
-    contentType: String!
-    projectId: ID
-    environment: Environment
-  }
+@ObjectType()
+export class File {
+  @Field(() => ID)
+  id!: string
 
-  input FileFilterInput {
-    projectId: ID
-    userId: ID
-    contentType: String
-    environment: Environment
-  }
+  @Field(() => String)
+  key!: string
 
-  extend type Query {
-    files(filter: FileFilterInput): [File!]!
-    file(key: String!): File
-    projectFiles(projectId: ID!): [File!]!
-    userFiles(userId: ID!): [File!]!
-  }
+  @Field(() => String)
+  fileName!: string
 
-  extend type Mutation {
-    uploadProjectLogo(
-      projectId: ID!
-      input: FileUploadInput!
-    ): ProjectLogoUploadResult!
-    generateFileDownloadUrl(key: String!): String!
-    deleteFile(key: String!): Boolean!
-  }
+  @Field(() => String)
+  originalFileName!: string
 
-  type ProjectLogoUploadResult {
-    uploadUrl: String!
-    key: String!
-    metadata: File!
-    projectId: ID!
-  }
-`
+  @Field(() => Number)
+  fileSize!: number
+
+  @Field(() => String)
+  contentType!: string
+
+  @Field(() => ID, { nullable: true })
+  uploadedById?: string
+
+  @Field(() => ID, { nullable: true })
+  projectId?: string
+
+  // These will be resolved by field resolvers
+  @Field(() => String, { nullable: true })
+  uploadedBy?: string
+
+  @Field(() => String, { nullable: true })
+  project?: string
+
+  @Field(() => Environment)
+  environment!: Environment
+
+  @Field(() => String)
+  uploadedAt!: string
+
+  @Field(() => String, { nullable: true })
+  downloadUrl?: string
+}
+
+@InputType()
+export class FileUploadInput {
+  @Field(() => String)
+  fileName!: string
+
+  @Field(() => String)
+  originalFileName!: string
+
+  @Field(() => Number)
+  fileSize!: number
+
+  @Field(() => String)
+  contentType!: string
+
+  @Field(() => ID, { nullable: true })
+  projectId?: string
+
+  @Field(() => Environment)
+  environment!: Environment
+}
+
+@InputType()
+export class FileFilterInput {
+  @Field(() => ID, { nullable: true })
+  projectId?: string
+
+  @Field(() => ID, { nullable: true })
+  userId?: string
+
+  @Field(() => String, { nullable: true })
+  contentType?: string
+
+  @Field(() => Environment, { nullable: true })
+  environment?: Environment
+}
+
+@ObjectType()
+export class ProjectLogoUploadResult {
+  @Field(() => String)
+  uploadUrl!: string
+
+  @Field(() => String)
+  key!: string
+
+  @Field(() => File)
+  metadata!: File
+
+  @Field(() => ID)
+  projectId!: string
+}

@@ -1,4 +1,5 @@
 export * from './contactApiClient'
+export * from './dashboardApiClient'
 export * from './fileApiClient'
 export * from './projectApiClient'
 export * from './projectRequestApiClient'
