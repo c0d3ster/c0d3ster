@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 
-import type { 
-  DashboardProjectFragment, 
-  ProjectRequestDisplayFragment 
+import type {
+  DashboardProjectFragment,
+  ProjectRequestDisplayFragment,
 } from '@/graphql/generated/graphql'
 
 import {
