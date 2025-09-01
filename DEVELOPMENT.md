@@ -131,21 +131,30 @@ npm run codegen:watch # Watch for schema changes
 c0d3ster/
 ├── src/
 │   ├── app/                 # Next.js app router pages
+│   │   └── api/graphql/     # GraphQL API route (Apollo Server)
 │   ├── components/          # React components (atoms, molecules, organisms)
-│   ├── graphql/            # GraphQL schema, resolvers, and context
-│   ├── services/           # Business logic and data access
-│   ├── models/             # Database models and schemas
-│   ├── libs/               # Shared utilities and configurations
-│   └── styles/             # Global CSS and styling
-├── migrations/             # Database migration files
-├── tests/                  # Test files and configurations
-└── public/                 # Static assets
+│   ├── graphql/             # GraphQL schema, resolvers, and context
+│   │   ├── schema/          # type-graphql schema definitions
+│   │   ├── resolvers/       # GraphQL resolvers
+│   │   ├── context.ts       # GraphQL context setup
+│   │   ├── index.ts         # Schema building with type-graphql
+│   │   └── generated/       # Auto-generated client types
+│   ├── apiClients/          # Apollo Client operations
+│   ├── services/            # Business logic and data access
+│   ├── models/              # Database models and schemas
+│   ├── libs/                # Shared utilities and configurations
+│   │   └── ApolloClient.ts  # Apollo Client configuration
+│   └── styles/              # Global CSS and styling
+├── migrations/              # Database migration files
+├── tests/                   # Test files and configurations
+└── public/                  # Static assets
 ```
 
 ## Key Technologies
 
 - **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
-- **Backend**: GraphQL with Apollo Server, Node.js
+- **Backend**: GraphQL with Apollo Server, type-graphql, Node.js
+- **Client**: Apollo Client for GraphQL operations
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Clerk
 - **Testing**: Vitest, Playwright
@@ -165,11 +174,46 @@ c0d3ster/
 
 When working with GraphQL:
 
-1. Define your schema in `src/graphql/schema/`
-2. Implement resolvers in `src/graphql/resolvers/`
-3. Add API client operations in `src/apiClients/`
-4. Run `npm run codegen` to generate types
-5. Use generated types in your components
+1. **Define Schema Types**: Use type-graphql decorators in `src/graphql/schema/`
+
+   ```typescript
+   @ObjectType()
+   export class User {
+     @Field(() => String)
+     id!: string
+
+     @Field(() => String)
+     email!: string
+   }
+   ```
+
+2. **Implement Resolvers**: Create resolver classes in `src/graphql/resolvers/`
+
+   ```typescript
+   @Resolver()
+   export class UserResolver {
+     @Query(() => User)
+     async me() {
+       // Implementation
+     }
+   }
+   ```
+
+3. **Add Client Operations**: Define queries/mutations in `src/apiClients/`
+
+   ```typescript
+   const GET_ME = gql`
+     query GetMe {
+       me {
+         id
+         email
+       }
+     }
+   `
+   ```
+
+4. **Generate Types**: Run `npm run codegen` to generate client types
+5. **Use Generated Types**: Import and use types in your components
 
 ### 3. Database Changes
 
@@ -194,14 +238,20 @@ When modifying the database:
 #### GraphQL Type Generation Issues
 
 - Run `npm run codegen` manually
-- Check for syntax errors in your GraphQL schema
-- Ensure all operations are properly defined
+- Check for syntax errors in your type-graphql schema
+- Ensure all operations are properly defined with `gql` template literals
 
 #### Build Issues
 
 - Clear Next.js cache: `rm -rf .next`
 - Delete node_modules: `rm -rf node_modules && npm install`
 - Check for TypeScript errors: `npm run type-check`
+
+#### type-graphql Issues
+
+- Ensure `reflect-metadata` is imported at the top of your entry point
+- Check that all decorators are properly applied
+- Verify resolver classes are included in the `buildSchema` call
 
 ### Getting Help
 
@@ -225,5 +275,8 @@ We welcome contributions! Please see our contributing guidelines for more inform
 - [Next.js Documentation](https://nextjs.org/docs)
 - [React Documentation](https://react.dev/)
 - [GraphQL Documentation](https://graphql.org/)
+- [Apollo Server Documentation](https://www.apollographql.com/docs/apollo-server/)
+- [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
+- [type-graphql Documentation](https://typegraphql.com/)
 - [Drizzle ORM Documentation](https://orm.drizzle.team/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)

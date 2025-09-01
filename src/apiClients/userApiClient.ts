@@ -2,7 +2,6 @@ import { gql } from 'graphql-tag'
 
 import type {
   GetMeQuery,
-  GetMyDashboardQuery,
   GetUserQuery,
   GetUserQueryVariables,
   UpdateUserMutation,
@@ -11,11 +10,9 @@ import type {
 
 import {
   GetMeDocument,
-  GetMyDashboardDocument,
   GetUserDocument,
   UpdateUserDocument,
   useGetMeQuery,
-  useGetMyDashboardQuery,
   useGetUserQuery,
   useUpdateUserMutation,
 } from '@/graphql/generated/graphql'
@@ -36,6 +33,7 @@ export const GET_ME = gql`
       portfolio
       hourlyRate
       availability
+      avatarUrl
       createdAt
       updatedAt
     }
@@ -56,6 +54,7 @@ export const GET_USER = gql`
       portfolio
       hourlyRate
       availability
+      avatarUrl
       createdAt
       updatedAt
     }
@@ -78,163 +77,10 @@ export const UPDATE_USER = gql`
   }
 `
 
-export const GET_MY_DASHBOARD = gql`
-  query GetMyDashboard {
-    myDashboard {
-      summary {
-        totalProjects
-        activeProjects
-        completedProjects
-        pendingRequests
-      }
-      projects {
-        id
-        title
-        projectName
-        description
-        projectType
-        budget
-        status
-        progressPercentage
-        startDate
-        estimatedCompletionDate
-        actualCompletionDate
-        createdAt
-        updatedAt
-        techStack
-        requestId
-        clientId
-        developerId
-        requirements
-        repositoryUrl
-        liveUrl
-        stagingUrl
-        featured
-        client {
-          id
-          firstName
-          lastName
-          email
-        }
-        developer {
-          id
-          firstName
-          lastName
-          email
-        }
-        collaborators {
-          id
-          role
-          joinedAt
-          user {
-            id
-            firstName
-            lastName
-            email
-          }
-        }
-        statusUpdates {
-          id
-          oldStatus
-          newStatus
-          progressPercentage
-          updateMessage
-          isClientVisible
-          createdAt
-          updatedBy {
-            id
-            firstName
-            lastName
-            email
-          }
-        }
-      }
-      projectRequests {
-        id
-        projectName
-        title
-        description
-        projectType
-        budget
-        timeline
-        requirements
-        additionalInfo
-        status
-        createdAt
-        user {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
-      availableProjects {
-        id
-        title
-        projectName
-        description
-        projectType
-        budget
-        priority
-        techStack
-        repositoryUrl
-        startDate
-        estimatedCompletionDate
-        createdAt
-        updatedAt
-        featured
-        client {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
-      assignedProjects {
-        id
-        title
-        projectName
-        description
-        projectType
-        budget
-        status
-        priority
-        progressPercentage
-        startDate
-        estimatedCompletionDate
-        actualCompletionDate
-        liveUrl
-        stagingUrl
-        repositoryUrl
-        techStack
-        createdAt
-        updatedAt
-        featured
-        client {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
-    }
-  }
-`
-
-export const TEST_USER_QUERY = gql`
-  query TestUserQuery {
-    me {
-      id
-      email
-      firstName
-    }
-  }
-`
-
 // Hooks for components
 export const useGetMe = () => useGetMeQuery()
 export const useGetUser = (id: string) => useGetUserQuery({ variables: { id } })
-export const useGetMyDashboard = () => useGetMyDashboardQuery()
+
 export const useUpdateUser = () => useUpdateUserMutation()
 
 // Async functions for SSR / non-hook usage
@@ -268,13 +114,4 @@ export const updateUser = async (
   })
   if (!result.data) throw new Error('No data returned from UpdateUser mutation')
   return result.data.updateUser
-}
-
-export const getMyDashboard = async () => {
-  const result = await apolloClient.query<GetMyDashboardQuery>({
-    query: GetMyDashboardDocument,
-  })
-  if (!result.data)
-    throw new Error('No data returned from GetMyDashboard query')
-  return result.data.myDashboard
 }

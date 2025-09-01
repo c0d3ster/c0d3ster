@@ -2,27 +2,23 @@
 
 import { useState } from 'react'
 
-import type { GetAvailableProjectsDetailedQuery } from '@/graphql/generated/graphql'
-
-type AvailableProject = NonNullable<
-  GetAvailableProjectsDetailedQuery['availableProjects']
->[0]
+import type { Project } from '@/graphql/generated/graphql'
 
 type AvailableProjectCardProps = {
-  project: AvailableProject
-  onAssign: (projectId: string) => Promise<void>
+  project: Project
+  onAssignAction: (projectId: string) => Promise<void>
 }
 
 export const AvailableProjectCard = ({
   project,
-  onAssign,
+  onAssignAction,
 }: AvailableProjectCardProps) => {
   const [isAssigning, setIsAssigning] = useState(false)
 
   const handleAssign = async () => {
     try {
       setIsAssigning(true)
-      await onAssign(project.id)
+      await onAssignAction(project.id)
     } catch (error) {
       console.error('Failed to assign to project:', error)
     } finally {
@@ -30,9 +26,11 @@ export const AvailableProjectCard = ({
     }
   }
 
-  const clientName =
-    `${project.client.firstName || ''} ${project.client.lastName || ''}`.trim() ||
-    'Unknown Client'
+  const clientName = project.client
+    ? `${project.client.firstName || ''} ${project.client.lastName || ''}`.trim() ||
+      project.client.email ||
+      'Unknown Client'
+    : 'Unknown Client'
 
   return (
     <div className='flex h-full min-h-[300px] flex-col rounded-lg border border-blue-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-blue-400/40 hover:bg-black/80'>
@@ -52,7 +50,7 @@ export const AvailableProjectCard = ({
           <span className='text-blue-400/60'>Client:</span> {clientName}
         </p>
         <p className='font-mono text-xs text-blue-400/80'>
-          {project.client.email}
+          {project.client?.email || 'No email available'}
         </p>
       </div>
 

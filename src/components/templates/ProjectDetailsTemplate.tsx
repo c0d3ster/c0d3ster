@@ -1,8 +1,10 @@
 'use client'
 
+import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
+import { useState } from 'react'
 
-import type { Project } from '@/graphql/generated/graphql'
+import type { GetProjectBySlugQuery } from '@/graphql/generated/graphql'
 
 import {
   BackButton,
@@ -10,10 +12,13 @@ import {
   ExpandingUnderline,
   ScrollFade,
 } from '@/components/atoms'
-import { AnimatedHeading } from '@/components/molecules'
+import { AnimatedHeading, LogoUpload } from '@/components/molecules'
 import { formatStatus, getStatusCardStyling } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
+
+// Type alias for the complete Project from the query
+type Project = NonNullable<GetProjectBySlugQuery['projectBySlug']>
 
 type ProjectDetailsTemplateProps = {
   project: Project
@@ -22,6 +27,25 @@ type ProjectDetailsTemplateProps = {
 export const ProjectDetailsTemplate = ({
   project,
 }: ProjectDetailsTemplateProps) => {
+  const { user, isLoaded } = useUser()
+  const [currentLogo, setCurrentLogo] = useState<string | null>(
+    project.logo || null
+  )
+
+  // Check if current user can edit this project (is client or developer)
+  // Only check after user data is loaded to avoid showing upload component briefly
+  const canEditProject =
+    isLoaded &&
+    user &&
+    (user.id === project.clientId || user.id === project.developerId)
+
+  // Check if user is the client (for personalized messages)
+  const isClient = user?.id === project.clientId
+
+  const handleLogoUploaded = (logoUrl: string) => {
+    setCurrentLogo(logoUrl)
+  }
+
   return (
     <CleanPageTemplate>
       <BackButton useBack text='BACK' />
@@ -51,22 +75,53 @@ export const ProjectDetailsTemplate = ({
           <ScrollFade>
             <div className='flex flex-col items-center space-y-8'>
               <div className='relative'>
-                {project.logo ? (
+                {currentLogo ? (
                   <Image
-                    src={project.logo}
+                    src={currentLogo}
                     alt={`${project.title ?? project.projectName} logo`}
                     width={300}
                     height={300}
+                    sizes='300px'
                     className='rounded-lg border border-green-400/20 bg-black/80 p-8'
+                    priority
                   />
+                ) : !isLoaded ? (
+                  <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                    <div className='text-center'>
+                      <div className='mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+                      <p className='mt-2 font-mono text-xs text-green-400/70'>
+                        Checking permissions...
+                      </p>
+                    </div>
+                  </div>
+                ) : canEditProject ? (
+                  <div className='flex h-[300px] w-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                    <LogoUpload
+                      projectId={project.id}
+                      onLogoUploadedAction={handleLogoUploaded}
+                    />
+                    <p className='mt-2 text-center font-mono text-xs text-green-400/70'>
+                      {isClient
+                        ? 'Upload your project logo'
+                        : 'Upload project logo as developer'}
+                    </p>
+                    <p className='mt-1 text-center font-mono text-xs text-green-400/50'>
+                      Supports PNG, JPG, GIF, and other image formats
+                    </p>
+                  </div>
                 ) : (
-                  <Image
-                    src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
-                    alt='c0d3ster logo'
-                    width={300}
-                    height={300}
-                    className='rounded-lg border border-green-400/20 bg-black/80 p-8 opacity-15'
-                  />
+                  <div className='flex h-[300px] w-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                    <Image
+                      src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
+                      alt='c0d3ster logo placeholder'
+                      width={200}
+                      height={200}
+                      className='opacity-20'
+                    />
+                    <p className='mt-4 text-center font-mono text-xs text-green-400/50'>
+                      No logo uploaded
+                    </p>
+                  </div>
                 )}
               </div>
 

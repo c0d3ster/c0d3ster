@@ -1,5 +1,4 @@
-/* eslint-disable jsonc/sort-keys */
-{
+/* eslint-disable jsonc/sort-keys */ {
   "compilerOptions": {
     // ======================================================================
     // Language & Environment
@@ -10,7 +9,8 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "moduleResolution": "bundler",
     "isolatedModules": true,
-
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     // ======================================================================
     // Type Safety - Foundation
     // Core type checking settings for a robust codebase
@@ -20,7 +20,6 @@
     "strictNullChecks": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
-
     // ======================================================================
     // Type Safety - Advanced
     // Additional checks for higher code quality
@@ -33,7 +32,6 @@
     "allowUnreachableCode": false,
     "useUnknownInCatchVariables": true,
     "noImplicitOverride": true,
-
     // ======================================================================
     // Interoperability
     // Settings for working with different file types and modules
@@ -42,7 +40,6 @@
     "checkJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-
     // ======================================================================
     // Build & Performance
     // Settings that affect compilation output and build performance
@@ -51,7 +48,6 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "forceConsistentCasingInFileNames": true,
-
     // ======================================================================
     // Project Structure
     // Configure import paths and module resolution
@@ -61,7 +57,6 @@
       "@/*": ["./src/*"],
       "@/public/*": ["./public/*"]
     },
-
     // ======================================================================
     // Next.js Project Configuration
     // Controls settings specific to Next.js framework
@@ -69,16 +64,19 @@
     "jsx": "preserve", // Preserve JSX for Next.js transformation
     "incremental": true, // Enable faster incremental builds
     "noEmit": true, // Skip emitting files (Next.js handles this)
-    "plugins": [{ "name": "next" }] // Enable Next.js TypeScript plugin
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ] // Enable Next.js TypeScript plugin
   },
-
   // Files to include/exclude from the project
   "exclude": ["node_modules", "**/*.spec.ts", "**/*.e2e.ts"],
   "include": [
-    "next-env.d.ts",
+    "**/*.mts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "**/*.mts"
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
   ]
 }

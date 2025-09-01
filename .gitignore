@@ -26,6 +26,8 @@
 *.pem
 Thumbs.db
 
+
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -56,4 +58,4 @@ build-archive.log
 /playwright/.cache/
 
 # GraphQL Codegen
-src/graphql/generated/
+# src/graphql/generated/ # Now committing generated types

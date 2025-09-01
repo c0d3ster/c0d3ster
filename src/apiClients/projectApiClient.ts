@@ -4,184 +4,44 @@ import { gql } from 'graphql-tag'
 import type {
   AssignProjectMutation,
   AssignProjectMutationVariables,
-  GetAssignedProjectsQuery,
-  GetAvailableProjectsDetailedQuery,
   GetFeaturedProjectsQuery,
-  GetMyProjectsQuery,
   GetProjectBySlugQuery,
   GetProjectsQuery,
+  ProjectFilter,
 } from '@/graphql/generated/graphql'
 
 import {
-  GetAssignedProjectsDocument,
-  GetAvailableProjectsDetailedDocument,
   GetFeaturedProjectsDocument,
-  GetMyProjectsDocument,
   GetProjectBySlugDocument,
   GetProjectsDocument,
-  useGetAssignedProjectsQuery,
-  useGetAvailableProjectsDetailedQuery,
   useGetFeaturedProjectsQuery,
-  useGetMyProjectsQuery,
   useGetProjectsQuery,
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
+
+import {
+  DASHBOARD_PROJECT_FRAGMENT,
+  PROJECT_DISPLAY_FRAGMENT,
+  USER_DISPLAY_FRAGMENT,
+} from './fragments'
 
 // GraphQL Operations
 export const GET_PROJECTS = gql`
   query GetProjects($filter: ProjectFilter, $userEmail: String) {
     projects(filter: $filter, userEmail: $userEmail) {
-      id
-      title
-      projectName
-      description
-      overview
-      techStack
-      status
-      logo
-      liveUrl
-      repositoryUrl
-      featured
+      ...ProjectDisplay
     }
   }
+  ${PROJECT_DISPLAY_FRAGMENT}
 `
 
-export const GET_MY_PROJECTS = gql`
-  query GetMyProjects {
-    myProjects {
-      id
-      title
-      description
-      projectType
-      budget
-      status
-      progressPercentage
-      startDate
-      estimatedCompletionDate
-      actualCompletionDate
-      createdAt
-      updatedAt
-      techStack
-      featured
-      client {
-        id
-        firstName
-        lastName
-        email
-      }
-      developer {
-        id
-        firstName
-        lastName
-        email
-      }
-      collaborators {
-        id
-        role
-        joinedAt
-        user {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
-      statusUpdates {
-        id
-        oldStatus
-        newStatus
-        progressPercentage
-        updateMessage
-        isClientVisible
-        createdAt
-        updatedBy {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
+export const GET_FEATURED_PROJECTS = gql`
+  query GetFeaturedProjects($userEmail: String) {
+    featuredProjects(userEmail: $userEmail) {
+      ...ProjectDisplay
     }
   }
-`
-
-export const GET_AVAILABLE_PROJECTS_DETAILED = gql`
-  query GetAvailableProjectsDetailed {
-    availableProjects {
-      id
-      title
-      description
-      projectType
-      budget
-      techStack
-      status
-      featured
-      client {
-        id
-        firstName
-        lastName
-        email
-      }
-    }
-  }
-`
-
-export const GET_ASSIGNED_PROJECTS = gql`
-  query GetAssignedProjects {
-    assignedProjects {
-      id
-      title
-      description
-      projectType
-      budget
-      status
-      progressPercentage
-      startDate
-      estimatedCompletionDate
-      actualCompletionDate
-      createdAt
-      updatedAt
-      techStack
-      client {
-        id
-        firstName
-        lastName
-        email
-      }
-      developer {
-        id
-        firstName
-        lastName
-        email
-      }
-      collaborators {
-        id
-        role
-        joinedAt
-        user {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
-      statusUpdates {
-        id
-        oldStatus
-        newStatus
-        progressPercentage
-        updateMessage
-        isClientVisible
-        createdAt
-        updatedBy {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
-    }
-  }
+  ${PROJECT_DISPLAY_FRAGMENT}
 `
 
 export const GET_PROJECT_BY_SLUG = gql`
@@ -192,112 +52,64 @@ export const GET_PROJECT_BY_SLUG = gql`
       projectName
       description
       overview
-      techStack
-      status
-      logo
-      liveUrl
-      repositoryUrl
-      featured
       projectType
       budget
       requirements
+      techStack
+      status
       progressPercentage
+      priority
       startDate
       estimatedCompletionDate
       actualCompletionDate
+      repositoryUrl
+      liveUrl
+      stagingUrl
+      featured
+      logo
       createdAt
       updatedAt
       clientId
       developerId
       requestId
+      projectRequest
       client {
-        id
-        firstName
-        lastName
-        email
+        ...UserDisplay
       }
       developer {
-        id
-        firstName
-        lastName
-        email
+        ...UserDisplay
       }
       collaborators {
         id
         role
         joinedAt
         user {
-          id
-          firstName
-          lastName
-          email
+          ...UserDisplay
         }
       }
-      statusUpdates {
-        id
-        oldStatus
-        newStatus
-        progressPercentage
-        updateMessage
-        isClientVisible
-        createdAt
-        updatedBy {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
+      statusUpdates
     }
   }
-`
-
-export const GET_FEATURED_PROJECTS = gql`
-  query GetFeaturedProjects($userEmail: String) {
-    featuredProjects(userEmail: $userEmail) {
-      id
-      title
-      projectName
-      description
-      overview
-      techStack
-      status
-      logo
-      liveUrl
-      repositoryUrl
-      featured
-    }
-  }
+  ${USER_DISPLAY_FRAGMENT}
 `
 
 export const ASSIGN_PROJECT = gql`
   mutation AssignProject($projectId: ID!, $developerId: ID!) {
     assignProject(projectId: $projectId, developerId: $developerId) {
-      id
-      title
-      status
-      developer {
-        id
-        firstName
-        lastName
-        email
-      }
+      ...DashboardProject
     }
   }
+  ${DASHBOARD_PROJECT_FRAGMENT}
 `
 
 // Hooks for components
-export const useGetProjects = (filter?: any, userEmail?: string) =>
+export const useGetProjects = (filter?: ProjectFilter, userEmail?: string) =>
   useGetProjectsQuery({
     variables: {
       filter: filter || undefined,
       userEmail: userEmail || undefined,
     },
   })
-export const useGetMyProjects = () => useGetMyProjectsQuery()
-export const useGetAvailableProjects = () =>
-  useGetAvailableProjectsDetailedQuery()
-export const useGetAssignedProjects = () => useGetAssignedProjectsQuery()
 export const useGetFeaturedProjects = (userEmail?: string) =>
   useGetFeaturedProjectsQuery({
     variables: userEmail ? { userEmail } : undefined,
@@ -305,7 +117,10 @@ export const useGetFeaturedProjects = (userEmail?: string) =>
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
 // Async functions for SSR / non-hook usage
-export const getProjects = async (filter?: any, userEmail?: string) => {
+export const getProjects = async (
+  filter?: ProjectFilter,
+  userEmail?: string
+) => {
   const result = await apolloClient.query<GetProjectsQuery>({
     query: GetProjectsDocument,
     variables: {
@@ -315,32 +130,6 @@ export const getProjects = async (filter?: any, userEmail?: string) => {
   })
   if (!result.data) throw new Error('No data returned from GetProjects query')
   return result.data.projects
-}
-
-export const getMyProjects = async () => {
-  const result = await apolloClient.query<GetMyProjectsQuery>({
-    query: GetMyProjectsDocument,
-  })
-  if (!result.data) throw new Error('No data returned from GetMyProjects query')
-  return result.data.myProjects
-}
-
-export const getAvailableProjects = async () => {
-  const result = await apolloClient.query<GetAvailableProjectsDetailedQuery>({
-    query: GetAvailableProjectsDetailedDocument,
-  })
-  if (!result.data)
-    throw new Error('No data returned from GetAvailableProjectsDetailed query')
-  return result.data.availableProjects
-}
-
-export const getAssignedProjects = async () => {
-  const result = await apolloClient.query<GetAssignedProjectsQuery>({
-    query: GetAssignedProjectsDocument,
-  })
-  if (!result.data)
-    throw new Error('No data returned from GetAssignedProjects query')
-  return result.data.assignedProjects
 }
 
 export const getProjectBySlug = async (slug: string) => {
@@ -377,7 +166,14 @@ export const assignProject = async (projectId: string, developerId: string) => {
     mutation: ASSIGN_PROJECT,
     variables: { projectId, developerId },
   })
-  if (!result.data?.assignProject)
+
+  if (result.error) {
+    throw new Error(result.error.message)
+  }
+
+  if (!result.data) {
     throw new Error('No data returned from AssignProject mutation')
+  }
+
   return result.data.assignProject
 }

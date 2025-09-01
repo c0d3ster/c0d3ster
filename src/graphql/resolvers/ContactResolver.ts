@@ -1,11 +1,20 @@
-import { ContactService } from '@/services'
+import { Arg, Mutation, Resolver } from 'type-graphql'
 
-const contactService = new ContactService()
+import type { ContactService } from '@/services'
 
-export const contactResolvers = {
-  Mutation: {
-    submitContactForm: async (_: any, { input }: { input: any }) => {
-      return await contactService.submitContactForm(input)
-    },
-  },
+import {
+  ContactFormInput,
+  ContactFormSubmission,
+} from '@/graphql/schema/contact'
+
+@Resolver(() => ContactFormSubmission)
+export class ContactResolver {
+  constructor(private contactService: ContactService) {}
+
+  @Mutation(() => ContactFormSubmission)
+  async submitContactForm(
+    @Arg('input', () => ContactFormInput) input: ContactFormInput
+  ) {
+    return await this.contactService.submitContactForm(input)
+  }
 }

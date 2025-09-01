@@ -1,22 +1,30 @@
 import { and, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
+import type { ProjectFilter } from '@/graphql/schema'
+import type { ProjectRecord } from '@/models'
+
+import { UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
 import {
   findProjectBySlug,
   hasSlugConflict,
+  isAdminRole,
   isDeveloperOrHigherRole,
-  isUserRole,
 } from '@/utils'
 
+import type { FileService } from './FileService'
+
 export class ProjectService {
+  constructor(private fileService: FileService) {}
+
   async getProjects(
-    filter?: any,
+    filter?: ProjectFilter,
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRecord[]> {
     let whereClause
     if (filter) {
       const conditions = []
@@ -46,11 +54,11 @@ export class ProjectService {
     }
 
     // Apply role-based filtering
-    if (currentUserRole === 'client' && currentUserId) {
+    if (currentUserRole === UserRole.Client && currentUserId) {
       whereClause = whereClause
         ? and(whereClause, eq(schemas.projects.clientId, currentUserId))
         : eq(schemas.projects.clientId, currentUserId)
-    } else if (currentUserRole === 'developer' && currentUserId) {
+    } else if (currentUserRole === UserRole.Developer && currentUserId) {
       whereClause = whereClause
         ? and(whereClause, eq(schemas.projects.developerId, currentUserId))
         : eq(schemas.projects.developerId, currentUserId)
@@ -66,7 +74,7 @@ export class ProjectService {
     id: string,
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRecord> {
     const project = await db.query.projects.findFirst({
       where: eq(schemas.projects.id, id),
     })
@@ -78,19 +86,22 @@ export class ProjectService {
     }
 
     // Admins can access all projects
-    if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
+    if (isAdminRole(currentUserRole)) {
       return project
     }
 
     // Check access permissions
-    if (currentUserRole === 'client' && project.clientId !== currentUserId) {
+    if (
+      currentUserRole === UserRole.Client &&
+      project.clientId !== currentUserId
+    ) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {
@@ -105,11 +116,11 @@ export class ProjectService {
     slug: string,
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRecord> {
     // Get all projects and find the one that matches the slug
     const allProjects = await db.query.projects.findMany()
 
-    const project = findProjectBySlug(slug, allProjects)
+    const project = findProjectBySlug<ProjectRecord>(slug, allProjects)
 
     if (!project) {
       throw new GraphQLError('Project not found', {
@@ -144,7 +155,7 @@ export class ProjectService {
     }
 
     // Admins can access all projects
-    if (currentUserRole === 'admin' || currentUserRole === 'super_admin') {
+    if (isAdminRole(currentUserRole)) {
       return project
     }
 
@@ -156,7 +167,7 @@ export class ProjectService {
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {
@@ -167,7 +178,7 @@ export class ProjectService {
     return project
   }
 
-  async getMyProjects(currentUserId: string) {
+  async getMyProjects(currentUserId: string): Promise<ProjectRecord[]> {
     // "My Projects" should return projects where the user is:
     // 1. The CLIENT (they own the project)
     // 2. A COLLABORATOR (they're working on it but not the main developer)
@@ -210,7 +221,7 @@ export class ProjectService {
     return projects
   }
 
-  async getAvailableProjects() {
+  async getAvailableProjects(): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: and(
         eq(schemas.projects.status, 'approved'),
@@ -220,7 +231,7 @@ export class ProjectService {
     })
   }
 
-  async getFeaturedProjects(userId?: string) {
+  async getFeaturedProjects(userId?: string): Promise<ProjectRecord[]> {
     let whereClause: any = eq(schemas.projects.featured, true)
 
     // If a user is specified, filter by that user's projects
@@ -237,14 +248,14 @@ export class ProjectService {
     })
   }
 
-  async getPublicProjects() {
+  async getPublicProjects(): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: eq(schemas.projects.featured, true),
       orderBy: [desc(schemas.projects.createdAt)],
     })
   }
 
-  async getAssignedProjects(developerId: string) {
+  async getAssignedProjects(developerId: string): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: eq(schemas.projects.developerId, developerId),
       orderBy: [desc(schemas.projects.createdAt)],
@@ -323,7 +334,7 @@ export class ProjectService {
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {
@@ -339,6 +350,35 @@ export class ProjectService {
           extensions: { code: 'INVALID_STATUS' },
         }
       )
+    }
+
+    // Handle logo update - create project_files entry if logo is provided
+    if (input.logo && input.logo !== project.logo) {
+      // Extract file information from the logo URL/path
+      const logoPath = input.logo
+      const fileName = logoPath.split('/').pop() || 'logo'
+      const originalFileName = fileName
+
+      // Get file metadata to extract contentType
+      const fileMetadata = await this.fileService.getFileMetadata(logoPath)
+      if (!fileMetadata) {
+        throw new GraphQLError('Could not retrieve file metadata for logo', {
+          extensions: { code: 'FILE_METADATA_NOT_FOUND' },
+        })
+      }
+
+      // Use FileService to create project_files entry
+      await this.fileService.createProjectFileRecord({
+        projectId: id,
+        fileName,
+        originalFileName,
+        contentType: fileMetadata.contentType,
+        fileSize: fileMetadata.fileSize,
+        filePath: logoPath,
+        uploadedBy: currentUserId || project.clientId, // Use current user or fallback to client
+        isClientVisible: true,
+        description: 'Project logo',
+      })
     }
 
     const [updatedProject] = await db
@@ -357,22 +397,21 @@ export class ProjectService {
   async assignProject(
     projectId: string,
     developerId: string,
-    currentUserId?: string,
+    currentUserId: string,
     currentUserRole?: string
   ) {
     // Check permissions - developers can assign themselves, admins can assign anyone
-    if (
-      !isDeveloperOrHigherRole(
-        isUserRole(currentUserRole) ? currentUserRole : null
-      )
-    ) {
+    if (!isDeveloperOrHigherRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
     // Developers can only assign themselves unless they're admin
-    if (currentUserRole === 'developer' && developerId !== currentUserId) {
+    if (
+      currentUserRole === UserRole.Developer &&
+      developerId !== currentUserId
+    ) {
       throw new GraphQLError(
         'Developers can only assign themselves to projects',
         {
@@ -453,7 +492,7 @@ export class ProjectService {
     }
 
     if (
-      currentUserRole === 'developer' &&
+      currentUserRole === UserRole.Developer &&
       project.developerId !== currentUserId
     ) {
       throw new GraphQLError('Access denied', {

@@ -1,185 +1,172 @@
 import { GraphQLError } from 'graphql'
+import {
+  Arg,
+  FieldResolver,
+  ID,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+} from 'type-graphql'
 
+import type { UserService } from '@/services'
+
+import {
+  UpdateUserInput,
+  User,
+  UserDashboard,
+  UserFilter,
+  UserRole,
+} from '@/graphql/schema'
 import { logger } from '@/libs/Logger'
-import { ProjectRequestService, ProjectService, UserService } from '@/services'
-import { isDeveloperOrHigherRole } from '@/utils'
 
-const userService = new UserService()
-const projectService = new ProjectService()
-const projectRequestService = new ProjectRequestService()
+@Resolver(() => User)
+export class UserResolver {
+  constructor(private userService: UserService) {}
 
-export const userResolvers = {
-  Query: {
-    me: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      return currentUser
-    },
+  @Query(() => User, { nullable: true })
+  async me() {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return currentUser
+  }
 
-    user: async (_: any, { id }: { id: string }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+  @Query(() => User, { nullable: true })
+  async user(@Arg('id', () => ID) id: string) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
 
-      return await userService.getUserById(id)
-    },
+    return await this.userService.getUserById(id)
+  }
 
-    users: async (_: any, { filter }: { filter?: any }) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      userService.checkPermission(currentUser, 'admin')
+  @Query(() => [User])
+  async users(
+    @Arg('filter', () => UserFilter, { nullable: true }) filter?: UserFilter
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
 
-      return await userService.getUsers(filter)
-    },
+    return await this.userService.getUsers(filter)
+  }
 
-    myDashboard: async () => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      // Return a placeholder object - the actual data will be resolved by field resolvers
-      return { userId: currentUser.id }
-    },
-  },
+  @Query(() => UserDashboard)
+  async myDashboard() {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    // Return a placeholder object - the actual data will be resolved by field resolvers
+    return { userId: currentUser.id }
+  }
 
-  Mutation: {
-    updateUser: async (
-      _: any,
-      { id, input }: { id: string; input: Record<string, unknown> }
-    ) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
+  @Mutation(() => User)
+  async updateUser(
+    @Arg('id', () => ID) id: string,
+    @Arg('input', () => UpdateUserInput) input: UpdateUserInput
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
 
-      // Users can only update themselves, or admins can update anyone
-      if (currentUser.id !== id && currentUser.role !== 'admin') {
-        throw new GraphQLError('Access denied', {
-          extensions: { code: 'FORBIDDEN' },
-        })
-      }
+    // Users can only update themselves, or admins can update anyone
+    if (currentUser.id !== id && currentUser.role !== UserRole.Admin) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
 
-      const isAdmin = currentUser.role === 'admin'
-      const ALLOWED_SELF_UPDATE_FIELDS = [
-        'firstName',
-        'lastName',
-        'avatarUrl',
-        'bio',
-        'timezone',
-      ] as const
-      const PRIVILEGED_FIELDS = ['role', 'emailVerified', 'status'] as const
+    const isAdmin = currentUser.role === UserRole.Admin
+    const ALLOWED_SELF_UPDATE_FIELDS = [
+      'firstName',
+      'lastName',
+      'avatarUrl',
+      'bio',
+      'availability',
+      'portfolio',
+      'skills',
+      'hourlyRate',
+    ] as const
+    const PRIVILEGED_FIELDS = ['role'] as const
 
-      const sanitizedInput = Object.fromEntries(
-        Object.entries(input).filter(([key]) =>
-          isAdmin ? true : ALLOWED_SELF_UPDATE_FIELDS.includes(key as any)
-        )
+    const sanitizedInput = Object.fromEntries(
+      Object.entries(input).filter(([key]) =>
+        isAdmin
+          ? true
+          : ALLOWED_SELF_UPDATE_FIELDS.includes(
+              key as (typeof ALLOWED_SELF_UPDATE_FIELDS)[number]
+            )
       )
+    )
 
-      // Extra guard: prevent privileged fields from slipping through for non-admins
-      if (
-        !isAdmin &&
-        Object.keys(input).some((k) => PRIVILEGED_FIELDS.includes(k as any))
-      ) {
-        throw new GraphQLError('Cannot modify restricted fields', {
-          extensions: { code: 'FORBIDDEN' },
-        })
-      }
+    // Extra guard: prevent privileged fields from slipping through for non-admins
+    if (
+      !isAdmin &&
+      Object.keys(input).some((k) =>
+        PRIVILEGED_FIELDS.includes(k as (typeof PRIVILEGED_FIELDS)[number])
+      )
+    ) {
+      throw new GraphQLError('Cannot modify restricted fields', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
 
-      return await userService.updateUser(id, sanitizedInput)
-    },
-  },
+    return await this.userService.updateUser(id, sanitizedInput)
+  }
 
-  User: {
-    // Ensure date fields are properly formatted as strings
-    createdAt: (parent: any) => {
-      if (!parent.createdAt) return null
-      try {
-        const date = new Date(parent.createdAt)
-        if (Number.isNaN(date.getTime())) {
-          logger.error('Invalid date value for createdAt', {
-            value: parent.createdAt,
-          })
-          return null
-        }
-        return date.toISOString()
-      } catch (error) {
-        logger.error('Error formatting createdAt', {
-          error: String(error),
+  @FieldResolver(() => String, { nullable: true })
+  createdAt(@Root() parent: User) {
+    if (!parent.createdAt) return null
+    try {
+      const date = new Date(parent.createdAt)
+      if (Number.isNaN(date.getTime())) {
+        logger.error('Invalid date value for createdAt', {
           value: parent.createdAt,
         })
         return null
       }
-    },
+      return date.toISOString()
+    } catch (error) {
+      logger.error('Error formatting createdAt date', {
+        value: parent.createdAt,
+        error,
+      })
+      return null
+    }
+  }
 
-    updatedAt: (parent: any) => {
-      if (!parent.updatedAt) return null
-      try {
-        const date = new Date(parent.updatedAt)
-        if (Number.isNaN(date.getTime())) {
-          logger.error('Invalid date value for updatedAt', {
-            value: parent.updatedAt,
-          })
-          return null
-        }
-        return date.toISOString()
-      } catch (error) {
-        logger.error('Error formatting updatedAt', {
-          error: String(error),
+  @FieldResolver(() => String, { nullable: true })
+  updatedAt(@Root() parent: User) {
+    if (!parent.updatedAt) return null
+    try {
+      const date = new Date(parent.updatedAt)
+      if (Number.isNaN(date.getTime())) {
+        logger.error('Invalid date value for updatedAt', {
           value: parent.updatedAt,
         })
         return null
       }
-    },
-  },
+      return date.toISOString()
+    } catch (error) {
+      logger.error('Error formatting updatedAt date', {
+        value: parent.updatedAt,
+        error,
+      })
+      return null
+    }
+  }
 
-  UserDashboard: {
-    projects: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      return await projectService.getMyProjects(currentUser.id)
-    },
+  @FieldResolver(() => [String], { nullable: true })
+  skills(@Root() parent: User) {
+    if (!parent.skills) return null
+    try {
+      return Array.isArray(parent.skills)
+        ? parent.skills
+        : JSON.parse(parent.skills)
+    } catch (error) {
+      logger.error('Error parsing skills', { value: parent.skills, error })
+      return null
+    }
+  }
 
-    projectRequests: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      return await projectRequestService.getMyProjectRequests(
-        currentUser.id,
-        currentUser.role
-      )
-    },
-
-    availableProjects: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      if (!isDeveloperOrHigherRole(currentUser.role)) {
-        return []
-      }
-      return await projectService.getAvailableProjects()
-    },
-
-    assignedProjects: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      if (!isDeveloperOrHigherRole(currentUser.role)) {
-        return []
-      }
-      return await projectService.getAssignedProjects(currentUser.id)
-    },
-
-    summary: async (_parent: any) => {
-      const currentUser = await userService.getCurrentUserWithAuth()
-      const [projects, projectRequests] = await Promise.all([
-        projectService.getMyProjects(currentUser.id),
-        projectRequestService.getMyProjectRequests(
-          currentUser.id,
-          currentUser.role
-        ),
-      ])
-
-      const totalProjects = projects.length
-      const activeProjects = projects.filter(
-        (p) => p.status === 'in_progress'
-      ).length
-      const completedProjects = projects.filter(
-        (p) => p.status === 'completed'
-      ).length
-      const pendingRequests = projectRequests.filter(
-        (r) => r.status === 'requested'
-      ).length
-
-      return {
-        totalProjects,
-        activeProjects,
-        completedProjects,
-        pendingRequests,
-      }
-    },
-  },
+  @FieldResolver(() => String, { nullable: true })
+  hourlyRate(@Root() parent: User) {
+    if (parent.hourlyRate === null || parent.hourlyRate === undefined)
+      return null
+    return parent.hourlyRate.toString()
+  }
 }

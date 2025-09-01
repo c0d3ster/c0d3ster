@@ -4,6 +4,9 @@ import { auth } from '@clerk/nextjs/server'
 import { and, desc, eq, ne } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
+import type { ProjectRecord, UserRecord } from '@/models'
+
+import { UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
@@ -43,7 +46,7 @@ export class UserService {
     return user
   }
 
-  checkPermission(user: any, requiredRole: string) {
+  checkPermission(user: UserRecord, requiredRole: string) {
     if (!user || typeof user.role !== 'string' || user.role.length === 0) {
       throw new GraphQLError('Forbidden', {
         extensions: { code: 'FORBIDDEN', reason: 'MISSING_OR_INVALID_ROLE' },
@@ -51,13 +54,13 @@ export class UserService {
     }
     const userRole = user.role
 
-    if (requiredRole === 'admin') {
+    if (requiredRole === UserRole.Admin) {
       if (!isAdminRole(userRole)) {
         throw new GraphQLError('Admin permissions required', {
           extensions: { code: 'FORBIDDEN' },
         })
       }
-    } else if (requiredRole === 'developer') {
+    } else if (requiredRole === UserRole.Developer) {
       if (!isDeveloperOrHigherRole(userRole)) {
         throw new GraphQLError('Developer permissions required', {
           extensions: { code: 'FORBIDDEN' },
@@ -115,7 +118,21 @@ export class UserService {
     })
   }
 
-  async updateUser(id: string, input: any) {
+  async updateUser(
+    id: string,
+    input: Partial<{
+      firstName?: string
+      lastName?: string
+      role?: UserRole
+      email?: string
+      avatarUrl?: string
+      bio?: string
+      skills?: string[]
+      portfolio?: string
+      hourlyRate?: number
+      availability?: string
+    }>
+  ) {
     // Whitelist fields
     const {
       firstName,
@@ -186,33 +203,38 @@ export class UserService {
 
     // Combine and deduplicate (in case user is both client and collaborator)
     const allProjects = [
-      ...clientProjects.map((project) => ({
+      ...clientProjects.map((project: ProjectRecord) => ({
         ...project,
-        userRole: 'client' as const,
+        projectRelationship: 'client' as const,
       })),
       ...collaboratorProjects.map((item) => ({
         ...item.projects,
-        userRole: 'collaborator' as const,
+        projectRelationship: 'collaborator' as const,
       })),
     ]
 
-    // Remove duplicates by ID, prioritizing client role over collaborator
+    // Remove duplicates by ID, prioritizing client relationship over collaborator
+    type ProjectWithRelationship = ProjectRecord & {
+      projectRelationship: 'client' | 'collaborator'
+    }
     const uniqueProjects = allProjects.reduce((acc, project) => {
-      const existingIndex = acc.findIndex((p) => p.id === project.id)
+      const existingIndex = acc.findIndex(
+        (p: ProjectWithRelationship) => p.id === project.id
+      )
       if (existingIndex === -1) {
         acc.push(project)
       } else if (
-        project.userRole === 'client' &&
-        acc[existingIndex].userRole === 'collaborator'
+        project.projectRelationship === 'client' &&
+        acc[existingIndex]?.projectRelationship === 'collaborator'
       ) {
         // Replace collaborator with client if user is both
         acc[existingIndex] = project
       }
       return acc
-    }, [] as any[])
+    }, [] as ProjectWithRelationship[])
 
     return uniqueProjects.sort(
-      (a, b) =>
+      (a: ProjectWithRelationship, b: ProjectWithRelationship) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
   }

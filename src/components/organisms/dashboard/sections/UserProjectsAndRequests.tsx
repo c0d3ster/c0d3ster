@@ -1,14 +1,15 @@
 'use client'
 
-import type { GetMyDashboardQuery } from '@/graphql/generated/graphql'
+import type {
+  DashboardProjectFragment,
+  ProjectRequestDisplayFragment,
+} from '@/graphql/generated/graphql'
 
 import { ProjectStatusCard } from '@/components/molecules'
 
 type UserProjectsAndRequestsProps = {
-  projects?: NonNullable<GetMyDashboardQuery['myDashboard']>['projects']
-  projectRequests?: NonNullable<
-    GetMyDashboardQuery['myDashboard']
-  >['projectRequests']
+  projects?: ReadonlyArray<DashboardProjectFragment>
+  projectRequests?: ReadonlyArray<ProjectRequestDisplayFragment>
 }
 
 export const UserProjectsAndRequests = ({

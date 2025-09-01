@@ -1,12 +1,17 @@
 'use client'
 
+import type {
+  DashboardProjectFragment,
+  ProjectDisplayFragment,
+} from '@/graphql/generated/graphql'
+
 import { useAssignProject, useGetMe } from '@/apiClients'
 import { AvailableProjectCard, ProjectStatusCard } from '@/components/molecules'
 import { Toast } from '@/libs/Toast'
 
 type DeveloperDashboardSectionProps = {
-  availableProjects: readonly any[]
-  assignedProjects: readonly any[]
+  availableProjects: ReadonlyArray<ProjectDisplayFragment>
+  assignedProjects: ReadonlyArray<DashboardProjectFragment>
   onDataRefreshAction: () => void
 }
 
@@ -55,7 +60,7 @@ export const DeveloperDashboardSection = ({
               <AvailableProjectCard
                 key={project.id}
                 project={project}
-                onAssign={handleAssignToProject}
+                onAssignAction={handleAssignToProject}
               />
             ))}
           </div>

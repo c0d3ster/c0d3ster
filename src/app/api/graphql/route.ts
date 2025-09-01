@@ -1,49 +1,40 @@
 import type { NextRequest } from 'next/server'
 
-import { graphql } from 'graphql'
-import { NextResponse } from 'next/server'
+import { ApolloServer } from '@apollo/server'
+import { startServerAndCreateNextHandler } from '@as-integrations/next'
 
-import { createContext } from '@/graphql/context'
-import { schema } from '@/graphql/schema'
+import { createContext, createSchema } from '@/graphql'
+import { logger } from '@/libs/Logger'
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json().catch(() => null)
-    if (
-      !body ||
-      typeof body.query !== 'string' ||
-      body.query.trim().length === 0
-    ) {
-      return NextResponse.json(
-        { errors: [{ message: 'query must be a non-empty string' }] },
-        { status: 400 }
-      )
+const server = new ApolloServer({
+  schema: await createSchema(),
+  introspection: process.env.NODE_ENV !== 'production',
+  formatError: (error) => {
+    // Log errors for debugging
+    logger.error('GraphQL Error:', { error })
+
+    // Return sanitized error in production
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        message: 'Internal server error',
+        extensions: { code: 'INTERNAL_SERVER_ERROR' },
+      }
     }
-    const { query, variables, operationName } = body
 
-    const context = await createContext()
+    return error
+  },
+})
 
-    // Execute the query using the executable schema
-    const result = await graphql({
-      schema,
-      source: query,
-      contextValue: context,
-      variableValues: variables,
-      operationName,
-    })
+const handler = startServerAndCreateNextHandler(server, {
+  context: async () => {
+    return await createContext()
+  },
+})
 
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error('GraphQL Error:', error)
-    return NextResponse.json(
-      { errors: [{ message: 'Internal server error' }] },
-      { status: 500 }
-    )
-  }
+export const GET = async (req: NextRequest) => {
+  return handler(req)
 }
 
-export async function GET() {
-  return NextResponse.json({
-    message: 'GraphQL endpoint - use POST for queries',
-  })
+export const POST = async (req: NextRequest) => {
+  return handler(req)
 }

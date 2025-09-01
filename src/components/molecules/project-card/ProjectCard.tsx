@@ -4,14 +4,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { FaStar } from 'react-icons/fa'
 
-import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
+import type { ProjectDisplayFragment } from '@/graphql/generated/graphql'
 
 import { formatStatus, generateSlug, getStatusStyling } from '@/utils'
 
-type Project = NonNullable<GetFeaturedProjectsQuery['featuredProjects']>[0]
-
 type ProjectCardProps = {
-  project: Project
+  project: ProjectDisplayFragment
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {

@@ -1,6 +1,6 @@
 'use client'
 
-import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
+import type { ProjectDisplayFragment } from '@/graphql/generated/graphql'
 
 import { useGetFeaturedProjects } from '@/apiClients'
 import {
@@ -12,8 +12,6 @@ import {
 } from '@/components/atoms'
 import { AnimatedHeading, ProjectCard } from '@/components/molecules'
 import { SUPPORT_EMAIL } from '@/constants'
-
-type Project = NonNullable<GetFeaturedProjectsQuery['featuredProjects']>[0]
 
 export const ProjectsPreviewSection = () => {
   const { data, loading, error } = useGetFeaturedProjects(SUPPORT_EMAIL)
@@ -79,11 +77,13 @@ export const ProjectsPreviewSection = () => {
       {/* Projects Grid */}
       {featuredProjects.length > 0 ? (
         <div className='mb-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
-          {featuredProjects.map((project: Project) => (
-            <ScrollFade key={project.projectName}>
-              <ProjectCard project={project} />
-            </ScrollFade>
-          ))}
+          {featuredProjects.map(
+            (project: ProjectDisplayFragment) => (
+              <ScrollFade key={project.projectName}>
+                <ProjectCard project={project} />
+              </ScrollFade>
+            )
+          )}
         </div>
       ) : (
         <div className='mb-12 text-center'>

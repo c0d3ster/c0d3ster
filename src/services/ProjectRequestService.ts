@@ -1,18 +1,39 @@
 import { and, desc, eq } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
+import type {
+  CreateProjectRequestInput,
+  ProjectRequestFilter,
+} from '@/graphql/schema'
+import type { ProjectRequestRecord } from '@/models'
+
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
-import { isAdminRole, isUserRole } from '@/utils'
+import { isAdminRole } from '@/utils'
 
 export class ProjectRequestService {
-  async getProjectRequests(filter?: any) {
+  async getProjectRequests(
+    filter?: ProjectRequestFilter
+  ): Promise<ProjectRequestRecord[]> {
     let whereClause
     if (filter) {
       const conditions = []
       if (filter.status) {
-        conditions.push(eq(schemas.projectRequests.status, filter.status))
+        conditions.push(
+          eq(
+            schemas.projectRequests.status,
+            filter.status as
+              | 'requested'
+              | 'in_review'
+              | 'approved'
+              | 'in_progress'
+              | 'in_testing'
+              | 'ready_for_launch'
+              | 'completed'
+              | 'cancelled'
+          )
+        )
       }
       if (filter.projectType) {
         conditions.push(
@@ -44,7 +65,7 @@ export class ProjectRequestService {
     id: string,
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRequestRecord> {
     const request = await db.query.projectRequests.findFirst({
       where: eq(schemas.projectRequests.id, id),
     })
@@ -56,10 +77,7 @@ export class ProjectRequestService {
     }
 
     // Check access permissions - allow if it's your own request OR you're an admin/super_admin
-    if (
-      request.userId !== currentUserId &&
-      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
-    ) {
+    if (request.userId !== currentUserId && !isAdminRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -68,7 +86,10 @@ export class ProjectRequestService {
     return request
   }
 
-  async getMyProjectRequests(currentUserId: string, _currentUserRole: string) {
+  async getMyProjectRequests(
+    currentUserId: string,
+    _currentUserRole: string
+  ): Promise<ProjectRequestRecord[]> {
     // Allow users with any role to see their own project requests
     return await db.query.projectRequests.findMany({
       where: eq(schemas.projectRequests.userId, currentUserId),
@@ -76,7 +97,20 @@ export class ProjectRequestService {
     })
   }
 
-  async createProjectRequest(input: any, currentUserId: string) {
+  async getProjectRequestsByUserId(
+    userId: string
+  ): Promise<ProjectRequestRecord[]> {
+    // Get project requests for a specific user
+    return await db.query.projectRequests.findMany({
+      where: eq(schemas.projectRequests.userId, userId),
+      orderBy: [desc(schemas.projectRequests.createdAt)],
+    })
+  }
+
+  async createProjectRequest(
+    input: CreateProjectRequestInput,
+    currentUserId: string
+  ): Promise<ProjectRequestRecord> {
     const [request] = await db
       .insert(schemas.projectRequests)
       .values({
@@ -104,10 +138,10 @@ export class ProjectRequestService {
 
   async updateProjectRequest(
     id: string,
-    input: any,
+    input: { status?: string; [key: string]: any },
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRequestRecord> {
     const request = await db.query.projectRequests.findFirst({
       where: eq(schemas.projectRequests.id, id),
     })
@@ -119,20 +153,14 @@ export class ProjectRequestService {
     }
 
     // Check permissions - allow if it's your own request OR you're an admin/super_admin
-    if (
-      request.userId !== currentUserId &&
-      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
-    ) {
+    if (request.userId !== currentUserId && !isAdminRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
     }
 
     // Only admins/super_admins can change status to approved
-    if (
-      input.status === 'approved' &&
-      !isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)
-    ) {
+    if (input.status === 'approved' && !isAdminRole(currentUserRole)) {
       throw new GraphQLError('Only admins can approve project requests', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -153,7 +181,7 @@ export class ProjectRequestService {
 
     const sanitizedInput = Object.fromEntries(
       Object.entries(input).filter(([key]) =>
-        allowedFields.includes(key as any)
+        allowedFields.includes(key as (typeof allowedFields)[number])
       )
     )
 
@@ -166,13 +194,22 @@ export class ProjectRequestService {
       .where(eq(schemas.projectRequests.id, id))
       .returning()
 
+    if (!updatedRequest) {
+      throw new GraphQLError('Failed to update project request', {
+        extensions: { code: 'UPDATE_FAILED' },
+      })
+    }
+
     logger.info(`Project request updated: ${id}`)
     return updatedRequest
   }
 
-  async approveProjectRequest(id: string, currentUserRole?: string) {
+  async approveProjectRequest(
+    id: string,
+    currentUserRole?: string
+  ): Promise<any> {
     // Optional: enforce at service layer as defense-in-depth
-    if (!isAdminRole(isUserRole(currentUserRole) ? currentUserRole : null)) {
+    if (!isAdminRole(currentUserRole)) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -246,7 +283,7 @@ export class ProjectRequestService {
     return project
   }
 
-  async rejectProjectRequest(id: string) {
+  async rejectProjectRequest(id: string): Promise<ProjectRequestRecord> {
     const [request] = await db
       .update(schemas.projectRequests)
       .set({
@@ -256,6 +293,12 @@ export class ProjectRequestService {
       })
       .where(eq(schemas.projectRequests.id, id))
       .returning()
+
+    if (!request) {
+      throw new GraphQLError('Failed to reject project request', {
+        extensions: { code: 'REJECTION_FAILED' },
+      })
+    }
 
     logger.info(`Project request rejected: ${id}`)
     return request

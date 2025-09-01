@@ -1,68 +1,109 @@
-import { gql } from 'graphql-tag'
+import {
+  Field,
+  ID,
+  InputType,
+  ObjectType,
+  registerEnumType,
+} from 'type-graphql'
 
-export const userSchema = gql`
-  # User-related enums
-  enum UserRole {
-    client
-    developer
-    admin
-    super_admin
-  }
+export enum UserRole {
+  Client = 'client',
+  Developer = 'developer',
+  Admin = 'admin',
+  SuperAdmin = 'super_admin',
+}
 
-  # User type
-  type User {
-    id: ID!
-    clerkId: String!
-    email: String!
-    firstName: String
-    lastName: String
-    role: UserRole!
-    bio: String
-    skills: [String!]
-    portfolio: String
-    hourlyRate: Float
-    availability: String
-    createdAt: String!
-    updatedAt: String!
-  }
+registerEnumType(UserRole, {
+  name: 'UserRole',
+  description: 'User role in the system',
+})
 
-  # Project summary types
-  type ProjectSummary {
-    totalProjects: Int!
-    activeProjects: Int!
-    completedProjects: Int!
-    pendingRequests: Int!
-  }
+@ObjectType('User')
+export class User {
+  @Field(() => ID)
+  id!: string
 
-  type UserDashboard {
-    projects: [Project!]!
-    projectRequests: [ProjectRequestDisplay!]!
-    summary: ProjectSummary!
-    availableProjects: [Project!]!
-    assignedProjects: [Project!]!
-  }
+  @Field(() => String)
+  clerkId!: string
 
-  # User input types
-  input UpdateUserInput {
-    firstName: String
-    lastName: String
-    bio: String
-    skills: [String!]
-    portfolio: String
-    hourlyRate: Float
-    availability: String
-  }
+  @Field(() => String)
+  email!: string
 
-  # User queries
-  extend type Query {
-    me: User
-    user(id: ID!): User
-    users: [User!]!
-    myDashboard: UserDashboard!
-  }
+  @Field(() => String, { nullable: true })
+  firstName?: string
 
-  # User mutations
-  extend type Mutation {
-    updateUser(id: ID!, input: UpdateUserInput!): User!
-  }
-`
+  @Field(() => String, { nullable: true })
+  lastName?: string
+
+  @Field(() => UserRole)
+  role!: UserRole
+
+  @Field(() => String, { nullable: true })
+  bio?: string
+
+  @Field(() => [String], { nullable: true })
+  skills?: string[]
+
+  @Field(() => String, { nullable: true })
+  portfolio?: string
+
+  @Field(() => Number, { nullable: true })
+  hourlyRate?: number
+
+  @Field(() => String, { nullable: true })
+  availability?: string
+
+  @Field(() => String, { nullable: true })
+  avatarUrl?: string
+
+  @Field(() => String)
+  createdAt!: string
+
+  @Field(() => String)
+  updatedAt!: string
+}
+
+@InputType('UpdateUserInput')
+export class UpdateUserInput {
+  @Field(() => String, { nullable: true })
+  firstName?: string
+
+  @Field(() => String, { nullable: true })
+  lastName?: string
+
+  @Field(() => String, { nullable: true })
+  bio?: string
+
+  @Field(() => [String], { nullable: true })
+  skills?: string[]
+
+  @Field(() => String, { nullable: true })
+  portfolio?: string
+
+  @Field(() => Number, { nullable: true })
+  hourlyRate?: number
+
+  @Field(() => String, { nullable: true })
+  availability?: string
+
+  @Field(() => String, { nullable: true })
+  avatarUrl?: string
+}
+
+@InputType('UserFilter')
+export class UserFilter {
+  @Field(() => UserRole, { nullable: true })
+  role?: UserRole
+
+  @Field(() => String, { nullable: true })
+  email?: string
+
+  @Field(() => String, { nullable: true })
+  firstName?: string
+
+  @Field(() => String, { nullable: true })
+  lastName?: string
+
+  @Field(() => String, { nullable: true })
+  availability?: string
+}

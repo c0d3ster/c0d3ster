@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { useGetMe, useGetMyDashboard } from '@/apiClients'
 import { CompactUserProfile } from '@/components/molecules'
+import { UserRole } from '@/graphql/generated/graphql'
 import { isAdminRole } from '@/utils/RoleConstants'
 
 import {
@@ -18,15 +19,8 @@ export const DashboardContent = () => {
 
   const userRole = userData?.me?.role
 
-  // Debug logging
-  console.error('🚨 CLIENT DASHBOARD - USER DATA:', {
-    userData: userData?.me,
-    userRole,
-    isAdminCheck: userRole ? isAdminRole(userRole) : false,
-  })
-
   const isAdmin = userRole ? isAdminRole(userRole) : false
-  const isDeveloper = userRole === 'developer'
+  const isDeveloper = userRole === UserRole.Developer
   const summary = dashboardData?.myDashboard?.summary
   const availableProjects = dashboardData?.myDashboard?.availableProjects || []
   const assignedProjects = dashboardData?.myDashboard?.assignedProjects || []
