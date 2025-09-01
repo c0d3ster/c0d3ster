@@ -4,7 +4,7 @@ import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import { useState } from 'react'
 
-import type { Project } from '@/graphql/generated/graphql'
+import type { GetProjectBySlugQuery } from '@/graphql/generated/graphql'
 
 import {
   BackButton,
@@ -18,7 +18,7 @@ import { formatStatus, getStatusCardStyling } from '@/utils'
 import { CleanPageTemplate } from './CleanPageTemplate'
 
 type ProjectDetailsTemplateProps = {
-  project: Project
+  project: NonNullable<GetProjectBySlugQuery['projectBySlug']>
 }
 
 export const ProjectDetailsTemplate = ({

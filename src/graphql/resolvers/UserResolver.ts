@@ -12,17 +12,15 @@ import {
 import type { UserService } from '@/services'
 
 import {
-  DisplayUser,
   UpdateUserInput,
   User,
-  UserDashboard, 
-UserRole 
+  UserDashboard,
+  UserFilter,
+  UserRole,
 } from '@/graphql/schema'
 import { logger } from '@/libs/Logger'
 
-
 @Resolver(() => User)
-@Resolver(() => DisplayUser)
 export class UserResolver {
   constructor(private userService: UserService) {}
 
@@ -41,7 +39,9 @@ export class UserResolver {
   }
 
   @Query(() => [User])
-  async users(@Arg('filter', () => Object, { nullable: true }) filter?: any) {
+  async users(
+    @Arg('filter', () => UserFilter, { nullable: true }) filter?: UserFilter
+  ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
 
@@ -85,14 +85,20 @@ export class UserResolver {
 
     const sanitizedInput = Object.fromEntries(
       Object.entries(input).filter(([key]) =>
-        isAdmin ? true : ALLOWED_SELF_UPDATE_FIELDS.includes(key as any)
+        isAdmin
+          ? true
+          : ALLOWED_SELF_UPDATE_FIELDS.includes(
+              key as (typeof ALLOWED_SELF_UPDATE_FIELDS)[number]
+            )
       )
     )
 
     // Extra guard: prevent privileged fields from slipping through for non-admins
     if (
       !isAdmin &&
-      Object.keys(input).some((k) => PRIVILEGED_FIELDS.includes(k as any))
+      Object.keys(input).some((k) =>
+        PRIVILEGED_FIELDS.includes(k as (typeof PRIVILEGED_FIELDS)[number])
+      )
     ) {
       throw new GraphQLError('Cannot modify restricted fields', {
         extensions: { code: 'FORBIDDEN' },
@@ -103,7 +109,7 @@ export class UserResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  createdAt(@Root() parent: any) {
+  createdAt(@Root() parent: User) {
     if (!parent.createdAt) return null
     try {
       const date = new Date(parent.createdAt)
@@ -124,7 +130,7 @@ export class UserResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  updatedAt(@Root() parent: any) {
+  updatedAt(@Root() parent: User) {
     if (!parent.updatedAt) return null
     try {
       const date = new Date(parent.updatedAt)
@@ -145,7 +151,7 @@ export class UserResolver {
   }
 
   @FieldResolver(() => [String], { nullable: true })
-  skills(@Root() parent: any) {
+  skills(@Root() parent: User) {
     if (!parent.skills) return null
     try {
       return Array.isArray(parent.skills)
@@ -158,7 +164,7 @@ export class UserResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  hourlyRate(@Root() parent: any) {
+  hourlyRate(@Root() parent: User) {
     if (parent.hourlyRate === null || parent.hourlyRate === undefined)
       return null
     return parent.hourlyRate.toString()

@@ -6,7 +6,7 @@ import {
   registerEnumType,
 } from 'type-graphql'
 
-import { DisplayUser } from './user'
+import { User } from './user'
 
 export enum ProjectStatus {
   Requested = 'requested',
@@ -15,10 +15,15 @@ export enum ProjectStatus {
   InProgress = 'in_progress',
   InTesting = 'in_testing',
   ReadyForLaunch = 'ready_for_launch',
-  Live = 'live',
   Completed = 'completed',
-  OnHold = 'on_hold',
   Cancelled = 'cancelled',
+}
+
+export enum ProjectPriority {
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+  Urgent = 'urgent',
 }
 
 export enum ProjectType {
@@ -42,70 +47,12 @@ registerEnumType(ProjectType, {
   description: 'Type of project',
 })
 
-@ObjectType()
-export class ProjectDisplay {
-  @Field(() => ID)
-  id!: string
+registerEnumType(ProjectPriority, {
+  name: 'ProjectPriority',
+  description: 'Priority level of a project',
+})
 
-  @Field(() => String)
-  projectName!: string
-
-  @Field(() => String, { nullable: true })
-  title?: string
-
-  @Field(() => String, { nullable: true })
-  overview?: string
-
-  @Field(() => String, { nullable: true })
-  description?: string
-
-  @Field(() => [String], { nullable: true })
-  techStack?: string[]
-
-  @Field(() => ProjectStatus)
-  status!: ProjectStatus
-
-  @Field(() => String, { nullable: true })
-  logo?: string
-
-  @Field(() => String, { nullable: true })
-  liveUrl?: string
-
-  @Field(() => String, { nullable: true })
-  repositoryUrl?: string
-
-  @Field(() => String, { nullable: true })
-  stagingUrl?: string
-
-  @Field(() => Boolean)
-  featured!: boolean
-
-  @Field(() => String)
-  createdAt!: string
-
-  @Field(() => String, { nullable: true })
-  updatedAt?: string
-
-  @Field(() => ProjectType)
-  projectType!: ProjectType
-
-  @Field(() => Number, { nullable: true })
-  budget?: number
-
-  @Field(() => Number, { nullable: true })
-  progressPercentage?: number
-
-  @Field(() => String, { nullable: true })
-  startDate?: string
-
-  @Field(() => String, { nullable: true })
-  estimatedCompletionDate?: string
-
-  @Field(() => String, { nullable: true })
-  actualCompletionDate?: string
-}
-
-@ObjectType()
+@ObjectType('Project')
 export class Project {
   @Field(() => ID)
   id!: string
@@ -140,8 +87,8 @@ export class Project {
   @Field(() => Number, { nullable: true })
   progressPercentage?: number
 
-  @Field(() => String, { nullable: true })
-  priority?: string
+  @Field(() => ProjectPriority, { nullable: true })
+  priority?: ProjectPriority
 
   @Field(() => String, { nullable: true })
   startDate?: string
@@ -183,11 +130,11 @@ export class Project {
   requestId?: string
 
   // These will be resolved by field resolvers
-  @Field(() => DisplayUser, { nullable: true })
-  client?: DisplayUser
+  @Field(() => User, { nullable: true })
+  client?: User
 
-  @Field(() => DisplayUser, { nullable: true })
-  developer?: DisplayUser
+  @Field(() => User, { nullable: true })
+  developer?: User
 
   @Field(() => String, { nullable: true })
   projectRequest?: string
@@ -199,7 +146,7 @@ export class Project {
   collaborators?: ProjectCollaborator[]
 }
 
-@ObjectType()
+@ObjectType('ProjectStatusUpdate')
 export class ProjectStatusUpdate {
   @Field(() => ID)
   id!: string
@@ -235,7 +182,7 @@ export class ProjectStatusUpdate {
   updatedBy?: string
 }
 
-@ObjectType()
+@ObjectType('ProjectCollaborator')
 export class ProjectCollaborator {
   @Field(() => ID)
   id!: string
@@ -250,11 +197,11 @@ export class ProjectCollaborator {
   userId?: string
 
   // This will be resolved by field resolvers
-  @Field(() => DisplayUser, { nullable: true })
-  user?: DisplayUser
+  @Field(() => User, { nullable: true })
+  user?: User
 }
 
-@InputType()
+@InputType('CreateProjectInput')
 export class CreateProjectInput {
   @Field(() => String, { nullable: true })
   title?: string
@@ -293,7 +240,7 @@ export class CreateProjectInput {
   actualCompletionDate?: string
 }
 
-@InputType()
+@InputType('UpdateProjectInput')
 export class UpdateProjectInput {
   @Field(() => String, { nullable: true })
   title?: string
@@ -338,7 +285,7 @@ export class UpdateProjectInput {
   logo?: string
 }
 
-@InputType()
+@InputType('ProjectFilter')
 export class ProjectFilter {
   @Field(() => ProjectStatus, { nullable: true })
   status?: ProjectStatus
@@ -346,8 +293,8 @@ export class ProjectFilter {
   @Field(() => ProjectType, { nullable: true })
   projectType?: ProjectType
 
-  @Field(() => String, { nullable: true })
-  priority?: string
+  @Field(() => ProjectPriority, { nullable: true })
+  priority?: ProjectPriority
 
   @Field(() => String, { nullable: true })
   clientId?: string

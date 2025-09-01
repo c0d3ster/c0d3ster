@@ -1,14 +1,18 @@
 'use client'
 
-import type { ProjectDisplay } from '@/graphql/generated/graphql'
+import type { GetMyDashboardQuery } from '@/graphql/generated/graphql'
 
 import { useAssignProject, useGetMe } from '@/apiClients'
 import { AvailableProjectCard, ProjectStatusCard } from '@/components/molecules'
 import { Toast } from '@/libs/Toast'
 
 type DeveloperDashboardSectionProps = {
-  availableProjects: readonly ProjectDisplay[]
-  assignedProjects: readonly ProjectDisplay[]
+  availableProjects: NonNullable<
+    GetMyDashboardQuery['myDashboard']
+  >['availableProjects']
+  assignedProjects: NonNullable<
+    GetMyDashboardQuery['myDashboard']
+  >['assignedProjects']
   onDataRefreshAction: () => void
 }
 

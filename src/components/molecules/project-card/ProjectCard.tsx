@@ -4,12 +4,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { FaStar } from 'react-icons/fa'
 
-import type { ProjectDisplay } from '@/graphql/generated/graphql'
+import type { GetProjectsQuery } from '@/graphql/generated/graphql'
 
 import { formatStatus, generateSlug, getStatusStyling } from '@/utils'
 
 type ProjectCardProps = {
-  project: ProjectDisplay
+  project: GetProjectsQuery['projects'][0]
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {

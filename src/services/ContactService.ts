@@ -1,10 +1,12 @@
 import { GraphQLError } from 'graphql'
 
+import type { ContactFormInput } from '@/graphql/schema'
+
 import { sendContactFormEmail } from '@/emails'
 import { logger } from '@/libs/Logger'
 
 export class ContactService {
-  async submitContactForm(input: any) {
+  async submitContactForm(input: ContactFormInput) {
     try {
       // Send email
       await sendContactFormEmail(input)

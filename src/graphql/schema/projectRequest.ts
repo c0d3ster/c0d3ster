@@ -1,52 +1,9 @@
 import { Field, ID, InputType, ObjectType } from 'type-graphql'
 
 import { ProjectType } from './project'
-import { DisplayUser } from './user'
+import { User } from './user'
 
-@ObjectType()
-export class ProjectRequestDisplay {
-  @Field(() => ID)
-  id!: string
-
-  @Field(() => String)
-  projectName!: string
-
-  @Field(() => String, { nullable: true })
-  title?: string
-
-  @Field(() => String)
-  description!: string
-
-  @Field(() => ProjectType)
-  projectType!: ProjectType
-
-  @Field(() => Number, { nullable: true })
-  budget?: number
-
-  @Field(() => String, { nullable: true })
-  timeline?: string
-
-  @Field(() => String, { nullable: true })
-  requirements?: string
-
-  @Field(() => String, { nullable: true })
-  additionalInfo?: string
-
-  @Field(() => String)
-  status!: string
-
-  @Field(() => String)
-  createdAt!: string
-
-  @Field(() => ID, { nullable: true })
-  userId?: string
-
-  // This will be resolved by field resolvers
-  @Field(() => DisplayUser, { nullable: true })
-  user?: DisplayUser
-}
-
-@ObjectType()
+@ObjectType('ProjectRequest')
 export class ProjectRequest {
   @Field(() => ID)
   id!: string
@@ -94,14 +51,14 @@ export class ProjectRequest {
   reviewerId?: string
 
   // These will be resolved by field resolvers
-  @Field(() => DisplayUser, { nullable: true })
-  user?: DisplayUser
+  @Field(() => User, { nullable: true })
+  user?: User
 
-  @Field(() => DisplayUser, { nullable: true })
-  reviewer?: DisplayUser
+  @Field(() => User, { nullable: true })
+  reviewer?: User
 }
 
-@InputType()
+@InputType('CreateProjectRequestInput')
 export class CreateProjectRequestInput {
   @Field(() => String)
   projectName!: string
@@ -129,4 +86,22 @@ export class CreateProjectRequestInput {
 
   @Field(() => String, { nullable: true })
   additionalInfo?: string
+}
+
+@InputType('ProjectRequestFilter')
+export class ProjectRequestFilter {
+  @Field(() => String, { nullable: true })
+  status?: string
+
+  @Field(() => ProjectType, { nullable: true })
+  projectType?: ProjectType
+
+  @Field(() => String, { nullable: true })
+  userId?: string
+
+  @Field(() => String, { nullable: true })
+  reviewerId?: string
+
+  @Field(() => String, { nullable: true })
+  projectName?: string
 }

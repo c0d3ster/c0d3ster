@@ -1,6 +1,6 @@
 'use client'
 
-import type { ProjectDisplay } from '@/graphql/generated/graphql'
+import type { GetFeaturedProjectsQuery } from '@/graphql/generated/graphql'
 
 import { useGetFeaturedProjects } from '@/apiClients'
 import {
@@ -77,11 +77,13 @@ export const ProjectsPreviewSection = () => {
       {/* Projects Grid */}
       {featuredProjects.length > 0 ? (
         <div className='mb-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
-          {featuredProjects.map((project: ProjectDisplay) => (
-            <ScrollFade key={project.projectName}>
-              <ProjectCard project={project} />
-            </ScrollFade>
-          ))}
+          {featuredProjects.map(
+            (project: GetFeaturedProjectsQuery['featuredProjects'][0]) => (
+              <ScrollFade key={project.projectName}>
+                <ProjectCard project={project} />
+              </ScrollFade>
+            )
+          )}
         </div>
       ) : (
         <div className='mb-12 text-center'>

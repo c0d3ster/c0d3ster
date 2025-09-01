@@ -37,6 +37,18 @@ export const GET_MY_DASHBOARD = gql`
         stagingUrl
         featured
         requestId
+        client {
+          id
+          firstName
+          lastName
+          email
+        }
+        developer {
+          id
+          firstName
+          lastName
+          email
+        }
       }
       projectRequests {
         id
@@ -72,6 +84,12 @@ export const GET_MY_DASHBOARD = gql`
         createdAt
         updatedAt
         featured
+        client {
+          id
+          firstName
+          lastName
+          email
+        }
       }
       assignedProjects {
         id
@@ -89,6 +107,18 @@ export const GET_MY_DASHBOARD = gql`
         createdAt
         updatedAt
         featured
+        client {
+          id
+          firstName
+          lastName
+          email
+        }
+        developer {
+          id
+          firstName
+          lastName
+          email
+        }
       }
     }
   }

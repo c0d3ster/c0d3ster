@@ -1,9 +1,9 @@
 import { Field, ObjectType } from 'type-graphql'
 
-import { ProjectDisplay } from './project'
-import { ProjectRequestDisplay } from './projectRequest'
+import { Project } from './project'
+import { ProjectRequest } from './projectRequest'
 
-@ObjectType()
+@ObjectType('ProjectSummary')
 export class ProjectSummary {
   @Field(() => Number)
   totalProjects!: number
@@ -18,20 +18,20 @@ export class ProjectSummary {
   pendingRequests!: number
 }
 
-@ObjectType()
+@ObjectType('UserDashboard')
 export class UserDashboard {
-  @Field(() => [ProjectDisplay])
-  projects!: ProjectDisplay[]
+  @Field(() => [Project])
+  projects!: Project[]
 
-  @Field(() => [ProjectRequestDisplay])
-  projectRequests!: ProjectRequestDisplay[]
+  @Field(() => [ProjectRequest])
+  projectRequests!: ProjectRequest[]
 
   @Field(() => ProjectSummary)
   summary!: ProjectSummary
 
-  @Field(() => [ProjectDisplay])
-  availableProjects!: ProjectDisplay[]
+  @Field(() => [Project])
+  availableProjects!: Project[]
 
-  @Field(() => [ProjectDisplay])
-  assignedProjects!: ProjectDisplay[]
+  @Field(() => [Project])
+  assignedProjects!: Project[]
 }

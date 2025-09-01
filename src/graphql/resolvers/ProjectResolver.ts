@@ -8,6 +8,7 @@ import {
   Root,
 } from 'type-graphql'
 
+import type { ProjectRecord } from '@/models'
 import type { FileService, ProjectService, UserService } from '@/services'
 
 import { SUPPORT_EMAIL } from '@/constants'
@@ -15,7 +16,6 @@ import {
   CreateProjectInput,
   Project,
   ProjectCollaborator,
-  ProjectDisplay,
   ProjectFilter,
   UpdateProjectInput,
   UserRole,
@@ -23,7 +23,6 @@ import {
 import { logger } from '@/libs/Logger'
 
 @Resolver(() => Project)
-@Resolver(() => ProjectDisplay)
 export class ProjectResolver {
   constructor(
     private projectService: ProjectService,
@@ -31,7 +30,7 @@ export class ProjectResolver {
     private fileService: FileService
   ) {}
 
-  @Query(() => [ProjectDisplay])
+  @Query(() => [Project])
   async projects(
     @Arg('filter', () => ProjectFilter, { nullable: true })
     filter?: ProjectFilter,
@@ -89,7 +88,7 @@ export class ProjectResolver {
     )
   }
 
-  @Query(() => [ProjectDisplay])
+  @Query(() => [Project])
   async featuredProjects(
     @Arg('userEmail', { nullable: true }) userEmail?: string
   ) {
@@ -168,45 +167,43 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  requestId(@Root() parent: any) {
+  requestId(@Root() parent: ProjectRecord) {
     return parent.requestId || null
   }
 
   @FieldResolver(() => String, { nullable: true })
-  async client(@Root() parent: any) {
+  async client(@Root() parent: ProjectRecord) {
     if (!parent.clientId) return null
     return await this.userService.getUserById(parent.clientId)
   }
 
   @FieldResolver(() => String, { nullable: true })
-  async developer(@Root() parent: any) {
+  async developer(@Root() parent: ProjectRecord) {
     if (!parent.developerId) return null
     return await this.userService.getUserById(parent.developerId)
   }
 
   @FieldResolver(() => String, { nullable: true })
-  async projectRequest(@Root() parent: any) {
-    if (!parent.projectRequestId) return null
-    return await this.projectService.getProjectRequestById(
-      parent.projectRequestId
-    )
+  async projectRequest(@Root() parent: ProjectRecord) {
+    if (!parent.requestId) return null
+    return await this.projectService.getProjectRequestById(parent.requestId)
   }
 
   @FieldResolver(() => [String], { nullable: true })
-  async statusUpdates(@Root() parent: any) {
+  async statusUpdates(@Root() parent: ProjectRecord) {
     const updates = await this.projectService.getProjectStatusUpdates(parent.id)
     return updates || []
   }
 
   @FieldResolver(() => [ProjectCollaborator], { nullable: true })
-  async collaborators(@Root() _parent: any) {
+  async collaborators(@Root() _parent: ProjectRecord) {
     // TODO: Implement collaborators functionality
     // For now, always return empty array
     return []
   }
 
   @FieldResolver(() => String, { nullable: true })
-  createdAt(@Root() parent: any) {
+  createdAt(@Root() parent: ProjectRecord) {
     if (!parent.createdAt) return null
     try {
       return new Date(parent.createdAt).toISOString()
@@ -220,7 +217,7 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  updatedAt(@Root() parent: any) {
+  updatedAt(@Root() parent: ProjectRecord) {
     if (!parent.updatedAt) return null
     try {
       return new Date(parent.updatedAt).toISOString()
@@ -234,7 +231,7 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  startDate(@Root() parent: any) {
+  startDate(@Root() parent: ProjectRecord) {
     if (!parent.startDate) return null
     try {
       return new Date(parent.startDate).toISOString()
@@ -248,7 +245,7 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  estimatedCompletionDate(@Root() parent: any) {
+  estimatedCompletionDate(@Root() parent: ProjectRecord) {
     if (!parent.estimatedCompletionDate) return null
     try {
       return new Date(parent.estimatedCompletionDate).toISOString()
@@ -262,7 +259,7 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  actualCompletionDate(@Root() parent: any) {
+  actualCompletionDate(@Root() parent: ProjectRecord) {
     if (!parent.actualCompletionDate) return null
     try {
       return new Date(parent.actualCompletionDate).toISOString()
@@ -276,7 +273,7 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => [String], { nullable: true })
-  techStack(@Root() parent: any) {
+  techStack(@Root() parent: ProjectRecord) {
     if (!parent.techStack) return null
     try {
       return Array.isArray(parent.techStack)
@@ -292,7 +289,7 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  requirements(@Root() parent: any) {
+  requirements(@Root() parent: ProjectRecord) {
     if (!parent.requirements) return null
     try {
       return typeof parent.requirements === 'string'
@@ -308,7 +305,7 @@ export class ProjectResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  async logo(@Root() parent: any) {
+  async logo(@Root() parent: ProjectRecord) {
     if (!parent.logo) return null
 
     // If it's a public asset path, return as-is

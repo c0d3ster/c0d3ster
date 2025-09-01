@@ -19,13 +19,6 @@ export const DashboardContent = () => {
 
   const userRole = userData?.me?.role
 
-  // Debug logging
-  console.error('🚨 CLIENT DASHBOARD - USER DATA:', {
-    userData: userData?.me,
-    userRole,
-    isAdminCheck: userRole ? isAdminRole(userRole) : false,
-  })
-
   const isAdmin = userRole ? isAdminRole(userRole) : false
   const isDeveloper = userRole === UserRole.Developer
   const summary = dashboardData?.myDashboard?.summary

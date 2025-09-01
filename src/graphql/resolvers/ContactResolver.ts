@@ -7,7 +7,7 @@ import {
   ContactFormSubmission,
 } from '@/graphql/schema/contact'
 
-@Resolver()
+@Resolver(() => ContactFormSubmission)
 export class ContactResolver {
   constructor(private contactService: ContactService) {}
 

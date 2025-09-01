@@ -16,7 +16,7 @@ registerEnumType(Environment, {
   description: 'Environment for file storage',
 })
 
-@ObjectType()
+@ObjectType('File')
 export class File {
   @Field(() => ID)
   id!: string
@@ -59,7 +59,7 @@ export class File {
   downloadUrl?: string
 }
 
-@InputType()
+@InputType('FileUploadInput')
 export class FileUploadInput {
   @Field(() => String)
   fileName!: string
@@ -80,7 +80,7 @@ export class FileUploadInput {
   environment!: Environment
 }
 
-@InputType()
+@InputType('FileFilterInput')
 export class FileFilterInput {
   @Field(() => ID, { nullable: true })
   projectId?: string
@@ -95,7 +95,7 @@ export class FileFilterInput {
   environment?: Environment
 }
 
-@ObjectType()
+@ObjectType('ProjectLogoUploadResult')
 export class ProjectLogoUploadResult {
   @Field(() => String)
   uploadUrl!: string

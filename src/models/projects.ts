@@ -27,7 +27,7 @@ export const projectRequests = pgTable('project_requests', {
   title: varchar('title', { length: 255 }),
   description: text('description').notNull(),
   projectType: projectTypeEnum('project_type').notNull(),
-  budget: decimal('budget', { precision: 10, scale: 2 }),
+  budget: decimal('budget', { precision: 10, scale: 2, mode: 'number' }),
   timeline: varchar('timeline', { length: 100 }),
   requirements: json('requirements'), // Structured requirements data
   contactPreference: varchar('contact_preference', { length: 50 }),
@@ -60,13 +60,17 @@ export const projects = pgTable('projects', {
   projectType: projectTypeEnum('project_type').notNull(),
   status: projectStatusEnum('status').notNull().default('approved'),
   priority: projectPriorityEnum('priority').notNull().default('medium'),
-  budget: decimal('budget', { precision: 10, scale: 2 }),
-  paidAmount: decimal('paid_amount', { precision: 10, scale: 2 }).default('0'),
+  budget: decimal('budget', { precision: 10, scale: 2, mode: 'number' }),
+  paidAmount: decimal('paid_amount', {
+    precision: 10,
+    scale: 2,
+    mode: 'number',
+  }).default(0),
   startDate: timestamp('start_date'),
   estimatedCompletionDate: timestamp('estimated_completion_date'),
   actualCompletionDate: timestamp('actual_completion_date'),
   requirements: json('requirements'),
-  techStack: json('tech_stack'), // Array of technologies
+  techStack: json('tech_stack').$type<string[]>(), // Array of technologies
   repositoryUrl: text('repository_url'),
   stagingUrl: text('staging_url'),
   liveUrl: text('live_url'),
@@ -116,3 +120,9 @@ export const projectCollaborators = pgTable('project_collaborators', {
     .references(() => users.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+// Type exports for use in services and resolvers
+export type ProjectRecord = typeof projects.$inferSelect
+export type ProjectRequestRecord = typeof projectRequests.$inferSelect
+export type ProjectStatusUpdateRecord = typeof projectStatusUpdates.$inferSelect
+export type ProjectCollaboratorRecord = typeof projectCollaborators.$inferSelect

@@ -2,12 +2,7 @@
 
 import Link from 'next/link'
 
-import type {
-  Project,
-  ProjectDisplay,
-  ProjectRequest,
-  ProjectRequestDisplay,
-} from '@/graphql/generated/graphql'
+import type { GetMyDashboardQuery } from '@/graphql/generated/graphql'
 
 import {
   formatStatus,
@@ -15,14 +10,28 @@ import {
   getStatusCardStyling,
 } from '@/utils/Project'
 
-type ProjectItem =
-  | Project
-  | ProjectRequest
-  | ProjectDisplay
-  | ProjectRequestDisplay
+type DashboardProject = NonNullable<
+  GetMyDashboardQuery['myDashboard']
+>['projects'][0]
+type DashboardProjectRequest = NonNullable<
+  GetMyDashboardQuery['myDashboard']
+>['projectRequests'][0]
+
+type ProjectItem = DashboardProject | DashboardProjectRequest
 
 type ProjectStatusCardProps = {
   item: ProjectItem
+}
+
+// Type guards
+const isProject = (item: ProjectItem): item is DashboardProject => {
+  return item.__typename === 'Project'
+}
+
+const isProjectRequest = (
+  item: ProjectItem
+): item is DashboardProjectRequest => {
+  return item.__typename === 'ProjectRequest'
 }
 
 const getStatusIcon = (status: string | undefined) => {
@@ -36,9 +45,7 @@ const getStatusIcon = (status: string | undefined) => {
     in_progress: '🚧',
     in_testing: '🧪',
     ready_for_launch: '🚀',
-    live: '🌐',
     completed: '✅',
-    on_hold: '⏸️',
   }
 
   return iconMap[status as keyof typeof iconMap] || '❓'
@@ -47,14 +54,10 @@ const getStatusIcon = (status: string | undefined) => {
 export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
   const status = item.status || 'unknown'
   const statusIcon = getStatusIcon(status)
-  const isProject =
-    item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
+  const itemIsProject = isProject(item)
 
   // Check if this is a project with client information
-  const hasClientInfo =
-    (item.__typename === 'Project' || item.__typename === 'ProjectDisplay') &&
-    'client' in item &&
-    item.client
+  const hasClientInfo = itemIsProject && item.client
   const clientName = hasClientInfo
     ? typeof item.client === 'string'
       ? item.client
@@ -64,7 +67,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
     : null
 
   // Check if this is an assigned project (has a developer)
-  const isAssignedProject = isProject && 'developer' in item && item.developer
+  const isAssignedProject = itemIsProject && item.developer
 
   return (
     <div className='flex h-full min-h-[280px] flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
@@ -102,13 +105,11 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           <p className='font-mono text-xs text-blue-400'>
             <span className='text-blue-400/60'>Client:</span> {clientName}
           </p>
-          {item.__typename === 'Project' &&
-            'client' in item &&
-            item.client?.email && (
-              <p className='font-mono text-xs text-blue-400/80'>
-                {item.client.email}
-              </p>
-            )}
+          {itemIsProject && item.client && typeof item.client !== 'string' && (
+            <p className='font-mono text-xs text-blue-400/80'>
+              {item.client.email}
+            </p>
+          )}
         </div>
       )}
 
@@ -120,17 +121,14 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
       {/* Project Details - grows to fill space */}
       <div className='mb-4 flex-1 space-y-2'>
         {/* Additional Info for Project Requests */}
-        {(item.__typename === 'ProjectRequest' ||
-          item.__typename === 'ProjectRequestDisplay') &&
-          'additionalInfo' in item &&
-          item.additionalInfo && (
-            <div className='mb-2'>
-              <p className='font-mono text-sm text-green-300/70 italic'>
-                <span className='text-green-300/60'>Notes: </span>
-                {item.additionalInfo}
-              </p>
-            </div>
-          )}
+        {isProjectRequest(item) && item.additionalInfo && (
+          <div className='mb-2'>
+            <p className='font-mono text-sm text-green-300/70 italic'>
+              <span className='text-green-300/60'>Notes: </span>
+              {item.additionalInfo}
+            </p>
+          </div>
+        )}
 
         {item.budget && (
           <div className='flex justify-between text-sm'>
@@ -139,40 +137,32 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           </div>
         )}
 
-        {(item.__typename === 'Project' ||
-          item.__typename === 'ProjectDisplay') &&
-          'progressPercentage' in item &&
-          item.progressPercentage !== null && (
-            <div className='space-y-1'>
-              <div className='flex justify-between text-sm'>
-                <span className='font-mono text-green-300/60'>Progress:</span>
-                <span className='font-mono text-green-400'>
-                  {item.progressPercentage}%
-                </span>
-              </div>
-              <div className='h-2 w-full rounded-full bg-green-400/20'>
-                <div
-                  className='h-full rounded-full bg-green-400 transition-all duration-300'
-                  style={{ width: `${item.progressPercentage}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-        {(item.__typename === 'ProjectRequest' ||
-          item.__typename === 'ProjectRequestDisplay') &&
-          'timeline' in item &&
-          item.timeline && (
+        {isProject(item) && item.progressPercentage !== null && (
+          <div className='space-y-1'>
             <div className='flex justify-between text-sm'>
-              <span className='font-mono text-green-300/60'>Timeline:</span>
-              <span className='font-mono text-green-400'>{item.timeline}</span>
+              <span className='font-mono text-green-300/60'>Progress:</span>
+              <span className='font-mono text-green-400'>
+                {item.progressPercentage}%
+              </span>
             </div>
-          )}
+            <div className='h-2 w-full rounded-full bg-green-400/20'>
+              <div
+                className='h-full rounded-full bg-green-400 transition-all duration-300'
+                style={{ width: `${item.progressPercentage}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {isProjectRequest(item) && item.timeline && (
+          <div className='flex justify-between text-sm'>
+            <span className='font-mono text-green-300/60'>Timeline:</span>
+            <span className='font-mono text-green-400'>{item.timeline}</span>
+          </div>
+        )}
 
         {/* Tech Stack for projects */}
-        {(item.__typename === 'Project' ||
-          item.__typename === 'ProjectDisplay') &&
-          'techStack' in item &&
+        {isProject(item) &&
           item.techStack &&
           Array.isArray(item.techStack) &&
           item.techStack.length > 0 && (
@@ -205,18 +195,13 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           href={`/projects/${generateSlug(item.projectName || item.title || 'untitled')}`}
           className='min-w-0 flex-1 cursor-pointer rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60 transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/20 hover:text-green-400'
         >
-          {item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
-            ? 'VIEW DETAILS'
-            : 'VIEW REQUEST'}
+          {item.__typename === 'Project' ? 'VIEW DETAILS' : 'VIEW REQUEST'}
         </Link>
       </div>
 
       {/* Footer - pinned to bottom */}
       <div className='border-t border-green-400/10 pt-3 font-mono text-xs text-green-300/50'>
-        {item.__typename === 'Project' || item.__typename === 'ProjectDisplay'
-          ? 'Project'
-          : 'Request'}{' '}
-        •{' '}
+        {item.__typename === 'Project' ? 'Project' : 'Request'} •{' '}
         {item.createdAt
           ? new Date(item.createdAt).toLocaleDateString()
           : 'Unknown Date'}

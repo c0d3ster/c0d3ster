@@ -7,7 +7,7 @@ import { Webhook } from 'svix'
 
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
-import { users } from '@/models/Schema'
+import { users } from '@/models'
 
 export async function POST(request: NextRequest) {
   logger.info('Webhook POST request received', {

@@ -7,6 +7,8 @@ import type {
   ProjectType,
 } from '@/graphql/generated/graphql'
 
+import { UserRole } from '@/graphql/generated/graphql'
+
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
 // Mock next/image
@@ -51,15 +53,23 @@ const mockProject: Project = {
   requestId: 'req1',
   client: {
     id: 'client1',
+    clerkId: 'client1_clerk',
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
+    role: UserRole.Client,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
   },
   developer: {
     id: 'dev1',
+    clerkId: 'dev1_clerk',
     firstName: 'Jane',
     lastName: 'Smith',
     email: 'jane@example.com',
+    role: UserRole.Developer,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
   },
   collaborators: [],
   statusUpdates: [],

@@ -12,25 +12,24 @@ import type { ProjectRequestService, UserService } from '@/services'
 
 import {
   CreateProjectRequestInput,
-  DisplayUser,
   ProjectRequest,
-  ProjectRequestDisplay, 
-UserRole 
+  ProjectRequestFilter,
+  User,
+  UserRole,
 } from '@/graphql/schema'
 import { logger } from '@/libs/Logger'
 
-
 @Resolver(() => ProjectRequest)
-@Resolver(() => ProjectRequestDisplay)
 export class ProjectRequestResolver {
   constructor(
     private projectRequestService: ProjectRequestService,
     private userService: UserService
   ) {}
 
-  @Query(() => [ProjectRequestDisplay])
+  @Query(() => [ProjectRequest])
   async projectRequests(
-    @Arg('filter', () => Object, { nullable: true }) filter?: any
+    @Arg('filter', () => ProjectRequestFilter, { nullable: true })
+    filter?: ProjectRequestFilter
   ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
@@ -109,35 +108,26 @@ export class ProjectRequestResolver {
     return await this.projectRequestService.rejectProjectRequest(id)
   }
 
-  @FieldResolver(() => DisplayUser, { nullable: true })
-  async user(@Root() parent: any) {
+  @FieldResolver(() => User, { nullable: true })
+  async user(@Root() parent: ProjectRequest) {
+    if (!parent.userId) return null
     const user = await this.userService.getUserById(parent.userId)
     if (!user) return null
 
-    return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-    }
+    return user
   }
 
-  @FieldResolver(() => DisplayUser, { nullable: true })
-  async reviewer(@Root() parent: any) {
-    if (!parent.reviewedBy) return null
-    const user = await this.userService.getUserById(parent.reviewedBy)
+  @FieldResolver(() => User, { nullable: true })
+  async reviewer(@Root() parent: ProjectRequest) {
+    if (!parent.reviewerId) return null
+    const user = await this.userService.getUserById(parent.reviewerId)
     if (!user) return null
 
-    return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-    }
+    return user
   }
 
   @FieldResolver(() => String, { nullable: true })
-  createdAt(@Root() parent: any) {
+  createdAt(@Root() parent: ProjectRequest) {
     if (!parent.createdAt) {
       return null
     }
@@ -158,7 +148,7 @@ export class ProjectRequestResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
-  updatedAt(@Root() parent: any) {
+  updatedAt(@Root() parent: ProjectRequest) {
     if (!parent.updatedAt) return null
     try {
       const date = new Date(parent.updatedAt)
@@ -171,25 +161,6 @@ export class ProjectRequestResolver {
       logger.error('Error formatting updatedAt', {
         error: String(error),
         value: parent.updatedAt,
-      })
-      return null
-    }
-  }
-
-  @FieldResolver(() => String, { nullable: true })
-  reviewedAt(@Root() parent: any) {
-    if (!parent.reviewedAt) return null
-    try {
-      const date = new Date(parent.reviewedAt)
-      if (Number.isNaN(date.getTime())) {
-        logger.error('Invalid date value', { value: parent.reviewedAt })
-        return null
-      }
-      return date.toISOString()
-    } catch (error) {
-      logger.error('Error formatting reviewedAt', {
-        error: String(error),
-        value: parent.reviewedAt,
       })
       return null
     }

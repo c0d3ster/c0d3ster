@@ -4,6 +4,8 @@ import { gql } from 'graphql-tag'
 import type {
   DeleteFileMutation,
   DeleteFileMutationVariables,
+  FileFilterInput,
+  FileUploadInput,
   UploadProjectLogoMutation,
   UploadProjectLogoMutationVariables,
 } from '@/graphql/generated/graphql'
@@ -70,7 +72,7 @@ export const useDeleteFile = () => {
   return useMutation(DELETE_FILE)
 }
 
-export const useGetFiles = (filter?: any) => {
+export const useGetFiles = (filter?: FileFilterInput) => {
   return useQuery(GET_FILES, {
     variables: { filter },
   })
@@ -84,7 +86,10 @@ export const useGetFile = (key: string) => {
 
 // Async functions
 
-export const uploadProjectLogo = async (projectId: string, input: any) => {
+export const uploadProjectLogo = async (
+  projectId: string,
+  input: FileUploadInput
+) => {
   const result = await apolloClient.mutate<
     UploadProjectLogoMutation,
     UploadProjectLogoMutationVariables

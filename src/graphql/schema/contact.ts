@@ -1,6 +1,6 @@
 import { Field, ID, InputType, ObjectType } from 'type-graphql'
 
-@ObjectType()
+@ObjectType('ContactFormSubmission')
 export class ContactFormSubmission {
   @Field(() => ID)
   id!: string
@@ -21,7 +21,7 @@ export class ContactFormSubmission {
   submittedAt!: string
 }
 
-@InputType()
+@InputType('ContactFormInput')
 export class ContactFormInput {
   @Field(() => String)
   name!: string

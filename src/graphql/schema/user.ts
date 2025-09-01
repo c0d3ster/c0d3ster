@@ -18,7 +18,7 @@ registerEnumType(UserRole, {
   description: 'User role in the system',
 })
 
-@ObjectType()
+@ObjectType('User')
 export class User {
   @Field(() => ID)
   id!: string
@@ -63,22 +63,7 @@ export class User {
   updatedAt!: string
 }
 
-@ObjectType()
-export class DisplayUser {
-  @Field(() => ID)
-  id!: string
-
-  @Field(() => String, { nullable: true })
-  firstName?: string
-
-  @Field(() => String, { nullable: true })
-  lastName?: string
-
-  @Field(() => String)
-  email!: string
-}
-
-@InputType()
+@InputType('UpdateUserInput')
 export class UpdateUserInput {
   @Field(() => String, { nullable: true })
   firstName?: string
@@ -103,4 +88,22 @@ export class UpdateUserInput {
 
   @Field(() => String, { nullable: true })
   avatarUrl?: string
+}
+
+@InputType('UserFilter')
+export class UserFilter {
+  @Field(() => UserRole, { nullable: true })
+  role?: UserRole
+
+  @Field(() => String, { nullable: true })
+  email?: string
+
+  @Field(() => String, { nullable: true })
+  firstName?: string
+
+  @Field(() => String, { nullable: true })
+  lastName?: string
+
+  @Field(() => String, { nullable: true })
+  availability?: string
 }

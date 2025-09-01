@@ -1,6 +1,9 @@
 import { and, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
+import type { ProjectFilter } from '@/graphql/schema'
+import type { ProjectRecord } from '@/models'
+
 import { UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
@@ -18,10 +21,10 @@ export class ProjectService {
   constructor(private fileService: FileService) {}
 
   async getProjects(
-    filter?: any,
+    filter?: ProjectFilter,
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRecord[]> {
     let whereClause
     if (filter) {
       const conditions = []
@@ -71,7 +74,7 @@ export class ProjectService {
     id: string,
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRecord> {
     const project = await db.query.projects.findFirst({
       where: eq(schemas.projects.id, id),
     })
@@ -113,11 +116,11 @@ export class ProjectService {
     slug: string,
     currentUserId?: string,
     currentUserRole?: string
-  ) {
+  ): Promise<ProjectRecord> {
     // Get all projects and find the one that matches the slug
     const allProjects = await db.query.projects.findMany()
 
-    const project = findProjectBySlug(slug, allProjects)
+    const project = findProjectBySlug<ProjectRecord>(slug, allProjects)
 
     if (!project) {
       throw new GraphQLError('Project not found', {
@@ -175,7 +178,7 @@ export class ProjectService {
     return project
   }
 
-  async getMyProjects(currentUserId: string) {
+  async getMyProjects(currentUserId: string): Promise<ProjectRecord[]> {
     // "My Projects" should return projects where the user is:
     // 1. The CLIENT (they own the project)
     // 2. A COLLABORATOR (they're working on it but not the main developer)
@@ -218,7 +221,7 @@ export class ProjectService {
     return projects
   }
 
-  async getAvailableProjects() {
+  async getAvailableProjects(): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: and(
         eq(schemas.projects.status, 'approved'),
@@ -228,7 +231,7 @@ export class ProjectService {
     })
   }
 
-  async getFeaturedProjects(userId?: string) {
+  async getFeaturedProjects(userId?: string): Promise<ProjectRecord[]> {
     let whereClause: any = eq(schemas.projects.featured, true)
 
     // If a user is specified, filter by that user's projects
@@ -245,14 +248,14 @@ export class ProjectService {
     })
   }
 
-  async getPublicProjects() {
+  async getPublicProjects(): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: eq(schemas.projects.featured, true),
       orderBy: [desc(schemas.projects.createdAt)],
     })
   }
 
-  async getAssignedProjects(developerId: string) {
+  async getAssignedProjects(developerId: string): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: eq(schemas.projects.developerId, developerId),
       orderBy: [desc(schemas.projects.createdAt)],

@@ -7,6 +7,7 @@ import type {
   GetFeaturedProjectsQuery,
   GetProjectBySlugQuery,
   GetProjectsQuery,
+  ProjectFilter,
 } from '@/graphql/generated/graphql'
 
 import {
@@ -161,7 +162,7 @@ export const ASSIGN_PROJECT = gql`
 `
 
 // Hooks for components
-export const useGetProjects = (filter?: any, userEmail?: string) =>
+export const useGetProjects = (filter?: ProjectFilter, userEmail?: string) =>
   useGetProjectsQuery({
     variables: {
       filter: filter || undefined,
@@ -175,7 +176,10 @@ export const useGetFeaturedProjects = (userEmail?: string) =>
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
 // Async functions for SSR / non-hook usage
-export const getProjects = async (filter?: any, userEmail?: string) => {
+export const getProjects = async (
+  filter?: ProjectFilter,
+  userEmail?: string
+) => {
   const result = await apolloClient.query<GetProjectsQuery>({
     query: GetProjectsDocument,
     variables: {
