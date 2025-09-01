@@ -33,6 +33,7 @@ export const GET_ME = gql`
       portfolio
       hourlyRate
       availability
+      avatarUrl
       createdAt
       updatedAt
     }
@@ -53,6 +54,7 @@ export const GET_USER = gql`
       portfolio
       hourlyRate
       availability
+      avatarUrl
       createdAt
       updatedAt
     }

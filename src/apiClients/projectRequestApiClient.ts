@@ -17,29 +17,16 @@ import {
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
 
+import { PROJECT_REQUEST_DISPLAY_FRAGMENT } from './fragments'
+
 // GraphQL Operations
 export const GET_PROJECT_REQUESTS = gql`
   query GetProjectRequests {
     projectRequests {
-      id
-      projectName
-      title
-      description
-      projectType
-      budget
-      timeline
-      requirements
-      additionalInfo
-      status
-      createdAt
-      user {
-        id
-        email
-        firstName
-        lastName
-      }
+      ...ProjectRequestDisplay
     }
   }
+  ${PROJECT_REQUEST_DISPLAY_FRAGMENT}
 `
 
 export const CREATE_PROJECT_REQUEST = gql`

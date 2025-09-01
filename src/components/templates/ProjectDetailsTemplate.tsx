@@ -17,8 +17,11 @@ import { formatStatus, getStatusCardStyling } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
 
+// Type alias for the complete Project from the query
+type Project = NonNullable<GetProjectBySlugQuery['projectBySlug']>
+
 type ProjectDetailsTemplateProps = {
-  project: NonNullable<GetProjectBySlugQuery['projectBySlug']>
+  project: Project
 }
 
 export const ProjectDetailsTemplate = ({

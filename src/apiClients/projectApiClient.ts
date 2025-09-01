@@ -19,45 +19,29 @@ import {
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
 
+import {
+  DASHBOARD_PROJECT_FRAGMENT,
+  PROJECT_DISPLAY_FRAGMENT,
+  USER_DISPLAY_FRAGMENT,
+} from './fragments'
+
 // GraphQL Operations
 export const GET_PROJECTS = gql`
   query GetProjects($filter: ProjectFilter, $userEmail: String) {
     projects(filter: $filter, userEmail: $userEmail) {
-      id
-      title
-      projectName
-      description
-      overview
-      techStack
-      status
-      logo
-      liveUrl
-      repositoryUrl
-      featured
-      createdAt
-      projectType
+      ...ProjectDisplay
     }
   }
+  ${PROJECT_DISPLAY_FRAGMENT}
 `
 
 export const GET_FEATURED_PROJECTS = gql`
   query GetFeaturedProjects($userEmail: String) {
     featuredProjects(userEmail: $userEmail) {
-      id
-      title
-      projectName
-      description
-      overview
-      techStack
-      status
-      logo
-      liveUrl
-      repositoryUrl
-      featured
-      createdAt
-      projectType
+      ...ProjectDisplay
     }
   }
+  ${PROJECT_DISPLAY_FRAGMENT}
 `
 
 export const GET_PROJECT_BY_SLUG = gql`
@@ -88,77 +72,34 @@ export const GET_PROJECT_BY_SLUG = gql`
       clientId
       developerId
       requestId
+      projectRequest
       client {
-        id
-        firstName
-        lastName
-        email
+        ...UserDisplay
       }
       developer {
-        id
-        firstName
-        lastName
-        email
+        ...UserDisplay
       }
       collaborators {
         id
         role
         joinedAt
         user {
-          id
-          firstName
-          lastName
-          email
+          ...UserDisplay
         }
       }
       statusUpdates
     }
   }
+  ${USER_DISPLAY_FRAGMENT}
 `
 
 export const ASSIGN_PROJECT = gql`
   mutation AssignProject($projectId: ID!, $developerId: ID!) {
     assignProject(projectId: $projectId, developerId: $developerId) {
-      id
-      title
-      projectName
-      description
-      projectType
-      budget
-      status
-      progressPercentage
-      startDate
-      estimatedCompletionDate
-      actualCompletionDate
-      createdAt
-      updatedAt
-      techStack
-      featured
-      client {
-        id
-        firstName
-        lastName
-        email
-      }
-      developer {
-        id
-        firstName
-        lastName
-        email
-      }
-      collaborators {
-        id
-        role
-        joinedAt
-        user {
-          id
-          firstName
-          lastName
-          email
-        }
-      }
+      ...DashboardProject
     }
   }
+  ${DASHBOARD_PROJECT_FRAGMENT}
 `
 
 // Hooks for components

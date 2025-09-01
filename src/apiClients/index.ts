@@ -1,6 +1,7 @@
 export * from './contactApiClient'
 export * from './dashboardApiClient'
 export * from './fileApiClient'
+export * from './fragments'
 export * from './projectApiClient'
 export * from './projectRequestApiClient'
 export * from './userApiClient'

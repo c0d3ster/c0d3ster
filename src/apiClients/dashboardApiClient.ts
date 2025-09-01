@@ -8,6 +8,13 @@ import {
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
 
+import {
+  DASHBOARD_PROJECT_FRAGMENT,
+  PROJECT_DISPLAY_FRAGMENT,
+  PROJECT_REQUEST_DISPLAY_FRAGMENT,
+  USER_DISPLAY_FRAGMENT,
+} from './fragments'
+
 export const GET_MY_DASHBOARD = gql`
   query GetMyDashboard {
     myDashboard {
@@ -18,110 +25,30 @@ export const GET_MY_DASHBOARD = gql`
         pendingRequests
       }
       projects {
-        id
-        title
-        projectName
-        description
-        projectType
-        budget
-        status
-        progressPercentage
-        techStack
-        repositoryUrl
-        startDate
-        estimatedCompletionDate
-        actualCompletionDate
-        createdAt
-        updatedAt
-        liveUrl
-        stagingUrl
-        featured
-        requestId
-        client {
-          id
-          firstName
-          lastName
-          email
-        }
-        developer {
-          id
-          firstName
-          lastName
-          email
-        }
+        ...DashboardProject
       }
       projectRequests {
-        id
-        projectName
-        title
-        description
-        projectType
-        budget
-        timeline
-        requirements
-        additionalInfo
-        status
-        createdAt
-        user {
-          id
-          email
-          firstName
-          lastName
-        }
+        ...ProjectRequestDisplay
       }
       availableProjects {
-        id
-        title
-        projectName
-        description
-        projectType
+        ...ProjectDisplay
         budget
-        status
-        techStack
-        repositoryUrl
         startDate
         estimatedCompletionDate
-        createdAt
         updatedAt
-        featured
         client {
-          id
-          firstName
-          lastName
-          email
+          ...UserDisplay
         }
       }
       assignedProjects {
-        id
-        title
-        projectName
-        description
-        projectType
-        budget
-        status
-        progressPercentage
-        techStack
-        repositoryUrl
-        startDate
-        estimatedCompletionDate
-        createdAt
-        updatedAt
-        featured
-        client {
-          id
-          firstName
-          lastName
-          email
-        }
-        developer {
-          id
-          firstName
-          lastName
-          email
-        }
+        ...DashboardProject
       }
     }
   }
+  ${DASHBOARD_PROJECT_FRAGMENT}
+  ${PROJECT_REQUEST_DISPLAY_FRAGMENT}
+  ${PROJECT_DISPLAY_FRAGMENT}
+  ${USER_DISPLAY_FRAGMENT}
 `
 
 // Hooks for components

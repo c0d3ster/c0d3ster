@@ -2,7 +2,10 @@
 
 import Link from 'next/link'
 
-import type { GetMyDashboardQuery } from '@/graphql/generated/graphql'
+import type { 
+  DashboardProjectFragment, 
+  ProjectRequestDisplayFragment 
+} from '@/graphql/generated/graphql'
 
 import {
   formatStatus,
@@ -10,27 +13,20 @@ import {
   getStatusCardStyling,
 } from '@/utils/Project'
 
-type DashboardProject = NonNullable<
-  GetMyDashboardQuery['myDashboard']
->['projects'][0]
-type DashboardProjectRequest = NonNullable<
-  GetMyDashboardQuery['myDashboard']
->['projectRequests'][0]
-
-type ProjectItem = DashboardProject | DashboardProjectRequest
+type ProjectItem = DashboardProjectFragment | ProjectRequestDisplayFragment
 
 type ProjectStatusCardProps = {
   item: ProjectItem
 }
 
 // Type guards
-const isProject = (item: ProjectItem): item is DashboardProject => {
+const isProject = (item: ProjectItem): item is DashboardProjectFragment => {
   return item.__typename === 'Project'
 }
 
 const isProjectRequest = (
   item: ProjectItem
-): item is DashboardProjectRequest => {
+): item is ProjectRequestDisplayFragment => {
   return item.__typename === 'ProjectRequest'
 }
 
