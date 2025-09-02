@@ -15,7 +15,13 @@ export class ProjectSummary {
   completedProjects!: number
 
   @Field(() => Number)
-  pendingRequests!: number
+  totalRequests!: number
+
+  @Field(() => Number)
+  pendingReviewRequests!: number
+
+  @Field(() => Number)
+  inReviewRequests!: number
 }
 
 @ObjectType('UserDashboard')

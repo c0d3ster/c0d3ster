@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import type { ProjectRequest } from '@/graphql/generated/graphql'
 
+import { ProjectStatus } from '@/graphql/generated/graphql'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
 
 import { RequirementsList } from './RequirementsList'
@@ -12,7 +13,7 @@ type ProjectRequestCardProps = {
   request: ProjectRequest
   updateStatusAction: (
     requestId: string,
-    status: string,
+    status: ProjectStatus,
     reviewNotes?: string
   ) => Promise<void>
   approveAction: (
@@ -44,7 +45,7 @@ export const ProjectRequestCard = ({
     internalNotes: '',
   })
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: ProjectStatus) => {
     try {
       setIsUpdating(true)
       await updateStatusAction(request.id, newStatus)
@@ -155,10 +156,10 @@ export const ProjectRequestCard = ({
 
       {/* Action Buttons */}
       <div className='flex flex-wrap gap-2'>
-        {request.status === 'requested' && (
+        {request.status === ProjectStatus.Requested && (
           <button
             type='button'
-            onClick={() => handleStatusUpdate('in_review')}
+            onClick={() => handleStatusUpdate(ProjectStatus.InReview)}
             disabled={isUpdating}
             className='rounded border border-blue-400/30 bg-blue-400/10 px-4 py-2 font-mono text-sm text-blue-400 transition-all duration-300 hover:bg-blue-400 hover:text-black disabled:opacity-50'
           >
@@ -166,7 +167,7 @@ export const ProjectRequestCard = ({
           </button>
         )}
 
-        {request.status === 'in_review' && !showApprovalForm && (
+        {request.status === ProjectStatus.InReview && !showApprovalForm && (
           <>
             <button
               type='button'
@@ -178,7 +179,7 @@ export const ProjectRequestCard = ({
             </button>
             <button
               type='button'
-              onClick={() => handleStatusUpdate('cancelled')}
+              onClick={() => handleStatusUpdate(ProjectStatus.Cancelled)}
               disabled={isUpdating}
               className='rounded border border-red-400/30 bg-red-400/10 px-4 py-2 font-mono text-sm text-red-400 transition-all duration-300 hover:bg-red-400 hover:text-black disabled:opacity-50'
             >
@@ -187,10 +188,10 @@ export const ProjectRequestCard = ({
           </>
         )}
 
-        {request.status === 'requested' && (
+        {request.status === ProjectStatus.Requested && (
           <button
             type='button'
-            onClick={() => handleStatusUpdate('cancelled')}
+            onClick={() => handleStatusUpdate(ProjectStatus.Cancelled)}
             disabled={isUpdating}
             className='rounded border border-red-400/30 bg-red-400/10 px-4 py-2 font-mono text-sm text-red-400 transition-all duration-300 hover:bg-red-400 hover:text-black disabled:opacity-50'
           >

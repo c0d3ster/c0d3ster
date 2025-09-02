@@ -82,17 +82,23 @@ export class DashboardResolver {
       ['in_progress', 'in_testing', 'ready_for_launch'].includes(p.status)
     ).length
     const completedProjects = userProjects.filter((p: ProjectRecord) =>
-      ['completed', 'live'].includes(p.status)
+      ['completed'].includes(p.status)
     ).length
-    const pendingRequests = userRequests.filter((r: ProjectRequestRecord) =>
-      ['pending', 'in_review'].includes(r.status)
+    const totalRequests = userRequests.length
+    const pendingReviewRequests = userRequests.filter(
+      (r: ProjectRequestRecord) => ['requested'].includes(r.status)
+    ).length
+    const inReviewRequests = userRequests.filter((r: ProjectRequestRecord) =>
+      ['in_review'].includes(r.status)
     ).length
 
     return {
       totalProjects,
       activeProjects,
       completedProjects,
-      pendingRequests,
+      totalRequests,
+      pendingReviewRequests,
+      inReviewRequests,
     }
   }
 

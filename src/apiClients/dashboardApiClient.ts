@@ -22,7 +22,9 @@ export const GET_MY_DASHBOARD = gql`
         totalProjects
         activeProjects
         completedProjects
-        pendingRequests
+        totalRequests
+        pendingReviewRequests
+        inReviewRequests
       }
       projects {
         ...DashboardProject

@@ -8,7 +8,6 @@ import type {
 import type { ProjectRequestRecord } from '@/models'
 
 import { db } from '@/libs/DB'
-import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
 import { isAdminRole } from '@/utils'
 
@@ -136,7 +135,7 @@ export class ProjectRequestService {
         extensions: { code: 'CREATION_FAILED' },
       })
     }
-    logger.info(`Project request created: ${request.id}`)
+
     return request
   }
 
@@ -204,7 +203,6 @@ export class ProjectRequestService {
       })
     }
 
-    logger.info(`Project request updated: ${id}`)
     return updatedRequest
   }
 
@@ -283,7 +281,6 @@ export class ProjectRequestService {
       return created
     })
 
-    logger.info(`Project request approved and project created: ${project.id}`)
     return project
   }
 
@@ -304,7 +301,6 @@ export class ProjectRequestService {
       })
     }
 
-    logger.info(`Project request rejected: ${id}`)
     return request
   }
 }

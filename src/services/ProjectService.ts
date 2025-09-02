@@ -190,14 +190,12 @@ export class ProjectService {
     // (those go in "Assigned Projects")
     // For admins, return ALL projects
 
-    logger.info(`Getting projects for user: ${currentUserId}`)
-
     // Admins see all projects
     if (currentUserRole && isAdminRole(currentUserRole)) {
       const allProjects = await db.query.projects.findMany({
         orderBy: [desc(schemas.projects.createdAt)],
       })
-      logger.info(`Admin user - returning ${allProjects.length} projects`)
+
       return allProjects
     }
 
@@ -231,7 +229,6 @@ export class ProjectService {
       )
       .orderBy(desc(schemas.projects.createdAt))
 
-    logger.info(`Found ${projects.length} projects for user ${currentUserId}`)
     return projects
   }
 
@@ -320,7 +317,7 @@ export class ProjectService {
         extensions: { code: 'CREATION_FAILED' },
       })
     }
-    logger.info(`Project created: ${project.id}`)
+
     return project
   }
 
@@ -378,7 +375,6 @@ export class ProjectService {
       .where(eq(schemas.projects.id, id))
       .returning()
 
-    logger.info(`Project updated: ${id}`)
     return updatedProject
   }
 
@@ -395,10 +391,10 @@ export class ProjectService {
     ) {
       try {
         await this.fileService.deleteFile(oldLogoKey)
-        logger.info(`Deleted old logo: ${oldLogoKey}`)
       } catch (error) {
+        // Log but don't fail the operation
         logger.warn(`Failed to delete old logo: ${oldLogoKey}`, {
-          error: String(error),
+          error,
         })
         // Continue with upload even if old logo deletion fails
       }
@@ -449,10 +445,10 @@ export class ProjectService {
     ) {
       try {
         await this.fileService.deleteFile(oldLogoKey)
-        logger.info(`Deleted old logo: ${oldLogoKey}`)
       } catch (error) {
+        // Log but don't fail the operation
         logger.warn(`Failed to delete old logo: ${oldLogoKey}`, {
-          error: String(error),
+          error,
         })
         // Continue with upload even if old logo deletion fails
       }
@@ -536,7 +532,6 @@ export class ProjectService {
       })
     }
 
-    logger.info(`Project assigned: ${projectId} to developer: ${developerId}`)
     return updatedProject
   }
 
@@ -602,7 +597,6 @@ export class ProjectService {
       })
       .where(eq(schemas.projects.id, id))
 
-    logger.info(`Project status updated: ${id} to ${input.newStatus}`)
     return statusUpdate
   }
 
