@@ -1,3 +1,5 @@
+import type { Buffer } from 'node:buffer'
+
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -14,6 +16,7 @@ import type { FileUploadInput } from '@/graphql/schema'
 import { Environment } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
+import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
 
 export class FileService {
@@ -159,6 +162,21 @@ export class FileService {
     await this.s3Client.send(command)
   }
 
+  async uploadFile(
+    key: string,
+    fileBuffer: Buffer,
+    contentType: string
+  ): Promise<void> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      Body: fileBuffer,
+      ContentType: contentType,
+    })
+
+    await this.s3Client.send(command)
+  }
+
   async listFiles(prefix: string): Promise<string[]> {
     const command = new ListObjectsV2Command({
       Bucket: this.bucketName,
@@ -208,7 +226,7 @@ export class FileService {
         uploadedAt: new Date(meta.uploadedat || Date.now()),
       }
     } catch (error) {
-      console.error('Error getting file metadata:', error)
+      logger.error('Error getting file metadata:', { error })
       return null
     }
   }
@@ -241,6 +259,18 @@ export class FileService {
       .returning()
 
     return projectFile
+  }
+
+  async deleteProjectFileRecordByPath(filePath: string) {
+    const result = await db
+      .delete(schemas.projectFiles)
+      .where(eq(schemas.projectFiles.filePath, filePath))
+      .returning()
+
+    logger.info(`Deleted project file record for path: ${filePath}`, {
+      deletedCount: result.length,
+    })
+    return result
   }
 
   async getProjectFiles(projectId: string) {

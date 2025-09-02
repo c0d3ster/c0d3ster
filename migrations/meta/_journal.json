@@ -71,6 +71,13 @@
       "when": 1756515486804,
       "tag": "0009_add_project_requests_project_name",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1756788013478,
+      "tag": "0010_remove_file_type_from_project_files",
+      "breakpoints": true
     }
   ]
 }

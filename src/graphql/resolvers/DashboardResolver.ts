@@ -8,7 +8,12 @@ import type {
   UserService,
 } from '@/services'
 
-import { ProjectRequest, ProjectSummary, UserDashboard } from '@/graphql/schema'
+import {
+  Project,
+  ProjectRequest,
+  ProjectSummary,
+  UserDashboard,
+} from '@/graphql/schema'
 import { isDeveloperOrHigherRole } from '@/utils'
 
 // Type for the dashboard parent object
@@ -24,7 +29,7 @@ export class DashboardResolver {
     private projectRequestService: ProjectRequestService
   ) {}
 
-  @FieldResolver(() => [String])
+  @FieldResolver(() => [Project])
   async projects(@Root() parent: DashboardParent) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     if (parent.userId !== currentUser.id) {
@@ -33,11 +38,10 @@ export class DashboardResolver {
       })
     }
 
-    const userProjects = await this.projectService.getProjects(
-      undefined,
-      currentUser.id
+    return await this.projectService.getMyProjects(
+      currentUser.id,
+      currentUser.role
     )
-    return userProjects.map((p: ProjectRecord) => p.id)
   }
 
   @FieldResolver(() => [ProjectRequest])
@@ -49,8 +53,9 @@ export class DashboardResolver {
       })
     }
 
-    return await this.projectRequestService.getProjectRequestsByUserId(
-      currentUser.id
+    return await this.projectRequestService.getMyProjectRequests(
+      currentUser.id,
+      currentUser.role
     )
   }
 
@@ -63,14 +68,14 @@ export class DashboardResolver {
       })
     }
 
-    const userProjects = await this.projectService.getProjects(
-      undefined,
-      currentUser.id
+    const userProjects = await this.projectService.getMyProjects(
+      currentUser.id,
+      currentUser.role
     )
-    const userRequests =
-      await this.projectRequestService.getProjectRequestsByUserId(
-        currentUser.id
-      )
+    const userRequests = await this.projectRequestService.getMyProjectRequests(
+      currentUser.id,
+      currentUser.role
+    )
 
     const totalProjects = userProjects.length
     const activeProjects = userProjects.filter((p: ProjectRecord) =>
@@ -91,7 +96,7 @@ export class DashboardResolver {
     }
   }
 
-  @FieldResolver(() => [String])
+  @FieldResolver(() => [Project])
   async availableProjects(@Root() parent: DashboardParent) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     if (parent.userId !== currentUser.id) {
@@ -106,10 +111,10 @@ export class DashboardResolver {
     }
 
     const availableProjects = await this.projectService.getAvailableProjects()
-    return availableProjects.map((p: ProjectRecord) => p.id)
+    return availableProjects
   }
 
-  @FieldResolver(() => [String])
+  @FieldResolver(() => [Project])
   async assignedProjects(@Root() parent: DashboardParent) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     if (parent.userId !== currentUser.id) {
@@ -126,6 +131,6 @@ export class DashboardResolver {
     const assignedProjects = await this.projectService.getAssignedProjects(
       currentUser.id
     )
-    return assignedProjects.map((p: ProjectRecord) => p.id)
+    return assignedProjects
   }
 }

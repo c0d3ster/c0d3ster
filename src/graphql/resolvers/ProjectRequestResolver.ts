@@ -127,6 +127,27 @@ export class ProjectRequestResolver {
   }
 
   @FieldResolver(() => String, { nullable: true })
+  requirements(@Root() parent: ProjectRequest) {
+    if (!parent.requirements) return null
+
+    // If it's already a string, return it
+    if (typeof parent.requirements === 'string') {
+      return parent.requirements
+    }
+
+    // If it's an object, stringify it and let the client handle formatting
+    try {
+      return JSON.stringify(parent.requirements)
+    } catch (error) {
+      logger.error('Error serializing requirements object', {
+        error: String(error),
+        requirements: parent.requirements,
+      })
+      return null
+    }
+  }
+
+  @FieldResolver(() => String, { nullable: true })
   createdAt(@Root() parent: ProjectRequest) {
     if (!parent.createdAt) {
       return null

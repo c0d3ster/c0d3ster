@@ -186,7 +186,10 @@ export class ProjectResolver {
   @FieldResolver(() => String, { nullable: true })
   async projectRequest(@Root() parent: ProjectRecord) {
     if (!parent.requestId) return null
-    return await this.projectService.getProjectRequestById(parent.requestId)
+    const request = await this.projectService.getProjectRequestById(
+      parent.requestId
+    )
+    return request ? request.projectName : null
   }
 
   @FieldResolver(() => [String], { nullable: true })

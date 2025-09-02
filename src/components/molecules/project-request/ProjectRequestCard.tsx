@@ -6,6 +6,8 @@ import type { ProjectRequest } from '@/graphql/generated/graphql'
 
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
 
+import { RequirementsList } from './RequirementsList'
+
 type ProjectRequestCardProps = {
   request: ProjectRequest
   updateStatusAction: (
@@ -124,18 +126,12 @@ export const ProjectRequestCard = ({
       </div>
 
       {/* Requirements */}
-      {request.requirements && (
-        <div className='mb-4'>
-          <h4 className='mb-2 font-mono text-sm font-bold text-green-300'>
-            Requirements:
-          </h4>
-          <div className='text-sm text-green-300/80'>
-            {typeof request.requirements === 'string'
-              ? request.requirements
-              : JSON.stringify(request.requirements, null, 2)}
-          </div>
-        </div>
-      )}
+      <div className='mb-4'>
+        <h4 className='mb-2 font-mono text-sm font-bold text-green-300'>
+          Requirements:
+        </h4>
+        <RequirementsList requirements={request.requirements} />
+      </div>
 
       {/* Additional Info */}
       {request.additionalInfo && (

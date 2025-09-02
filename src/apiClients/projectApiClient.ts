@@ -15,6 +15,7 @@ import {
   GetProjectBySlugDocument,
   GetProjectsDocument,
   useGetFeaturedProjectsQuery,
+  useGetProjectBySlugQuery,
   useGetProjectsQuery,
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
@@ -114,6 +115,12 @@ export const useGetFeaturedProjects = (userEmail?: string) =>
   useGetFeaturedProjectsQuery({
     variables: userEmail ? { userEmail } : undefined,
   })
+
+export const useGetProjectBySlug = (slug: string) =>
+  useGetProjectBySlugQuery({
+    variables: { slug },
+  })
+
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
 // Async functions for SSR / non-hook usage

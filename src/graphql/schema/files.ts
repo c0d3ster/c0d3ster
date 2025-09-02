@@ -95,6 +95,30 @@ export class FileFilterInput {
   environment?: Environment
 }
 
+@ObjectType('FileUploadMetadata')
+export class FileUploadMetadata {
+  @Field(() => String)
+  key!: string
+
+  @Field(() => String)
+  fileName!: string
+
+  @Field(() => String)
+  originalFileName!: string
+
+  @Field(() => Number)
+  fileSize!: number
+
+  @Field(() => String)
+  contentType!: string
+
+  @Field(() => Environment)
+  environment!: Environment
+
+  @Field(() => String)
+  uploadedAt!: string
+}
+
 @ObjectType('ProjectLogoUploadResult')
 export class ProjectLogoUploadResult {
   @Field(() => String)
@@ -103,8 +127,8 @@ export class ProjectLogoUploadResult {
   @Field(() => String)
   key!: string
 
-  @Field(() => File)
-  metadata!: File
+  @Field(() => FileUploadMetadata)
+  metadata!: FileUploadMetadata
 
   @Field(() => ID)
   projectId!: string

@@ -93,15 +93,6 @@ export type FileFilterInput = {
   readonly userId?: InputMaybe<Scalars['ID']['input']>;
 };
 
-export type FileUploadInput = {
-  readonly contentType: Scalars['String']['input'];
-  readonly environment: Environment;
-  readonly fileName: Scalars['String']['input'];
-  readonly fileSize: Scalars['Float']['input'];
-  readonly originalFileName: Scalars['String']['input'];
-  readonly projectId?: InputMaybe<Scalars['ID']['input']>;
-};
-
 export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly approveProjectRequest: Scalars['String']['output'];
@@ -116,7 +107,7 @@ export type Mutation = {
   readonly updateProjectRequestStatus: ProjectRequest;
   readonly updateProjectStatus: Project;
   readonly updateUser: User;
-  readonly uploadProjectLogo: ProjectLogoUploadResult;
+  readonly uploadProjectLogo: Scalars['String']['output'];
 };
 
 
@@ -188,7 +179,9 @@ export type MutationUpdateUserArgs = {
 
 
 export type MutationUploadProjectLogoArgs = {
-  input: FileUploadInput;
+  contentType: Scalars['String']['input'];
+  file: Scalars['String']['input'];
+  fileName: Scalars['String']['input'];
   projectId: Scalars['ID']['input'];
 };
 
@@ -241,14 +234,6 @@ export type ProjectFilter = {
   readonly priority?: InputMaybe<ProjectPriority>;
   readonly projectType?: InputMaybe<ProjectType>;
   readonly status?: InputMaybe<ProjectStatus>;
-};
-
-export type ProjectLogoUploadResult = {
-  readonly __typename?: 'ProjectLogoUploadResult';
-  readonly key: Scalars['String']['output'];
-  readonly metadata: File;
-  readonly projectId: Scalars['ID']['output'];
-  readonly uploadUrl: Scalars['String']['output'];
 };
 
 /** Priority level of a project */
@@ -484,11 +469,13 @@ export type GetMyDashboardQuery = { readonly __typename?: 'Query', readonly myDa
 
 export type UploadProjectLogoMutationVariables = Exact<{
   projectId: Scalars['ID']['input'];
-  input: FileUploadInput;
+  file: Scalars['String']['input'];
+  fileName: Scalars['String']['input'];
+  contentType: Scalars['String']['input'];
 }>;
 
 
-export type UploadProjectLogoMutation = { readonly __typename?: 'Mutation', readonly uploadProjectLogo: { readonly __typename?: 'ProjectLogoUploadResult', readonly uploadUrl: string, readonly key: string, readonly projectId: string, readonly metadata: { readonly __typename?: 'File', readonly id: string, readonly fileName: string, readonly contentType: string } } };
+export type UploadProjectLogoMutation = { readonly __typename?: 'Mutation', readonly uploadProjectLogo: string };
 
 export type GetFilesQueryVariables = Exact<{
   filter?: InputMaybe<FileFilterInput>;
@@ -747,17 +734,13 @@ export function useGetMyDashboardLazyQuery(baseOptions?: ApolloReactHooks.LazyQu
 export type GetMyDashboardQueryHookResult = ReturnType<typeof useGetMyDashboardQuery>;
 export type GetMyDashboardLazyQueryHookResult = ReturnType<typeof useGetMyDashboardLazyQuery>;
 export const UploadProjectLogoDocument = gql`
-    mutation UploadProjectLogo($projectId: ID!, $input: FileUploadInput!) {
-  uploadProjectLogo(projectId: $projectId, input: $input) {
-    uploadUrl
-    key
-    projectId
-    metadata {
-      id
-      fileName
-      contentType
-    }
-  }
+    mutation UploadProjectLogo($projectId: ID!, $file: String!, $fileName: String!, $contentType: String!) {
+  uploadProjectLogo(
+    projectId: $projectId
+    file: $file
+    fileName: $fileName
+    contentType: $contentType
+  )
 }
     `;
 
@@ -775,7 +758,9 @@ export const UploadProjectLogoDocument = gql`
  * const [uploadProjectLogoMutation, { data, loading, error }] = useUploadProjectLogoMutation({
  *   variables: {
  *      projectId: // value for 'projectId'
- *      input: // value for 'input'
+ *      file: // value for 'file'
+ *      fileName: // value for 'fileName'
+ *      contentType: // value for 'contentType'
  *   },
  * });
  */

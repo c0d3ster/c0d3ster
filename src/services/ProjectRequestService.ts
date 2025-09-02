@@ -88,9 +88,13 @@ export class ProjectRequestService {
 
   async getMyProjectRequests(
     currentUserId: string,
-    _currentUserRole: string
+    currentUserRole: string
   ): Promise<ProjectRequestRecord[]> {
-    // Allow users with any role to see their own project requests
+    // Admins can see all project requests, others see only their own
+    if (isAdminRole(currentUserRole)) {
+      return await this.getProjectRequests()
+    }
+
     return await db.query.projectRequests.findMany({
       where: eq(schemas.projectRequests.userId, currentUserId),
       orderBy: [desc(schemas.projectRequests.createdAt)],
