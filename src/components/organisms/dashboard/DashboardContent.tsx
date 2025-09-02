@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 import { useGetMe, useGetMyDashboard } from '@/apiClients'
 import { CompactUserProfile } from '@/components/molecules'
-import { UserRole } from '@/graphql/generated/graphql'
+import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { isAdminRole } from '@/utils/RoleConstants'
 
 import {
@@ -168,8 +168,7 @@ export const DashboardContent = () => {
                 <div className='font-mono text-xl font-bold text-blue-400'>
                   {
                     (dashboardData?.myDashboard?.projectRequests || []).filter(
-                      (r: any) =>
-                        r.status === 'approved' || r.status === 'Approved'
+                      (r) => r.status === ProjectStatus.Approved
                     ).length
                   }
                 </div>

@@ -1,10 +1,13 @@
 import {
   Field,
+  GraphQLISODateTime,
   ID,
   InputType,
-  ObjectType,
-  registerEnumType,
+  Int,
+  ObjectType, 
+registerEnumType 
 } from 'type-graphql'
+
 
 export enum Environment {
   DEV = 'DEV',
@@ -106,7 +109,7 @@ export class FileUploadMetadata {
   @Field(() => String)
   originalFileName!: string
 
-  @Field(() => Number)
+  @Field(() => Int)
   fileSize!: number
 
   @Field(() => String)
@@ -115,7 +118,7 @@ export class FileUploadMetadata {
   @Field(() => Environment)
   environment!: Environment
 
-  @Field(() => String)
+  @Field(() => GraphQLISODateTime)
   uploadedAt!: string
 }
 

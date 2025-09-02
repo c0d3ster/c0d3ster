@@ -165,13 +165,15 @@ export class FileService {
   async uploadFile(
     key: string,
     fileBuffer: Buffer,
-    contentType: string
+    contentType: string,
+    metadata?: Record<string, string>
   ): Promise<void> {
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
       Body: fileBuffer,
       ContentType: contentType,
+      Metadata: metadata,
     })
 
     await this.s3Client.send(command)

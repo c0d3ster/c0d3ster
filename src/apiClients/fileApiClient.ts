@@ -5,6 +5,8 @@ import type {
   DeleteFileMutation,
   DeleteFileMutationVariables,
   FileFilterInput,
+  GetFileQuery,
+  GetFileQueryVariables,
   UploadProjectLogoMutation,
   UploadProjectLogoMutationVariables,
 } from '@/graphql/generated/graphql'
@@ -82,8 +84,9 @@ export const useGetFiles = (filter?: FileFilterInput) => {
 }
 
 export const useGetFile = (key: string) => {
-  return useQuery(GET_FILE, {
+  return useQuery<GetFileQuery, GetFileQueryVariables>(GET_FILE, {
     variables: { key },
+    skip: !key, // Skip the query if key is empty
   })
 }
 

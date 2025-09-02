@@ -1,3 +1,4 @@
+import { fileTypeFromBuffer } from 'file-type'
 import { Buffer } from 'node:buffer'
 import {
   Arg,
@@ -107,10 +108,8 @@ export class FileResolver {
       this.userService.checkPermission(currentUser, UserRole.Admin)
     }
 
-    const env = Environment.DEV // or derive from context/filter
-    const files = await this.fileService.listFiles(
-      `${env.toLowerCase()}/users/${userId}/`
-    )
+    const env = process.env.APP_ENV?.toLowerCase() ?? 'dev'
+    const files = await this.fileService.listFiles(`${env}/users/${userId}/`)
 
     // Get metadata for each file
     const fileMetadata = await Promise.all(
@@ -143,8 +142,13 @@ export class FileResolver {
     const fileBuffer = Buffer.from(fileBase64, 'base64')
     const fileSize = fileBuffer.length
 
+    // Validate content type using magic bytes to prevent spoofed contentType
+    const detected = await fileTypeFromBuffer(fileBuffer)
+    const effectiveType = detected?.mime ?? contentType
+
     logger.info('Upload validation:', {
       contentType,
+      effectiveType,
       fileSize,
       fileName,
       allowedTypes: ALLOWED_IMAGE_TYPES,
@@ -152,11 +156,11 @@ export class FileResolver {
     })
 
     if (
-      !ALLOWED_IMAGE_TYPES.includes(contentType as any) ||
+      !ALLOWED_IMAGE_TYPES.includes(effectiveType as any) ||
       fileSize > MAX_FILE_SIZE
     ) {
       throw new Error(
-        `Invalid file upload parameters. Content type: ${contentType}, File size: ${fileSize}, Max size: ${MAX_FILE_SIZE}`
+        `Invalid file upload parameters. Content type: ${effectiveType}, File size: ${fileSize}, Max size: ${MAX_FILE_SIZE}`
       )
     }
 
@@ -165,10 +169,19 @@ export class FileResolver {
 
     // Generate file key with environment prefix
     const timestamp = Date.now()
-    const key = `dev/projects/${projectId}/${timestamp}_${fileName}`
+    const env = process.env.APP_ENV?.toLowerCase() ?? 'dev'
+    const key = `${env}/projects/${projectId}/${timestamp}_${fileName}`
 
-    // Upload directly to R2/S3
-    await this.fileService.uploadFile(key, fileBuffer, contentType)
+    // Upload directly to R2/S3 using the detected content type with metadata
+    await this.fileService.uploadFile(key, fileBuffer, effectiveType, {
+      filename: fileName,
+      originalfilename: fileName,
+      uploadedby: currentUser.id,
+      projectid: projectId,
+      environment: env,
+      uploadedat: new Date().toISOString(),
+      filesize: fileSize.toString(),
+    })
 
     // Update project logo field
     await this.projectService.updateProject(
@@ -183,7 +196,7 @@ export class FileResolver {
       projectId,
       fileName,
       originalFileName: fileName,
-      contentType,
+      contentType: effectiveType,
       fileSize,
       filePath: key,
       uploadedBy: currentUser.id,
@@ -192,14 +205,17 @@ export class FileResolver {
     })
 
     // Clean up old logo AFTER successful upload and database updates
-    if (oldLogoKey && oldLogoKey.includes('projects/')) {
+    if (
+      oldLogoKey &&
+      (oldLogoKey.includes('projects/') || oldLogoKey.includes('users/'))
+    ) {
       try {
         // Delete old logo file from storage
         await this.fileService.deleteFile(oldLogoKey)
         logger.info(`Deleted old logo file: ${oldLogoKey}`)
 
-        // Delete old logo entry from project_files table
-        await this.fileService.deleteProjectFileRecord(oldLogoKey)
+        // Delete old logo entry from project_files table using the correct method
+        await this.fileService.deleteProjectFileRecordByPath(oldLogoKey)
         logger.info(`Deleted old logo database entry: ${oldLogoKey}`)
       } catch (error) {
         logger.warn(`Failed to clean up old logo: ${oldLogoKey}`, {

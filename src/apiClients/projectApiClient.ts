@@ -23,6 +23,7 @@ import { apolloClient } from '@/libs/ApolloClient'
 import {
   DASHBOARD_PROJECT_FRAGMENT,
   PROJECT_DISPLAY_FRAGMENT,
+  PROJECT_REQUEST_DISPLAY_FRAGMENT,
   USER_DISPLAY_FRAGMENT,
 } from './fragments'
 
@@ -73,7 +74,9 @@ export const GET_PROJECT_BY_SLUG = gql`
       clientId
       developerId
       requestId
-      projectRequest
+      projectRequest {
+        ...ProjectRequestDisplay
+      }
       client {
         ...UserDisplay
       }
@@ -91,6 +94,7 @@ export const GET_PROJECT_BY_SLUG = gql`
       statusUpdates
     }
   }
+  ${PROJECT_REQUEST_DISPLAY_FRAGMENT}
   ${USER_DISPLAY_FRAGMENT}
 `
 

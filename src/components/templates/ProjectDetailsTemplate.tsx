@@ -2,12 +2,12 @@
 
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FaPencilAlt } from 'react-icons/fa'
 
 import type { GetProjectBySlugQuery } from '@/graphql/generated/graphql'
 
-import { useGetMe } from '@/apiClients'
+import { useGetFile, useGetMe } from '@/apiClients'
 import {
   BackButton,
   Button,
@@ -35,9 +35,26 @@ export const ProjectDetailsTemplate = ({
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
     project.logo || null
   )
+  const setCurrentLogoUrlRef = useRef(setCurrentLogoUrl)
+
+  // Check if the project logo is a public URL or a storage key
+  const isPublicUrl = (url?: string | null) =>
+    !!url && (/^https?:\/\//.test(url) || url.startsWith('/assets/'))
 
   // Use the current logo URL if set, otherwise fall back to the project logo
-  const displayLogo = currentLogoUrl || project.logo
+  const displayLogo =
+    currentLogoUrl || (isPublicUrl(project.logo) ? project.logo : undefined)
+
+  // Get download URL for non-public storage keys
+  const shouldFetchFile = project.logo && !isPublicUrl(project.logo)
+  const { data: fileData } = useGetFile(shouldFetchFile ? project.logo : '')
+
+  // Update current logo URL when file data is loaded
+  useEffect(() => {
+    if (shouldFetchFile && fileData?.file?.downloadUrl && !currentLogoUrl) {
+      setCurrentLogoUrlRef.current(fileData.file.downloadUrl)
+    }
+  }, [shouldFetchFile, fileData?.file?.downloadUrl, currentLogoUrl])
 
   // Check if current user can edit this project (is client or developer)
   // Only check after user data is loaded to avoid showing upload component briefly
@@ -151,7 +168,8 @@ export const ProjectDetailsTemplate = ({
                       No project logo available
                     </p>
                     <p className='mt-1 text-center font-mono text-xs text-green-400/30'>
-                      Logo upload is restricted to project owner
+                      Logo upload is restricted to the project owner or assigned
+                      developer
                     </p>
                   </div>
                 )}
