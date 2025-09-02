@@ -1,6 +1,6 @@
 import { Field, ID, InputType, ObjectType } from 'type-graphql'
 
-import { ProjectType } from './project'
+import { ProjectStatus, ProjectType } from './project'
 import { User } from './user'
 
 @ObjectType('ProjectRequest')
@@ -35,8 +35,8 @@ export class ProjectRequest {
   @Field(() => String, { nullable: true })
   additionalInfo?: string
 
-  @Field(() => String)
-  status!: string
+  @Field(() => ProjectStatus)
+  status!: ProjectStatus
 
   @Field(() => String)
   createdAt!: string

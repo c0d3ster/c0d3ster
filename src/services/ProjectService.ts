@@ -63,6 +63,7 @@ export class ProjectService {
         ? and(whereClause, eq(schemas.projects.developerId, currentUserId))
         : eq(schemas.projects.developerId, currentUserId)
     }
+    // Admins and super_admins can see all projects - no additional filtering needed
 
     return await db.query.projects.findMany({
       where: whereClause,
@@ -178,14 +179,25 @@ export class ProjectService {
     return project
   }
 
-  async getMyProjects(currentUserId: string): Promise<ProjectRecord[]> {
+  async getMyProjects(
+    currentUserId: string,
+    currentUserRole?: string
+  ): Promise<ProjectRecord[]> {
     // "My Projects" should return projects where the user is:
     // 1. The CLIENT (they own the project)
     // 2. A COLLABORATOR (they're working on it but not the main developer)
     // It should NOT include projects where they're the main assigned developer
     // (those go in "Assigned Projects")
+    // For admins, return ALL projects
 
-    logger.info(`Getting projects for user: ${currentUserId}`)
+    // Admins see all projects
+    if (currentUserRole && isAdminRole(currentUserRole)) {
+      const allProjects = await db.query.projects.findMany({
+        orderBy: [desc(schemas.projects.createdAt)],
+      })
+
+      return allProjects
+    }
 
     // Single query using OR conditions
     const projects = await db
@@ -217,7 +229,6 @@ export class ProjectService {
       )
       .orderBy(desc(schemas.projects.createdAt))
 
-    logger.info(`Found ${projects.length} projects for user ${currentUserId}`)
     return projects
   }
 
@@ -306,7 +317,7 @@ export class ProjectService {
         extensions: { code: 'CREATION_FAILED' },
       })
     }
-    logger.info(`Project created: ${project.id}`)
+
     return project
   }
 
@@ -352,34 +363,8 @@ export class ProjectService {
       )
     }
 
-    // Handle logo update - create project_files entry if logo is provided
-    if (input.logo && input.logo !== project.logo) {
-      // Extract file information from the logo URL/path
-      const logoPath = input.logo
-      const fileName = logoPath.split('/').pop() || 'logo'
-      const originalFileName = fileName
-
-      // Get file metadata to extract contentType
-      const fileMetadata = await this.fileService.getFileMetadata(logoPath)
-      if (!fileMetadata) {
-        throw new GraphQLError('Could not retrieve file metadata for logo', {
-          extensions: { code: 'FILE_METADATA_NOT_FOUND' },
-        })
-      }
-
-      // Use FileService to create project_files entry
-      await this.fileService.createProjectFileRecord({
-        projectId: id,
-        fileName,
-        originalFileName,
-        contentType: fileMetadata.contentType,
-        fileSize: fileMetadata.fileSize,
-        filePath: logoPath,
-        uploadedBy: currentUserId || project.clientId, // Use current user or fallback to client
-        isClientVisible: true,
-        description: 'Project logo',
-      })
-    }
+    // Handle logo update - logo-specific logic will be handled separately in FileResolver
+    // We only update the project.logo field here, not create project_files entries
 
     const [updatedProject] = await db
       .update(schemas.projects)
@@ -390,8 +375,97 @@ export class ProjectService {
       .where(eq(schemas.projects.id, id))
       .returning()
 
-    logger.info(`Project updated: ${id}`)
     return updatedProject
+  }
+
+  async updateProjectLogo(
+    projectId: string,
+    logoKey: string,
+    uploadedBy: string,
+    oldLogoKey?: string | null
+  ) {
+    // Delete old logo from R2 if it exists and is stored in R2
+    if (
+      oldLogoKey &&
+      (oldLogoKey.includes('projects/') || oldLogoKey.includes('users/'))
+    ) {
+      try {
+        await this.fileService.deleteFile(oldLogoKey)
+      } catch (error) {
+        // Log but don't fail the operation
+        logger.warn(`Failed to delete old logo: ${oldLogoKey}`, {
+          error,
+        })
+        // Continue with upload even if old logo deletion fails
+      }
+    }
+
+    // Try to get file metadata from storage (for existing files)
+    const fileMetadata = await this.fileService.getFileMetadata(logoKey)
+    if (!fileMetadata) {
+      // If metadata is not available, this might be a fresh upload
+      // In that case, we'll skip creating the project_files entry for now
+      // The entry will be created later when the file is actually uploaded and processed
+      logger.warn(
+        `Could not retrieve file metadata for logo: ${logoKey}. Skipping project_files entry creation.`
+      )
+      return
+    }
+
+    // Use FileService to create project_files entry
+    await this.fileService.createProjectFileRecord({
+      projectId,
+      fileName: fileMetadata.fileName,
+      originalFileName: fileMetadata.originalFileName,
+      contentType: fileMetadata.contentType,
+      fileSize: fileMetadata.fileSize,
+      filePath: logoKey,
+      uploadedBy,
+      isClientVisible: true,
+      description: 'Project logo',
+    })
+  }
+
+  async updateProjectLogoWithMetadata(
+    projectId: string,
+    logoKey: string,
+    metadata: {
+      fileName: string
+      originalFileName: string
+      fileSize: number
+      contentType: string
+    },
+    uploadedBy: string,
+    oldLogoKey?: string | null
+  ) {
+    // Delete old logo from R2 if it exists and is stored in R2
+    if (
+      oldLogoKey &&
+      (oldLogoKey.includes('projects/') || oldLogoKey.includes('users/'))
+    ) {
+      try {
+        await this.fileService.deleteFile(oldLogoKey)
+      } catch (error) {
+        // Log but don't fail the operation
+        logger.warn(`Failed to delete old logo: ${oldLogoKey}`, {
+          error,
+        })
+        // Continue with upload even if old logo deletion fails
+      }
+    }
+
+    // Use the provided metadata directly (for fresh uploads)
+    await this.fileService.createProjectFileRecord({
+      projectId,
+      fileName: metadata.fileName,
+      originalFileName: metadata.originalFileName,
+      contentType: metadata.contentType,
+      fileSize: metadata.fileSize,
+      filePath: logoKey,
+      uploadedBy,
+      isClientVisible: true,
+      description: 'Project logo',
+    })
   }
 
   async assignProject(
@@ -458,7 +532,6 @@ export class ProjectService {
       })
     }
 
-    logger.info(`Project assigned: ${projectId} to developer: ${developerId}`)
     return updatedProject
   }
 
@@ -524,7 +597,6 @@ export class ProjectService {
       })
       .where(eq(schemas.projects.id, id))
 
-    logger.info(`Project status updated: ${id} to ${input.newStatus}`)
     return statusUpdate
   }
 

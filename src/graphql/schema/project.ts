@@ -6,6 +6,7 @@ import {
   registerEnumType,
 } from 'type-graphql'
 
+import { ProjectRequest } from './projectRequest'
 import { User } from './user'
 
 export enum ProjectStatus {
@@ -136,8 +137,8 @@ export class Project {
   @Field(() => User, { nullable: true })
   developer?: User
 
-  @Field(() => String, { nullable: true })
-  projectRequest?: string
+  @Field(() => ProjectRequest, { nullable: true })
+  projectRequest?: ProjectRequest
 
   @Field(() => [String], { nullable: true })
   statusUpdates?: string[]

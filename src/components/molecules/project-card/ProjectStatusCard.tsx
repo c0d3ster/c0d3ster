@@ -11,6 +11,7 @@ import {
   formatStatus,
   generateSlug,
   getStatusCardStyling,
+  getStatusIcon,
 } from '@/utils/Project'
 
 type ProjectItem = DashboardProjectFragment | ProjectRequestDisplayFragment
@@ -28,23 +29,6 @@ const isProjectRequest = (
   item: ProjectItem
 ): item is ProjectRequestDisplayFragment => {
   return item.__typename === 'ProjectRequest'
-}
-
-const getStatusIcon = (status: string | undefined) => {
-  const iconMap = {
-    // Request statuses
-    requested: '⏳',
-    in_review: '👀',
-    approved: '✅',
-    cancelled: '❌',
-    // Project statuses
-    in_progress: '🚧',
-    in_testing: '🧪',
-    ready_for_launch: '🚀',
-    completed: '✅',
-  }
-
-  return iconMap[status as keyof typeof iconMap] || '❓'
 }
 
 export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {

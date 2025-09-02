@@ -62,6 +62,9 @@ export const DASHBOARD_PROJECT_FRAGMENT = gql`
     updatedAt
     stagingUrl
     requestId
+    projectRequest {
+      ...ProjectRequestDisplay
+    }
     client {
       ...UserDisplay
     }
@@ -70,5 +73,6 @@ export const DASHBOARD_PROJECT_FRAGMENT = gql`
     }
   }
   ${PROJECT_DISPLAY_FRAGMENT}
+  ${PROJECT_REQUEST_DISPLAY_FRAGMENT}
   ${USER_DISPLAY_FRAGMENT}
 `

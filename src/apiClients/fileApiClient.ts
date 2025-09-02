@@ -5,7 +5,8 @@ import type {
   DeleteFileMutation,
   DeleteFileMutationVariables,
   FileFilterInput,
-  FileUploadInput,
+  GetFileQuery,
+  GetFileQueryVariables,
   UploadProjectLogoMutation,
   UploadProjectLogoMutationVariables,
 } from '@/graphql/generated/graphql'
@@ -13,17 +14,18 @@ import type {
 import { apolloClient } from '@/libs/ApolloClient'
 
 export const UPLOAD_PROJECT_LOGO = gql`
-  mutation UploadProjectLogo($projectId: ID!, $input: FileUploadInput!) {
-    uploadProjectLogo(projectId: $projectId, input: $input) {
-      uploadUrl
-      key
-      projectId
-      metadata {
-        id
-        fileName
-        contentType
-      }
-    }
+  mutation UploadProjectLogo(
+    $projectId: ID!
+    $file: String!
+    $fileName: String!
+    $contentType: String!
+  ) {
+    uploadProjectLogo(
+      projectId: $projectId
+      file: $file
+      fileName: $fileName
+      contentType: $contentType
+    )
   }
 `
 
@@ -65,7 +67,10 @@ export const DELETE_FILE = gql`
 
 // Hooks
 export const useUploadProjectLogo = () => {
-  return useMutation(UPLOAD_PROJECT_LOGO)
+  return useMutation<
+    UploadProjectLogoMutation,
+    UploadProjectLogoMutationVariables
+  >(UPLOAD_PROJECT_LOGO)
 }
 
 export const useDeleteFile = () => {
@@ -79,8 +84,9 @@ export const useGetFiles = (filter?: FileFilterInput) => {
 }
 
 export const useGetFile = (key: string) => {
-  return useQuery(GET_FILE, {
+  return useQuery<GetFileQuery, GetFileQueryVariables>(GET_FILE, {
     variables: { key },
+    skip: !key, // Skip the query if key is empty
   })
 }
 
@@ -88,21 +94,20 @@ export const useGetFile = (key: string) => {
 
 export const uploadProjectLogo = async (
   projectId: string,
-  input: FileUploadInput
+  file: string,
+  fileName: string,
+  contentType: string
 ) => {
   const result = await apolloClient.mutate<
     UploadProjectLogoMutation,
     UploadProjectLogoMutationVariables
   >({
     mutation: UPLOAD_PROJECT_LOGO,
-    variables: { projectId, input },
+    variables: { projectId, file, fileName, contentType },
   })
 
   if (result.error) throw new Error(result.error.message)
-  const payload = result.data?.uploadProjectLogo
-  if (!payload)
-    throw new Error('No data returned from UploadProjectLogo mutation')
-  return payload
+  return result.data?.uploadProjectLogo
 }
 
 export const deleteFile = async (key: string) => {

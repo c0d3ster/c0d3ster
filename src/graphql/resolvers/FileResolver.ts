@@ -1,3 +1,5 @@
+import { fileTypeFromBuffer } from 'file-type'
+import { Buffer } from 'node:buffer'
 import {
   Arg,
   FieldResolver,
@@ -10,14 +12,9 @@ import {
 
 import type { FileService, ProjectService, UserService } from '@/services'
 
-import {
-  Environment,
-  File,
-  FileFilterInput,
-  FileUploadInput,
-  ProjectLogoUploadResult, 
-UserRole 
-} from '@/graphql/schema'
+import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/constants/file'
+import { Environment, File, FileFilterInput, UserRole } from '@/graphql/schema'
+import { logger } from '@/libs/Logger'
 
 @Resolver(() => File)
 export class FileResolver {
@@ -111,10 +108,8 @@ export class FileResolver {
       this.userService.checkPermission(currentUser, UserRole.Admin)
     }
 
-    const env = Environment.DEV // or derive from context/filter
-    const files = await this.fileService.listFiles(
-      `${env.toLowerCase()}/users/${userId}/`
-    )
+    const env = process.env.APP_ENV?.toLowerCase() ?? 'dev'
+    const files = await this.fileService.listFiles(`${env}/users/${userId}/`)
 
     // Get metadata for each file
     const fileMetadata = await Promise.all(
@@ -124,14 +119,16 @@ export class FileResolver {
     return fileMetadata.filter(Boolean)
   }
 
-  @Mutation(() => ProjectLogoUploadResult)
+  @Mutation(() => String)
   async uploadProjectLogo(
     @Arg('projectId', () => ID) projectId: string,
-    @Arg('input', () => FileUploadInput) input: FileUploadInput
+    @Arg('file', () => String) fileBase64: string,
+    @Arg('fileName', () => String) fileName: string,
+    @Arg('contentType', () => String) contentType: string
   ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
 
-    // Ensure user can update this project before issuing upload URL
+    // Ensure user can update this project
     const project = await this.projectService.getProjectById(
       projectId,
       currentUser.id,
@@ -141,39 +138,97 @@ export class FileResolver {
       throw new Error('Project not found or access denied')
     }
 
-    // Validate upload input (content type and size)
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp']
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    // Decode base64 to get file size
+    const fileBuffer = Buffer.from(fileBase64, 'base64')
+    const fileSize = fileBuffer.length
 
-    if (!allowedTypes.includes(input.contentType) || input.fileSize > maxSize) {
-      throw new Error('Invalid file upload parameters')
-    }
+    // Validate content type using magic bytes to prevent spoofed contentType
+    const detected = await fileTypeFromBuffer(fileBuffer)
+    const effectiveType = detected?.mime ?? contentType
 
-    // Generate the upload URL
-    const result = await this.fileService.generatePresignedUploadUrl({
-      fileName: input.fileName,
-      originalFileName: input.originalFileName,
-      fileSize: input.fileSize,
-      contentType: input.contentType,
-      userId: currentUser.id,
-      projectId,
-      environment: input.environment,
+    logger.info('Upload validation:', {
+      contentType,
+      effectiveType,
+      fileSize,
+      fileName,
+      allowedTypes: ALLOWED_IMAGE_TYPES,
+      maxSize: MAX_FILE_SIZE,
     })
 
-    // Update the project logo field - this will automatically create the project_files entry
+    if (
+      !ALLOWED_IMAGE_TYPES.includes(effectiveType as any) ||
+      fileSize > MAX_FILE_SIZE
+    ) {
+      throw new Error(
+        `Invalid file upload parameters. Content type: ${effectiveType}, File size: ${fileSize}, Max size: ${MAX_FILE_SIZE}`
+      )
+    }
+
+    // Get current project logo before updating
+    const oldLogoKey = project.logo
+
+    // Generate file key with environment prefix
+    const timestamp = Date.now()
+    const env = process.env.APP_ENV?.toLowerCase() ?? 'dev'
+    const key = `${env}/projects/${projectId}/${timestamp}_${fileName}`
+
+    // Upload directly to R2/S3 using the detected content type with metadata
+    await this.fileService.uploadFile(key, fileBuffer, effectiveType, {
+      filename: fileName,
+      originalfilename: fileName,
+      uploadedby: currentUser.id,
+      projectid: projectId,
+      environment: env,
+      uploadedat: new Date().toISOString(),
+      filesize: fileSize.toString(),
+    })
+
+    // Update project logo field
     await this.projectService.updateProject(
       projectId,
-      { logo: result.key },
+      { logo: key },
       currentUser.id,
       currentUser.role
     )
 
-    return {
-      uploadUrl: result.uploadUrl,
-      key: result.key,
-      metadata: result.metadata,
+    // Create project_files entry for new logo
+    await this.fileService.createProjectFileRecord({
       projectId,
+      fileName,
+      originalFileName: fileName,
+      contentType: effectiveType,
+      fileSize,
+      filePath: key,
+      uploadedBy: currentUser.id,
+      isClientVisible: true,
+      description: 'Project logo',
+    })
+
+    // Clean up old logo AFTER successful upload and database updates
+    if (
+      oldLogoKey &&
+      (oldLogoKey.includes('projects/') || oldLogoKey.includes('users/'))
+    ) {
+      try {
+        // Delete old logo file from storage
+        await this.fileService.deleteFile(oldLogoKey)
+        logger.info(`Deleted old logo file: ${oldLogoKey}`)
+
+        // Delete old logo entry from project_files table using the correct method
+        await this.fileService.deleteProjectFileRecordByPath(oldLogoKey)
+        logger.info(`Deleted old logo database entry: ${oldLogoKey}`)
+      } catch (error) {
+        logger.warn(`Failed to clean up old logo: ${oldLogoKey}`, {
+          error: String(error),
+        })
+        // Don't throw - cleanup failure shouldn't affect the successful upload
+      }
     }
+
+    // Generate and return presigned URL for the new logo
+    const presignedUrl =
+      await this.fileService.generatePresignedDownloadUrl(key)
+    return presignedUrl
   }
 
   @Mutation(() => Boolean)

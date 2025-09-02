@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 import { useGetMe, useGetMyDashboard } from '@/apiClients'
 import { CompactUserProfile } from '@/components/molecules'
-import { UserRole } from '@/graphql/generated/graphql'
+import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { isAdminRole } from '@/utils/RoleConstants'
 
 import {
@@ -35,42 +35,14 @@ export const DashboardContent = () => {
         <div className='flex flex-col items-center justify-between space-y-4 lg:flex-row lg:space-y-0'>
           <CompactUserProfile />
           <div className='grid gap-4 text-center lg:text-right'>
-            <div className='flex flex-wrap items-center justify-center gap-3 lg:justify-end'>
-              <span className='inline-flex rounded-full bg-green-400/10 px-3 py-1 font-mono text-xs font-bold text-green-400'>
-                ACTIVE
-              </span>
-              <span className='inline-flex rounded-full bg-green-400/20 px-3 py-1 font-mono text-xs font-bold text-green-400'>
-                ONLINE
-              </span>
-            </div>
-            {isAdmin ? (
-              <>
-                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
-                  <span className='font-mono text-sm text-green-300'>
-                    Total Requests:
-                  </span>
-                  <span className='font-mono text-sm font-bold text-green-400'>
-                    {/* Will be populated by AdminDashboardSection */}
-                  </span>
-                </div>
-                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
-                  <span className='font-mono text-sm text-green-300'>
-                    Pending Review:
-                  </span>
-                  <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {/* Will be populated by AdminDashboardSection */}
-                  </span>
-                </div>
-                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
-                  <span className='font-mono text-sm text-green-300'>
-                    In Review:
-                  </span>
-                  <span className='font-mono text-sm font-bold text-blue-400'>
-                    {/* Will be populated by AdminDashboardSection */}
-                  </span>
-                </div>
-              </>
-            ) : isDeveloper ? (
+            {isContentLoading ? (
+              <div className='flex items-center justify-center'>
+                <div className='h-4 w-4 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+                <span className='ml-2 font-mono text-sm text-green-400'>
+                  Loading...
+                </span>
+              </div>
+            ) : isAdmin || isDeveloper ? (
               <>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
                   <span className='font-mono text-sm text-green-300'>
@@ -94,7 +66,7 @@ export const DashboardContent = () => {
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
                     {(summary?.totalProjects || 0) +
-                      (summary?.pendingRequests || 0)}
+                      (summary?.pendingReviewRequests || 0)}
                   </span>
                 </div>
               </>
@@ -110,10 +82,26 @@ export const DashboardContent = () => {
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
                   <span className='font-mono text-sm text-green-300'>
-                    Requests:
+                    Total Requests:
                   </span>
                   <span className='font-mono text-sm font-bold text-yellow-400'>
-                    {summary?.pendingRequests || 0}
+                    {summary?.totalRequests || 0}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    Pending Review:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-orange-400'>
+                    {summary?.pendingReviewRequests || 0}
+                  </span>
+                </div>
+                <div className='flex items-center justify-center space-x-3 lg:justify-end'>
+                  <span className='font-mono text-sm text-green-300'>
+                    In Review:
+                  </span>
+                  <span className='font-mono text-sm font-bold text-blue-400'>
+                    {summary?.inReviewRequests || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -154,9 +142,40 @@ export const DashboardContent = () => {
       {/* Admin Project Requests Management Section */}
       {isAdmin && (
         <div className='mb-8 rounded-lg border border-purple-400/20 bg-black/40 p-6 backdrop-blur-sm'>
-          <h3 className='mb-6 font-mono text-lg font-bold text-purple-400'>
-            🔧 PROJECT REQUESTS MANAGEMENT
-          </h3>
+          <div className='mb-6 flex items-center justify-between'>
+            <h3 className='font-mono text-lg font-bold text-purple-400'>
+              🔧 PROJECT REQUESTS MANAGEMENT
+            </h3>
+            {/* Summary Stats - Inline with title */}
+            <div className='flex gap-6 rounded-lg border border-purple-400/20 bg-purple-400/5 p-3'>
+              <div className='text-center'>
+                <div className='font-mono text-xl font-bold text-purple-400'>
+                  {summary?.pendingReviewRequests || 0}
+                </div>
+                <div className='font-mono text-xs text-green-300'>
+                  Pending Review
+                </div>
+              </div>
+              <div className='text-center'>
+                <div className='font-mono text-xl font-bold text-orange-400'>
+                  {summary?.inReviewRequests || 0}
+                </div>
+                <div className='font-mono text-xs text-green-300'>
+                  In Review
+                </div>
+              </div>
+              <div className='text-center'>
+                <div className='font-mono text-xl font-bold text-blue-400'>
+                  {
+                    (dashboardData?.myDashboard?.projectRequests || []).filter(
+                      (r) => r.status === ProjectStatus.Approved
+                    ).length
+                  }
+                </div>
+                <div className='font-mono text-xs text-green-300'>Approved</div>
+              </div>
+            </div>
+          </div>
           <AdminDashboardSection />
         </div>
       )}

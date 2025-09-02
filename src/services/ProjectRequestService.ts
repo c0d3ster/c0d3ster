@@ -8,7 +8,6 @@ import type {
 import type { ProjectRequestRecord } from '@/models'
 
 import { db } from '@/libs/DB'
-import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
 import { isAdminRole } from '@/utils'
 
@@ -88,9 +87,13 @@ export class ProjectRequestService {
 
   async getMyProjectRequests(
     currentUserId: string,
-    _currentUserRole: string
+    currentUserRole: string
   ): Promise<ProjectRequestRecord[]> {
-    // Allow users with any role to see their own project requests
+    // Admins can see all project requests, others see only their own
+    if (isAdminRole(currentUserRole)) {
+      return await this.getProjectRequests()
+    }
+
     return await db.query.projectRequests.findMany({
       where: eq(schemas.projectRequests.userId, currentUserId),
       orderBy: [desc(schemas.projectRequests.createdAt)],
@@ -132,7 +135,7 @@ export class ProjectRequestService {
         extensions: { code: 'CREATION_FAILED' },
       })
     }
-    logger.info(`Project request created: ${request.id}`)
+
     return request
   }
 
@@ -200,7 +203,6 @@ export class ProjectRequestService {
       })
     }
 
-    logger.info(`Project request updated: ${id}`)
     return updatedRequest
   }
 
@@ -279,7 +281,6 @@ export class ProjectRequestService {
       return created
     })
 
-    logger.info(`Project request approved and project created: ${project.id}`)
     return project
   }
 
@@ -300,7 +301,6 @@ export class ProjectRequestService {
       })
     }
 
-    logger.info(`Project request rejected: ${id}`)
     return request
   }
 }

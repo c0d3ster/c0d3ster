@@ -2,6 +2,8 @@
  * Utility functions for handling project slugs and status
  */
 
+import { ProjectStatus } from '@/graphql/generated/graphql'
+
 /**
  * Generates a URL-friendly slug from a project name
  * @param projectName - The project name to convert to a slug
@@ -76,6 +78,36 @@ export const formatStatus = (status: string): string => {
 }
 
 /**
+ * Gets the icon for a project status
+ * @param status - The project status
+ * @returns Icon emoji string
+ */
+export const getStatusIcon = (status: string | undefined | null): string => {
+  if (!status) return '❓'
+
+  switch (status) {
+    case ProjectStatus.Requested:
+      return '⏳'
+    case ProjectStatus.InReview:
+      return '👀'
+    case ProjectStatus.Approved:
+      return '👍'
+    case ProjectStatus.InProgress:
+      return '🚧'
+    case ProjectStatus.InTesting:
+      return '🧪'
+    case ProjectStatus.ReadyForLaunch:
+      return '🚀'
+    case ProjectStatus.Completed:
+      return '✅'
+    case ProjectStatus.Cancelled:
+      return '❌'
+    default:
+      return '❓'
+  }
+}
+
+/**
  * Gets CSS classes for styling project status
  * @param status - The project status
  * @returns CSS class string for styling
@@ -84,22 +116,19 @@ export const getStatusStyling = (status: string | undefined | null): string => {
   if (!status) return 'text-gray-400'
 
   switch (status) {
-    case 'Completed':
+    case ProjectStatus.Completed:
       return 'text-green-400'
-    case 'InProgress':
-    case 'InTesting':
-    case 'ReadyForLaunch':
+    case ProjectStatus.InProgress:
+    case ProjectStatus.InTesting:
+    case ProjectStatus.ReadyForLaunch:
       return 'text-yellow-400'
-    case 'Requested':
-    case 'InReview':
-    case 'Approved':
+    case ProjectStatus.Requested:
+      return 'text-purple-400'
+    case ProjectStatus.InReview:
+    case ProjectStatus.Approved:
       return 'text-blue-400'
-    case 'Cancelled':
+    case ProjectStatus.Cancelled:
       return 'text-red-400'
-    case 'Live':
-      return 'text-green-400'
-    case 'OnHold':
-      return 'text-gray-400'
     default:
       return 'text-gray-400'
   }
@@ -116,22 +145,19 @@ export const getStatusCardStyling = (
   if (!status) return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
 
   switch (status) {
-    case 'Completed':
+    case ProjectStatus.Completed:
       return 'border-green-400/40 bg-green-400/20 text-green-400'
-    case 'InProgress':
-    case 'InTesting':
-    case 'ReadyForLaunch':
+    case ProjectStatus.InProgress:
+    case ProjectStatus.InTesting:
+    case ProjectStatus.ReadyForLaunch:
       return 'border-yellow-400/40 bg-yellow-400/20 text-yellow-400'
-    case 'Requested':
-    case 'InReview':
-    case 'Approved':
+    case ProjectStatus.Requested:
+      return 'border-purple-400/40 bg-purple-400/20 text-purple-400'
+    case ProjectStatus.InReview:
+    case ProjectStatus.Approved:
       return 'border-blue-400/40 bg-blue-400/20 text-blue-400'
-    case 'Cancelled':
+    case ProjectStatus.Cancelled:
       return 'border-red-400/40 bg-red-400/20 text-red-400'
-    case 'Live':
-      return 'border-green-400/40 bg-green-400/20 text-green-400'
-    case 'OnHold':
-      return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
     default:
       return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
   }

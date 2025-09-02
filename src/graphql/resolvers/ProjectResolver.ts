@@ -17,6 +17,7 @@ import {
   Project,
   ProjectCollaborator,
   ProjectFilter,
+  ProjectRequest,
   UpdateProjectInput,
   UserRole,
 } from '@/graphql/schema'
@@ -183,7 +184,7 @@ export class ProjectResolver {
     return await this.userService.getUserById(parent.developerId)
   }
 
-  @FieldResolver(() => String, { nullable: true })
+  @FieldResolver(() => ProjectRequest, { nullable: true })
   async projectRequest(@Root() parent: ProjectRecord) {
     if (!parent.requestId) return null
     return await this.projectService.getProjectRequestById(parent.requestId)

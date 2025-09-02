@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type {
-  Project,
+import type { Project } from '@/graphql/generated/graphql'
+
+import {
   ProjectStatus,
   ProjectType,
+  UserRole,
 } from '@/graphql/generated/graphql'
-
-import { UserRole } from '@/graphql/generated/graphql'
 
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
@@ -19,11 +19,24 @@ vi.mock('next/image', () => ({
   ),
 }))
 
+// Mock next/link to avoid router context issues
+vi.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ href, children, onClick, ...props }: any) => (
+    <a href={href} onClick={onClick} {...props}>
+      {children}
+    </a>
+  ),
+}))
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
   useRouter: () => ({
     back: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
   }),
 }))
 
@@ -33,13 +46,13 @@ const mockProject: Project = {
   title: 'Test Project',
   overview: 'A test project for testing purposes',
   techStack: ['React', 'TypeScript', 'Tailwind'],
-  status: 'completed' as ProjectStatus,
+  status: ProjectStatus.Completed,
   logo: '/test-logo.png',
   projectName: 'TestProject',
   liveUrl: 'https://testproject.com',
   description: 'This is a detailed description of the test project.',
   featured: true,
-  projectType: 'web_app' as ProjectType,
+  projectType: ProjectType.WebApp,
   budget: 5000,
   requirements: '{"requirement1": "test"}',
   progressPercentage: 100,
@@ -189,7 +202,7 @@ describe('ProjectDetailsTemplate', () => {
   it('renders in-progress status with correct styling', () => {
     const inProgressProject = {
       ...mockProject,
-      status: 'in_progress' as ProjectStatus,
+      status: ProjectStatus.InProgress,
     }
     render(<ProjectDetailsTemplate project={inProgressProject} />)
 

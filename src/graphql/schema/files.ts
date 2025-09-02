@@ -1,10 +1,13 @@
 import {
   Field,
+  GraphQLISODateTime,
   ID,
   InputType,
-  ObjectType,
-  registerEnumType,
+  Int,
+  ObjectType, 
+registerEnumType 
 } from 'type-graphql'
+
 
 export enum Environment {
   DEV = 'DEV',
@@ -95,6 +98,30 @@ export class FileFilterInput {
   environment?: Environment
 }
 
+@ObjectType('FileUploadMetadata')
+export class FileUploadMetadata {
+  @Field(() => String)
+  key!: string
+
+  @Field(() => String)
+  fileName!: string
+
+  @Field(() => String)
+  originalFileName!: string
+
+  @Field(() => Int)
+  fileSize!: number
+
+  @Field(() => String)
+  contentType!: string
+
+  @Field(() => Environment)
+  environment!: Environment
+
+  @Field(() => GraphQLISODateTime)
+  uploadedAt!: string
+}
+
 @ObjectType('ProjectLogoUploadResult')
 export class ProjectLogoUploadResult {
   @Field(() => String)
@@ -103,8 +130,8 @@ export class ProjectLogoUploadResult {
   @Field(() => String)
   key!: string
 
-  @Field(() => File)
-  metadata!: File
+  @Field(() => FileUploadMetadata)
+  metadata!: FileUploadMetadata
 
   @Field(() => ID)
   projectId!: string

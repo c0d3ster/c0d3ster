@@ -15,6 +15,7 @@ import {
   GetProjectBySlugDocument,
   GetProjectsDocument,
   useGetFeaturedProjectsQuery,
+  useGetProjectBySlugQuery,
   useGetProjectsQuery,
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
@@ -22,6 +23,7 @@ import { apolloClient } from '@/libs/ApolloClient'
 import {
   DASHBOARD_PROJECT_FRAGMENT,
   PROJECT_DISPLAY_FRAGMENT,
+  PROJECT_REQUEST_DISPLAY_FRAGMENT,
   USER_DISPLAY_FRAGMENT,
 } from './fragments'
 
@@ -72,7 +74,9 @@ export const GET_PROJECT_BY_SLUG = gql`
       clientId
       developerId
       requestId
-      projectRequest
+      projectRequest {
+        ...ProjectRequestDisplay
+      }
       client {
         ...UserDisplay
       }
@@ -90,6 +94,7 @@ export const GET_PROJECT_BY_SLUG = gql`
       statusUpdates
     }
   }
+  ${PROJECT_REQUEST_DISPLAY_FRAGMENT}
   ${USER_DISPLAY_FRAGMENT}
 `
 
@@ -114,6 +119,12 @@ export const useGetFeaturedProjects = (userEmail?: string) =>
   useGetFeaturedProjectsQuery({
     variables: userEmail ? { userEmail } : undefined,
   })
+
+export const useGetProjectBySlug = (slug: string) =>
+  useGetProjectBySlugQuery({
+    variables: { slug },
+  })
+
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 
 // Async functions for SSR / non-hook usage

@@ -71,6 +71,27 @@
       "when": 1756515486804,
       "tag": "0009_add_project_requests_project_name",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1756788013478,
+      "tag": "0010_remove_file_type_from_project_files",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1756788200000,
+      "tag": "0011_add_foreign_key_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1756797024652,
+      "tag": "0012_add_project_collaborator_unique_constraint",
+      "breakpoints": true
     }
   ]
 }
