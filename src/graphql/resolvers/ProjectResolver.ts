@@ -196,6 +196,14 @@ export class ProjectResolver {
     return updates || []
   }
 
+  @FieldResolver(() => [String], { nullable: true })
+  async completeStatusHistory(@Root() parent: ProjectRecord) {
+    const updates = await this.projectService.getCompleteProjectStatusHistory(
+      parent.id
+    )
+    return updates || []
+  }
+
   @FieldResolver(() => [ProjectCollaborator], { nullable: true })
   async collaborators(@Root() _parent: ProjectRecord) {
     // TODO: Implement collaborators functionality

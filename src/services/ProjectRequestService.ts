@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import type {
@@ -188,6 +188,9 @@ export class ProjectRequestService {
       )
     )
 
+    // Check if status is being changed
+    const isStatusChange = input.status && input.status !== request.status
+
     const [updatedRequest] = await db
       .update(schemas.projectRequests)
       .set({
@@ -203,11 +206,33 @@ export class ProjectRequestService {
       })
     }
 
+    // Create status update record if status was changed
+    if (isStatusChange && currentUserId) {
+      await db.insert(schemas.statusUpdates).values({
+        entityType: 'project_request',
+        entityId: id,
+        oldStatus: request.status,
+        newStatus: input.status! as
+          | 'requested'
+          | 'in_review'
+          | 'approved'
+          | 'in_progress'
+          | 'in_testing'
+          | 'ready_for_launch'
+          | 'completed'
+          | 'cancelled',
+        updateMessage: `Status updated to ${input.status}`,
+        isClientVisible: true,
+        updatedBy: currentUserId,
+      })
+    }
+
     return updatedRequest
   }
 
   async approveProjectRequest(
     id: string,
+    currentUserId?: string,
     currentUserRole?: string
   ): Promise<any> {
     // Optional: enforce at service layer as defense-in-depth
@@ -234,7 +259,7 @@ export class ProjectRequestService {
       })
     }
 
-    // Atomic transition + project creation
+    // Atomic transition + project creation + status update
     const project = await db.transaction(async (tx) => {
       const updated = await tx
         .update(schemas.projectRequests)
@@ -278,13 +303,47 @@ export class ProjectRequestService {
         })
       }
 
+      // Create status update record for the approval
+      if (currentUserId) {
+        await tx.insert(schemas.statusUpdates).values({
+          entityType: 'project_request',
+          entityId: id,
+          oldStatus: request.status,
+          newStatus: 'approved' as
+            | 'requested'
+            | 'in_review'
+            | 'approved'
+            | 'in_progress'
+            | 'in_testing'
+            | 'ready_for_launch'
+            | 'completed'
+            | 'cancelled',
+          updateMessage: 'Project request approved and converted to project',
+          isClientVisible: true,
+          updatedBy: currentUserId,
+        })
+      }
+
       return created
     })
 
     return project
   }
 
-  async rejectProjectRequest(id: string): Promise<ProjectRequestRecord> {
+  async rejectProjectRequest(
+    id: string,
+    currentUserId?: string
+  ): Promise<ProjectRequestRecord> {
+    const existingRequest = await db.query.projectRequests.findFirst({
+      where: eq(schemas.projectRequests.id, id),
+    })
+
+    if (!existingRequest) {
+      throw new GraphQLError('Project request not found', {
+        extensions: { code: 'PROJECT_REQUEST_NOT_FOUND' },
+      })
+    }
+
     const [request] = await db
       .update(schemas.projectRequests)
       .set({
@@ -301,6 +360,37 @@ export class ProjectRequestService {
       })
     }
 
+    // Create status update record for the rejection
+    if (currentUserId) {
+      await db.insert(schemas.statusUpdates).values({
+        entityType: 'project_request',
+        entityId: id,
+        oldStatus: existingRequest.status,
+        newStatus: 'cancelled' as
+          | 'requested'
+          | 'in_review'
+          | 'approved'
+          | 'in_progress'
+          | 'in_testing'
+          | 'ready_for_launch'
+          | 'completed'
+          | 'cancelled',
+        updateMessage: 'Project request rejected',
+        isClientVisible: true,
+        updatedBy: currentUserId,
+      })
+    }
+
     return request
+  }
+
+  async getProjectRequestStatusUpdates(projectRequestId: string) {
+    return await db.query.statusUpdates.findMany({
+      where: and(
+        eq(schemas.statusUpdates.entityType, 'project_request'),
+        eq(schemas.statusUpdates.entityId, projectRequestId)
+      ),
+      orderBy: [asc(schemas.statusUpdates.createdAt)],
+    })
   }
 }

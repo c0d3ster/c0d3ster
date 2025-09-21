@@ -21,6 +21,7 @@ const config: CodegenConfig = {
         withVariablesTypes: false,
         withMutationFn: false,
         withMutationOptionsType: false,
+        useEnumValues: true,
       },
     },
   },

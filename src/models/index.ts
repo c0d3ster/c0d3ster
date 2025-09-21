@@ -5,7 +5,7 @@ import {
   projectCollaborators,
   projectRequests,
   projects,
-  projectStatusUpdates,
+  statusUpdates,
 } from './projects'
 import { users } from './users'
 
@@ -22,7 +22,7 @@ export const schemas = {
   users,
   projectRequests,
   projects,
-  projectStatusUpdates,
+  statusUpdates,
   projectFiles,
   domains,
   projectCollaborators,

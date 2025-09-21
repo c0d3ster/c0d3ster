@@ -55,11 +55,23 @@ export const APPROVE_PROJECT_REQUEST = gql`
   }
 `
 
+export const UPDATE_PROJECT_REQUEST_STATUS = gql`
+  mutation UpdateProjectRequestStatus($id: ID!, $status: String!) {
+    updateProjectRequestStatus(id: $id, status: $status) {
+      id
+      status
+      updatedAt
+    }
+  }
+`
+
 // Hooks for components
 export const useGetProjectRequests = () => useGetProjectRequestsQuery()
 export const useCreateProjectRequest = () => useCreateProjectRequestMutation()
 export const useApproveProjectRequest = () =>
   useMutation(APPROVE_PROJECT_REQUEST)
+export const useUpdateProjectRequestStatus = () =>
+  useMutation(UPDATE_PROJECT_REQUEST_STATUS)
 
 // Async functions for SSR / non-hook usage
 export const getProjectRequests = async () => {

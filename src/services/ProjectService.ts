@@ -1,4 +1,4 @@
-import { and, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
+import { and, asc, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import type { ProjectFilter } from '@/graphql/schema'
@@ -575,9 +575,10 @@ export class ProjectService {
 
     // Create status update
     const [statusUpdate] = await db
-      .insert(schemas.projectStatusUpdates)
+      .insert(schemas.statusUpdates)
       .values({
-        projectId: id,
+        entityType: 'project',
+        entityId: id,
         oldStatus: project.status,
         newStatus: input.newStatus,
         progressPercentage: input.progressPercentage,
@@ -601,9 +602,47 @@ export class ProjectService {
   }
 
   async getProjectStatusUpdates(projectId: string) {
-    return await db.query.projectStatusUpdates.findMany({
-      where: eq(schemas.projectStatusUpdates.projectId, projectId),
-      orderBy: [desc(schemas.projectStatusUpdates.createdAt)],
+    return await db.query.statusUpdates.findMany({
+      where: and(
+        eq(schemas.statusUpdates.entityType, 'project'),
+        eq(schemas.statusUpdates.entityId, projectId)
+      ),
+      orderBy: [asc(schemas.statusUpdates.createdAt)],
+    })
+  }
+
+  async getCompleteProjectStatusHistory(projectId: string) {
+    const project = await db.query.projects.findFirst({
+      where: eq(schemas.projects.id, projectId),
+    })
+
+    if (!project) {
+      throw new GraphQLError('Project not found', {
+        extensions: { code: 'PROJECT_NOT_FOUND' },
+      })
+    }
+
+    // Get status updates for both the project and its original request
+    const conditions = [
+      and(
+        eq(schemas.statusUpdates.entityType, 'project'),
+        eq(schemas.statusUpdates.entityId, projectId)
+      ),
+    ]
+
+    // If this project was created from a request, include the request status updates
+    if (project.requestId) {
+      conditions.push(
+        and(
+          eq(schemas.statusUpdates.entityType, 'project_request'),
+          eq(schemas.statusUpdates.entityId, project.requestId)
+        )
+      )
+    }
+
+    return await db.query.statusUpdates.findMany({
+      where: or(...conditions),
+      orderBy: [asc(schemas.statusUpdates.createdAt)],
     })
   }
 

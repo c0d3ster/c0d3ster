@@ -192,6 +192,7 @@ export type Project = {
   readonly client?: Maybe<User>;
   readonly clientId: Scalars['ID']['output'];
   readonly collaborators?: Maybe<ReadonlyArray<ProjectCollaborator>>;
+  readonly completeStatusHistory?: Maybe<ReadonlyArray<Scalars['String']['output']>>;
   readonly createdAt: Scalars['String']['output'];
   readonly description: Scalars['String']['output'];
   readonly developer?: Maybe<User>;
@@ -556,6 +557,14 @@ export type ApproveProjectRequestMutationVariables = Exact<{
 
 
 export type ApproveProjectRequestMutation = { readonly __typename?: 'Mutation', readonly approveProjectRequest: string };
+
+export type UpdateProjectRequestStatusMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  status: Scalars['String']['input'];
+}>;
+
+
+export type UpdateProjectRequestStatusMutation = { readonly __typename?: 'Mutation', readonly updateProjectRequestStatus: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly status: ProjectStatus, readonly updatedAt: string } };
 
 export type GetMeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1167,6 +1176,39 @@ export function useApproveProjectRequestMutation(baseOptions?: ApolloReactHooks.
         return ApolloReactHooks.useMutation<ApproveProjectRequestMutation, ApproveProjectRequestMutationVariables>(ApproveProjectRequestDocument, options);
       }
 export type ApproveProjectRequestMutationHookResult = ReturnType<typeof useApproveProjectRequestMutation>;
+export const UpdateProjectRequestStatusDocument = gql`
+    mutation UpdateProjectRequestStatus($id: ID!, $status: String!) {
+  updateProjectRequestStatus(id: $id, status: $status) {
+    id
+    status
+    updatedAt
+  }
+}
+    `;
+
+/**
+ * __useUpdateProjectRequestStatusMutation__
+ *
+ * To run a mutation, you first call `useUpdateProjectRequestStatusMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateProjectRequestStatusMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateProjectRequestStatusMutation, { data, loading, error }] = useUpdateProjectRequestStatusMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      status: // value for 'status'
+ *   },
+ * });
+ */
+export function useUpdateProjectRequestStatusMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateProjectRequestStatusMutation, UpdateProjectRequestStatusMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateProjectRequestStatusMutation, UpdateProjectRequestStatusMutationVariables>(UpdateProjectRequestStatusDocument, options);
+      }
+export type UpdateProjectRequestStatusMutationHookResult = ReturnType<typeof useUpdateProjectRequestStatusMutation>;
 export const GetMeDocument = gql`
     query GetMe {
   me {
