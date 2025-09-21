@@ -1,6 +1,9 @@
-
 import { gql } from '@apollo/client';
 import * as ApolloReactHooks from '@apollo/client/react';
+
+import { Environment } from '@/graphql/schema/files';
+import { ProjectPriority, ProjectStatus , ProjectType  } from '@/graphql/schema/project';
+import { UserRole } from '@/graphql/schema/user';
 
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -63,11 +66,7 @@ export type CreateProjectRequestInput = {
   readonly title?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** Environment for file storage */
-export enum Environment {
-  Dev = 'DEV',
-  Prod = 'PROD'
-}
+export { Environment };
 
 export type File = {
   readonly __typename?: 'File';
@@ -237,13 +236,7 @@ export type ProjectFilter = {
   readonly status?: InputMaybe<ProjectStatus>;
 };
 
-/** Priority level of a project */
-export enum ProjectPriority {
-  High = 'High',
-  Low = 'Low',
-  Medium = 'Medium',
-  Urgent = 'Urgent'
-}
+export { ProjectPriority };
 
 export type ProjectRequest = {
   readonly __typename?: 'ProjectRequest';
@@ -274,17 +267,7 @@ export type ProjectRequestFilter = {
   readonly userId?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** Status of a project */
-export enum ProjectStatus {
-  Approved = 'Approved',
-  Cancelled = 'Cancelled',
-  Completed = 'Completed',
-  InProgress = 'InProgress',
-  InReview = 'InReview',
-  InTesting = 'InTesting',
-  ReadyForLaunch = 'ReadyForLaunch',
-  Requested = 'Requested'
-}
+export { ProjectStatus };
 
 export type ProjectSummary = {
   readonly __typename?: 'ProjectSummary';
@@ -296,17 +279,7 @@ export type ProjectSummary = {
   readonly totalRequests: Scalars['Float']['output'];
 };
 
-/** Type of project */
-export enum ProjectType {
-  Api = 'Api',
-  Consultation = 'Consultation',
-  ECommerce = 'ECommerce',
-  Maintenance = 'Maintenance',
-  MobileApp = 'MobileApp',
-  Other = 'Other',
-  WebApp = 'WebApp',
-  Website = 'Website'
-}
+export { ProjectType };
 
 export type Query = {
   readonly __typename?: 'Query';
@@ -450,13 +423,7 @@ export type UserFilter = {
   readonly role?: InputMaybe<UserRole>;
 };
 
-/** User role in the system */
-export enum UserRole {
-  Admin = 'Admin',
-  Client = 'Client',
-  Developer = 'Developer',
-  SuperAdmin = 'SuperAdmin'
-}
+export { UserRole };
 
 export type SubmitContactFormMutationVariables = Exact<{
   input: ContactFormInput;
