@@ -140,8 +140,8 @@ export class Project {
   @Field(() => ProjectRequest, { nullable: true })
   projectRequest?: ProjectRequest
 
-  @Field(() => [String], { nullable: true })
-  statusUpdates?: string[]
+  @Field(() => [StatusUpdate], { nullable: true })
+  statusUpdates?: StatusUpdate[]
 
   @Field(() => [ProjectCollaborator], { nullable: true })
   collaborators?: ProjectCollaborator[]
@@ -181,6 +181,43 @@ export class ProjectStatusUpdate {
 
   @Field(() => String, { nullable: true })
   updatedBy?: string
+}
+
+@ObjectType('StatusUpdate')
+export class StatusUpdate {
+  @Field(() => ID)
+  id!: string
+
+  @Field(() => String)
+  entityType!: string
+
+  @Field(() => ID)
+  entityId!: string
+
+  @Field(() => ProjectStatus, { nullable: true })
+  oldStatus?: ProjectStatus
+
+  @Field(() => ProjectStatus)
+  newStatus!: ProjectStatus
+
+  @Field(() => Number, { nullable: true })
+  progressPercentage?: number
+
+  @Field(() => String)
+  updateMessage!: string
+
+  @Field(() => Boolean)
+  isClientVisible!: boolean
+
+  @Field(() => ID)
+  updatedBy!: string
+
+  @Field(() => String)
+  createdAt!: string
+
+  // These will be resolved by field resolvers
+  @Field(() => User, { nullable: true })
+  updatedByUser?: User
 }
 
 @ObjectType('ProjectCollaborator')

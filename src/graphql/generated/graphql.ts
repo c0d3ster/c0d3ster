@@ -1,9 +1,6 @@
+
 import { gql } from '@apollo/client';
 import * as ApolloReactHooks from '@apollo/client/react';
-
-import { Environment } from '@/graphql/schema/files';
-import { ProjectPriority, ProjectStatus , ProjectType  } from '@/graphql/schema/project';
-import { UserRole } from '@/graphql/schema/user';
 
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -66,7 +63,11 @@ export type CreateProjectRequestInput = {
   readonly title?: InputMaybe<Scalars['String']['input']>;
 };
 
-export { Environment };
+/** Environment for file storage */
+export enum Environment {
+  Dev = 'DEV',
+  Prod = 'PROD'
+}
 
 export type File = {
   readonly __typename?: 'File';
@@ -191,7 +192,7 @@ export type Project = {
   readonly client?: Maybe<User>;
   readonly clientId: Scalars['ID']['output'];
   readonly collaborators?: Maybe<ReadonlyArray<ProjectCollaborator>>;
-  readonly completeStatusHistory?: Maybe<ReadonlyArray<Scalars['String']['output']>>;
+  readonly completeStatusHistory?: Maybe<ReadonlyArray<StatusUpdate>>;
   readonly createdAt: Scalars['String']['output'];
   readonly description: Scalars['String']['output'];
   readonly developer?: Maybe<User>;
@@ -213,7 +214,7 @@ export type Project = {
   readonly stagingUrl?: Maybe<Scalars['String']['output']>;
   readonly startDate?: Maybe<Scalars['String']['output']>;
   readonly status: ProjectStatus;
-  readonly statusUpdates?: Maybe<ReadonlyArray<Scalars['String']['output']>>;
+  readonly statusUpdates?: Maybe<ReadonlyArray<StatusUpdate>>;
   readonly techStack?: Maybe<ReadonlyArray<Scalars['String']['output']>>;
   readonly title?: Maybe<Scalars['String']['output']>;
   readonly updatedAt: Scalars['String']['output'];
@@ -236,7 +237,13 @@ export type ProjectFilter = {
   readonly status?: InputMaybe<ProjectStatus>;
 };
 
-export { ProjectPriority };
+/** Priority level of a project */
+export enum ProjectPriority {
+  High = 'High',
+  Low = 'Low',
+  Medium = 'Medium',
+  Urgent = 'Urgent'
+}
 
 export type ProjectRequest = {
   readonly __typename?: 'ProjectRequest';
@@ -267,7 +274,17 @@ export type ProjectRequestFilter = {
   readonly userId?: InputMaybe<Scalars['String']['input']>;
 };
 
-export { ProjectStatus };
+/** Status of a project */
+export enum ProjectStatus {
+  Approved = 'Approved',
+  Cancelled = 'Cancelled',
+  Completed = 'Completed',
+  InProgress = 'InProgress',
+  InReview = 'InReview',
+  InTesting = 'InTesting',
+  ReadyForLaunch = 'ReadyForLaunch',
+  Requested = 'Requested'
+}
 
 export type ProjectSummary = {
   readonly __typename?: 'ProjectSummary';
@@ -279,7 +296,17 @@ export type ProjectSummary = {
   readonly totalRequests: Scalars['Float']['output'];
 };
 
-export { ProjectType };
+/** Type of project */
+export enum ProjectType {
+  Api = 'Api',
+  Consultation = 'Consultation',
+  ECommerce = 'ECommerce',
+  Maintenance = 'Maintenance',
+  MobileApp = 'MobileApp',
+  Other = 'Other',
+  WebApp = 'WebApp',
+  Website = 'Website'
+}
 
 export type Query = {
   readonly __typename?: 'Query';
@@ -360,6 +387,21 @@ export type QueryUsersArgs = {
   filter?: InputMaybe<UserFilter>;
 };
 
+export type StatusUpdate = {
+  readonly __typename?: 'StatusUpdate';
+  readonly createdAt: Scalars['String']['output'];
+  readonly entityId: Scalars['ID']['output'];
+  readonly entityType: Scalars['String']['output'];
+  readonly id: Scalars['ID']['output'];
+  readonly isClientVisible: Scalars['Boolean']['output'];
+  readonly newStatus: ProjectStatus;
+  readonly oldStatus?: Maybe<ProjectStatus>;
+  readonly progressPercentage?: Maybe<Scalars['Float']['output']>;
+  readonly updateMessage: Scalars['String']['output'];
+  readonly updatedBy: Scalars['ID']['output'];
+  readonly updatedByUser?: Maybe<User>;
+};
+
 export type UpdateProjectInput = {
   readonly actualCompletionDate?: InputMaybe<Scalars['String']['input']>;
   readonly budget?: InputMaybe<Scalars['Float']['input']>;
@@ -423,7 +465,13 @@ export type UserFilter = {
   readonly role?: InputMaybe<UserRole>;
 };
 
-export { UserRole };
+/** User role in the system */
+export enum UserRole {
+  Admin = 'Admin',
+  Client = 'Client',
+  Developer = 'Developer',
+  SuperAdmin = 'SuperAdmin'
+}
 
 export type SubmitContactFormMutationVariables = Exact<{
   input: ContactFormInput;
@@ -496,7 +544,7 @@ export type GetProjectBySlugQueryVariables = Exact<{
 }>;
 
 
-export type GetProjectBySlugQuery = { readonly __typename?: 'Query', readonly projectBySlug?: { readonly __typename?: 'Project', readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly budget?: number | null, readonly requirements?: string | null, readonly techStack?: ReadonlyArray<string> | null, readonly status: ProjectStatus, readonly progressPercentage?: number | null, readonly priority?: ProjectPriority | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly repositoryUrl?: string | null, readonly liveUrl?: string | null, readonly stagingUrl?: string | null, readonly featured: boolean, readonly logo?: string | null, readonly createdAt: string, readonly updatedAt: string, readonly clientId: string, readonly developerId?: string | null, readonly requestId?: string | null, readonly statusUpdates?: ReadonlyArray<string> | null, readonly projectRequest?: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly requirements?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly collaborators?: ReadonlyArray<{ readonly __typename?: 'ProjectCollaborator', readonly id: string, readonly role: string, readonly joinedAt: string, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> | null } | null };
+export type GetProjectBySlugQuery = { readonly __typename?: 'Query', readonly projectBySlug?: { readonly __typename?: 'Project', readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly budget?: number | null, readonly requirements?: string | null, readonly techStack?: ReadonlyArray<string> | null, readonly status: ProjectStatus, readonly progressPercentage?: number | null, readonly priority?: ProjectPriority | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly repositoryUrl?: string | null, readonly liveUrl?: string | null, readonly stagingUrl?: string | null, readonly featured: boolean, readonly logo?: string | null, readonly createdAt: string, readonly updatedAt: string, readonly clientId: string, readonly developerId?: string | null, readonly requestId?: string | null, readonly projectRequest?: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly requirements?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly collaborators?: ReadonlyArray<{ readonly __typename?: 'ProjectCollaborator', readonly id: string, readonly role: string, readonly joinedAt: string, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> | null, readonly statusUpdates?: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly entityType: string, readonly entityId: string, readonly oldStatus?: ProjectStatus | null, readonly newStatus: ProjectStatus, readonly progressPercentage?: number | null, readonly updateMessage: string, readonly isClientVisible: boolean, readonly updatedBy: string, readonly createdAt: string, readonly updatedByUser?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> | null } | null };
 
 export type AssignProjectMutationVariables = Exact<{
   projectId: Scalars['ID']['input'];
@@ -977,7 +1025,21 @@ export const GetProjectBySlugDocument = gql`
         ...UserDisplay
       }
     }
-    statusUpdates
+    statusUpdates {
+      id
+      entityType
+      entityId
+      oldStatus
+      newStatus
+      progressPercentage
+      updateMessage
+      isClientVisible
+      updatedBy
+      createdAt
+      updatedByUser {
+        ...UserDisplay
+      }
+    }
   }
 }
     ${ProjectRequestDisplayFragmentDoc}

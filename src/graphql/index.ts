@@ -20,6 +20,7 @@ import {
   ProjectResolver,
   UserResolver,
 } from './resolvers'
+import { StatusUpdateResolver } from './resolvers/StatusUpdateResolver'
 
 // // --- Define a dummy class for JSON scalar mapping ---
 // class JSONType {}
@@ -53,6 +54,7 @@ async function createSchema(): Promise<GraphQLSchema> {
         DashboardResolver,
         ProjectResolver,
         ProjectRequestResolver,
+        StatusUpdateResolver,
         ContactResolver,
         FileResolver,
       ],
@@ -78,6 +80,8 @@ async function createSchema(): Promise<GraphQLSchema> {
               projectService,
               projectRequestService
             )
+          if (someClass === StatusUpdateResolver)
+            return new StatusUpdateResolver(userService)
           return new (someClass as any)()
         },
       },

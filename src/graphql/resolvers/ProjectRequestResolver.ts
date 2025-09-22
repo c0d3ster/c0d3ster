@@ -97,11 +97,12 @@ export class ProjectRequestResolver {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
 
-    return await this.projectRequestService.approveProjectRequest(
+    const project = await this.projectRequestService.approveProjectRequest(
       id,
       currentUser.id,
       currentUser.role
     )
+    return project.id
   }
 
   @Mutation(() => String)
@@ -109,10 +110,11 @@ export class ProjectRequestResolver {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
 
-    return await this.projectRequestService.rejectProjectRequest(
+    const updated = await this.projectRequestService.rejectProjectRequest(
       id,
       currentUser.id
     )
+    return updated.id
   }
 
   @FieldResolver(() => User, { nullable: true })

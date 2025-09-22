@@ -91,7 +91,22 @@ export const GET_PROJECT_BY_SLUG = gql`
           ...UserDisplay
         }
       }
-      statusUpdates
+
+      statusUpdates {
+        id
+        entityType
+        entityId
+        oldStatus
+        newStatus
+        progressPercentage
+        updateMessage
+        isClientVisible
+        updatedBy
+        createdAt
+        updatedByUser {
+          ...UserDisplay
+        }
+      }
     }
   }
   ${PROJECT_REQUEST_DISPLAY_FRAGMENT}

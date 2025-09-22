@@ -384,12 +384,21 @@ export class ProjectRequestService {
     return request
   }
 
-  async getProjectRequestStatusUpdates(projectRequestId: string) {
+  async getProjectRequestStatusUpdates(
+    projectRequestId: string,
+    currentUserRole?: string
+  ) {
+    const baseWhere = and(
+      eq(schemas.statusUpdates.entityType, 'project_request'),
+      eq(schemas.statusUpdates.entityId, projectRequestId)
+    )
+
+    const whereClause = isAdminRole(currentUserRole)
+      ? baseWhere
+      : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
+
     return await db.query.statusUpdates.findMany({
-      where: and(
-        eq(schemas.statusUpdates.entityType, 'project_request'),
-        eq(schemas.statusUpdates.entityId, projectRequestId)
-      ),
+      where: whereClause,
       orderBy: [asc(schemas.statusUpdates.createdAt)],
     })
   }

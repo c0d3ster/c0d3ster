@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 
-// TODO: Fix type import when GraphQL types are properly generated
 import {
   useApproveProjectRequest,
   useGetProjectRequests,
@@ -12,7 +11,6 @@ import { ProjectRequestCard } from '@/components/molecules'
 import { Toast } from '@/libs/Toast'
 
 export const AdminDashboardSection = () => {
-  // Use GraphQL hooks directly from the API client
   const {
     data: projectRequestsData,
     loading: adminLoading,

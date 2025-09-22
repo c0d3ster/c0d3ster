@@ -601,17 +601,26 @@ export class ProjectService {
     return statusUpdate
   }
 
-  async getProjectStatusUpdates(projectId: string) {
+  async getProjectStatusUpdates(projectId: string, currentUserRole?: string) {
+    const baseWhere = and(
+      eq(schemas.statusUpdates.entityType, 'project'),
+      eq(schemas.statusUpdates.entityId, projectId)
+    )
+
+    const whereClause = isAdminRole(currentUserRole)
+      ? baseWhere
+      : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
+
     return await db.query.statusUpdates.findMany({
-      where: and(
-        eq(schemas.statusUpdates.entityType, 'project'),
-        eq(schemas.statusUpdates.entityId, projectId)
-      ),
+      where: whereClause,
       orderBy: [asc(schemas.statusUpdates.createdAt)],
     })
   }
 
-  async getCompleteProjectStatusHistory(projectId: string) {
+  async getCompleteProjectStatusHistory(
+    projectId: string,
+    currentUserRole?: string
+  ) {
     const project = await db.query.projects.findFirst({
       where: eq(schemas.projects.id, projectId),
     })
@@ -640,8 +649,13 @@ export class ProjectService {
       )
     }
 
+    const baseWhere = or(...conditions)
+    const whereClause = isAdminRole(currentUserRole)
+      ? baseWhere
+      : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
+
     return await db.query.statusUpdates.findMany({
-      where: or(...conditions),
+      where: whereClause,
       orderBy: [asc(schemas.statusUpdates.createdAt)],
     })
   }

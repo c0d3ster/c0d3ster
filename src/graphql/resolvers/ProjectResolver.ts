@@ -18,6 +18,7 @@ import {
   ProjectCollaborator,
   ProjectFilter,
   ProjectRequest,
+  StatusUpdate,
   UpdateProjectInput,
   UserRole,
 } from '@/graphql/schema'
@@ -190,16 +191,36 @@ export class ProjectResolver {
     return await this.projectService.getProjectRequestById(parent.requestId)
   }
 
-  @FieldResolver(() => [String], { nullable: true })
+  @FieldResolver(() => [StatusUpdate], { nullable: true })
   async statusUpdates(@Root() parent: ProjectRecord) {
-    const updates = await this.projectService.getProjectStatusUpdates(parent.id)
+    let currentUserRole: string | undefined
+    try {
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      currentUserRole = currentUser.role
+    } catch {
+      // No auth - will filter to client-visible only
+    }
+
+    const updates = await this.projectService.getProjectStatusUpdates(
+      parent.id,
+      currentUserRole
+    )
     return updates || []
   }
 
-  @FieldResolver(() => [String], { nullable: true })
+  @FieldResolver(() => [StatusUpdate], { nullable: true })
   async completeStatusHistory(@Root() parent: ProjectRecord) {
+    let currentUserRole: string | undefined
+    try {
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      currentUserRole = currentUser.role
+    } catch {
+      // No auth - will filter to client-visible only
+    }
+
     const updates = await this.projectService.getCompleteProjectStatusHistory(
-      parent.id
+      parent.id,
+      currentUserRole
     )
     return updates || []
   }
