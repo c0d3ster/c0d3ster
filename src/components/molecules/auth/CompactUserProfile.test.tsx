@@ -6,16 +6,24 @@ import { UserRole } from '@/graphql/generated/graphql'
 import { CompactUserProfile } from './CompactUserProfile'
 
 // Mock Clerk hooks
-const mockUseUser = vi.fn()
-vi.mock('@clerk/nextjs', () => ({
-  useUser: () => mockUseUser(),
-}))
+const mockUser = vi.fn()
+vi.mock('@clerk/nextjs', async () => {
+  const actual = await vi.importActual('@clerk/nextjs')
+  return {
+    ...actual,
+    useUser: () => mockUser(),
+  }
+})
 
 // Mock API client
-const mockUseGetMe = vi.fn()
-vi.mock('@/apiClients/userApiClient', () => ({
-  useGetMe: () => mockUseGetMe(),
-}))
+const mockGetMe = vi.fn()
+vi.mock('@/apiClients/userApiClient', async () => {
+  const actual = await vi.importActual('@/apiClients/userApiClient')
+  return {
+    ...actual,
+    useGetMe: () => mockGetMe(),
+  }
+})
 
 // Mock utils
 vi.mock('@/utils', () => ({
@@ -28,11 +36,11 @@ describe('CompactUserProfile', () => {
   })
 
   it('renders loading state when user is not loaded', () => {
-    mockUseUser.mockReturnValue({
+    mockUser.mockReturnValue({
       user: null,
       isLoaded: false,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: null,
       loading: true,
     })
@@ -49,11 +57,11 @@ describe('CompactUserProfile', () => {
   })
 
   it('renders loading state when user data is loading', () => {
-    mockUseUser.mockReturnValue({
+    mockUser.mockReturnValue({
       user: { id: '1' },
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: null,
       loading: true,
     })
@@ -70,17 +78,17 @@ describe('CompactUserProfile', () => {
   })
 
   it('renders user profile with admin badge', () => {
-    const mockUser = {
+    const mockUserData = {
       id: '1',
       imageUrl: 'https://example.com/avatar.jpg',
       emailAddresses: [{ emailAddress: 'admin@example.com' }],
     }
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
+    mockUser.mockReturnValue({
+      user: mockUserData,
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: {
         me: {
           id: '1',
@@ -100,17 +108,17 @@ describe('CompactUserProfile', () => {
   })
 
   it('renders user profile with developer badge', () => {
-    const mockUser = {
+    const mockUserData = {
       id: '1',
       imageUrl: 'https://example.com/avatar.jpg',
       emailAddresses: [{ emailAddress: 'dev@example.com' }],
     }
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
+    mockUser.mockReturnValue({
+      user: mockUserData,
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: {
         me: {
           id: '1',
@@ -130,17 +138,17 @@ describe('CompactUserProfile', () => {
   })
 
   it('renders user profile with client badge', () => {
-    const mockUser = {
+    const mockUserData = {
       id: '1',
       imageUrl: 'https://example.com/avatar.jpg',
       emailAddresses: [{ emailAddress: 'client@example.com' }],
     }
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
+    mockUser.mockReturnValue({
+      user: mockUserData,
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: {
         me: {
           id: '1',
@@ -160,17 +168,17 @@ describe('CompactUserProfile', () => {
   })
 
   it('renders user profile with image when available', () => {
-    const mockUser = {
+    const mockUserData = {
       id: '1',
       imageUrl: 'https://example.com/avatar.jpg',
       emailAddresses: [{ emailAddress: 'user@example.com' }],
     }
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
+    mockUser.mockReturnValue({
+      user: mockUserData,
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: {
         me: {
           id: '1',
@@ -191,17 +199,17 @@ describe('CompactUserProfile', () => {
   })
 
   it('renders fallback avatar when no image is available', () => {
-    const mockUser = {
+    const mockUserData = {
       id: '1',
       imageUrl: null,
       emailAddresses: [{ emailAddress: 'user@example.com' }],
     }
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
+    mockUser.mockReturnValue({
+      user: mockUserData,
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: {
         me: {
           id: '1',
@@ -219,17 +227,17 @@ describe('CompactUserProfile', () => {
   })
 
   it('uses email as display name when name is not available', () => {
-    const mockUser = {
+    const mockUserData = {
       id: '1',
       imageUrl: null,
       emailAddresses: [{ emailAddress: 'user@example.com' }],
     }
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
+    mockUser.mockReturnValue({
+      user: mockUserData,
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: {
         me: {
           id: '1',
@@ -250,18 +258,18 @@ describe('CompactUserProfile', () => {
   })
 
   it('uses clerk user data when GraphQL data is not available', () => {
-    const mockUser = {
+    const mockUserData = {
       id: '1',
       imageUrl: null,
       fullName: 'Clerk User',
       emailAddresses: [{ emailAddress: 'clerk@example.com' }],
     }
 
-    mockUseUser.mockReturnValue({
-      user: mockUser,
+    mockUser.mockReturnValue({
+      user: mockUserData,
       isLoaded: true,
     })
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: null,
       loading: false,
     })

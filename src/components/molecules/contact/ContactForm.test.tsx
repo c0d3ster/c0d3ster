@@ -12,7 +12,6 @@ vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
   return {
     ...actual,
-    // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
     useSubmitContactForm: () => mockSubmitContactForm(),
   }
 })

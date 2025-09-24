@@ -25,13 +25,13 @@ if (typeof __dirname === 'undefined') {
 
 // Mock Clerk to prevent server-side imports
 vi.mock('@clerk/nextjs', () => ({
-  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+   
   useUser: () => ({
     user: null,
     isLoaded: true,
     isSignedIn: false,
   }),
-  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+   
   useAuth: () => ({
     userId: null,
     isLoaded: true,

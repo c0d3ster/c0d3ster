@@ -70,14 +70,16 @@ describe('ProjectCard', () => {
     const { container } = render(<ProjectCard project={mockProject} />)
 
     // Check for the star icon by looking for the SVG element specifically
-    const starIcon = screen.getByRole('img', { hidden: true })
-
-    expect(starIcon).toBeInTheDocument()
-
-    // The star should be an SVG, but the logo is an IMG, so we need to check differently
     const svgElements = container.querySelectorAll('svg')
 
     expect(svgElements.length).toBeGreaterThan(0)
+
+    // The star should be an SVG with the star path
+    const starSvg = Array.from(svgElements).find((svg) =>
+      svg.querySelector('path[d*="M259.3 17.8"]')
+    )
+
+    expect(starSvg).toBeInTheDocument()
   })
 
   it('renders decorative elements when project is not featured', () => {

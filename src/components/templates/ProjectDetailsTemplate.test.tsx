@@ -20,9 +20,9 @@ vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
   return {
     ...actual,
-    // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+     
     useGetMe: () => mockGetMe(),
-    // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+     
     useGetFile: () => mockGetFile(),
   }
 })
@@ -41,7 +41,7 @@ vi.mock('next/link', () => ({
 vi.mock('next/navigation', () => ({
   __esModule: true,
   default: {},
-  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+   
   useRouter: () => ({
     back: vi.fn(),
     push: vi.fn(),
