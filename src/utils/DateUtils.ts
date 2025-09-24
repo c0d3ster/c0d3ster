@@ -2,9 +2,9 @@
  * Shared date utility functions for consistent date handling across the application
  */
 
-export type DateInput = string | number | Date | null | undefined
+type DateInput = string | number | Date | null | undefined
 
-export type DateFormatOptions = {
+type DateFormatOptions = {
   includeTime?: boolean
   includeSeconds?: boolean
   format?: 'short' | 'medium' | 'long' | 'full'
@@ -15,20 +15,20 @@ export type DateFormatOptions = {
  * Parses various date formats into a Date object
  * Handles ISO strings, numeric timestamps, and Date objects
  */
-export const parseTimestamp = (value: DateInput): number | null => {
+const parseTimestamp = (value: DateInput): number | null => {
   if (!value) return null
-  
+
   try {
     // If it's already a Date object
     if (value instanceof Date) {
       return value.getTime()
     }
-    
+
     // If it's a number (timestamp)
     if (typeof value === 'number') {
       return value
     }
-    
+
     // If it's a string
     if (typeof value === 'string') {
       // Check if it's a numeric timestamp string
@@ -36,12 +36,12 @@ export const parseTimestamp = (value: DateInput): number | null => {
         const timestamp = Number.parseInt(value, 10)
         return Number.isFinite(timestamp) ? timestamp : null
       }
-      
+
       // Try parsing as ISO string or other format
       const date = new Date(value)
       return Number.isFinite(date.getTime()) ? date.getTime() : null
     }
-    
+
     return null
   } catch {
     return null
@@ -51,7 +51,7 @@ export const parseTimestamp = (value: DateInput): number | null => {
 /**
  * Formats a date for display with consistent options
  */
-export const formatDate = (
+const formatDate = (
   value: DateInput,
   options: DateFormatOptions = {}
 ): string => {
@@ -59,32 +59,34 @@ export const formatDate = (
     includeTime = false,
     includeSeconds = false,
     format = 'medium',
-    locale = 'en-US'
+    locale = 'en-US',
   } = options
-  
+
   const timestamp = parseTimestamp(value)
   if (timestamp === null) return 'Invalid date'
-  
+
   const date = new Date(timestamp)
-  
+
   try {
     if (includeTime) {
       // Use toLocaleString for date + time
       return date.toLocaleString(locale, {
         year: 'numeric',
-        month: format === 'short' ? 'short' : format === 'long' ? 'long' : 'short',
+        month:
+          format === 'short' ? 'short' : format === 'long' ? 'long' : 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
         second: includeSeconds ? '2-digit' : undefined,
-        hour12: true
+        hour12: true,
       })
     } else {
       // Use toLocaleDateString for date only
       return date.toLocaleDateString(locale, {
         year: 'numeric',
-        month: format === 'short' ? 'short' : format === 'long' ? 'long' : 'short',
-        day: 'numeric'
+        month:
+          format === 'short' ? 'short' : format === 'long' ? 'long' : 'short',
+        day: 'numeric',
       })
     }
   } catch (error) {
@@ -100,7 +102,7 @@ export const formatStatusDate = (value: DateInput): string => {
   return formatDate(value, {
     includeTime: true,
     format: 'short',
-    locale: 'en-US'
+    locale: 'en-US',
   })
 }
 
@@ -111,7 +113,7 @@ export const formatCardDate = (value: DateInput): string => {
   return formatDate(value, {
     includeTime: false,
     format: 'short',
-    locale: 'en-US'
+    locale: 'en-US',
   })
 }
 
@@ -122,7 +124,7 @@ export const formatProfileDate = (value: DateInput): string => {
   return formatDate(value, {
     includeTime: false,
     format: 'long',
-    locale: 'en-US'
+    locale: 'en-US',
   })
 }
 
@@ -132,11 +134,4 @@ export const formatProfileDate = (value: DateInput): string => {
 export const getSortableTimestamp = (value: DateInput): number => {
   const timestamp = parseTimestamp(value)
   return timestamp ?? 0
-}
-
-/**
- * Checks if a date is valid
- */
-export const isValidDate = (value: DateInput): boolean => {
-  return parseTimestamp(value) !== null
 }
