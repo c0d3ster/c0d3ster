@@ -11,6 +11,20 @@ import {
 
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
+// Mock only the API clients that ProjectDetailsTemplate actually uses
+const mockUseGetMe = vi.fn()
+const mockUseGetFile = vi.fn()
+
+// Mock the specific functions we need, let the rest use real implementations
+vi.mock('@/apiClients', async () => {
+  const actual = await vi.importActual('@/apiClients')
+  return {
+    ...actual,
+    useGetMe: () => mockUseGetMe(),
+    useGetFile: () => mockUseGetFile(),
+  }
+})
+
 // Mock next/image
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -93,6 +107,19 @@ const mockProject: Project = {
 }
 
 describe('ProjectDetailsTemplate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Set up default mock behavior
+    mockUseGetMe.mockReturnValue({
+      data: { me: null },
+      loading: false,
+    })
+    mockUseGetFile.mockReturnValue({
+      data: null,
+      loading: false,
+    })
+  })
+
   it('renders project header with correct information', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
