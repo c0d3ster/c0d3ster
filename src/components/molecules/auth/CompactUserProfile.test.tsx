@@ -5,14 +5,6 @@ import { UserRole } from '@/graphql/generated/graphql'
 
 import { CompactUserProfile } from './CompactUserProfile'
 
-// Mock next/image
-vi.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, fill, ...props }: any) => (
-    <img src={src} alt={alt} {...props} />
-  ),
-}))
-
 // Mock Clerk hooks
 const mockUseUser = vi.fn()
 vi.mock('@clerk/nextjs', () => ({
@@ -49,7 +41,9 @@ describe('CompactUserProfile', () => {
 
     // Check for loading skeleton by looking for the animate-pulse class
     const loadingElements = screen.getAllByRole('generic')
-    const loadingElement = loadingElements.find(el => el.classList.contains('animate-pulse'))
+    const loadingElement = loadingElements.find((el) =>
+      el.classList.contains('animate-pulse')
+    )
 
     expect(loadingElement).toBeInTheDocument()
   })
@@ -68,7 +62,9 @@ describe('CompactUserProfile', () => {
 
     // Check for loading skeleton by looking for the animate-pulse class
     const loadingElements = screen.getAllByRole('generic')
-    const loadingElement = loadingElements.find(el => el.classList.contains('animate-pulse'))
+    const loadingElement = loadingElements.find((el) =>
+      el.classList.contains('animate-pulse')
+    )
 
     expect(loadingElement).toBeInTheDocument()
   })
@@ -188,10 +184,10 @@ describe('CompactUserProfile', () => {
 
     render(<CompactUserProfile />)
 
-    const avatar = screen.getByAltText('John Doe')
+    const avatar = screen.getByTestId('next-image')
 
     expect(avatar).toBeInTheDocument()
-    expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg')
+    expect(avatar).toHaveAttribute('data-src', 'https://example.com/avatar.jpg')
   })
 
   it('renders fallback avatar when no image is available', () => {
@@ -248,7 +244,9 @@ describe('CompactUserProfile', () => {
     render(<CompactUserProfile />)
 
     // Check for the display name in the heading
-    expect(screen.getByRole('heading', { name: 'user@example.com' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'user@example.com' })
+    ).toBeInTheDocument()
   })
 
   it('uses clerk user data when GraphQL data is not available', () => {

@@ -59,30 +59,13 @@ vi.mock('@/libs/Toast', () => ({
   },
 }))
 
-// // Mock GraphQL generated types - mock everything with a proxy
-// vi.mock('@/graphql/generated/graphql', () => ({
-//   GetMeDocument: {},
-//   GetMyDashboardDocument: {},
-//   GetUserDocument: {},
-//   UpdateUserDocument: {},
-//   useGetMeQuery: vi.fn(),
-//   useGetMyDashboardQuery: vi.fn(),
-//   useGetUserQuery: vi.fn(),
-//   useUpdateUserMutation: vi.fn(),
-//   GetMeQuery: {},
-//   GetMyDashboardQuery: {},
-//   GetUserQuery: {},
-//   UpdateUserMutation: {},
-//   GetUserQueryVariables: {},
-//   UpdateUserMutationVariables: {},
-//   ProjectType: {},
-// }))
-
-// // Mock GraphQL main folder to prevent resolver imports
-// vi.mock('@/graphql', () => ({
-//   resolvers: {},
-//   typeDefs: {},
-// }))
+// Mock next/image globally for all tests
+vi.mock('next/image', () => ({
+  __esModule: true,
+  default: ({ src, alt, ...props }: any) => (
+    <div data-testid='next-image' data-src={src} data-alt={alt} {...props} />
+  ),
+}))
 
 // Mock database-related modules to prevent Drizzle ORM imports
 vi.mock('@/models', () => ({

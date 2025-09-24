@@ -6,13 +6,14 @@ import { Toast } from '@/libs/Toast'
 import { ContactForm } from './ContactForm'
 
 // Mock only the API client that ContactForm actually uses
-const mockUseSubmitContactForm = vi.fn()
+const mockSubmitContactForm = vi.fn()
 
 vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
   return {
     ...actual,
-    useSubmitContactForm: () => mockUseSubmitContactForm(),
+    // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+    useSubmitContactForm: () => mockSubmitContactForm(),
   }
 })
 
@@ -20,7 +21,7 @@ describe('ContactForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Set up default mock behavior
-    mockUseSubmitContactForm.mockReturnValue([
+    mockSubmitContactForm.mockReturnValue([
       vi.fn().mockResolvedValue({ data: { submitContactForm: { id: '1' } } }),
       { loading: false, error: null },
     ])
@@ -91,7 +92,7 @@ describe('ContactForm', () => {
   it('handles form submission error', async () => {
     // Mock the mutation function to throw an error
     const mockMutation = vi.fn().mockRejectedValue(new Error('Server error'))
-    mockUseSubmitContactForm.mockReturnValue([mockMutation, {} as any])
+    mockSubmitContactForm.mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 
@@ -127,7 +128,7 @@ describe('ContactForm', () => {
       .mockRejectedValue(
         new Error('Network error. Please check your connection and try again.')
       )
-    mockUseSubmitContactForm.mockReturnValue([mockMutation, {} as any])
+    mockSubmitContactForm.mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 
@@ -177,7 +178,7 @@ describe('ContactForm', () => {
   it('shows loading state during submission', async () => {
     // Mock the mutation function to never resolve (for loading state)
     const mockMutation = vi.fn().mockImplementation(() => new Promise(() => {})) // Never resolves
-    mockUseSubmitContactForm.mockReturnValue([mockMutation, {} as any])
+    mockSubmitContactForm.mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 

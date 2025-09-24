@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   test: {
-    setupFiles: ['tests/setup.ts'],
+    setupFiles: ['tests/setup.tsx'],
     env: loadEnv('', process.cwd(), ''),
     globals: true, // This provides Jest compatibility globals like expect
     coverage: {

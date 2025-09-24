@@ -12,26 +12,20 @@ import {
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
 // Mock only the API clients that ProjectDetailsTemplate actually uses
-const mockUseGetMe = vi.fn()
-const mockUseGetFile = vi.fn()
+const mockGetMe = vi.fn()
+const mockGetFile = vi.fn()
 
 // Mock the specific functions we need, let the rest use real implementations
 vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
   return {
     ...actual,
-    useGetMe: () => mockUseGetMe(),
-    useGetFile: () => mockUseGetFile(),
+    // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+    useGetMe: () => mockGetMe(),
+    // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+    useGetFile: () => mockGetFile(),
   }
 })
-
-// Mock next/image
-vi.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, priority, ...props }: any) => (
-    <div data-testid='next-image' data-src={src} data-alt={alt} {...props} />
-  ),
-}))
 
 // Mock next/link to avoid router context issues
 vi.mock('next/link', () => ({
@@ -110,11 +104,11 @@ describe('ProjectDetailsTemplate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Set up default mock behavior
-    mockUseGetMe.mockReturnValue({
+    mockGetMe.mockReturnValue({
       data: { me: null },
       loading: false,
     })
-    mockUseGetFile.mockReturnValue({
+    mockGetFile.mockReturnValue({
       data: null,
       loading: false,
     })

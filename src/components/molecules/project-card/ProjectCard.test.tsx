@@ -7,14 +7,6 @@ import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
 
 import { ProjectCard } from './ProjectCard'
 
-// Mock next/image
-vi.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, ...props }: any) => (
-    <img src={src} alt={alt} {...props} />
-  ),
-}))
-
 // Mock next/link
 vi.mock('next/link', () => ({
   __esModule: true,
@@ -50,19 +42,19 @@ const mockProject: ProjectDisplayFragment = {
 describe('ProjectCard', () => {
   it('renders project title', () => {
     render(<ProjectCard project={mockProject} />)
-    
+
     expect(screen.getByText('Test Project')).toBeInTheDocument()
   })
 
   it('renders project overview', () => {
     render(<ProjectCard project={mockProject} />)
-    
+
     expect(screen.getByText('A test project overview')).toBeInTheDocument()
   })
 
   it('renders tech stack', () => {
     render(<ProjectCard project={mockProject} />)
-    
+
     expect(screen.getByText('React')).toBeInTheDocument()
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
     expect(screen.getByText('Tailwind')).toBeInTheDocument()
@@ -70,13 +62,13 @@ describe('ProjectCard', () => {
 
   it('renders status', () => {
     render(<ProjectCard project={mockProject} />)
-    
+
     expect(screen.getByText('INPROGRESS')).toBeInTheDocument()
   })
 
   it('renders featured star when project is featured', () => {
     const { container } = render(<ProjectCard project={mockProject} />)
-    
+
     // Check for the star icon by looking for the SVG element specifically
     const starIcon = screen.getByRole('img', { hidden: true })
 
@@ -91,37 +83,41 @@ describe('ProjectCard', () => {
   it('renders decorative elements when project is not featured', () => {
     const nonFeaturedProject = { ...mockProject, featured: false }
     const { container } = render(<ProjectCard project={nonFeaturedProject} />)
-    
+
     // Check that no SVG elements are present (no star icon)
     const svgElements = container.querySelectorAll('svg')
 
     expect(svgElements.length).toBe(0)
 
     // Check for decorative elements by looking for the specific div structure
-    const decorativeContainer = screen.getByText('INPROGRESS').parentElement?.querySelector('div[class*="mr-1 flex space-x-1"]')
+    const statusElement = screen.getByText('INPROGRESS')
+    const parentElement = statusElement.parentElement
+    const decorativeContainer = parentElement?.querySelector(
+      'div[class*="mr-1 flex space-x-1"]'
+    )
 
     expect(decorativeContainer).toBeInTheDocument()
   })
 
   it('renders project logo when available', () => {
     render(<ProjectCard project={mockProject} />)
-    
-    const logo = screen.getByAltText('Test Project logo')
+
+    const logo = screen.getByTestId('next-image')
 
     expect(logo).toBeInTheDocument()
-    expect(logo).toHaveAttribute('src', '/test-logo.png')
+    expect(logo).toHaveAttribute('data-src', '/test-logo.png')
   })
 
   it('does not render logo when not available', () => {
     const projectWithoutLogo = { ...mockProject, logo: null }
     render(<ProjectCard project={projectWithoutLogo} />)
-    
-    expect(screen.queryByAltText('Test Project logo')).not.toBeInTheDocument()
+
+    expect(screen.queryByTestId('next-image')).not.toBeInTheDocument()
   })
 
   it('generates correct project URL', () => {
     render(<ProjectCard project={mockProject} />)
-    
+
     const link = screen.getByRole('link')
 
     expect(link).toHaveAttribute('href', '/projects/test-project')
@@ -130,15 +126,17 @@ describe('ProjectCard', () => {
   it('uses projectName as title when title is not available', () => {
     const projectWithoutTitle = { ...mockProject, title: null }
     render(<ProjectCard project={projectWithoutTitle} />)
-    
+
     expect(screen.getByText('test-project')).toBeInTheDocument()
   })
 
   it('uses description as overview when overview is not available', () => {
     const projectWithoutOverview = { ...mockProject, overview: null }
     render(<ProjectCard project={projectWithoutOverview} />)
-    
-    expect(screen.getByText('A detailed test project description')).toBeInTheDocument()
+
+    expect(
+      screen.getByText('A detailed test project description')
+    ).toBeInTheDocument()
   })
 
   it('renders tech stack items correctly', () => {
@@ -147,7 +145,7 @@ describe('ProjectCard', () => {
       techStack: ['React', 'TypeScript', 'Tailwind'],
     }
     render(<ProjectCard project={projectWithTechStack} />)
-    
+
     expect(screen.getByText('React')).toBeInTheDocument()
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
     expect(screen.getByText('Tailwind')).toBeInTheDocument()
