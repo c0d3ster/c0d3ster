@@ -369,27 +369,29 @@ export class ProjectService {
     // Handle logo update - logo-specific logic will be handled separately in FileResolver
     // We only update the project.logo field here, not create project_files entries
 
-    const [updatedProject] = await db
-      .update(schemas.projects)
-      .set({
-        ...input,
-        updatedAt: new Date(),
-      })
-      .where(eq(schemas.projects.id, id))
-      .returning()
+    const updatedProject = await db.transaction(async (tx) => {
+      const [proj] = await tx
+        .update(schemas.projects)
+        .set({
+          ...input,
+          updatedAt: new Date(),
+        })
+        .where(eq(schemas.projects.id, id))
+        .returning()
 
-    // Create status update record if status was changed
-    if (isStatusChange && currentUserId) {
-      await db.insert(schemas.statusUpdates).values({
-        entityType: 'project',
-        entityId: id,
-        oldStatus: project.status,
-        newStatus: input.status as ProjectStatus,
-        updateMessage: `Status updated to ${input.status}`,
-        isClientVisible: true,
-        updatedBy: currentUserId,
-      })
-    }
+      if (isStatusChange && currentUserId) {
+        await tx.insert(schemas.statusUpdates).values({
+          entityType: 'project',
+          entityId: id,
+          oldStatus: project.status,
+          newStatus: input.status as ProjectStatus,
+          updateMessage: `Status updated to ${input.status}`,
+          isClientVisible: true,
+          updatedBy: currentUserId,
+        })
+      }
+      return proj
+    })
 
     return updatedProject
   }

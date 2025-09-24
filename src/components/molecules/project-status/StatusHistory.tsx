@@ -2,7 +2,6 @@
 
 import type { StatusUpdate } from '@/graphql/generated/graphql'
 
-import { logger } from '@/libs/Logger'
 import { formatStatus, getStatusCardStyling } from '@/utils'
 
 type StatusHistoryProps = {
@@ -38,16 +37,6 @@ export const StatusHistory = ({ statusUpdates }: StatusHistoryProps) => {
     return dateB.getTime() - dateA.getTime() // Most recent first
   })
 
-  // Debug: Log the date values to see what's causing the invalid date
-  logger.info('Status updates dates', {
-    dates: validUpdates.map((u) => ({
-      id: u.id,
-      createdAt: u.createdAt,
-      createdAtType: typeof u.createdAt,
-      dateValid: !Number.isNaN(new Date(u.createdAt).getTime()),
-    })),
-  })
-
   return (
     <div className='space-y-4'>
       <h3 className='font-mono text-xl font-bold text-green-400'>
@@ -61,35 +50,28 @@ export const StatusHistory = ({ statusUpdates }: StatusHistoryProps) => {
           // Handle date formatting - check if it's a timestamp string or ISO string
           let formattedDate = 'Invalid date'
           if (update.createdAt) {
-            try {
-              let date: Date
+            let date: Date
 
-              // Check if it's a numeric timestamp string
-              if (
-                typeof update.createdAt === 'string' &&
-                /^\d+$/.test(update.createdAt)
-              ) {
-                // It's a timestamp string, convert to number
-                const timestamp = Number.parseInt(update.createdAt, 10)
-                date = new Date(timestamp)
-              } else {
-                // It's likely an ISO string or other format
-                date = new Date(update.createdAt)
-              }
+            // Check if it's a numeric timestamp string
+            if (
+              typeof update.createdAt === 'string' &&
+              /^\d+$/.test(update.createdAt)
+            ) {
+              // It's a timestamp string, convert to number
+              const timestamp = Number.parseInt(update.createdAt, 10)
+              date = new Date(timestamp)
+            } else {
+              // It's likely an ISO string or other format
+              date = new Date(update.createdAt)
+            }
 
-              if (!Number.isNaN(date.getTime())) {
-                formattedDate = date.toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              }
-            } catch (error) {
-              logger.error('Error formatting createdAt', {
-                error: String(error),
-                value: update.createdAt,
+            if (!Number.isNaN(date.getTime())) {
+              formattedDate = date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
               })
             }
           }

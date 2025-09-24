@@ -152,14 +152,12 @@ export class ProjectRequestService {
       })
     }
 
-    // Only admins/super_admins can change status to approved
-    if (
-      input.status === ProjectStatus.Approved &&
-      !isAdminRole(currentUserRole)
-    ) {
-      throw new GraphQLError('Only admins can approve project requests', {
-        extensions: { code: 'FORBIDDEN' },
-      })
+    // Block setting Approved via updateProjectRequest to prevent bypassing the atomic approval flow
+    if (input.status === ProjectStatus.Approved) {
+      throw new GraphQLError(
+        'Use approveProjectRequest() for approvals to ensure atomic project creation and logging',
+        { extensions: { code: 'INVALID_STATUS_TRANSITION' } }
+      )
     }
 
     // Whitelist allowed fields to prevent mass assignment
