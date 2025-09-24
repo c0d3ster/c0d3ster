@@ -2,20 +2,36 @@ import { cleanup } from '@testing-library/react'
 import { Buffer } from 'node:buffer'
 import { afterEach, beforeEach, vi } from 'vitest'
 
-// Mock apiClients BEFORE any other imports to prevent GraphQL imports
-vi.mock('@/apiClients/userApiClient', () => ({
-  useGetMe: vi.fn(() => ({ data: { me: null }, loading: false })),
-  useGetUser: vi.fn(),
-  useUpdateUser: vi.fn(),
-  useGetMyDashboard: vi.fn(),
-}))
+// Mock apiClients index file to prevent GraphQL imports
+const mockUseGetMe = vi.fn(() => ({ data: { me: null }, loading: false }))
+const mockUseGetUser = vi.fn()
+const mockUseUpdateUser = vi.fn()
+const mockUseGetMyDashboard = vi.fn()
+const mockUseGetFile = vi.fn(() => ({ data: null, loading: false }))
+const mockUseSubmitContactForm = vi.fn(() => [
+  vi.fn().mockResolvedValue({ data: { submitContactForm: { id: '1' } } }),
+  { loading: false, error: null },
+])
+const mockUseCreateProjectRequest = vi.fn(() => [
+  vi.fn().mockResolvedValue({ data: { createProjectRequest: { id: '1' } } }),
+  { loading: false, error: null },
+])
+const mockUseUploadProjectLogo = vi.fn(() => [
+  vi
+    .fn()
+    .mockResolvedValue({ data: { uploadProjectLogo: { url: 'test-url' } } }),
+  { loading: false, error: null },
+])
 
-// Mock contact API client specifically
-vi.mock('@/apiClients/contactApiClient', () => ({
-  useSubmitContactForm: vi.fn(() => [
-    vi.fn().mockResolvedValue({ data: { submitContactForm: { id: '1' } } }),
-    { loading: false, error: null },
-  ]),
+vi.mock('@/apiClients', () => ({
+  useGetMe: mockUseGetMe,
+  useGetUser: mockUseGetUser,
+  useUpdateUser: mockUseUpdateUser,
+  useGetMyDashboard: mockUseGetMyDashboard,
+  useGetFile: mockUseGetFile,
+  useSubmitContactForm: mockUseSubmitContactForm,
+  useCreateProjectRequest: mockUseCreateProjectRequest,
+  useUploadProjectLogo: mockUseUploadProjectLogo,
 }))
 
 // Set Buffer for browser environment with full polyfill

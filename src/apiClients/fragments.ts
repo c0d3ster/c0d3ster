@@ -42,6 +42,12 @@ export const PROJECT_REQUEST_DISPLAY_FRAGMENT = gql`
     requirements
     additionalInfo
     status
+    statusUpdates {
+      id
+      newStatus
+      updateMessage
+      createdAt
+    }
     createdAt
     updatedAt
     user {

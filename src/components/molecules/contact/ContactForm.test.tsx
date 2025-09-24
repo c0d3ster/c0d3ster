@@ -70,9 +70,7 @@ describe('ContactForm', () => {
 
   it('handles form submission error', async () => {
     // Mock the mutation function to throw an error
-    const { useSubmitContactForm } = await import(
-      '@/apiClients/contactApiClient'
-    )
+    const { useSubmitContactForm } = await import('@/apiClients')
     const mockMutation = vi.fn().mockRejectedValue(new Error('Server error'))
     vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
 
@@ -105,9 +103,7 @@ describe('ContactForm', () => {
 
   it('handles network errors', async () => {
     // Mock the mutation function to throw a network error
-    const { useSubmitContactForm } = await import(
-      '@/apiClients/contactApiClient'
-    )
+    const { useSubmitContactForm } = await import('@/apiClients')
     const mockMutation = vi
       .fn()
       .mockRejectedValue(
@@ -162,9 +158,7 @@ describe('ContactForm', () => {
 
   it('shows loading state during submission', async () => {
     // Mock the mutation function to never resolve (for loading state)
-    const { useSubmitContactForm } = await import(
-      '@/apiClients/contactApiClient'
-    )
+    const { useSubmitContactForm } = await import('@/apiClients')
     const mockMutation = vi.fn().mockImplementation(() => new Promise(() => {})) // Never resolves
     vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
 

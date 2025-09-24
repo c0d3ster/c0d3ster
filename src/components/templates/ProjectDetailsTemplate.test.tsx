@@ -31,6 +31,8 @@ vi.mock('next/link', () => ({
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
+  __esModule: true,
+  default: {},
   // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
   useRouter: () => ({
     back: vi.fn(),
@@ -39,6 +41,8 @@ vi.mock('next/navigation', () => ({
     refresh: vi.fn(),
   }),
 }))
+
+// Use global mocks from test setup
 
 // Mock the Project type
 const mockProject: Project = {
