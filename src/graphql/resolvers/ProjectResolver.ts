@@ -1,3 +1,4 @@
+import { and, asc, eq, or } from 'drizzle-orm'
 import {
   Arg,
   FieldResolver,
@@ -20,9 +21,13 @@ import {
   ProjectRequest,
   StatusUpdate,
   UpdateProjectInput,
+  User,
   UserRole,
 } from '@/graphql/schema'
+import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
+import { schemas } from '@/models'
+import { isAdminRole } from '@/utils'
 
 @Resolver(() => Project)
 export class ProjectResolver {
@@ -173,13 +178,13 @@ export class ProjectResolver {
     return parent.requestId || null
   }
 
-  @FieldResolver(() => String, { nullable: true })
+  @FieldResolver(() => User, { nullable: true })
   async client(@Root() parent: ProjectRecord) {
     if (!parent.clientId) return null
     return await this.userService.getUserById(parent.clientId)
   }
 
-  @FieldResolver(() => String, { nullable: true })
+  @FieldResolver(() => User, { nullable: true })
   async developer(@Root() parent: ProjectRecord) {
     if (!parent.developerId) return null
     return await this.userService.getUserById(parent.developerId)
@@ -201,28 +206,28 @@ export class ProjectResolver {
       // No auth - will filter to client-visible only
     }
 
-    const updates = await this.projectService.getProjectStatusUpdates(
-      parent.id,
-      currentUserRole
-    )
-    return updates || []
-  }
-
-  @FieldResolver(() => [StatusUpdate], { nullable: true })
-  async completeStatusHistory(@Root() parent: ProjectRecord) {
-    let currentUserRole: string | undefined
-    try {
-      const currentUser = await this.userService.getCurrentUserWithAuth()
-      currentUserRole = currentUser.role
-    } catch {
-      // No auth - will filter to client-visible only
+    // Get all status updates for both project and request
+    const whereConditions = [eq(schemas.statusUpdates.entityId, parent.id)]
+    if (parent.requestId) {
+      whereConditions.push(eq(schemas.statusUpdates.entityId, parent.requestId))
     }
 
-    const updates = await this.projectService.getCompleteProjectStatusHistory(
-      parent.id,
-      currentUserRole
-    )
-    return updates || []
+    const baseWhere = or(...whereConditions)
+    const whereClause = isAdminRole(currentUserRole)
+      ? baseWhere
+      : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
+
+    const updates = await db.query.statusUpdates.findMany({
+      where: whereClause,
+      orderBy: [asc(schemas.statusUpdates.createdAt)],
+    })
+
+    logger.info('Status updates found', {
+      count: updates.length,
+      projectId: parent.id,
+      requestId: parent.requestId,
+    })
+    return updates
   }
 
   @FieldResolver(() => [ProjectCollaborator], { nullable: true })

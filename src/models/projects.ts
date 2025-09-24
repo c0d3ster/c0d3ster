@@ -12,6 +12,8 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
+import { ProjectPriority, ProjectStatus } from '@/graphql/schema'
+
 import {
   projectPriorityEnum,
   projectStatusEnum,
@@ -36,7 +38,9 @@ export const projectRequests = pgTable(
     requirements: json('requirements'), // Structured requirements data
     contactPreference: varchar('contact_preference', { length: 50 }),
     additionalInfo: text('additional_info'),
-    status: projectStatusEnum('status').notNull().default('requested'),
+    status: projectStatusEnum('status')
+      .notNull()
+      .default(ProjectStatus.Requested),
     reviewedAt: timestamp('reviewed_at'),
     reviewedBy: uuid('reviewed_by').references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -71,8 +75,12 @@ export const projects = pgTable(
     overview: text('overview'),
     logo: text('logo'),
     projectType: projectTypeEnum('project_type').notNull(),
-    status: projectStatusEnum('status').notNull().default('approved'),
-    priority: projectPriorityEnum('priority').notNull().default('medium'),
+    status: projectStatusEnum('status')
+      .notNull()
+      .default(ProjectStatus.Approved),
+    priority: projectPriorityEnum('priority')
+      .notNull()
+      .default(ProjectPriority.Medium),
     budget: decimal('budget', { precision: 10, scale: 2, mode: 'number' }),
     paidAmount: decimal('paid_amount', {
       precision: 10,

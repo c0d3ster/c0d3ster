@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { FaPencilAlt } from 'react-icons/fa'
 
-import type { GetProjectBySlugQuery } from '@/graphql/generated/graphql'
+import type { Project } from '@/graphql/generated/graphql'
 
 import { useGetFile, useGetMe } from '@/apiClients'
 import {
@@ -13,13 +13,14 @@ import {
   ExpandingUnderline,
   ScrollFade,
 } from '@/components/atoms'
-import { AnimatedHeading, LogoUpload } from '@/components/molecules'
+import {
+  AnimatedHeading,
+  LogoUpload,
+  StatusHistory,
+} from '@/components/molecules'
 import { formatStatus, getStatusCardStyling } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
-
-// Type alias for the complete Project from the query
-type Project = NonNullable<GetProjectBySlugQuery['projectBySlug']>
 
 type ProjectDetailsTemplateProps = {
   project: Project
@@ -219,6 +220,9 @@ export const ProjectDetailsTemplate = ({
                   {project.description || 'Project details coming soon...'}
                 </p>
               </div>
+
+              {/* Status History */}
+              <StatusHistory statusUpdates={project.statusUpdates || []} />
             </div>
           </ScrollFade>
         </div>

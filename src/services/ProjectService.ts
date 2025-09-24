@@ -4,7 +4,7 @@ import { GraphQLError } from 'graphql'
 import type { ProjectFilter } from '@/graphql/schema'
 import type { ProjectRecord } from '@/models'
 
-import { UserRole } from '@/graphql/schema'
+import { ProjectStatus, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
@@ -235,7 +235,7 @@ export class ProjectService {
   async getAvailableProjects(): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: and(
-        eq(schemas.projects.status, 'approved'),
+        eq(schemas.projects.status, ProjectStatus.Approved),
         isNull(schemas.projects.developerId)
       ),
       orderBy: [desc(schemas.projects.createdAt)],
@@ -363,6 +363,9 @@ export class ProjectService {
       )
     }
 
+    // Check if status is being changed
+    const isStatusChange = input.status && input.status !== project.status
+
     // Handle logo update - logo-specific logic will be handled separately in FileResolver
     // We only update the project.logo field here, not create project_files entries
 
@@ -374,6 +377,19 @@ export class ProjectService {
       })
       .where(eq(schemas.projects.id, id))
       .returning()
+
+    // Create status update record if status was changed
+    if (isStatusChange && currentUserId) {
+      await db.insert(schemas.statusUpdates).values({
+        entityType: 'project',
+        entityId: id,
+        oldStatus: project.status,
+        newStatus: input.status as ProjectStatus,
+        updateMessage: `Status updated to ${input.status}`,
+        isClientVisible: true,
+        updatedBy: currentUserId,
+      })
+    }
 
     return updatedProject
   }
@@ -514,13 +530,13 @@ export class ProjectService {
       .update(schemas.projects)
       .set({
         developerId,
-        status: 'in_progress',
+        status: ProjectStatus.InProgress,
         updatedAt: new Date(),
       })
       .where(
         and(
           eq(schemas.projects.id, projectId),
-          eq(schemas.projects.status, 'approved'),
+          eq(schemas.projects.status, ProjectStatus.Approved),
           isNull(schemas.projects.developerId)
         )
       )
@@ -531,6 +547,17 @@ export class ProjectService {
         extensions: { code: 'ASSIGNMENT_FAILED' },
       })
     }
+
+    // Create status update for the assignment
+    await db.insert(schemas.statusUpdates).values({
+      entityType: 'project',
+      entityId: projectId,
+      oldStatus: ProjectStatus.Approved,
+      newStatus: ProjectStatus.InProgress,
+      updateMessage: `Project assigned to developer and status updated to in progress`,
+      isClientVisible: true,
+      updatedBy: currentUserId,
+    })
 
     return updatedProject
   }
@@ -631,13 +658,44 @@ export class ProjectService {
       })
     }
 
+    logger.info('Getting complete status history', {
+      projectId,
+      requestId: project.requestId,
+      currentUserRole,
+    })
+
+    // Debug: Check what status updates exist for this project
+    const whereConditions = [eq(schemas.statusUpdates.entityId, projectId)]
+    if (project.requestId) {
+      whereConditions.push(
+        eq(schemas.statusUpdates.entityId, project.requestId)
+      )
+    }
+
+    const allUpdates = await db.query.statusUpdates.findMany({
+      where: or(...whereConditions),
+    })
+
+    logger.info('All status updates for project/request', {
+      allUpdates: allUpdates.map((u) => ({
+        id: u.id,
+        entityType: u.entityType,
+        entityId: u.entityId,
+        newStatus: u.newStatus,
+        isClientVisible: u.isClientVisible,
+      })),
+    })
+
     // Get status updates for both the project and its original request
-    const conditions = [
+    const conditions = []
+
+    // Always look for project status updates
+    conditions.push(
       and(
         eq(schemas.statusUpdates.entityType, 'project'),
         eq(schemas.statusUpdates.entityId, projectId)
-      ),
-    ]
+      )
+    )
 
     // If this project was created from a request, include the request status updates
     if (project.requestId) {
@@ -654,10 +712,23 @@ export class ProjectService {
       ? baseWhere
       : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
 
-    return await db.query.statusUpdates.findMany({
+    const updates = await db.query.statusUpdates.findMany({
       where: whereClause,
       orderBy: [asc(schemas.statusUpdates.createdAt)],
     })
+
+    logger.info('Found status updates', {
+      count: updates.length,
+      updates: updates.map((u) => ({
+        id: u.id,
+        entityType: u.entityType,
+        entityId: u.entityId,
+        newStatus: u.newStatus,
+        isClientVisible: u.isClientVisible,
+      })),
+    })
+
+    return updates
   }
 
   async getProjectCollaborators(projectId: string) {

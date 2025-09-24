@@ -10,7 +10,6 @@ const config: CodegenConfig = {
         'typescript',
         'typescript-operations',
         'typescript-react-apollo',
-        './scripts/copy-enums-plugin.js',
       ],
       config: {
         apolloClientVersion: 4,
