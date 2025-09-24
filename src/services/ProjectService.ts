@@ -1,10 +1,10 @@
-import { and, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
+import { and, asc, desc, eq, exists, isNull, ne, or } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import type { ProjectFilter } from '@/graphql/schema'
 import type { ProjectRecord } from '@/models'
 
-import { UserRole } from '@/graphql/schema'
+import { ProjectStatus, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
@@ -235,7 +235,7 @@ export class ProjectService {
   async getAvailableProjects(): Promise<ProjectRecord[]> {
     return await db.query.projects.findMany({
       where: and(
-        eq(schemas.projects.status, 'approved'),
+        eq(schemas.projects.status, ProjectStatus.Approved),
         isNull(schemas.projects.developerId)
       ),
       orderBy: [desc(schemas.projects.createdAt)],
@@ -363,17 +363,53 @@ export class ProjectService {
       )
     }
 
-    // Handle logo update - logo-specific logic will be handled separately in FileResolver
-    // We only update the project.logo field here, not create project_files entries
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedFields = [
+      'title',
+      'projectName',
+      'description',
+      'projectType',
+      'budget',
+      'requirements',
+      'techStack',
+      'status',
+      'progressPercentage',
+      'logo',
+    ] as const
+    const sanitizedInput = Object.fromEntries(
+      Object.entries(input).filter(([k]) =>
+        (allowedFields as readonly string[]).includes(k)
+      )
+    ) as Partial<Record<(typeof allowedFields)[number], any>>
 
-    const [updatedProject] = await db
-      .update(schemas.projects)
-      .set({
-        ...input,
-        updatedAt: new Date(),
-      })
-      .where(eq(schemas.projects.id, id))
-      .returning()
+    // Check if status is being changed
+    const nextStatus = sanitizedInput.status as ProjectStatus | undefined
+    const isStatusChange =
+      typeof nextStatus !== 'undefined' && nextStatus !== project.status
+
+    const updatedProject = await db.transaction(async (tx) => {
+      const [proj] = await tx
+        .update(schemas.projects)
+        .set({
+          ...sanitizedInput,
+          updatedAt: new Date(),
+        })
+        .where(eq(schemas.projects.id, id))
+        .returning()
+
+      if (isStatusChange && currentUserId) {
+        await tx.insert(schemas.statusUpdates).values({
+          entityType: 'project',
+          entityId: id,
+          oldStatus: project.status,
+          newStatus: nextStatus as ProjectStatus,
+          updateMessage: `Status updated to ${nextStatus}`,
+          isClientVisible: true,
+          updatedBy: currentUserId,
+        })
+      }
+      return proj
+    })
 
     return updatedProject
   }
@@ -514,13 +550,13 @@ export class ProjectService {
       .update(schemas.projects)
       .set({
         developerId,
-        status: 'in_progress',
+        status: ProjectStatus.InProgress,
         updatedAt: new Date(),
       })
       .where(
         and(
           eq(schemas.projects.id, projectId),
-          eq(schemas.projects.status, 'approved'),
+          eq(schemas.projects.status, ProjectStatus.Approved),
           isNull(schemas.projects.developerId)
         )
       )
@@ -531,6 +567,17 @@ export class ProjectService {
         extensions: { code: 'ASSIGNMENT_FAILED' },
       })
     }
+
+    // Create status update for the assignment
+    await db.insert(schemas.statusUpdates).values({
+      entityType: 'project',
+      entityId: projectId,
+      oldStatus: ProjectStatus.Approved,
+      newStatus: ProjectStatus.InProgress,
+      updateMessage: `Project assigned to developer and status updated to in progress`,
+      isClientVisible: true,
+      updatedBy: currentUserId,
+    })
 
     return updatedProject
   }
@@ -575,9 +622,10 @@ export class ProjectService {
 
     // Create status update
     const [statusUpdate] = await db
-      .insert(schemas.projectStatusUpdates)
+      .insert(schemas.statusUpdates)
       .values({
-        projectId: id,
+        entityType: 'project',
+        entityId: id,
         oldStatus: project.status,
         newStatus: input.newStatus,
         progressPercentage: input.progressPercentage,
@@ -600,11 +648,76 @@ export class ProjectService {
     return statusUpdate
   }
 
-  async getProjectStatusUpdates(projectId: string) {
-    return await db.query.projectStatusUpdates.findMany({
-      where: eq(schemas.projectStatusUpdates.projectId, projectId),
-      orderBy: [desc(schemas.projectStatusUpdates.createdAt)],
+  async getProjectStatusUpdates(projectId: string, currentUserRole?: string) {
+    const baseWhere = and(
+      eq(schemas.statusUpdates.entityType, 'project'),
+      eq(schemas.statusUpdates.entityId, projectId)
+    )
+
+    const whereClause = isAdminRole(currentUserRole)
+      ? baseWhere
+      : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
+
+    return await db.query.statusUpdates.findMany({
+      where: whereClause,
+      orderBy: [asc(schemas.statusUpdates.createdAt)],
     })
+  }
+
+  async getCompleteProjectStatusHistory(
+    projectId: string,
+    currentUserId?: string,
+    currentUserRole?: string
+  ) {
+    const project = await this.getProjectById(
+      projectId,
+      currentUserId,
+      currentUserRole
+    )
+
+    // Get status updates for both the project and its original request
+    const conditions = []
+
+    // Always look for project status updates
+    conditions.push(
+      and(
+        eq(schemas.statusUpdates.entityType, 'project'),
+        eq(schemas.statusUpdates.entityId, projectId)
+      )
+    )
+
+    // If this project was created from a request, include the request status updates
+    if (project.requestId) {
+      conditions.push(
+        and(
+          eq(schemas.statusUpdates.entityType, 'project_request'),
+          eq(schemas.statusUpdates.entityId, project.requestId)
+        )
+      )
+    }
+
+    const baseWhere = or(...conditions)
+    const whereClause = isAdminRole(currentUserRole)
+      ? baseWhere
+      : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
+
+    const updates = await db.query.statusUpdates.findMany({
+      where: whereClause,
+      orderBy: [asc(schemas.statusUpdates.createdAt)],
+    })
+
+    logger.info('Found status updates', {
+      count: updates.length,
+      updates: updates.map((u) => ({
+        id: u.id,
+        entityType: u.entityType,
+        entityId: u.entityId,
+        newStatus: u.newStatus,
+        isClientVisible: u.isClientVisible,
+      })),
+    })
+
+    return updates
   }
 
   async getProjectCollaborators(projectId: string) {

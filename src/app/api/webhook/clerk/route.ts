@@ -1,3 +1,5 @@
+import 'reflect-metadata'
+
 import type { NextRequest } from 'next/server'
 
 import { eq } from 'drizzle-orm'

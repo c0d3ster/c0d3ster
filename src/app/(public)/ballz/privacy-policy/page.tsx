@@ -4,6 +4,7 @@ import { BackButton, ExpandingUnderline } from '@/components/atoms'
 import { AnimatedHeading } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
 import { GITHUB_USERNAME, SUPPORT_EMAIL } from '@/constants'
+import { formatCardDate } from '@/utils'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - BALLZ',
@@ -28,7 +29,7 @@ export default function PrivacyPolicy() {
             BALLZ Mobile Game
           </p>
           <p className='mt-4 font-mono text-base text-green-400 opacity-70'>
-            Last updated: {new Date().toLocaleDateString()}
+            Last updated: {formatCardDate(new Date())}
           </p>
         </div>
 

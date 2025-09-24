@@ -43,6 +43,7 @@ export const PROJECT_REQUEST_DISPLAY_FRAGMENT = gql`
     additionalInfo
     status
     createdAt
+    updatedAt
     user {
       ...UserDisplay
     }

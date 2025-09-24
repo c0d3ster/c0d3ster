@@ -92,6 +92,20 @@
       "when": 1756797024652,
       "tag": "0012_add_project_collaborator_unique_constraint",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1756798051242,
+      "tag": "0013_add_project_request_id_to_status_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1756798658537,
+      "tag": "0014_restructure_status_updates_to_single_table",
+      "breakpoints": true
     }
   ]
 }

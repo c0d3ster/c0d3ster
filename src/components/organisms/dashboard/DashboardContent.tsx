@@ -15,7 +15,11 @@ import {
 
 export const DashboardContent = () => {
   const { data: userData, loading: userLoading } = useGetMe()
-  const { data: dashboardData, loading: dashboardLoading } = useGetMyDashboard()
+  const {
+    data: dashboardData,
+    loading: dashboardLoading,
+    refetch: refetchDashboard,
+  } = useGetMyDashboard()
 
   const userRole = userData?.me?.role
 
@@ -199,7 +203,7 @@ export const DashboardContent = () => {
                 assignedProjects={assignedProjects}
                 onDataRefreshAction={() => {
                   // Refetch the dashboard data
-                  window.location.reload()
+                  refetchDashboard()
                 }}
               />
             )}

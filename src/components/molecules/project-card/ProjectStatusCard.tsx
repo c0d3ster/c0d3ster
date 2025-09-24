@@ -7,6 +7,7 @@ import type {
   ProjectRequestDisplayFragment,
 } from '@/graphql/generated/graphql'
 
+import { formatCardDate } from '@/utils'
 import {
   formatStatus,
   generateSlug,
@@ -182,9 +183,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
       {/* Footer - pinned to bottom */}
       <div className='border-t border-green-400/10 pt-3 font-mono text-xs text-green-300/50'>
         {item.__typename === 'Project' ? 'Project' : 'Request'} •{' '}
-        {item.createdAt
-          ? new Date(item.createdAt).toLocaleDateString()
-          : 'Unknown Date'}
+        {formatCardDate(item.createdAt)}
       </div>
     </div>
   )

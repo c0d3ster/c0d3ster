@@ -4,10 +4,10 @@ import { useState } from 'react'
 
 import type { ProjectRequest } from '@/graphql/generated/graphql'
 
+import { RequirementsList } from '@/components/molecules'
 import { ProjectStatus } from '@/graphql/generated/graphql'
+import { formatCardDate } from '@/utils'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
-
-import { RequirementsList } from './RequirementsList'
 
 type ProjectRequestCardProps = {
   request: ProjectRequest
@@ -68,14 +68,9 @@ export const ProjectRequestCard = ({
     }
   }
 
+  // Use shared date utility for consistent formatting
   const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return 'Unknown Date'
-    try {
-      return new Date(dateString).toLocaleDateString()
-    } catch (error) {
-      console.error('Invalid date:', dateString, error)
-      return 'Invalid Date'
-    }
+    return formatCardDate(dateString)
   }
 
   const userName =

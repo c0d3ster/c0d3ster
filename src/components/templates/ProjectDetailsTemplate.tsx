@@ -1,11 +1,10 @@
 'use client'
 
-import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { FaPencilAlt } from 'react-icons/fa'
 
-import type { GetProjectBySlugQuery } from '@/graphql/generated/graphql'
+import type { Project } from '@/graphql/generated/graphql'
 
 import { useGetFile, useGetMe } from '@/apiClients'
 import {
@@ -14,13 +13,14 @@ import {
   ExpandingUnderline,
   ScrollFade,
 } from '@/components/atoms'
-import { AnimatedHeading, LogoUpload } from '@/components/molecules'
+import {
+  AnimatedHeading,
+  LogoUpload,
+  StatusHistory,
+} from '@/components/molecules'
 import { formatStatus, getStatusCardStyling } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
-
-// Type alias for the complete Project from the query
-type Project = NonNullable<GetProjectBySlugQuery['projectBySlug']>
 
 type ProjectDetailsTemplateProps = {
   project: Project
@@ -29,7 +29,6 @@ type ProjectDetailsTemplateProps = {
 export const ProjectDetailsTemplate = ({
   project,
 }: ProjectDetailsTemplateProps) => {
-  const { user, isLoaded } = useUser()
   const { data: meData, loading: meLoading } = useGetMe()
   const [showLogoUpload, setShowLogoUpload] = useState(false)
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
@@ -60,9 +59,7 @@ export const ProjectDetailsTemplate = ({
   // Only check after user data is loaded to avoid showing upload component briefly
   // Compare database user IDs properly
   const canEditProject =
-    isLoaded &&
     !meLoading &&
-    user &&
     meData?.me &&
     (meData.me.id === project.clientId || meData.me.id === project.developerId)
 
@@ -131,7 +128,7 @@ export const ProjectDetailsTemplate = ({
                       </button>
                     )}
                   </div>
-                ) : !isLoaded || meLoading ? (
+                ) : meLoading ? (
                   <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <div className='text-center'>
                       <div className='mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
@@ -223,6 +220,9 @@ export const ProjectDetailsTemplate = ({
                   {project.description || 'Project details coming soon...'}
                 </p>
               </div>
+
+              {/* Status History */}
+              <StatusHistory statusUpdates={project.statusUpdates || []} />
             </div>
           </ScrollFade>
         </div>

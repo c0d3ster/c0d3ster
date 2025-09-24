@@ -2,13 +2,15 @@
 
 import { useState } from 'react'
 
-// TODO: Fix type import when GraphQL types are properly generated
-import { useApproveProjectRequest, useGetProjectRequests } from '@/apiClients'
+import {
+  useApproveProjectRequest,
+  useGetProjectRequests,
+  useUpdateProjectRequestStatus,
+} from '@/apiClients'
 import { ProjectRequestCard } from '@/components/molecules'
 import { Toast } from '@/libs/Toast'
 
 export const AdminDashboardSection = () => {
-  // Use GraphQL hooks directly from the API client
   const {
     data: projectRequestsData,
     loading: adminLoading,
@@ -16,6 +18,7 @@ export const AdminDashboardSection = () => {
     refetch: adminRefetch,
   } = useGetProjectRequests()
   const [approveMutation] = useApproveProjectRequest()
+  const [updateStatusMutation] = useUpdateProjectRequestStatus()
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
@@ -23,10 +26,11 @@ export const AdminDashboardSection = () => {
   const adminRequests = projectRequestsData?.projectRequests || []
 
   // Admin request handlers
-  const handleUpdateStatus = async (_requestId: string, _status: string) => {
+  const handleUpdateStatus = async (requestId: string, status: string) => {
     try {
-      // TODO: Implement updateProjectRequest mutation in GraphQL
-      Toast.error('Update status not yet implemented in GraphQL')
+      await updateStatusMutation({ variables: { id: requestId, status } })
+      Toast.success(`Project request status updated to ${status}`)
+      await adminRefetch()
     } catch (error) {
       Toast.error('Failed to update request status')
       throw error

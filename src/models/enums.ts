@@ -1,34 +1,25 @@
 import { pgEnum } from 'drizzle-orm/pg-core'
 
-// Project-related enums
-export const projectStatusEnum = pgEnum('project_status', [
-  'requested',
-  'in_review',
-  'approved',
-  'in_progress',
-  'in_testing',
-  'ready_for_launch',
-  'completed',
-  'cancelled',
-])
+import {
+  ProjectPriority,
+  ProjectStatus,
+  ProjectType,
+  UserRole,
+} from '@/graphql/schema'
 
-export const projectPriorityEnum = pgEnum('project_priority', [
-  'low',
-  'medium',
-  'high',
-  'urgent',
-])
-
-export const projectTypeEnum = pgEnum('project_type', [
-  'website',
-  'web_app',
-  'mobile_app',
-  'e_commerce',
-  'api',
-  'maintenance',
-  'consultation',
-  'other',
-])
+// Project-related enums - derived from GraphQL schema
+export const projectStatusEnum = pgEnum(
+  'project_status',
+  Object.values(ProjectStatus) as [string, ...string[]]
+)
+export const projectPriorityEnum = pgEnum(
+  'project_priority',
+  Object.values(ProjectPriority) as [string, ...string[]]
+)
+export const projectTypeEnum = pgEnum(
+  'project_type',
+  Object.values(ProjectType) as [string, ...string[]]
+)
 
 // Domain-related enums
 export const domainStatusEnum = pgEnum('domain_status', [
@@ -39,20 +30,8 @@ export const domainStatusEnum = pgEnum('domain_status', [
   'cancelled',
 ])
 
-// File-related enums
-export const fileTypeEnum = pgEnum('file_type', [
-  'design',
-  'document',
-  'image',
-  'video',
-  'code',
-  'other',
-])
-
-// User role enums
-export const userRoleEnum = pgEnum('user_role', [
-  'client',
-  'developer',
-  'admin',
-  'super_admin',
-])
+// User role enums - derived from GraphQL schema
+export const userRoleEnum = pgEnum(
+  'user_role',
+  Object.values(UserRole) as [string, ...string[]]
+)

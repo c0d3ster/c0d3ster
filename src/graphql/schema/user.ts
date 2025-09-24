@@ -23,8 +23,8 @@ export class User {
   @Field(() => ID)
   id!: string
 
-  @Field(() => String)
-  clerkId!: string
+  @Field(() => String, { nullable: true })
+  clerkId?: string
 
   @Field(() => String)
   email!: string
@@ -35,8 +35,8 @@ export class User {
   @Field(() => String, { nullable: true })
   lastName?: string
 
-  @Field(() => UserRole)
-  role!: UserRole
+  @Field(() => UserRole, { nullable: true })
+  role?: UserRole
 
   @Field(() => String, { nullable: true })
   bio?: string
@@ -56,11 +56,26 @@ export class User {
   @Field(() => String, { nullable: true })
   avatarUrl?: string
 
-  @Field(() => String)
-  createdAt!: string
+  @Field(() => String, { nullable: true })
+  createdAt?: string
+
+  @Field(() => String, { nullable: true })
+  updatedAt?: string
+}
+
+@ObjectType()
+export class UserDisplay {
+  @Field(() => ID)
+  id!: string
+
+  @Field(() => String, { nullable: true })
+  firstName?: string
+
+  @Field(() => String, { nullable: true })
+  lastName?: string
 
   @Field(() => String)
-  updatedAt!: string
+  email!: string
 }
 
 @InputType('UpdateUserInput')

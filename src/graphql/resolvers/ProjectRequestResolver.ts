@@ -14,6 +14,7 @@ import {
   CreateProjectRequestInput,
   ProjectRequest,
   ProjectRequestFilter,
+  StatusUpdate,
   User,
   UserRole,
 } from '@/graphql/schema'
@@ -97,7 +98,12 @@ export class ProjectRequestResolver {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
 
-    return await this.projectRequestService.approveProjectRequest(id)
+    const project = await this.projectRequestService.approveProjectRequest(
+      id,
+      currentUser.id,
+      currentUser.role
+    )
+    return project.id
   }
 
   @Mutation(() => String)
@@ -105,7 +111,11 @@ export class ProjectRequestResolver {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
 
-    return await this.projectRequestService.rejectProjectRequest(id)
+    const updated = await this.projectRequestService.rejectProjectRequest(
+      id,
+      currentUser.id
+    )
+    return updated.id
   }
 
   @FieldResolver(() => User, { nullable: true })
@@ -185,5 +195,14 @@ export class ProjectRequestResolver {
       })
       return null
     }
+  }
+
+  @FieldResolver(() => [StatusUpdate])
+  async statusUpdates(@Root() parent: ProjectRequest) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectRequestService.getProjectRequestStatusUpdates(
+      parent.id,
+      currentUser.role
+    )
   }
 }

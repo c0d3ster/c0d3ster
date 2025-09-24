@@ -12,6 +12,8 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
+import { ProjectPriority, ProjectStatus } from '@/graphql/schema'
+
 import {
   projectPriorityEnum,
   projectStatusEnum,
@@ -36,7 +38,9 @@ export const projectRequests = pgTable(
     requirements: json('requirements'), // Structured requirements data
     contactPreference: varchar('contact_preference', { length: 50 }),
     additionalInfo: text('additional_info'),
-    status: projectStatusEnum('status').notNull().default('requested'),
+    status: projectStatusEnum('status')
+      .notNull()
+      .default(ProjectStatus.Requested),
     reviewedAt: timestamp('reviewed_at'),
     reviewedBy: uuid('reviewed_by').references(() => users.id),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -71,8 +75,12 @@ export const projects = pgTable(
     overview: text('overview'),
     logo: text('logo'),
     projectType: projectTypeEnum('project_type').notNull(),
-    status: projectStatusEnum('status').notNull().default('approved'),
-    priority: projectPriorityEnum('priority').notNull().default('medium'),
+    status: projectStatusEnum('status')
+      .notNull()
+      .default(ProjectStatus.Approved),
+    priority: projectPriorityEnum('priority')
+      .notNull()
+      .default(ProjectPriority.Medium),
     budget: decimal('budget', { precision: 10, scale: 2, mode: 'number' }),
     paidAmount: decimal('paid_amount', {
       precision: 10,
@@ -104,14 +112,13 @@ export const projects = pgTable(
   })
 )
 
-// Project status updates and progress tracking
-export const projectStatusUpdates = pgTable(
-  'project_status_updates',
+// Status updates for both projects and project requests
+export const statusUpdates = pgTable(
+  'status_updates',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    projectId: uuid('project_id')
-      .notNull()
-      .references(() => projects.id, { onDelete: 'cascade' }),
+    entityType: varchar('entity_type', { length: 20 }).notNull(), // 'project' or 'project_request'
+    entityId: uuid('entity_id').notNull(), // references either projects.id or project_requests.id
     oldStatus: projectStatusEnum('old_status'),
     newStatus: projectStatusEnum('new_status').notNull(),
     progressPercentage: integer('progress_percentage'),
@@ -123,8 +130,11 @@ export const projectStatusUpdates = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
-    projectIdIdx: index('idx_psu_project_id').on(table.projectId),
-    updatedByIdx: index('idx_psu_updated_by').on(table.updatedBy),
+    entityTypeIdIdx: index('idx_status_updates_entity_type_id').on(
+      table.entityType,
+      table.entityId
+    ),
+    updatedByIdx: index('idx_status_updates_updated_by').on(table.updatedBy),
   })
 )
 
@@ -162,5 +172,5 @@ export const projectCollaborators = pgTable(
 // Type exports for use in services and resolvers
 export type ProjectRecord = typeof projects.$inferSelect
 export type ProjectRequestRecord = typeof projectRequests.$inferSelect
-export type ProjectStatusUpdateRecord = typeof projectStatusUpdates.$inferSelect
+export type StatusUpdateRecord = typeof statusUpdates.$inferSelect
 export type ProjectCollaboratorRecord = typeof projectCollaborators.$inferSelect

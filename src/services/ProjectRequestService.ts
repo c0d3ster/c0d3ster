@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import type {
@@ -7,6 +7,7 @@ import type {
 } from '@/graphql/schema'
 import type { ProjectRequestRecord } from '@/models'
 
+import { ProjectStatus } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { schemas } from '@/models'
 import { isAdminRole } from '@/utils'
@@ -20,18 +21,7 @@ export class ProjectRequestService {
       const conditions = []
       if (filter.status) {
         conditions.push(
-          eq(
-            schemas.projectRequests.status,
-            filter.status as
-              | 'requested'
-              | 'in_review'
-              | 'approved'
-              | 'in_progress'
-              | 'in_testing'
-              | 'ready_for_launch'
-              | 'completed'
-              | 'cancelled'
-          )
+          eq(schemas.projectRequests.status, filter.status as ProjectStatus)
         )
       }
       if (filter.projectType) {
@@ -162,11 +152,12 @@ export class ProjectRequestService {
       })
     }
 
-    // Only admins/super_admins can change status to approved
-    if (input.status === 'approved' && !isAdminRole(currentUserRole)) {
-      throw new GraphQLError('Only admins can approve project requests', {
-        extensions: { code: 'FORBIDDEN' },
-      })
+    // Block setting Approved via updateProjectRequest to prevent bypassing the atomic approval flow
+    if (input.status === ProjectStatus.Approved) {
+      throw new GraphQLError(
+        'Use approveProjectRequest() for approvals to ensure atomic project creation and logging',
+        { extensions: { code: 'INVALID_STATUS_TRANSITION' } }
+      )
     }
 
     // Whitelist allowed fields to prevent mass assignment
@@ -188,6 +179,9 @@ export class ProjectRequestService {
       )
     )
 
+    // Check if status is being changed
+    const isStatusChange = input.status && input.status !== request.status
+
     const [updatedRequest] = await db
       .update(schemas.projectRequests)
       .set({
@@ -203,11 +197,25 @@ export class ProjectRequestService {
       })
     }
 
+    // Create status update record if status was changed
+    if (isStatusChange && currentUserId) {
+      await db.insert(schemas.statusUpdates).values({
+        entityType: 'project_request',
+        entityId: id,
+        oldStatus: request.status,
+        newStatus: input.status! as ProjectStatus,
+        updateMessage: `Status updated to ${input.status}`,
+        isClientVisible: true,
+        updatedBy: currentUserId,
+      })
+    }
+
     return updatedRequest
   }
 
   async approveProjectRequest(
     id: string,
+    currentUserId?: string,
     currentUserRole?: string
   ): Promise<any> {
     // Optional: enforce at service layer as defense-in-depth
@@ -228,25 +236,25 @@ export class ProjectRequestService {
     }
 
     // Align with route: require 'in_review' (or agree on a single status)
-    if (request.status !== 'in_review') {
+    if (request.status !== ProjectStatus.InReview) {
       throw new GraphQLError('Project request must be in review to approve', {
         extensions: { code: 'INVALID_STATUS' },
       })
     }
 
-    // Atomic transition + project creation
+    // Atomic transition + project creation + status update
     const project = await db.transaction(async (tx) => {
       const updated = await tx
         .update(schemas.projectRequests)
         .set({
-          status: 'approved',
+          status: ProjectStatus.Approved,
           reviewedAt: new Date(),
           updatedAt: new Date(),
         })
         .where(
           and(
             eq(schemas.projectRequests.id, id),
-            eq(schemas.projectRequests.status, 'in_review')
+            eq(schemas.projectRequests.status, ProjectStatus.InReview)
           )
         )
         .returning({ id: schemas.projectRequests.id })
@@ -261,13 +269,14 @@ export class ProjectRequestService {
         .insert(schemas.projects)
         .values({
           clientId: request.userId,
+          requestId: id, // Link the project to its original request
           projectName: request.projectName,
           title: request.title,
           description: request.description,
           projectType: request.projectType,
           budget: request.budget,
           requirements: request.requirements,
-          status: 'approved',
+          status: ProjectStatus.Approved,
           featured: false,
         })
         .returning()
@@ -278,17 +287,43 @@ export class ProjectRequestService {
         })
       }
 
+      // Create status update record for the approval
+      if (currentUserId) {
+        await tx.insert(schemas.statusUpdates).values({
+          entityType: 'project_request',
+          entityId: id,
+          oldStatus: request.status,
+          newStatus: ProjectStatus.Approved,
+          updateMessage: 'Project request approved and converted to project',
+          isClientVisible: true,
+          updatedBy: currentUserId,
+        })
+      }
+
       return created
     })
 
     return project
   }
 
-  async rejectProjectRequest(id: string): Promise<ProjectRequestRecord> {
+  async rejectProjectRequest(
+    id: string,
+    currentUserId?: string
+  ): Promise<ProjectRequestRecord> {
+    const existingRequest = await db.query.projectRequests.findFirst({
+      where: eq(schemas.projectRequests.id, id),
+    })
+
+    if (!existingRequest) {
+      throw new GraphQLError('Project request not found', {
+        extensions: { code: 'PROJECT_REQUEST_NOT_FOUND' },
+      })
+    }
+
     const [request] = await db
       .update(schemas.projectRequests)
       .set({
-        status: 'cancelled',
+        status: ProjectStatus.Cancelled,
         reviewedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -301,6 +336,38 @@ export class ProjectRequestService {
       })
     }
 
+    // Create status update record for the rejection
+    if (currentUserId) {
+      await db.insert(schemas.statusUpdates).values({
+        entityType: 'project_request',
+        entityId: id,
+        oldStatus: existingRequest.status,
+        newStatus: ProjectStatus.Cancelled,
+        updateMessage: 'Project request rejected',
+        isClientVisible: true,
+        updatedBy: currentUserId,
+      })
+    }
+
     return request
+  }
+
+  async getProjectRequestStatusUpdates(
+    projectRequestId: string,
+    currentUserRole?: string
+  ) {
+    const baseWhere = and(
+      eq(schemas.statusUpdates.entityType, 'project_request'),
+      eq(schemas.statusUpdates.entityId, projectRequestId)
+    )
+
+    const whereClause = isAdminRole(currentUserRole)
+      ? baseWhere
+      : and(baseWhere, eq(schemas.statusUpdates.isClientVisible, true))
+
+    return await db.query.statusUpdates.findMany({
+      where: whereClause,
+      orderBy: [asc(schemas.statusUpdates.createdAt)],
+    })
   }
 }

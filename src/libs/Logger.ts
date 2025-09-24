@@ -23,7 +23,7 @@ const betterStackSink: AsyncSink = async (record) => {
   })
 }
 
-await configure({
+configure({
   sinks: {
     console: getConsoleSink({ formatter: getJsonLinesFormatter() }),
     betterStack: fromAsyncSink(betterStackSink),

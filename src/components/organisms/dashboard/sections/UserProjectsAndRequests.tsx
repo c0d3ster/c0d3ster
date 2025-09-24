@@ -29,25 +29,6 @@ export const UserProjectsAndRequests = ({
     (request) => !approvedProjectRequestIds.includes(request.id)
   )
 
-  // Temporary debugging
-  console.warn(
-    '🔍 DEBUG - Projects:',
-    projectsList.map((p) => ({
-      id: p.id,
-      title: p.title,
-      requestId: p.requestId,
-    }))
-  )
-  console.warn(
-    '🔍 DEBUG - ProjectRequests:',
-    projectRequestsList.map((r) => ({ id: r.id, title: r.title }))
-  )
-  console.warn('🔍 DEBUG - Approved IDs:', approvedProjectRequestIds)
-  console.warn(
-    '🔍 DEBUG - Filtered Requests:',
-    filteredProjectRequests.map((r) => ({ id: r.id, title: r.title }))
-  )
-
   return (
     <>
       {/* Your Projects Section */}
