@@ -363,17 +363,35 @@ export class ProjectService {
       )
     }
 
-    // Check if status is being changed
-    const isStatusChange = input.status && input.status !== project.status
+    // Whitelist allowed fields to prevent mass assignment
+    const allowedFields = [
+      'title',
+      'projectName',
+      'description',
+      'projectType',
+      'budget',
+      'requirements',
+      'techStack',
+      'status',
+      'progressPercentage',
+      'logo',
+    ] as const
+    const sanitizedInput = Object.fromEntries(
+      Object.entries(input).filter(([k]) =>
+        (allowedFields as readonly string[]).includes(k)
+      )
+    ) as Partial<Record<(typeof allowedFields)[number], any>>
 
-    // Handle logo update - logo-specific logic will be handled separately in FileResolver
-    // We only update the project.logo field here, not create project_files entries
+    // Check if status is being changed
+    const nextStatus = sanitizedInput.status as ProjectStatus | undefined
+    const isStatusChange =
+      typeof nextStatus !== 'undefined' && nextStatus !== project.status
 
     const updatedProject = await db.transaction(async (tx) => {
       const [proj] = await tx
         .update(schemas.projects)
         .set({
-          ...input,
+          ...sanitizedInput,
           updatedAt: new Date(),
         })
         .where(eq(schemas.projects.id, id))
@@ -384,8 +402,8 @@ export class ProjectService {
           entityType: 'project',
           entityId: id,
           oldStatus: project.status,
-          newStatus: input.status as ProjectStatus,
-          updateMessage: `Status updated to ${input.status}`,
+          newStatus: nextStatus as ProjectStatus,
+          updateMessage: `Status updated to ${nextStatus}`,
           isClientVisible: true,
           updatedBy: currentUserId,
         })
@@ -648,45 +666,14 @@ export class ProjectService {
 
   async getCompleteProjectStatusHistory(
     projectId: string,
+    currentUserId?: string,
     currentUserRole?: string
   ) {
-    const project = await db.query.projects.findFirst({
-      where: eq(schemas.projects.id, projectId),
-    })
-
-    if (!project) {
-      throw new GraphQLError('Project not found', {
-        extensions: { code: 'PROJECT_NOT_FOUND' },
-      })
-    }
-
-    logger.info('Getting complete status history', {
+    const project = await this.getProjectById(
       projectId,
-      requestId: project.requestId,
-      currentUserRole,
-    })
-
-    // Debug: Check what status updates exist for this project
-    const whereConditions = [eq(schemas.statusUpdates.entityId, projectId)]
-    if (project.requestId) {
-      whereConditions.push(
-        eq(schemas.statusUpdates.entityId, project.requestId)
-      )
-    }
-
-    const allUpdates = await db.query.statusUpdates.findMany({
-      where: or(...whereConditions),
-    })
-
-    logger.info('All status updates for project/request', {
-      allUpdates: allUpdates.map((u) => ({
-        id: u.id,
-        entityType: u.entityType,
-        entityId: u.entityId,
-        newStatus: u.newStatus,
-        isClientVisible: u.isClientVisible,
-      })),
-    })
+      currentUserId,
+      currentUserRole
+    )
 
     // Get status updates for both the project and its original request
     const conditions = []

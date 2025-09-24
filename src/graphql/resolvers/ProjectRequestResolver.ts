@@ -14,6 +14,7 @@ import {
   CreateProjectRequestInput,
   ProjectRequest,
   ProjectRequestFilter,
+  StatusUpdate,
   User,
   UserRole,
 } from '@/graphql/schema'
@@ -194,5 +195,14 @@ export class ProjectRequestResolver {
       })
       return null
     }
+  }
+
+  @FieldResolver(() => [StatusUpdate])
+  async statusUpdates(@Root() parent: ProjectRequest) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectRequestService.getProjectRequestStatusUpdates(
+      parent.id,
+      currentUser.role
+    )
   }
 }

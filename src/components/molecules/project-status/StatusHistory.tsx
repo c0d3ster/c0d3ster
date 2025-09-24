@@ -2,7 +2,12 @@
 
 import type { StatusUpdate } from '@/graphql/generated/graphql'
 
-import { formatStatus, getStatusCardStyling } from '@/utils'
+import {
+  formatStatus,
+  formatStatusDate,
+  getSortableTimestamp,
+  getStatusCardStyling,
+} from '@/utils'
 
 type StatusHistoryProps = {
   statusUpdates: ReadonlyArray<StatusUpdate | null | undefined>
@@ -24,17 +29,11 @@ export const StatusHistory = ({ statusUpdates }: StatusHistoryProps) => {
   }
 
   const sortedUpdates = [...validUpdates].sort((a, b) => {
-    // Parse dates properly for sorting
-    const dateA =
-      typeof a.createdAt === 'string' && /^\d+$/.test(a.createdAt)
-        ? new Date(Number.parseInt(a.createdAt, 10))
-        : new Date(a.createdAt)
-    const dateB =
-      typeof b.createdAt === 'string' && /^\d+$/.test(b.createdAt)
-        ? new Date(Number.parseInt(b.createdAt, 10))
-        : new Date(b.createdAt)
+    // Use shared utility for consistent date parsing and sorting
+    const timestampA = getSortableTimestamp(a.createdAt)
+    const timestampB = getSortableTimestamp(b.createdAt)
 
-    return dateB.getTime() - dateA.getTime() // Most recent first
+    return timestampB - timestampA // Most recent first
   })
 
   return (
@@ -47,34 +46,8 @@ export const StatusHistory = ({ statusUpdates }: StatusHistoryProps) => {
         {sortedUpdates.map((update, index) => {
           const isLast = index === sortedUpdates.length - 1
 
-          // Handle date formatting - check if it's a timestamp string or ISO string
-          let formattedDate = 'Invalid date'
-          if (update.createdAt) {
-            let date: Date
-
-            // Check if it's a numeric timestamp string
-            if (
-              typeof update.createdAt === 'string' &&
-              /^\d+$/.test(update.createdAt)
-            ) {
-              // It's a timestamp string, convert to number
-              const timestamp = Number.parseInt(update.createdAt, 10)
-              date = new Date(timestamp)
-            } else {
-              // It's likely an ISO string or other format
-              date = new Date(update.createdAt)
-            }
-
-            if (!Number.isNaN(date.getTime())) {
-              formattedDate = date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-            }
-          }
+          // Format date using shared utility
+          const formattedDate = formatStatusDate(update.createdAt)
 
           return (
             <div

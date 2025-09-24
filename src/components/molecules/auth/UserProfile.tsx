@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 
 import { useGetMe, useUpdateUser } from '@/apiClients'
+import { formatProfileDate } from '@/utils'
 
 export const UserProfile = () => {
   const { user, isLoaded } = useUser()
@@ -119,24 +120,7 @@ export const UserProfile = () => {
               MEMBER SINCE
             </span>
             <p className='mt-2 font-mono text-lg text-green-400'>
-              {(() => {
-                if (!meData?.me?.createdAt) return 'N/A'
-
-                try {
-                  const date = new Date(meData.me.createdAt)
-                  // Check if the date is valid
-                  if (Number.isNaN(date.getTime())) {
-                    return 'N/A'
-                  }
-                  return date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })
-                } catch {
-                  return 'N/A'
-                }
-              })()}
+              {formatProfileDate(meData?.me?.createdAt)}
             </p>
           </div>
           <button
