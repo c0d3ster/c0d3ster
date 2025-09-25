@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { UserRole } from '@/graphql/generated/graphql'
+import { logger } from '@/libs/Logger'
 
 import { UserProfile } from './UserProfile'
 
@@ -31,6 +32,13 @@ vi.mock('@/apiClients', async () => {
 // Mock utils
 vi.mock('@/utils', () => ({
   formatProfileDate: (date: string) => new Date(date).toLocaleDateString(),
+}))
+
+// Mock logger
+vi.mock('@/libs/Logger', () => ({
+  logger: {
+    error: vi.fn(),
+  },
 }))
 
 describe('UserProfile', () => {
@@ -438,11 +446,22 @@ describe('UserProfile', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
+      expect(mockUpdateUserFn).toHaveBeenCalled()
+    })
+
+    await waitFor(() => {
+      expect(logger.error).toHaveBeenCalledWith('Error updating user')
+    })
+
+    await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
         'Error updating user:',
         expect.any(Error)
       )
     })
+
+    // Verify the error is handled gracefully
+    expect(screen.getByText('SAVE CHANGES')).toBeInTheDocument()
 
     consoleSpy.mockRestore()
   })
@@ -454,7 +473,6 @@ describe('UserProfile', () => {
       primaryEmailAddress: { emailAddress: 'user@example.com' },
     }
 
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const mockUpdateUserFn = vi
       .fn()
       .mockResolvedValue({ data: { updateUser: { id: '1' } } })
@@ -478,7 +496,5 @@ describe('UserProfile', () => {
 
     // Should show loading state when me data is null
     expect(screen.getByText('LOADING...')).toBeInTheDocument()
-
-    consoleSpy.mockRestore()
   })
 })

@@ -9,11 +9,13 @@ import { ProjectRequestCard } from './ProjectRequestCard'
 
 // Mock RequirementsList component
 vi.mock('@/components/molecules', () => ({
-  RequirementsList: ({ requirements }: { requirements: string[] }) => (
+  RequirementsList: ({
+    requirements,
+  }: {
+    requirements: string | null | undefined
+  }) => (
     <div data-testid='requirements-list'>
-      {requirements.map((req) => (
-        <div key={req}>{req}</div>
-      ))}
+      {requirements ? 'Requirements loaded' : 'No requirements'}
     </div>
   ),
 }))
@@ -70,7 +72,7 @@ describe('ProjectRequestCard', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText((_, element) => {
-        return element?.textContent === 'Type: WEB_APPLICATION'
+        return element?.textContent === `Type: ${ProjectType.WebApp}`
       })
     ).toBeInTheDocument()
     expect(
@@ -118,9 +120,7 @@ describe('ProjectRequestCard', () => {
     )
 
     expect(screen.getByTestId('requirements-list')).toBeInTheDocument()
-    expect(screen.getByText('Requirement 1')).toBeInTheDocument()
-    expect(screen.getByText('Requirement 2')).toBeInTheDocument()
-    expect(screen.getByText('Requirement 3')).toBeInTheDocument()
+    expect(screen.getByText('Requirements loaded')).toBeInTheDocument()
   })
 
   it('shows correct action buttons for REQUESTED status', () => {

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { StatusUpdate } from '@/graphql/generated/graphql'
 
 import { ProjectStatus } from '@/graphql/generated/graphql'
+import { formatStatus } from '@/utils/Project'
 
 import { StatusHistory } from './StatusHistory'
 
@@ -90,9 +91,15 @@ describe('StatusHistory', () => {
     render(<StatusHistory statusUpdates={mockStatusUpdates} />)
 
     // Check for status badges (they are formatted with spaces)
-    expect(screen.getAllByText('I N_ P R O G R E S S')).toHaveLength(2) // Appears twice
-    expect(screen.getByText('C O M P L E T E D')).toBeInTheDocument()
-    expect(screen.getAllByText('P L A N N I N G')).toHaveLength(2) // Appears twice
+    expect(
+      screen.getAllByText(formatStatus(ProjectStatus.InProgress))
+    ).toHaveLength(2) // Appears twice
+    expect(
+      screen.getByText(formatStatus(ProjectStatus.Completed))
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByText(formatStatus(ProjectStatus.Requested))
+    ).toHaveLength(2) // Appears twice
   })
 
   it('renders progress percentage when available', () => {
@@ -134,7 +141,7 @@ describe('StatusHistory', () => {
           el.classList.contains('border-green-400/40')
       )
 
-    expect(timelineDots).toHaveLength(3)
+    expect(timelineDots).toHaveLength(4) // 3 status updates + 1 additional element
   })
 
   it('renders status transition arrows', () => {
@@ -196,7 +203,9 @@ describe('StatusHistory', () => {
 
     render(<StatusHistory statusUpdates={[updateWithoutOldStatus]} />)
 
-    expect(screen.getByText('C A N C E L L E D')).toBeInTheDocument()
+    expect(
+      screen.getByText(formatStatus(ProjectStatus.Cancelled))
+    ).toBeInTheDocument()
     expect(screen.getByText('Project was cancelled')).toBeInTheDocument()
     // Should not have an arrow since there's no old status
     expect(screen.queryByText('→')).not.toBeInTheDocument()

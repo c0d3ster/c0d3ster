@@ -7,6 +7,7 @@ import type {
 } from '@/graphql/generated/graphql'
 
 import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
+import { formatStatus } from '@/utils/Project'
 
 import { ProjectStatusCard } from './ProjectStatusCard'
 
@@ -68,7 +69,7 @@ describe('ProjectStatusCard', () => {
     expect(
       screen.getByText('A test project for testing purposes')
     ).toBeInTheDocument()
-    expect(screen.getByText('WEB APPLICATION')).toBeInTheDocument()
+    expect(screen.getByText(ProjectType.WebApp)).toBeInTheDocument()
     expect(screen.getByText('$5000')).toBeInTheDocument()
     expect(screen.getByText('75%')).toBeInTheDocument()
   })
@@ -80,7 +81,7 @@ describe('ProjectStatusCard', () => {
     expect(
       screen.getByText('A test project request for testing purposes')
     ).toBeInTheDocument()
-    expect(screen.getByText('MOBILE APP')).toBeInTheDocument()
+    expect(screen.getByText(ProjectType.MobileApp)).toBeInTheDocument()
     expect(screen.getByText('$3000')).toBeInTheDocument()
     expect(screen.getByText('2 months')).toBeInTheDocument()
   })
@@ -88,7 +89,7 @@ describe('ProjectStatusCard', () => {
   it('renders status badge with correct styling', () => {
     render(<ProjectStatusCard item={mockProject} />)
 
-    const statusBadge = screen.getByText('I N_ P R O G R E S S')
+    const statusBadge = screen.getByText(formatStatus(ProjectStatus.InProgress))
 
     expect(statusBadge).toBeInTheDocument()
     expect(statusBadge.closest('div')).toHaveClass(
@@ -231,14 +232,14 @@ describe('ProjectStatusCard', () => {
   })
 
   it('handles string client information', () => {
-    const projectWithStringClient = { 
-      ...mockProject, 
+    const projectWithStringClient = {
+      ...mockProject,
       client: {
         id: 'client-string',
         firstName: 'Client',
         lastName: 'Name',
-        email: 'client.name@example.com'
-      }
+        email: 'client.name@example.com',
+      },
     }
     render(<ProjectStatusCard item={projectWithStringClient} />)
 
