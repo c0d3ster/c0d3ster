@@ -36,6 +36,7 @@ vi.mock('@/components/molecules', () => ({
     <div data-testid={`available-project-card-${project.id}`}>
       <div data-testid='project-title'>{project.title}</div>
       <button
+        type='button'
         onClick={() => onAssignAction(project.id)}
         data-testid='assign-button'
       >

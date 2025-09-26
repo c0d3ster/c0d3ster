@@ -35,12 +35,14 @@ vi.mock('@/components/molecules', () => ({
       <div data-testid='request-title'>{request.title}</div>
       <div data-testid='request-status'>{request.status}</div>
       <button
+        type='button'
         onClick={() => updateStatusAction(request.id, 'in_review')}
         data-testid='update-status-button'
       >
         Update Status
       </button>
       <button
+        type='button'
         onClick={() => approveAction(request.id, {})}
         data-testid='approve-button'
       >

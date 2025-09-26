@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { ProjectsPreviewSection } from './ProjectsPreviewSection'
+
 // Mock only the specific hook we need, not the entire module
 vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
@@ -25,9 +27,7 @@ vi.mock('next/link', () => ({
 }))
 
 describe('ProjectsPreviewSection', () => {
-  it('renders loading state by default', async () => {
-    const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
-
+  it('renders loading state by default', () => {
     render(<ProjectsPreviewSection />)
 
     expect(screen.getByText('FEATURED PROJECTS')).toBeInTheDocument()
@@ -35,7 +35,6 @@ describe('ProjectsPreviewSection', () => {
   })
 
   it('renders error state', async () => {
-    const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
     const { useGetFeaturedProjects } = await import('@/apiClients')
 
     vi.mocked(useGetFeaturedProjects).mockReturnValue({

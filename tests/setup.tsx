@@ -1,5 +1,8 @@
+import 'reflect-metadata'
 import { cleanup } from '@testing-library/react'
+import '@testing-library/jest-dom'
 import { Buffer } from 'node:buffer'
+import React from 'react'
 import { afterEach, beforeEach, vi } from 'vitest'
 
 // Set Buffer for browser environment with full polyfill
@@ -25,13 +28,12 @@ if (typeof __dirname === 'undefined') {
 
 // Mock Clerk to prevent server-side imports
 vi.mock('@clerk/nextjs', () => ({
-   
   useUser: () => ({
     user: null,
     isLoaded: true,
     isSignedIn: false,
   }),
-   
+
   useAuth: () => ({
     userId: null,
     isLoaded: true,
@@ -59,6 +61,16 @@ vi.mock('@/libs/Toast', () => ({
   },
 }))
 
+// Mock Logger utility
+vi.mock('@/libs/Logger', () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}))
+
 // Mock next/image globally for all tests
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -66,24 +78,6 @@ vi.mock('next/image', () => ({
     <div data-testid='next-image' data-src={src} data-alt={alt} {...props} />
   ),
 }))
-
-// Mock database-related modules to prevent Drizzle ORM imports
-vi.mock('@/models', () => ({
-  schemas: {},
-  users: {},
-  projects: {},
-  projectRequests: {},
-  projectStatusUpdates: {},
-  projectCollaborators: {},
-}))
-
-// // Mock apiClients to prevent GraphQL imports
-// vi.mock('@/apiClients', () => ({
-//   useGetMe: vi.fn(() => ({ data: { me: null }, loading: false })),
-//   useGetUser: vi.fn(),
-//   useUpdateUser: vi.fn(),
-//   useGetMyDashboard: vi.fn(),
-// }))
 
 vi.mock('@/libs/Env', () => ({
   Env: {
@@ -110,8 +104,10 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn(),
   or: vi.fn(),
   desc: vi.fn(),
+  asc: vi.fn(),
   isNull: vi.fn(),
   ne: vi.fn(),
+  exists: vi.fn(),
   pgEnum: vi.fn(),
   sql: vi.fn(),
   SQL: vi.fn(),
@@ -137,32 +133,52 @@ vi.mock('drizzle-orm/node-postgres', () => ({
   NodePgDatabase: vi.fn(),
 }))
 
-// Mock pg-core
-vi.mock('drizzle-orm/pg-core', () => ({
-  pgTable: vi.fn(),
-  text: vi.fn(),
-  integer: vi.fn(),
-  timestamp: vi.fn(),
-  boolean: vi.fn(),
-  json: vi.fn(),
-  eq: vi.fn(),
-  and: vi.fn(),
-  or: vi.fn(),
-  desc: vi.fn(),
-  isNull: vi.fn(),
-  ne: vi.fn(),
-  pgEnum: vi.fn(),
-  sql: vi.fn(),
-  uuid: vi.fn(),
-  varchar: vi.fn(),
-}))
-
 // Mock the specific module that's causing the pg import
 vi.mock('@/libs/DB', () => ({
   db: {
-    query: vi.fn(),
+    query: {
+      users: {
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
+      projects: {
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
+      projectRequests: {
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
+      statusUpdates: {
+        findMany: vi.fn(),
+      },
+      projectCollaborators: {
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
+      projectFiles: {
+        findMany: vi.fn(),
+      },
+    },
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    select: vi.fn(),
+    transaction: vi.fn(),
     execute: vi.fn(),
   },
+}))
+
+// Mock IntersectionObserver
+globalThis.IntersectionObserver = vi.fn().mockImplementation((callback) => ({
+  observe: vi.fn((_element) => {
+    // Immediately trigger the callback to simulate element being in viewport
+    setTimeout(() => {
+      callback([{ isIntersecting: true }])
+    }, 0)
+  }),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
 }))
 
 // Clear all mocks and timers before each test

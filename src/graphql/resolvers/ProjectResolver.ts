@@ -222,11 +222,6 @@ export class ProjectResolver {
       orderBy: [asc(schemas.statusUpdates.createdAt)],
     })
 
-    logger.info('Status updates found', {
-      count: updates.length,
-      projectId: parent.id,
-      requestId: parent.requestId,
-    })
     return updates
   }
 
