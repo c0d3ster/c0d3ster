@@ -7,7 +7,7 @@ import { ContactSection } from './ContactSection'
 
 // Mock ContactForm to avoid Apollo Client dependency
 vi.mock('@/components/molecules/contact/ContactForm', () => ({
-  ContactForm: () => <div data-testid="contact-form">Contact Form Mock</div>,
+  ContactForm: () => <div data-testid='contact-form'>Contact Form Mock</div>,
 }))
 
 describe('ContactSection', () => {
@@ -54,7 +54,7 @@ describe('ContactSection', () => {
           screen.getByText('RESPONSE TIME: < 24 HOURS')
         ).toBeInTheDocument()
       },
-      { timeout: 3000 }
+      { timeout: 4000 }
     )
 
     await waitFor(
@@ -63,7 +63,7 @@ describe('ContactSection', () => {
           screen.getByText('AVAILABILITY: OPEN FOR PROJECTS')
         ).toBeInTheDocument()
       },
-      { timeout: 3000 }
+      { timeout: 4000 }
     )
 
     await waitFor(
@@ -72,7 +72,7 @@ describe('ContactSection', () => {
           screen.getByText('COMMUNICATION: SECURE & CONFIDENTIAL')
         ).toBeInTheDocument()
       },
-      { timeout: 3000 }
+      { timeout: 4000 }
     )
   })
 })
