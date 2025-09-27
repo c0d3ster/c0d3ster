@@ -1,52 +1,23 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { Project } from '@/graphql/generated/graphql'
-
-import {
-  ProjectStatus,
-  ProjectType,
-  UserRole,
-} from '@/graphql/generated/graphql'
+import { ProjectStatus } from '@/graphql/generated/graphql'
+import { createMockFullProject } from '@/tests/mocks'
 
 import { AvailableProjectCard } from './AvailableProjectCard'
 
-const mockProject: Project = {
-  id: '1',
-  title: 'Test Project',
-  overview: 'A test project overview',
-  description: 'A detailed test project description',
-  techStack: ['React', 'TypeScript', 'Tailwind'],
+const mockProject = createMockFullProject({
   status: ProjectStatus.Requested,
-  logo: '/test-logo.png',
-  projectName: 'test-project',
-  featured: false,
-  projectType: ProjectType.WebApp,
-  budget: 5000,
-  requirements: '{"requirement1": "test"}',
-  progressPercentage: 0,
-  startDate: '2024-01-01',
-  estimatedCompletionDate: '2024-03-01',
-  actualCompletionDate: null,
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-  clientId: 'client1',
   developerId: null,
-  requestId: 'req1',
+  developer: null,
+  progressPercentage: 0,
   client: {
     id: 'client1',
-    clerkId: 'client1_clerk',
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
-    role: UserRole.Client,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
-  developer: null,
-  collaborators: [],
-  statusUpdates: [],
-}
+})
 
 describe('AvailableProjectCard', () => {
   const mockOnAssignAction = vi.fn()
@@ -99,9 +70,7 @@ describe('AvailableProjectCard', () => {
       />
     )
 
-    expect(
-      screen.getByText('A detailed test project description')
-    ).toBeInTheDocument()
+    expect(screen.getByText('A test project description')).toBeInTheDocument()
   })
 
   it('renders project type', () => {

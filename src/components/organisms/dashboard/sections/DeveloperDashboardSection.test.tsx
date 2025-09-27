@@ -1,11 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import {
-  ProjectStatus,
-  ProjectType,
-  UserRole,
-} from '@/graphql/generated/graphql'
+import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
+import { createMockProjects } from '@/tests/mocks'
 
 import { DeveloperDashboardSection } from './DeveloperDashboardSection'
 
@@ -21,14 +18,6 @@ vi.mock('@/apiClients', async () => {
     useAssignProject: () => [mockAssignProject],
   }
 })
-
-// Mock Toast
-vi.mock('@/libs/Toast', () => ({
-  Toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}))
 
 // Mock child components
 vi.mock('@/components/molecules', () => ({
@@ -52,53 +41,29 @@ vi.mock('@/components/molecules', () => ({
   ),
 }))
 
-const mockAvailableProjects = [
-  {
-    id: 'available1',
-    projectName: 'available-project-1',
-    title: 'Available Project 1',
-    description: 'First available project',
-    projectType: ProjectType.WebApp,
-    status: ProjectStatus.Requested,
-    budget: 5000,
-    timeline: '3 months',
-    requirements: 'Requirements for project 1',
-    featured: false,
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: 'available2',
-    projectName: 'available-project-2',
-    title: 'Available Project 2',
-    description: 'Second available project',
-    projectType: ProjectType.MobileApp,
-    status: ProjectStatus.Requested,
-    budget: 8000,
-    timeline: '4 months',
-    requirements: 'Requirements for project 2',
-    featured: false,
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-16T10:00:00Z',
-  },
-]
+const mockAvailableProjects = createMockProjects(2).map((project, index) => ({
+  ...project,
+  id: `available${index + 1}`,
+  projectName: `available-project-${index + 1}`,
+  title: `Available Project ${index + 1}`,
+  status: ProjectStatus.Requested,
+  budget: 5000 + index * 3000,
+  timeline: '3 months',
+  requirements: `Requirements for project ${index + 1}`,
+  updatedAt: '2024-01-15T10:00:00Z',
+}))
 
-const mockAssignedProjects = [
-  {
-    id: 'assigned1',
-    projectName: 'assigned-project-1',
-    title: 'Assigned Project 1',
-    description: 'First assigned project',
-    projectType: ProjectType.WebApp,
-    status: ProjectStatus.InProgress,
-    budget: 6000,
-    timeline: '3 months',
-    requirements: 'Requirements for assigned project 1',
-    featured: false,
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T10:00:00Z',
-  },
-]
+const mockAssignedProjects = createMockProjects(1).map((project, index) => ({
+  ...project,
+  id: `assigned${index + 1}`,
+  projectName: `assigned-project-${index + 1}`,
+  title: `Assigned Project ${index + 1}`,
+  status: ProjectStatus.InProgress,
+  budget: 6000,
+  timeline: '3 months',
+  requirements: `Requirements for assigned project ${index + 1}`,
+  updatedAt: '2024-01-17T10:00:00Z',
+}))
 
 const mockUser = {
   id: 'user1',

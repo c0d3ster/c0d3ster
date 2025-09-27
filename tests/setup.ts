@@ -5,6 +5,11 @@ import { Buffer } from 'node:buffer'
 import React from 'react'
 import { afterEach, beforeEach, vi } from 'vitest'
 
+// =============================================================================
+// ENVIRONMENT POLYFILLS
+// =============================================================================
+// Required for test environment to work in browser-like conditions
+
 // Set Buffer for browser environment with full polyfill
 // eslint-disable-next-line node/prefer-global/buffer
 if (typeof globalThis.Buffer === 'undefined') {
@@ -26,42 +31,13 @@ if (typeof __dirname === 'undefined') {
   globalThis.__dirname = '/'
 }
 
-// Mock Clerk to prevent server-side imports
-vi.mock('@clerk/nextjs', () => ({
-  useUser: () => ({
-    user: null,
-    isLoaded: true,
-    isSignedIn: false,
-  }),
+// =============================================================================
+// APPLICATION MOCKS
+// =============================================================================
+// Mocks for application-specific utilities used across multiple test files
 
-  useAuth: () => ({
-    userId: null,
-    isLoaded: true,
-    isSignedIn: false,
-  }),
-  auth: () => Promise.resolve({ userId: null }),
-}))
-
-// Mock Clerk server
-vi.mock('@clerk/nextjs/server', () => ({
-  auth: () => Promise.resolve({ userId: null }),
-  currentUser: () => Promise.resolve(null),
-  clerkClient: {
-    users: {
-      getUser: () => Promise.resolve(null),
-    },
-  },
-}))
-
-// Mock Toast utility
-vi.mock('@/libs/Toast', () => ({
-  Toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}))
-
-// Mock Logger utility
+// Mock Logger utility - tests verify that logging calls happen with specific messages
+// Used in: 8+ service and component test files
 vi.mock('@/libs/Logger', () => ({
   logger: {
     error: vi.fn(),
@@ -71,14 +47,48 @@ vi.mock('@/libs/Logger', () => ({
   },
 }))
 
-// Mock next/image globally for all tests
-vi.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, ...props }: any) => (
-    <div data-testid='next-image' data-src={src} data-alt={alt} {...props} />
-  ),
+// Mock Toast utility - tests verify that toast calls happen with specific messages
+// Used in: 4+ component test files
+vi.mock('@/libs/Toast', () => ({
+  Toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }))
 
+// =============================================================================
+// NEXT.JS MOCKS
+// =============================================================================
+// Mocks for Next.js components and utilities used across multiple test files
+
+// Mock next/image globally for all tests
+// Used in: 10+ component test files
+vi.mock('next/image', () => ({
+  __esModule: true,
+  default: ({ src, alt, ...props }: any) =>
+    React.createElement('div', {
+      'data-testid': 'next-image',
+      'data-src': src,
+      'data-alt': alt,
+      ...props,
+    }),
+}))
+
+// Mock next/link globally for all tests
+// Used in: 5+ component test files with similar implementations
+vi.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ children, href, ...props }: any) =>
+    React.createElement('a', { href, ...props }, children),
+}))
+
+// =============================================================================
+// DATABASE MOCKS
+// =============================================================================
+// Mocks for database-related modules to prevent actual database connections
+
+// Mock environment configuration
+// Used in: 1+ service test files
 vi.mock('@/libs/Env', () => ({
   Env: {
     DATABASE_URL: 'test-database-url',
@@ -92,6 +102,7 @@ vi.mock('pg', () => ({
 }))
 
 // Mock drizzle-orm to prevent database imports
+// Used in: All service test files
 vi.mock('drizzle-orm', () => ({
   drizzle: vi.fn(),
   pgTable: vi.fn(),
@@ -113,7 +124,8 @@ vi.mock('drizzle-orm', () => ({
   SQL: vi.fn(),
 }))
 
-// Mock any other database-related modules
+// Mock drizzle-orm node-postgres adapter
+// Used in: All service test files
 vi.mock('drizzle-orm/node-postgres', () => ({
   drizzle: vi.fn(),
   pgTable: vi.fn(),
@@ -133,7 +145,8 @@ vi.mock('drizzle-orm/node-postgres', () => ({
   NodePgDatabase: vi.fn(),
 }))
 
-// Mock the specific module that's causing the pg import
+// Mock the application database module
+// Used in: All service test files
 vi.mock('@/libs/DB', () => ({
   db: {
     query: {
@@ -169,7 +182,13 @@ vi.mock('@/libs/DB', () => ({
   },
 }))
 
+// =============================================================================
+// BROWSER API MOCKS
+// =============================================================================
+// Mocks for browser APIs not available in test environment
+
 // Mock IntersectionObserver
+// Used in: Component tests that use intersection-based features
 globalThis.IntersectionObserver = vi.fn().mockImplementation((callback) => ({
   observe: vi.fn((_element) => {
     // Immediately trigger the callback to simulate element being in viewport

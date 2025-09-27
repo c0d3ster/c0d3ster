@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   test: {
-    setupFiles: ['tests/setup.tsx'],
+    setupFiles: ['tests/setup.ts'],
     env: loadEnv('', process.cwd(), ''),
     globals: true, // This provides Jest compatibility globals like expect
     coverage: {
@@ -29,7 +29,7 @@ export default defineConfig({
           include: ['src/**/*.test.{js,ts,tsx}'],
           exclude: ['src/hooks/**/*.test.ts'],
           environment: 'jsdom',
-          setupFiles: ['tests/setup.tsx'],
+          setupFiles: ['tests/setup.ts'],
         },
       },
       {

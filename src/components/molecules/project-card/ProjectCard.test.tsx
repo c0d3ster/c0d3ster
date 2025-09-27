@@ -1,21 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { ProjectDisplayFragment } from '@/graphql/generated/graphql'
-
-import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
+import { createMockProject } from '@/tests/mocks'
 
 import { ProjectCard } from './ProjectCard'
-
-// Mock next/link
-vi.mock('next/link', () => ({
-  __esModule: true,
-  default: ({ href, children, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}))
 
 // Mock utils
 vi.mock('@/utils', () => ({
@@ -24,20 +12,9 @@ vi.mock('@/utils', () => ({
   getStatusStyling: (_status: string) => 'text-green-400',
 }))
 
-const mockProject: ProjectDisplayFragment = {
-  __typename: 'Project',
-  id: '1',
-  title: 'Test Project',
-  projectName: 'test-project',
-  overview: 'A test project overview',
-  description: 'A detailed test project description',
-  techStack: ['React', 'TypeScript', 'Tailwind'],
-  status: ProjectStatus.InProgress,
-  logo: '/test-logo.png',
+const mockProject = createMockProject({
   featured: true,
-  projectType: ProjectType.WebApp,
-  createdAt: '2024-01-01T00:00:00Z',
-}
+})
 
 describe('ProjectCard', () => {
   it('renders project title', () => {
@@ -136,9 +113,7 @@ describe('ProjectCard', () => {
     const projectWithoutOverview = { ...mockProject, overview: null }
     render(<ProjectCard project={projectWithoutOverview} />)
 
-    expect(
-      screen.getByText('A detailed test project description')
-    ).toBeInTheDocument()
+    expect(screen.getByText('A test project description')).toBeInTheDocument()
   })
 
   it('renders tech stack items correctly', () => {

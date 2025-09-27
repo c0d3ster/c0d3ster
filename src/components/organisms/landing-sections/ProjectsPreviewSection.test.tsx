@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import { createMockProjects } from '@/tests/mocks'
+
 import { ProjectsPreviewSection } from './ProjectsPreviewSection'
 
 // Mock only the specific hook we need, not the entire module
@@ -15,16 +17,6 @@ vi.mock('@/apiClients', async () => {
     })),
   }
 })
-
-// Mock next/link
-vi.mock('next/link', () => ({
-  __esModule: true,
-  default: ({ children, href, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}))
 
 describe('ProjectsPreviewSection', () => {
   it('renders loading state by default', () => {
@@ -53,21 +45,7 @@ describe('ProjectsPreviewSection', () => {
     const { ProjectsPreviewSection } = await import('./ProjectsPreviewSection')
     const { useGetFeaturedProjects } = await import('@/apiClients')
 
-    const mockProjects = [
-      {
-        id: '1',
-        title: 'Test Project 1',
-        projectName: 'Test Project 1',
-        description: 'Test description 1',
-        overview: 'Test overview 1',
-        techStack: ['React', 'TypeScript'],
-        status: 'completed',
-        logo: '/test-logo-1.png',
-        liveUrl: 'https://test1.com',
-        repositoryUrl: 'https://github.com/test1',
-        featured: true,
-      },
-    ]
+    const mockProjects = createMockProjects(1)
 
     vi.mocked(useGetFeaturedProjects).mockReturnValue({
       data: { featuredProjects: mockProjects },

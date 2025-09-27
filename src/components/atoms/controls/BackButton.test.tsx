@@ -11,15 +11,6 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock next/link
-vi.mock('next/link', () => ({
-  default: ({ children, href, onClick, className }: any) => (
-    <a href={href} onClick={onClick} className={className}>
-      {children}
-    </a>
-  ),
-}))
-
 // Mock react-icons
 vi.mock('react-icons/fa', () => ({
   FaArrowLeft: () => <span data-testid='arrow-left'>←</span>,

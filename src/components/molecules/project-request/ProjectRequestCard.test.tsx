@@ -1,9 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { ProjectRequest } from '@/graphql/generated/graphql'
-
 import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
+import { createMockFullProjectRequest } from '@/tests/mocks'
 
 import { ProjectRequestCard } from './ProjectRequestCard'
 
@@ -20,27 +19,19 @@ vi.mock('@/components/molecules', () => ({
   ),
 }))
 
-const mockProjectRequest: ProjectRequest = {
-  id: '1',
+const mockProjectRequest = createMockFullProjectRequest({
   projectName: 'test-project-request',
   title: 'Test Project Request',
   description: 'A test project request for testing purposes',
-  projectType: ProjectType.WebApp,
-  status: ProjectStatus.Requested,
-  budget: 5000,
-  timeline: '3 months',
   additionalInfo: 'This is additional information',
   requirements: 'Requirement 1\nRequirement 2\nRequirement 3',
-  createdAt: '2024-01-15T10:00:00Z',
-  updatedAt: '2024-01-15T10:00:00Z',
-  statusUpdates: [],
   user: {
     id: 'user1',
     firstName: 'John',
     lastName: 'Doe',
     email: 'john.doe@example.com',
   },
-}
+})
 
 const mockUpdateStatusAction = vi.fn()
 const mockApproveAction = vi.fn()

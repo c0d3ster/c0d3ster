@@ -1,30 +1,23 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import type {
-  DashboardProjectFragment,
-  ProjectRequestDisplayFragment,
-} from '@/graphql/generated/graphql'
-
 import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
+import {
+  createMockDashboardProject,
+  createMockProjectRequest,
+} from '@/tests/mocks'
 import { formatStatus } from '@/utils/Project'
 
 import { ProjectStatusCard } from './ProjectStatusCard'
 
-const mockProject: DashboardProjectFragment = {
-  __typename: 'Project',
-  id: '1',
+const mockProject = createMockDashboardProject({
   projectName: 'test-project',
   title: 'Test Project',
   description: 'A test project for testing purposes',
-  projectType: ProjectType.WebApp,
   status: ProjectStatus.InProgress,
   budget: 5000,
   progressPercentage: 75,
   techStack: ['React', 'TypeScript', 'Node.js'],
-  createdAt: '2024-01-15T10:00:00Z',
-  updatedAt: '2024-01-15T10:00:00Z',
-  featured: false,
   client: {
     id: 'client1',
     firstName: 'John',
@@ -37,29 +30,23 @@ const mockProject: DashboardProjectFragment = {
     lastName: 'Smith',
     email: 'jane.smith@example.com',
   },
-}
+})
 
-const mockProjectRequest: ProjectRequestDisplayFragment = {
-  __typename: 'ProjectRequest',
-  id: '2',
+const mockProjectRequest = createMockProjectRequest({
   projectName: 'test-request',
   title: 'Test Request',
   description: 'A test project request for testing purposes',
   projectType: ProjectType.MobileApp,
-  status: ProjectStatus.Requested,
   budget: 3000,
   timeline: '2 months',
   additionalInfo: 'This is additional information',
-  createdAt: '2024-01-10T10:00:00Z',
-  updatedAt: '2024-01-10T10:00:00Z',
-  statusUpdates: [],
   user: {
     id: 'user1',
     firstName: 'Bob',
     lastName: 'Client',
     email: 'bob.client@example.com',
   },
-}
+})
 
 describe('ProjectStatusCard', () => {
   it('renders project information correctly', () => {
@@ -250,12 +237,12 @@ describe('ProjectStatusCard', () => {
   it('renders footer information correctly', () => {
     render(<ProjectStatusCard item={mockProject} />)
 
-    expect(screen.getByText('Project • Jan 15, 2024')).toBeInTheDocument()
+    expect(screen.getByText('Project • Dec 31, 2023')).toBeInTheDocument()
   })
 
   it('renders footer information correctly for project requests', () => {
     render(<ProjectStatusCard item={mockProjectRequest} />)
 
-    expect(screen.getByText('Request • Jan 10, 2024')).toBeInTheDocument()
+    expect(screen.getByText('Request • Dec 31, 2023')).toBeInTheDocument()
   })
 })

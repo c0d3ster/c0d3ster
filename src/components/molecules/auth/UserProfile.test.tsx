@@ -34,13 +34,6 @@ vi.mock('@/utils', () => ({
   formatProfileDate: (date: string) => new Date(date).toLocaleDateString(),
 }))
 
-// Mock logger
-vi.mock('@/libs/Logger', () => ({
-  logger: {
-    error: vi.fn(),
-  },
-}))
-
 describe('UserProfile', () => {
   beforeEach(() => {
     vi.clearAllMocks()

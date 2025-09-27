@@ -1,13 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { Project } from '@/graphql/generated/graphql'
-
-import {
-  ProjectStatus,
-  ProjectType,
-  UserRole,
-} from '@/graphql/generated/graphql'
+import { ProjectStatus } from '@/graphql/generated/graphql'
+import { createMockFullProject } from '@/tests/mocks'
 
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
@@ -20,28 +15,16 @@ vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
   return {
     ...actual,
-     
     useGetMe: () => mockGetMe(),
-     
     useGetFile: () => mockGetFile(),
   }
 })
-
-// Mock next/link to avoid router context issues
-vi.mock('next/link', () => ({
-  __esModule: true,
-  default: ({ href, children, onClick, ...props }: any) => (
-    <a href={href} onClick={onClick} {...props}>
-      {children}
-    </a>
-  ),
-}))
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   __esModule: true,
   default: {},
-   
+
   useRouter: () => ({
     back: vi.fn(),
     push: vi.fn(),
@@ -52,53 +35,26 @@ vi.mock('next/navigation', () => ({
 
 // Use global mocks from test setup
 
-// Mock the Project type
-const mockProject: Project = {
-  id: '1',
-  title: 'Test Project',
-  overview: 'A test project for testing purposes',
-  techStack: ['React', 'TypeScript', 'Tailwind'],
+const mockProject = createMockFullProject({
   status: ProjectStatus.Completed,
-  logo: '/test-logo.png',
   projectName: 'TestProject',
-  liveUrl: 'https://testproject.com',
   description: 'This is a detailed description of the test project.',
   featured: true,
-  projectType: ProjectType.WebApp,
-  budget: 5000,
-  requirements: '{"requirement1": "test"}',
   progressPercentage: 100,
-  startDate: '2024-01-01',
-  estimatedCompletionDate: '2024-03-01',
   actualCompletionDate: '2024-02-28',
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-  clientId: 'client1',
-  developerId: 'dev1',
-  requestId: 'req1',
   client: {
     id: 'client1',
-    clerkId: 'client1_clerk',
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
-    role: UserRole.Client,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
   developer: {
     id: 'dev1',
-    clerkId: 'dev1_clerk',
     firstName: 'Jane',
     lastName: 'Smith',
     email: 'jane@example.com',
-    role: UserRole.Developer,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
-  collaborators: [],
-  statusUpdates: [],
-}
+})
 
 describe('ProjectDetailsTemplate', () => {
   beforeEach(() => {
@@ -119,9 +75,7 @@ describe('ProjectDetailsTemplate', () => {
 
     expect(screen.getByText('TestProject')).toBeInTheDocument()
     expect(screen.getByText('Test Project')).toBeInTheDocument()
-    expect(
-      screen.getByText('A test project for testing purposes')
-    ).toBeInTheDocument()
+    expect(screen.getByText('A test project overview')).toBeInTheDocument()
   })
 
   it('renders project header with projectName when title is not available', () => {
@@ -134,9 +88,7 @@ describe('ProjectDetailsTemplate', () => {
     )
     // Check that projectName appears in the subtitle paragraph (there are 2 elements with this text)
     expect(screen.getAllByText('TestProject')).toHaveLength(2)
-    expect(
-      screen.getByText('A test project for testing purposes')
-    ).toBeInTheDocument()
+    expect(screen.getByText('A test project overview')).toBeInTheDocument()
   })
 
   it('renders project logo when available', () => {

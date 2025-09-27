@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
+import { ProjectStatus } from '@/graphql/generated/graphql'
+import { createMockProjectRequests } from '@/tests/mocks'
 
 import { AdminDashboardSection } from './AdminDashboardSection'
 
@@ -19,14 +20,6 @@ vi.mock('@/apiClients', async () => {
     useUpdateProjectRequestStatus: () => [mockUpdateProjectRequestStatus],
   }
 })
-
-// Mock Toast
-vi.mock('@/libs/Toast', () => ({
-  Toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}))
 
 // Mock ProjectRequestCard
 vi.mock('@/components/molecules', () => ({
@@ -52,68 +45,50 @@ vi.mock('@/components/molecules', () => ({
   ),
 }))
 
-const mockProjectRequests = [
-  {
-    id: 'request1',
-    title: 'Test Project Request 1',
-    description: 'A test project request',
-    projectType: ProjectType.WebApp,
-    status: ProjectStatus.Requested,
-    budget: 5000,
-    timeline: '3 months',
-    additionalInfo: 'Additional info',
-    requirements: 'Requirements here',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-    statusUpdates: [],
+const mockProjectRequests = createMockProjectRequests(3).map(
+  (request, index) => ({
+    ...request,
+    id: `request${index + 1}`,
+    title: `Test Project Request ${index + 1}`,
+    description:
+      index === 0
+        ? 'A test project request'
+        : index === 1
+          ? 'Another test project request'
+          : 'Third test project request',
+    status:
+      index === 0
+        ? ProjectStatus.Requested
+        : index === 1
+          ? ProjectStatus.InReview
+          : ProjectStatus.Approved,
+    budget: index === 0 ? 5000 : index === 1 ? 8000 : 3000,
+    timeline: index === 0 ? '3 months' : index === 1 ? '4 months' : '2 months',
+    additionalInfo:
+      index === 0
+        ? 'Additional info'
+        : index === 1
+          ? 'More additional info'
+          : 'Even more info',
+    requirements:
+      index === 0
+        ? 'Requirements here'
+        : index === 1
+          ? 'More requirements'
+          : 'Even more requirements',
     user: {
-      id: 'user1',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john@example.com',
+      id: `user${index + 1}`,
+      firstName: index === 0 ? 'John' : index === 1 ? 'Jane' : 'Bob',
+      lastName: index === 0 ? 'Doe' : index === 1 ? 'Smith' : 'Johnson',
+      email:
+        index === 0
+          ? 'john@example.com'
+          : index === 1
+            ? 'jane@example.com'
+            : 'bob@example.com',
     },
-  },
-  {
-    id: 'request2',
-    title: 'Test Project Request 2',
-    description: 'Another test project request',
-    projectType: ProjectType.MobileApp,
-    status: ProjectStatus.InReview,
-    budget: 8000,
-    timeline: '4 months',
-    additionalInfo: 'More additional info',
-    requirements: 'More requirements',
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-16T10:00:00Z',
-    statusUpdates: [],
-    user: {
-      id: 'user2',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane@example.com',
-    },
-  },
-  {
-    id: 'request3',
-    title: 'Test Project Request 3',
-    description: 'Third test project request',
-    projectType: ProjectType.WebApp,
-    status: ProjectStatus.Approved,
-    budget: 3000,
-    timeline: '2 months',
-    additionalInfo: 'Even more info',
-    requirements: 'Even more requirements',
-    createdAt: '2024-01-17T10:00:00Z',
-    updatedAt: '2024-01-17T10:00:00Z',
-    statusUpdates: [],
-    user: {
-      id: 'user3',
-      firstName: 'Bob',
-      lastName: 'Johnson',
-      email: 'bob@example.com',
-    },
-  },
-]
+  })
+)
 
 describe('AdminDashboardSection', () => {
   beforeEach(() => {

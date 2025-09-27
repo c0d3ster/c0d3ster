@@ -6,16 +6,26 @@ import { UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { isAdminRole, isDeveloperOrHigherRole } from '@/utils'
 
+// Mocks are defined inline to avoid hoisting issues
 import { UserService } from './UserService'
 
-// Mock specific dependencies not covered by global setup
+// Mock specific dependencies with reusable utilities
 vi.mock('@clerk/nextjs/server', () => ({
-  auth: vi.fn(),
+  auth: vi.fn().mockResolvedValue({ userId: null }),
+  currentUser: vi.fn().mockResolvedValue(null),
+  clerkClient: {
+    users: {
+      getUser: vi.fn().mockResolvedValue(null),
+    },
+  },
 }))
 
 vi.mock('@/utils', () => ({
   isAdminRole: vi.fn(),
   isDeveloperOrHigherRole: vi.fn(),
+  findProjectBySlug: vi.fn(),
+  hasSlugConflict: vi.fn(),
+  formatProfileDate: (date: string) => new Date(date).toLocaleDateString(),
 }))
 
 describe('UserService', () => {
