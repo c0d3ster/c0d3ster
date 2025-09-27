@@ -64,12 +64,17 @@ import {
   createMockFullProject,
   createMockProject,
   createMockProjectRequest,
-  createMockUtils,
 } from '@/tests/mocks'
 
 // Use in individual test files
 vi.mock('@clerk/nextjs', () => createMockClerkUser())
-vi.mock('@/utils', () => createMockUtils())
+vi.mock('@/utils', () => ({
+  isAdminRole: vi.fn(),
+  isDeveloperOrHigherRole: vi.fn(),
+  findProjectBySlug: vi.fn(),
+  hasSlugConflict: vi.fn(),
+  formatProfileDate: (date: string) => new Date(date).toLocaleDateString(),
+}))
 // Logger and Toast are mocked globally in setup.ts
 
 // Use project mock utilities for consistent test data

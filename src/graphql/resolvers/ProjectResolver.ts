@@ -41,7 +41,7 @@ export class ProjectResolver {
   async projects(
     @Arg('filter', () => ProjectFilter, { nullable: true })
     filter?: ProjectFilter,
-    @Arg('userEmail', { nullable: true }) userEmail?: string
+    @Arg('userEmail', () => String, { nullable: true }) userEmail?: string
   ) {
     // Allow public access for SUPPORT_EMAIL without authentication
     if (userEmail === SUPPORT_EMAIL) {
@@ -97,7 +97,7 @@ export class ProjectResolver {
 
   @Query(() => [Project])
   async featuredProjects(
-    @Arg('userEmail', { nullable: true }) userEmail?: string
+    @Arg('userEmail', () => String, { nullable: true }) userEmail?: string
   ) {
     // Allow public access for SUPPORT_EMAIL without authentication
     if (userEmail === SUPPORT_EMAIL) {
@@ -157,7 +157,8 @@ export class ProjectResolver {
   async updateProjectStatus(
     @Arg('id', () => ID) id: string,
     @Arg('status', () => String) status: string,
-    @Arg('progressPercentage', { nullable: true }) progressPercentage?: number
+    @Arg('progressPercentage', () => Number, { nullable: true })
+    progressPercentage?: number
   ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     return await this.projectService.updateProjectStatus(

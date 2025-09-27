@@ -8,6 +8,7 @@ import type {
   UserService,
 } from '@/services'
 
+import { ProjectStatus } from '@/graphql/generated/graphql'
 import {
   Project,
   ProjectRequest,
@@ -79,17 +80,22 @@ export class DashboardResolver {
 
     const totalProjects = userProjects.length
     const activeProjects = userProjects.filter((p: ProjectRecord) =>
-      ['in_progress', 'in_testing', 'ready_for_launch'].includes(p.status)
+      [
+        ProjectStatus.InProgress,
+        ProjectStatus.InTesting,
+        ProjectStatus.ReadyForLaunch,
+      ].includes(p.status as ProjectStatus)
     ).length
     const completedProjects = userProjects.filter((p: ProjectRecord) =>
-      ['completed'].includes(p.status)
+      [ProjectStatus.Completed].includes(p.status as ProjectStatus)
     ).length
     const totalRequests = userRequests.length
     const pendingReviewRequests = userRequests.filter(
-      (r: ProjectRequestRecord) => ['requested'].includes(r.status)
+      (r: ProjectRequestRecord) =>
+        [ProjectStatus.Requested].includes(r.status as ProjectStatus)
     ).length
     const inReviewRequests = userRequests.filter((r: ProjectRequestRecord) =>
-      ['in_review'].includes(r.status)
+      [ProjectStatus.InReview].includes(r.status as ProjectStatus)
     ).length
 
     return {

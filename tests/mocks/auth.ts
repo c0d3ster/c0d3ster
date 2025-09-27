@@ -28,3 +28,14 @@ export const createMockClerkServer = () => ({
     },
   },
 })
+
+export const createMockUser = (overrides = {}) => ({
+  id: 'user-1',
+  email: 'test@example.com',
+  firstName: 'Test',
+  lastName: 'User',
+  role: 'client',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  ...overrides,
+})
