@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 
 import { useGetMe, useUpdateUser } from '@/apiClients'
+import { logger } from '@/libs/Logger'
 import { formatProfileDate } from '@/utils'
 
 export const UserProfile = () => {
@@ -48,6 +49,7 @@ export const UserProfile = () => {
       await refetchMe()
       setIsEditing(false)
     } catch (error) {
+      logger.error('Error updating user')
       console.error('Error updating user:', error)
     } finally {
       setIsLoading(false)

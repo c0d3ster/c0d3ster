@@ -54,6 +54,7 @@ export default antfu(
       'node/prefer-global/process': 'off', // Allow using `process.env`
       'test/padding-around-all': 'error', // Add padding in test files
       'test/prefer-lowercase-title': 'off', // Allow using uppercase titles in test titles
+      'react-hooks-extra/no-unnecessary-use-prefix': 'off', // Disable the annoying use prefix rule
       'perfectionist/sort-imports': [
         'error',
         {

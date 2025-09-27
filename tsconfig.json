@@ -55,7 +55,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@/public/*": ["./public/*"]
+      "@/public/*": ["./public/*"],
+      "@/tests/*": ["./tests/*"]
     },
     // ======================================================================
     // Next.js Project Configuration

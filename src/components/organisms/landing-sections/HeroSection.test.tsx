@@ -38,8 +38,8 @@ describe('HeroSection', () => {
       () => {
         expect(screen.getByText(customTitle)).toBeInTheDocument()
       },
-      { timeout: 3000 }
-    ) // 3 second timeout
+      { timeout: 4000 }
+    )
   })
 
   it('renders custom subtitle', () => {

@@ -74,9 +74,6 @@ export const GET_PROJECT_BY_SLUG = gql`
       clientId
       developerId
       requestId
-      projectRequest {
-        ...ProjectRequestDisplay
-      }
       client {
         ...UserDisplay
       }

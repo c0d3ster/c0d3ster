@@ -1,37 +1,30 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { Project } from '@/graphql/generated/graphql'
-
-import {
-  ProjectStatus,
-  ProjectType,
-  UserRole,
-} from '@/graphql/generated/graphql'
+import { ProjectStatus } from '@/graphql/generated/graphql'
+import { createMockFullProject } from '@/tests/mocks'
 
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
-// Mock next/image
-vi.mock('next/image', () => ({
-  __esModule: true,
-  default: ({ src, alt, priority, ...props }: any) => (
-    <div data-testid='next-image' data-src={src} data-alt={alt} {...props} />
-  ),
-}))
+// Mock only the API clients that ProjectDetailsTemplate actually uses
+const mockGetMe = vi.fn()
+const mockGetFile = vi.fn()
 
-// Mock next/link to avoid router context issues
-vi.mock('next/link', () => ({
-  __esModule: true,
-  default: ({ href, children, onClick, ...props }: any) => (
-    <a href={href} onClick={onClick} {...props}>
-      {children}
-    </a>
-  ),
-}))
+// Mock the specific functions we need, let the rest use real implementations
+vi.mock('@/apiClients', async () => {
+  const actual = await vi.importActual('@/apiClients')
+  return {
+    ...actual,
+    useGetMe: () => mockGetMe(),
+    useGetFile: () => mockGetFile(),
+  }
+})
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
-  // eslint-disable-next-line react-hooks-extra/no-unnecessary-use-prefix
+  __esModule: true,
+  default: {},
+
   useRouter: () => ({
     back: vi.fn(),
     push: vi.fn(),
@@ -40,63 +33,49 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock the Project type
-const mockProject: Project = {
-  id: '1',
-  title: 'Test Project',
-  overview: 'A test project for testing purposes',
-  techStack: ['React', 'TypeScript', 'Tailwind'],
+// Use global mocks from test setup
+
+const mockProject = createMockFullProject({
   status: ProjectStatus.Completed,
-  logo: '/test-logo.png',
   projectName: 'TestProject',
-  liveUrl: 'https://testproject.com',
   description: 'This is a detailed description of the test project.',
   featured: true,
-  projectType: ProjectType.WebApp,
-  budget: 5000,
-  requirements: '{"requirement1": "test"}',
   progressPercentage: 100,
-  startDate: '2024-01-01',
-  estimatedCompletionDate: '2024-03-01',
   actualCompletionDate: '2024-02-28',
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-01T00:00:00Z',
-  clientId: 'client1',
-  developerId: 'dev1',
-  requestId: 'req1',
   client: {
     id: 'client1',
-    clerkId: 'client1_clerk',
     firstName: 'John',
     lastName: 'Doe',
     email: 'john@example.com',
-    role: UserRole.Client,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
   developer: {
     id: 'dev1',
-    clerkId: 'dev1_clerk',
     firstName: 'Jane',
     lastName: 'Smith',
     email: 'jane@example.com',
-    role: UserRole.Developer,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
   },
-  collaborators: [],
-  statusUpdates: [],
-}
+})
 
 describe('ProjectDetailsTemplate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Set up default mock behavior
+    mockGetMe.mockReturnValue({
+      data: { me: null },
+      loading: false,
+    })
+    mockGetFile.mockReturnValue({
+      data: null,
+      loading: false,
+    })
+  })
+
   it('renders project header with correct information', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
     expect(screen.getByText('TestProject')).toBeInTheDocument()
     expect(screen.getByText('Test Project')).toBeInTheDocument()
-    expect(
-      screen.getByText('A test project for testing purposes')
-    ).toBeInTheDocument()
+    expect(screen.getByText('A test project overview')).toBeInTheDocument()
   })
 
   it('renders project header with projectName when title is not available', () => {
@@ -109,9 +88,7 @@ describe('ProjectDetailsTemplate', () => {
     )
     // Check that projectName appears in the subtitle paragraph (there are 2 elements with this text)
     expect(screen.getAllByText('TestProject')).toHaveLength(2)
-    expect(
-      screen.getByText('A test project for testing purposes')
-    ).toBeInTheDocument()
+    expect(screen.getByText('A test project overview')).toBeInTheDocument()
   })
 
   it('renders project logo when available', () => {
