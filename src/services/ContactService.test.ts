@@ -66,8 +66,21 @@ describe('ContactService', () => {
       ).rejects.toThrow(GraphQLError)
 
       expect(mockLoggerError).toHaveBeenCalledWith(
-        'Failed to submit contact form:',
-        { error }
+        'Contact form submission failed:',
+        {
+          error: {
+            message: 'Email service unavailable',
+            stack: expect.any(String),
+            type: 'Error',
+          },
+          input: {
+            name: 'John Doe',
+            email: 'john@example.com',
+            subject: 'Test Subject',
+            messageLength: 20,
+          },
+          timestamp: expect.any(String),
+        }
       )
     })
 
@@ -82,10 +95,12 @@ describe('ContactService', () => {
       } catch (thrownError) {
         expect(thrownError).toBeInstanceOf(GraphQLError)
         expect((thrownError as GraphQLError).message).toBe(
-          'Failed to submit contact form'
+          'Failed to submit contact form: Network error'
         )
         expect((thrownError as GraphQLError).extensions).toEqual({
           code: 'CONTACT_FORM_ERROR',
+          originalError: 'Network error',
+          details: expect.any(String),
         })
       }
     })

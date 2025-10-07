@@ -116,7 +116,9 @@ describe('ContactForm', () => {
     fireEvent.click(submitButton)
 
     await waitFor(() => {
-      expect(Toast.error).toHaveBeenCalledWith('Server error')
+      expect(Toast.error).toHaveBeenCalledWith(
+        'Failed to send message. Please try again or contact support if the issue persists.'
+      )
     })
   })
 
@@ -153,7 +155,7 @@ describe('ContactForm', () => {
 
     await waitFor(() => {
       expect(Toast.error).toHaveBeenCalledWith(
-        'Network error. Please check your connection and try again.'
+        'Failed to send message. Please try again or contact support if the issue persists.'
       )
     })
   })
