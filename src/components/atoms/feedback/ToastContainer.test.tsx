@@ -19,24 +19,23 @@ describe('ToastContainer', () => {
 
     render(<ToastContainer />)
 
-    expect(MockedToastContainer).toHaveBeenCalledWith(
-      {
-        position: 'top-right',
-        autoClose: 5000,
-        hideProgressBar: false,
-        newestOnTop: false,
-        closeOnClick: true,
-        rtl: false,
-        pauseOnFocusLoss: true,
-        draggable: true,
-        pauseOnHover: true,
-        theme: 'dark',
-        closeButton: false,
-        icon: false,
-        className: 'mt-20',
-      },
-      undefined
-    )
+    const [callProps] = (MockedToastContainer as any).mock.calls[0]
+
+    expect(callProps).toEqual({
+      position: 'top-right',
+      autoClose: 5000,
+      hideProgressBar: false,
+      newestOnTop: false,
+      closeOnClick: true,
+      rtl: false,
+      pauseOnFocusLoss: true,
+      draggable: true,
+      pauseOnHover: true,
+      theme: 'dark',
+      closeButton: false,
+      icon: false,
+      className: 'mt-20',
+    })
   })
 
   it('renders ToastContainer component', async () => {

@@ -69,10 +69,16 @@ describe('BackButton', () => {
     render(<BackButton useBack={true} />)
 
     const link = screen.getByRole('link')
-    const preventDefault = vi.fn()
-    fireEvent.click(link, { preventDefault })
+
+    // Spy on the preventDefault method of the event
+    const preventDefaultSpy = vi.spyOn(Event.prototype, 'preventDefault')
+
+    fireEvent.click(link)
 
     expect(mockBack).toHaveBeenCalledTimes(1)
+    expect(preventDefaultSpy).toHaveBeenCalledTimes(1)
+
+    preventDefaultSpy.mockRestore()
   })
 
   it('applies correct CSS classes', () => {

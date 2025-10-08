@@ -27,6 +27,12 @@ vi.mock('@/analytics', () => ({
 }))
 
 // Mock Apollo Client
+vi.mock('@apollo/client', () => ({
+  HttpLink: vi.fn(),
+  InMemoryCache: vi.fn(),
+  ApolloClient: vi.fn(),
+}))
+
 vi.mock('@apollo/client/react', () => ({
   ApolloProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid='apollo-provider'>{children}</div>

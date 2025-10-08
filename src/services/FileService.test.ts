@@ -251,6 +251,7 @@ describe('FileService', () => {
       }
       mockS3Send.mockResolvedValue({
         Metadata: mockMetadata,
+        ContentType: 'image/jpeg',
       })
 
       const result = await fileService.getFileMetadata('test-key')
@@ -260,7 +261,7 @@ describe('FileService', () => {
         fileName: 'test.jpg',
         originalFileName: 'original.jpg',
         fileSize: 1024,
-        contentType: '',
+        contentType: 'image/jpeg',
         projectId: 'project-123',
         uploadedBy: 'user-123',
         environment: 'DEV',
@@ -278,6 +279,7 @@ describe('FileService', () => {
           uploadedBy: 'user-123',
           environment: 'DEV',
         },
+        ContentType: 'image/jpeg',
       })
 
       const result = await fileService.getFileMetadata('test-key')
@@ -286,7 +288,7 @@ describe('FileService', () => {
         fileName: 'test.jpg',
         originalFileName: '',
         fileSize: 1024,
-        contentType: '',
+        contentType: 'image/jpeg',
         projectId: undefined,
         uploadedBy: 'user-123',
         environment: 'DEV',

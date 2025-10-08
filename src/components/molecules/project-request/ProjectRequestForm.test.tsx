@@ -21,6 +21,16 @@ vi.mock('@/apiClients', () => ({
   useCreateProjectRequest: () => [mockCreateProjectRequest],
 }))
 
+// Mock Toast
+vi.mock('@/libs/Toast', () => ({
+  Toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
+}))
+
 // Mock the validation schema
 vi.mock('@/validations', () => ({
   projectRequestSchema: {

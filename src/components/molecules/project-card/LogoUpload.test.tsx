@@ -1,5 +1,13 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import { LogoUpload } from './LogoUpload'
 
@@ -18,9 +26,20 @@ const mockFileReader = {
 }
 
 // Mock global FileReader
-Object.defineProperty(window, 'FileReader', {
-  writable: true,
-  value: vi.fn(() => mockFileReader),
+const originalFileReader = window.FileReader
+
+beforeAll(() => {
+  Object.defineProperty(window, 'FileReader', {
+    writable: true,
+    value: vi.fn(() => mockFileReader),
+  })
+})
+
+afterAll(() => {
+  Object.defineProperty(window, 'FileReader', {
+    writable: true,
+    value: originalFileReader,
+  })
 })
 
 describe('LogoUpload', () => {

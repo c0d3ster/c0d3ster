@@ -1,9 +1,19 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logger } from '@/libs/Logger'
 
 import { RequirementsList } from './RequirementsList'
+
+const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
+
+beforeEach(() => {
+  loggerErrorSpy.mockClear()
+})
+
+afterAll(() => {
+  loggerErrorSpy.mockRestore()
+})
 
 describe('RequirementsList', () => {
   it('renders "No requirements specified" when requirements is null', () => {

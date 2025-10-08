@@ -237,12 +237,20 @@ describe('ProjectStatusCard', () => {
   it('renders footer information correctly', () => {
     render(<ProjectStatusCard item={mockProject} />)
 
-    expect(screen.getByText('Project • Dec 31, 2023')).toBeInTheDocument()
+    expect(
+      screen.getByText((_, element) => {
+        return element?.textContent === 'Project • Dec 31, 2023'
+      })
+    ).toBeInTheDocument()
   })
 
   it('renders footer information correctly for project requests', () => {
     render(<ProjectStatusCard item={mockProjectRequest} />)
 
-    expect(screen.getByText('Request • Dec 31, 2023')).toBeInTheDocument()
+    expect(
+      screen.getByText((_, element) => {
+        return element?.textContent === 'Request • Dec 31, 2023'
+      })
+    ).toBeInTheDocument()
   })
 })

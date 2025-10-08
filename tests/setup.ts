@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { cleanup } from '@testing-library/react'
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom/vitest'
 import { Buffer } from 'node:buffer'
 import React from 'react'
 import { afterEach, beforeEach, vi } from 'vitest'

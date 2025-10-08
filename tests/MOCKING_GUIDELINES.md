@@ -135,7 +135,7 @@ Based on analysis of all test files:
 
 ## Mock File Structure
 
-```
+```text
 tests/
 ├── setup.ts              # Global mocks (Logger, Toast, next/image, next/link, DB, etc.)
 ├── mocks/                # Domain utilities (used in 3+ files)
