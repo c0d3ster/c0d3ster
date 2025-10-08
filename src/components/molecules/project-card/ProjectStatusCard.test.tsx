@@ -237,20 +237,18 @@ describe('ProjectStatusCard', () => {
   it('renders footer information correctly', () => {
     render(<ProjectStatusCard item={mockProject} />)
 
+    // Check that the footer contains the expected text (handles text split across text nodes)
     expect(
-      screen.getByText((_, element) => {
-        return element?.textContent === 'Project • Dec 31, 2023'
-      })
+      screen.getByText(/Project\s*•\s*Dec\s*31,\s*2023/)
     ).toBeInTheDocument()
   })
 
   it('renders footer information correctly for project requests', () => {
     render(<ProjectStatusCard item={mockProjectRequest} />)
 
+    // Check that the footer contains the expected text (handles text split across text nodes)
     expect(
-      screen.getByText((_, element) => {
-        return element?.textContent === 'Request • Dec 31, 2023'
-      })
+      screen.getByText(/Request\s*•\s*Dec\s*31,\s*2023/)
     ).toBeInTheDocument()
   })
 })
