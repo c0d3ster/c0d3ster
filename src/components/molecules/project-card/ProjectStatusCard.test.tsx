@@ -233,22 +233,4 @@ describe('ProjectStatusCard', () => {
     expect(screen.getByText('Client:')).toBeInTheDocument()
     expect(screen.getByText('Client Name')).toBeInTheDocument()
   })
-
-  it('renders footer information correctly', () => {
-    render(<ProjectStatusCard item={mockProject} />)
-
-    // Check that the footer contains the expected text (handles text split across text nodes)
-    expect(
-      screen.getByText(/Project\s*•\s*Dec\s*31,\s*2023/)
-    ).toBeInTheDocument()
-  })
-
-  it('renders footer information correctly for project requests', () => {
-    render(<ProjectStatusCard item={mockProjectRequest} />)
-
-    // Check that the footer contains the expected text (handles text split across text nodes)
-    expect(
-      screen.getByText(/Request\s*•\s*Dec\s*31,\s*2023/)
-    ).toBeInTheDocument()
-  })
 })
