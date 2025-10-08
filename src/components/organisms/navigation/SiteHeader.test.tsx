@@ -13,16 +13,6 @@ vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/'),
 }))
 
-// Mock next/link
-vi.mock('next/link', () => ({
-  __esModule: true,
-  default: ({ children, href, ...props }: any) => (
-    <a href={href} {...props}>
-      {children}
-    </a>
-  ),
-}))
-
 // Mock next/image
 vi.mock('next/image', () => ({
   __esModule: true,

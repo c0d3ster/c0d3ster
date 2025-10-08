@@ -8,6 +8,7 @@ import type {
   UserService,
 } from '@/services'
 
+import { ProjectStatus } from '@/graphql/generated/graphql'
 import {
   Project,
   ProjectRequest,
@@ -15,6 +16,30 @@ import {
   UserDashboard,
 } from '@/graphql/schema'
 import { isDeveloperOrHigherRole } from '@/utils'
+
+// Helper function to normalize status values between DB strings and GraphQL enums
+const normalizeStatus = (status: unknown): ProjectStatus | undefined => {
+  if (typeof status !== 'string') return undefined
+  const map: Record<string, ProjectStatus> = {
+    in_progress: ProjectStatus.InProgress,
+    InProgress: ProjectStatus.InProgress,
+    in_testing: ProjectStatus.InTesting,
+    InTesting: ProjectStatus.InTesting,
+    ready_for_launch: ProjectStatus.ReadyForLaunch,
+    ReadyForLaunch: ProjectStatus.ReadyForLaunch,
+    completed: ProjectStatus.Completed,
+    Completed: ProjectStatus.Completed,
+    requested: ProjectStatus.Requested,
+    Requested: ProjectStatus.Requested,
+    in_review: ProjectStatus.InReview,
+    InReview: ProjectStatus.InReview,
+    approved: ProjectStatus.Approved,
+    Approved: ProjectStatus.Approved,
+    cancelled: ProjectStatus.Cancelled,
+    Cancelled: ProjectStatus.Cancelled,
+  }
+  return map[status]
+}
 
 // Type for the dashboard parent object
 type DashboardParent = {
@@ -78,19 +103,29 @@ export class DashboardResolver {
     )
 
     const totalProjects = userProjects.length
-    const activeProjects = userProjects.filter((p: ProjectRecord) =>
-      ['in_progress', 'in_testing', 'ready_for_launch'].includes(p.status)
-    ).length
-    const completedProjects = userProjects.filter((p: ProjectRecord) =>
-      ['completed'].includes(p.status)
-    ).length
+    const activeProjects = userProjects.filter((p: ProjectRecord) => {
+      const s = normalizeStatus(p.status)
+      return (
+        s === ProjectStatus.InProgress ||
+        s === ProjectStatus.InTesting ||
+        s === ProjectStatus.ReadyForLaunch
+      )
+    }).length
+    const completedProjects = userProjects.filter((p: ProjectRecord) => {
+      const s = normalizeStatus(p.status)
+      return s === ProjectStatus.Completed
+    }).length
     const totalRequests = userRequests.length
     const pendingReviewRequests = userRequests.filter(
-      (r: ProjectRequestRecord) => ['requested'].includes(r.status)
+      (r: ProjectRequestRecord) => {
+        const s = normalizeStatus(r.status)
+        return s === ProjectStatus.Requested
+      }
     ).length
-    const inReviewRequests = userRequests.filter((r: ProjectRequestRecord) =>
-      ['in_review'].includes(r.status)
-    ).length
+    const inReviewRequests = userRequests.filter((r: ProjectRequestRecord) => {
+      const s = normalizeStatus(r.status)
+      return s === ProjectStatus.InReview
+    }).length
 
     return {
       totalProjects,

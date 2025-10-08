@@ -21,9 +21,33 @@ export class ContactService {
         submittedAt: new Date().toISOString(),
       }
     } catch (error) {
-      logger.error('Failed to submit contact form:', { error })
-      throw new GraphQLError('Failed to submit contact form', {
-        extensions: { code: 'CONTACT_FORM_ERROR' },
+      // Preserve the original error message and details
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred'
+      const errorDetails = error instanceof Error ? error.stack : String(error)
+
+      // Enhanced logging with more context for debugging
+      logger.error('Contact form submission failed:', {
+        error: {
+          message: errorMessage,
+          stack: errorDetails,
+          type: error?.constructor?.name || 'Unknown',
+        },
+        input: {
+          name: input.name,
+          email: input.email,
+          subject: input.subject,
+          messageLength: input.message?.length || 0,
+        },
+        timestamp: new Date().toISOString(),
+      })
+
+      throw new GraphQLError(`Failed to submit contact form: ${errorMessage}`, {
+        extensions: {
+          code: 'CONTACT_FORM_ERROR',
+          originalError: errorMessage,
+          details: errorDetails,
+        },
       })
     }
   }

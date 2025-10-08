@@ -5,7 +5,27 @@ import { Toast } from '@/libs/Toast'
 
 import { ContactForm } from './ContactForm'
 
+// Mock only the API client that ContactForm actually uses
+const mockSubmitContactForm = vi.fn()
+
+vi.mock('@/apiClients', async () => {
+  const actual = await vi.importActual('@/apiClients')
+  return {
+    ...actual,
+    useSubmitContactForm: () => mockSubmitContactForm(),
+  }
+})
+
 describe('ContactForm', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Set up default mock behavior
+    mockSubmitContactForm.mockReturnValue([
+      vi.fn().mockResolvedValue({ data: { submitContactForm: { id: '1' } } }),
+      { loading: false, error: null },
+    ])
+  })
+
   it('renders all form fields', () => {
     render(<ContactForm />)
 
@@ -70,50 +90,8 @@ describe('ContactForm', () => {
 
   it('handles form submission error', async () => {
     // Mock the mutation function to throw an error
-    const { useSubmitContactForm } = await import(
-      '@/apiClients/contactApiClient'
-    )
     const mockMutation = vi.fn().mockRejectedValue(new Error('Server error'))
-    vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
-
-    render(<ContactForm />)
-
-    // Fill out the form
-    fireEvent.change(screen.getByLabelText('NAME'), {
-      target: { value: 'John Doe' },
-    })
-    fireEvent.change(screen.getByLabelText('EMAIL'), {
-      target: { value: 'john@example.com' },
-    })
-    fireEvent.change(screen.getByLabelText('SUBJECT'), {
-      target: { value: 'Project Inquiry' },
-    })
-    fireEvent.change(screen.getByLabelText('MESSAGE'), {
-      target: { value: 'I would like to discuss a project.' },
-    })
-
-    // Submit the form
-    const submitButton = screen.getByRole('button', {
-      name: 'INITIATE TRANSMISSION',
-    })
-    fireEvent.click(submitButton)
-
-    await waitFor(() => {
-      expect(Toast.error).toHaveBeenCalledWith('Server error')
-    })
-  })
-
-  it('handles network errors', async () => {
-    // Mock the mutation function to throw a network error
-    const { useSubmitContactForm } = await import(
-      '@/apiClients/contactApiClient'
-    )
-    const mockMutation = vi
-      .fn()
-      .mockRejectedValue(
-        new Error('Network error. Please check your connection and try again.')
-      )
-    vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
+    mockSubmitContactForm.mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 
@@ -139,7 +117,45 @@ describe('ContactForm', () => {
 
     await waitFor(() => {
       expect(Toast.error).toHaveBeenCalledWith(
-        'Network error. Please check your connection and try again.'
+        'Failed to send message. Please try again or contact support if the issue persists.'
+      )
+    })
+  })
+
+  it('handles network errors', async () => {
+    // Mock the mutation function to throw a network error
+    const mockMutation = vi
+      .fn()
+      .mockRejectedValue(
+        new Error('Network error. Please check your connection and try again.')
+      )
+    mockSubmitContactForm.mockReturnValue([mockMutation, {} as any])
+
+    render(<ContactForm />)
+
+    // Fill out the form
+    fireEvent.change(screen.getByLabelText('NAME'), {
+      target: { value: 'John Doe' },
+    })
+    fireEvent.change(screen.getByLabelText('EMAIL'), {
+      target: { value: 'john@example.com' },
+    })
+    fireEvent.change(screen.getByLabelText('SUBJECT'), {
+      target: { value: 'Project Inquiry' },
+    })
+    fireEvent.change(screen.getByLabelText('MESSAGE'), {
+      target: { value: 'I would like to discuss a project.' },
+    })
+
+    // Submit the form
+    const submitButton = screen.getByRole('button', {
+      name: 'INITIATE TRANSMISSION',
+    })
+    fireEvent.click(submitButton)
+
+    await waitFor(() => {
+      expect(Toast.error).toHaveBeenCalledWith(
+        'Failed to send message. Please try again or contact support if the issue persists.'
       )
     })
   })
@@ -162,11 +178,8 @@ describe('ContactForm', () => {
 
   it('shows loading state during submission', async () => {
     // Mock the mutation function to never resolve (for loading state)
-    const { useSubmitContactForm } = await import(
-      '@/apiClients/contactApiClient'
-    )
     const mockMutation = vi.fn().mockImplementation(() => new Promise(() => {})) // Never resolves
-    vi.mocked(useSubmitContactForm).mockReturnValue([mockMutation, {} as any])
+    mockSubmitContactForm.mockReturnValue([mockMutation, {} as any])
 
     render(<ContactForm />)
 

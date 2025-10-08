@@ -38,9 +38,22 @@ export const ContactForm = () => {
         Toast.error('Failed to send message. Please try again.')
       }
     } catch (error: any) {
+      // Log detailed error information for debugging (server-side)
+      if (error?.graphQLErrors?.length > 0) {
+        const graphQLError = error.graphQLErrors[0]
+        console.error('Contact form error details:', {
+          originalError: graphQLError.extensions?.originalError,
+          details: graphQLError.extensions?.details,
+          code: graphQLError.extensions?.code,
+          message: graphQLError.message,
+        })
+      } else {
+        console.error('Contact form error:', error)
+      }
+
+      // Show generic user-friendly message regardless of error type
       Toast.error(
-        error.message ||
-          'Network error. Please check your connection and try again.'
+        'Failed to send message. Please try again or contact support if the issue persists.'
       )
     } finally {
       setIsSubmitting(false)

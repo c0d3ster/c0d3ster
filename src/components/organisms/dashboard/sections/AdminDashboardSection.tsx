@@ -33,7 +33,7 @@ export const AdminDashboardSection = () => {
       await adminRefetch()
     } catch (error) {
       Toast.error('Failed to update request status')
-      throw error
+      console.error('Update request status error:', error)
     }
   }
 

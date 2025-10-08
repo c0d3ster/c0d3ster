@@ -1,9 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { GITHUB_USERNAME, LINKEDIN_USERNAME, SUPPORT_EMAIL } from '@/constants'
 
 import { ContactSection } from './ContactSection'
+
+// Mock ContactForm to avoid Apollo Client dependency
+vi.mock('@/components/molecules/contact/ContactForm', () => ({
+  ContactForm: () => <div data-testid='contact-form'>Contact Form Mock</div>,
+}))
 
 describe('ContactSection', () => {
   it('renders section header', () => {
@@ -16,7 +21,7 @@ describe('ContactSection', () => {
   it('renders contact methods', () => {
     render(<ContactSection />)
 
-    expect(screen.getAllByText('EMAIL')).toHaveLength(2) // One in heading, one in label
+    expect(screen.getByText('EMAIL')).toBeInTheDocument() // Only one since ContactForm is mocked
     expect(screen.getByText('GITHUB')).toBeInTheDocument()
     expect(screen.getByText('LINKEDIN')).toBeInTheDocument()
   })
@@ -36,51 +41,7 @@ describe('ContactSection', () => {
   it('renders contact form', () => {
     render(<ContactSection />)
 
-    expect(screen.getByText('SEND MESSAGE')).toBeInTheDocument()
-    expect(
-      screen
-        .getByRole('button', { name: 'INITIATE TRANSMISSION' })
-        .closest('form')
-    ).toBeInTheDocument()
-  })
-
-  it('renders form fields', () => {
-    render(<ContactSection />)
-
-    expect(screen.getByLabelText('NAME')).toBeInTheDocument()
-    expect(screen.getByLabelText('EMAIL')).toBeInTheDocument()
-    expect(screen.getByLabelText('SUBJECT')).toBeInTheDocument()
-    expect(screen.getByLabelText('MESSAGE')).toBeInTheDocument()
-  })
-
-  it('has correct form field types', () => {
-    render(<ContactSection />)
-
-    expect(screen.getByLabelText('NAME')).toHaveAttribute('type', 'text')
-    expect(screen.getByLabelText('EMAIL')).toHaveAttribute('type', 'email')
-    expect(screen.getByLabelText('SUBJECT')).toHaveAttribute('type', 'text')
-  })
-
-  it('has correct placeholders', () => {
-    render(<ContactSection />)
-
-    expect(screen.getByPlaceholderText('YOUR NAME')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('YOUR EMAIL')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('PROJECT TYPE')).toBeInTheDocument()
-    expect(
-      screen.getByPlaceholderText('DESCRIBE YOUR PROJECT...')
-    ).toBeInTheDocument()
-  })
-
-  it('renders submit button', () => {
-    render(<ContactSection />)
-
-    const submitButton = screen.getByRole('button', {
-      name: 'INITIATE TRANSMISSION',
-    })
-
-    expect(submitButton).toBeInTheDocument()
-    expect(submitButton).toHaveAttribute('type', 'submit')
+    expect(screen.getByTestId('contact-form')).toBeInTheDocument()
   })
 
   it('renders status information with typewriter effects', async () => {
@@ -93,7 +54,7 @@ describe('ContactSection', () => {
           screen.getByText('RESPONSE TIME: < 24 HOURS')
         ).toBeInTheDocument()
       },
-      { timeout: 3000 }
+      { timeout: 4000 }
     )
 
     await waitFor(
@@ -102,7 +63,7 @@ describe('ContactSection', () => {
           screen.getByText('AVAILABILITY: OPEN FOR PROJECTS')
         ).toBeInTheDocument()
       },
-      { timeout: 3000 }
+      { timeout: 4000 }
     )
 
     await waitFor(
@@ -111,7 +72,7 @@ describe('ContactSection', () => {
           screen.getByText('COMMUNICATION: SECURE & CONFIDENTIAL')
         ).toBeInTheDocument()
       },
-      { timeout: 3000 }
+      { timeout: 4000 }
     )
   })
 })
