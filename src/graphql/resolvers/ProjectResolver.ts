@@ -174,6 +174,16 @@ export class ProjectResolver {
     )
   }
 
+  @Mutation(() => Project)
+  async provisionProjectRepo(@Arg('projectId', () => ID) projectId: string) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    return await this.projectService.provisionProjectRepo(
+      projectId,
+      currentUser.id,
+      currentUser.role
+    )
+  }
+
   @FieldResolver(() => String, { nullable: true })
   requestId(@Root() parent: ProjectRecord) {
     return parent.requestId || null

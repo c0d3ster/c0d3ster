@@ -10,12 +10,15 @@ import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
 import {
   findProjectBySlug,
+  generateSlug,
   hasSlugConflict,
   isAdminRole,
   isDeveloperOrHigherRole,
 } from '@/utils'
 
 import type { FileService } from './FileService'
+
+import { addRepoSecret, createRepoFromTemplate } from './GitHubService'
 
 export class ProjectService {
   constructor(private fileService: FileService) {}
@@ -729,6 +732,86 @@ export class ProjectService {
   async getProjectRequestById(projectRequestId: string) {
     return await db.query.projectRequests.findFirst({
       where: eq(schemas.projectRequests.id, projectRequestId),
+    })
+  }
+
+  async provisionProjectRepo(
+    projectId: string,
+    currentUserId: string,
+    currentUserRole?: string
+  ): Promise<ProjectRecord> {
+    return await db.transaction(async (tx) => {
+      const [project] = await tx
+        .select()
+        .from(schemas.projects)
+        .where(eq(schemas.projects.id, projectId))
+        .for('update')
+
+      if (!project) {
+        throw new GraphQLError('Project not found', {
+          extensions: { code: 'PROJECT_NOT_FOUND' },
+        })
+      }
+
+      // Only admins or the assigned developer may provision
+      const isAdmin = isAdminRole(currentUserRole)
+      const isAssignedDeveloper =
+        currentUserRole === UserRole.Developer &&
+        project.developerId === currentUserId
+
+      if (!isAdmin && !isAssignedDeveloper) {
+        throw new GraphQLError('Access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
+
+      if (project.repositoryUrl) {
+        throw new GraphQLError(
+          'Repository already provisioned for this project',
+          { extensions: { code: 'REPO_ALREADY_PROVISIONED' } }
+        )
+      }
+
+      const repoName = generateSlug(project.projectName)
+
+      logger.info('Provisioning GitHub repo', { projectId, repoName })
+
+      const repo = await createRepoFromTemplate(
+        repoName,
+        `Repository for ${project.projectName}`
+      )
+
+      // Add project metadata as Actions secrets so devs can use them in workflows
+      await addRepoSecret(repo.name, 'PROJECT_ID', project.id)
+      await addRepoSecret(repo.name, 'PROJECT_NAME', project.projectName)
+
+      // If the project has a logo stored in R2, add the object key as a secret
+      // so the new repo can fetch a fresh presigned URL from the management API at runtime
+      const isR2Key =
+        project.logo &&
+        (project.logo.includes('projects/') || project.logo.includes('users/'))
+      if (isR2Key && project.logo) {
+        await addRepoSecret(repo.name, 'PROJECT_LOGO_KEY', project.logo)
+      }
+
+      const [updatedProject] = await tx
+        .update(schemas.projects)
+        .set({ repositoryUrl: repo.html_url, updatedAt: new Date() })
+        .where(eq(schemas.projects.id, projectId))
+        .returning()
+
+      if (!updatedProject) {
+        throw new GraphQLError('Failed to save repository URL', {
+          extensions: { code: 'UPDATE_FAILED' },
+        })
+      }
+
+      logger.info('GitHub repo provisioned', {
+        projectId,
+        repoUrl: repo.html_url,
+      })
+
+      return updatedProject
     })
   }
 }

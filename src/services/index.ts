@@ -5,6 +5,8 @@ import { ProjectRequestService } from './ProjectRequestService'
 import { ProjectService } from './ProjectService'
 import { UserService } from './UserService'
 
+export * from './GitHubService'
+
 // Create services with their dependencies
 export const fileService = new FileService()
 export const projectService = new ProjectService(fileService)

@@ -14,7 +14,7 @@ type ButtonProps = {
 }
 
 const baseStyles =
-  'inline-block rounded border font-mono font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-block cursor-pointer rounded border font-mono font-bold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50'
 
 const buttonStyle =
   'border-green-400 bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-black'
