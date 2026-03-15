@@ -24,7 +24,7 @@ async function encryptSecret(
   return sodium.to_base64(encrypted, sodium.base64_variants.ORIGINAL)
 }
 
-export type GitHubRepo = {
+type GitHubRepo = {
   html_url: string
   name: string
   ssh_url: string
@@ -94,14 +94,23 @@ async function fetchRepoPublicKey(
       return res.json() as Promise<{ key: string; key_id: string }>
     }
 
-    if (res.status === 404 && attempt < retries) {
-      logger.info('Repo not ready yet, retrying...', { repoName, attempt })
-      await new Promise((resolve) => setTimeout(resolve, delayMs))
-      continue
+    if (res.status === 404) {
+      if (attempt < retries) {
+        logger.info('Repo not ready yet, retrying...', { repoName, attempt })
+        await new Promise((resolve) => setTimeout(resolve, delayMs))
+        continue
+      }
+      throw new GraphQLError(
+        'Repo did not become ready in time for secret setup',
+        { extensions: { code: 'GITHUB_SECRET_KEY_FETCH_FAILED' } }
+      )
     }
 
     const body = await res.text()
-    logger.error('Failed to fetch repo public key', { status: res.status, body })
+    logger.error('Failed to fetch repo public key', {
+      status: res.status,
+      body,
+    })
     throw new GraphQLError(
       `Failed to fetch repo public key for secret encryption: ${body}`,
       { extensions: { code: 'GITHUB_SECRET_KEY_FETCH_FAILED' } }

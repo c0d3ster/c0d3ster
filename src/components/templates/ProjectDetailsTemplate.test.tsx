@@ -11,12 +11,15 @@ const mockGetMe = vi.fn()
 const mockGetFile = vi.fn()
 
 // Mock the specific functions we need, let the rest use real implementations
+const mockProvisionProjectRepo = vi.fn()
+
 vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
   return {
     ...actual,
     useGetMe: () => mockGetMe(),
     useGetFile: () => mockGetFile(),
+    useProvisionProjectRepo: () => [mockProvisionProjectRepo, { loading: false }],
   }
 })
 

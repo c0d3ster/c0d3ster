@@ -73,13 +73,14 @@ export const ProjectDetailsTemplate = ({
   // Check if user is the client (for personalized messages)
   const isClient = meData?.me?.id === project.clientId
 
-  // Only admins or the assigned developer can provision a repo
+  // Only admins or the assigned developer (with Developer role) can provision a repo
   const canProvisionRepo =
     !meLoading &&
     meData?.me &&
     (meData.me.role === UserRole.Admin ||
       meData.me.role === UserRole.SuperAdmin ||
-      meData.me.id === project.developerId) &&
+      (meData.me.role === UserRole.Developer &&
+        meData.me.id === project.developerId)) &&
     !repoUrl
 
   const handleProvisionRepo = async () => {
