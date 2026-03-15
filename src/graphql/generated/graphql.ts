@@ -100,6 +100,7 @@ export type Mutation = {
   readonly createProject: Project;
   readonly createProjectRequest: ProjectRequest;
   readonly deleteFile: Scalars['Boolean']['output'];
+  readonly provisionProjectRepo: Project;
   readonly rejectProjectRequest: Scalars['String']['output'];
   readonly submitContactForm: ContactFormSubmission;
   readonly updateProject: Project;
@@ -134,6 +135,11 @@ export type MutationCreateProjectRequestArgs = {
 
 export type MutationDeleteFileArgs = {
   key: Scalars['String']['input'];
+};
+
+
+export type MutationProvisionProjectRepoArgs = {
+  projectId: Scalars['ID']['input'];
 };
 
 
@@ -553,6 +559,13 @@ export type AssignProjectMutationVariables = Exact<{
 
 
 export type AssignProjectMutation = { readonly __typename?: 'Mutation', readonly assignProject: { readonly __typename?: 'Project', readonly budget?: number | null, readonly progressPercentage?: number | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly updatedAt: string, readonly stagingUrl?: string | null, readonly requestId?: string | null, readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly status: ProjectStatus, readonly techStack?: ReadonlyArray<string> | null, readonly featured: boolean, readonly logo?: string | null, readonly liveUrl?: string | null, readonly repositoryUrl?: string | null, readonly createdAt: string, readonly projectRequest?: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly requirements?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } };
+
+export type ProvisionProjectRepoMutationVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+}>;
+
+
+export type ProvisionProjectRepoMutation = { readonly __typename?: 'Mutation', readonly provisionProjectRepo: { readonly __typename?: 'Project', readonly id: string, readonly projectName: string, readonly repositoryUrl?: string | null } };
 
 export type GetProjectRequestsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1105,6 +1118,38 @@ export function useAssignProjectMutation(baseOptions?: ApolloReactHooks.Mutation
         return ApolloReactHooks.useMutation<AssignProjectMutation, AssignProjectMutationVariables>(AssignProjectDocument, options);
       }
 export type AssignProjectMutationHookResult = ReturnType<typeof useAssignProjectMutation>;
+export const ProvisionProjectRepoDocument = gql`
+    mutation ProvisionProjectRepo($projectId: ID!) {
+  provisionProjectRepo(projectId: $projectId) {
+    id
+    projectName
+    repositoryUrl
+  }
+}
+    `;
+
+/**
+ * __useProvisionProjectRepoMutation__
+ *
+ * To run a mutation, you first call `useProvisionProjectRepoMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useProvisionProjectRepoMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [provisionProjectRepoMutation, { data, loading, error }] = useProvisionProjectRepoMutation({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *   },
+ * });
+ */
+export function useProvisionProjectRepoMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ProvisionProjectRepoMutation, ProvisionProjectRepoMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ProvisionProjectRepoMutation, ProvisionProjectRepoMutationVariables>(ProvisionProjectRepoDocument, options);
+      }
+export type ProvisionProjectRepoMutationHookResult = ReturnType<typeof useProvisionProjectRepoMutation>;
 export const GetProjectRequestsDocument = gql`
     query GetProjectRequests {
   projectRequests {

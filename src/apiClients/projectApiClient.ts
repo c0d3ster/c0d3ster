@@ -17,6 +17,7 @@ import {
   useGetFeaturedProjectsQuery,
   useGetProjectBySlugQuery,
   useGetProjectsQuery,
+  useProvisionProjectRepoMutation,
 } from '@/graphql/generated/graphql'
 import { apolloClient } from '@/libs/ApolloClient'
 
@@ -119,6 +120,16 @@ export const ASSIGN_PROJECT = gql`
   ${DASHBOARD_PROJECT_FRAGMENT}
 `
 
+export const PROVISION_PROJECT_REPO = gql`
+  mutation ProvisionProjectRepo($projectId: ID!) {
+    provisionProjectRepo(projectId: $projectId) {
+      id
+      projectName
+      repositoryUrl
+    }
+  }
+`
+
 // Hooks for components
 export const useGetProjects = (filter?: ProjectFilter, userEmail?: string) =>
   useGetProjectsQuery({
@@ -138,6 +149,7 @@ export const useGetProjectBySlug = (slug: string) =>
   })
 
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
+export const useProvisionProjectRepo = () => useProvisionProjectRepoMutation()
 
 // Async functions for SSR / non-hook usage
 export const getProjects = async (

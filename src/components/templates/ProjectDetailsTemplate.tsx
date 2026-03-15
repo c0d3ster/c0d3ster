@@ -6,7 +6,7 @@ import { FaPencilAlt } from 'react-icons/fa'
 
 import type { Project } from '@/graphql/generated/graphql'
 
-import { useGetFile, useGetMe } from '@/apiClients'
+import { useGetFile, useGetMe, useProvisionProjectRepo } from '@/apiClients'
 import {
   BackButton,
   Button,
@@ -18,6 +18,8 @@ import {
   LogoUpload,
   StatusHistory,
 } from '@/components/molecules'
+import { UserRole } from '@/graphql/generated/graphql'
+import { Toast } from '@/libs/Toast'
 import { formatStatus, getStatusCardStyling } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
@@ -30,6 +32,11 @@ export const ProjectDetailsTemplate = ({
   project,
 }: ProjectDetailsTemplateProps) => {
   const { data: meData, loading: meLoading } = useGetMe()
+  const [provisionProjectRepo, { loading: provisioning }] =
+    useProvisionProjectRepo()
+  const [repoUrl, setRepoUrl] = useState<string | null>(
+    project.repositoryUrl || null
+  )
   const [showLogoUpload, setShowLogoUpload] = useState(false)
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
     project.logo || null
@@ -65,6 +72,32 @@ export const ProjectDetailsTemplate = ({
 
   // Check if user is the client (for personalized messages)
   const isClient = meData?.me?.id === project.clientId
+
+  // Only admins or the assigned developer can provision a repo
+  const canProvisionRepo =
+    !meLoading &&
+    meData?.me &&
+    (meData.me.role === UserRole.Admin ||
+      meData.me.role === UserRole.SuperAdmin ||
+      meData.me.id === project.developerId) &&
+    !repoUrl
+
+  const handleProvisionRepo = async () => {
+    try {
+      const result = await provisionProjectRepo({
+        variables: { projectId: project.id },
+      })
+      const url = result.data?.provisionProjectRepo?.repositoryUrl
+      if (url) {
+        setRepoUrl(url)
+        Toast.success('Repository provisioned successfully!')
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to provision repository'
+      Toast.error(message)
+    }
+  }
 
   const handleLogoUploaded = (logoUrl: string) => {
     // Update the logo URL directly with the presigned URL from the mutation
@@ -227,10 +260,31 @@ export const ProjectDetailsTemplate = ({
           </ScrollFade>
         </div>
 
+        {/* Repository Section */}
+        {(repoUrl || canProvisionRepo) && (
+          <ScrollFade>
+            <div className='mt-12 text-center'>
+              {repoUrl ? (
+                <Button href={repoUrl} external size='md'>
+                  VIEW REPOSITORY
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleProvisionRepo}
+                  disabled={provisioning}
+                  size='md'
+                >
+                  {provisioning ? 'PROVISIONING REPO...' : 'PROVISION REPO'}
+                </Button>
+              )}
+            </div>
+          </ScrollFade>
+        )}
+
         {/* Access Project Button */}
         {project.liveUrl && (
           <ScrollFade>
-            <div className='mt-16 text-center'>
+            <div className='mt-8 text-center'>
               <Button
                 href={project.liveUrl}
                 external={project.liveUrl.startsWith('http')}
