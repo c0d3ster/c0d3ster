@@ -11,7 +11,25 @@ import {
   isDeveloperOrHigherRole,
 } from '@/utils'
 
+import {
+  addRepoSecret,
+  createRepoFromTemplate,
+  deleteRepo,
+} from './GitHubService'
 import { ProjectService } from './ProjectService'
+import { createVercelProject } from './VercelService'
+
+// Mock GitHub and Vercel provisioning services
+vi.mock('./GitHubService', () => ({
+  createRepoFromTemplate: vi.fn(),
+  addRepoSecret: vi.fn(),
+  deleteRepo: vi.fn(),
+}))
+
+vi.mock('./VercelService', () => ({
+  createVercelProject: vi.fn(),
+  deleteVercelProject: vi.fn(),
+}))
 
 // Mock FileService
 const mockFileService = {
@@ -26,6 +44,7 @@ vi.mock('@/utils', () => ({
   hasSlugConflict: vi.fn(),
   isAdminRole: vi.fn(),
   isDeveloperOrHigherRole: vi.fn(),
+  generateSlug: vi.fn().mockReturnValue('test-project'),
 }))
 
 describe('ProjectService', () => {
@@ -46,6 +65,10 @@ describe('ProjectService', () => {
   const mockHasSlugConflict = vi.mocked(hasSlugConflict)
   const mockIsAdminRole = vi.mocked(isAdminRole)
   const mockIsDeveloperOrHigherRole = vi.mocked(isDeveloperOrHigherRole)
+  const mockCreateRepoFromTemplate = vi.mocked(createRepoFromTemplate)
+  const mockAddRepoSecret = vi.mocked(addRepoSecret)
+  const mockDeleteRepo = vi.mocked(deleteRepo)
+  const mockCreateVercelProject = vi.mocked(createVercelProject)
 
   const mockProject = {
     id: 'project-123',
@@ -800,8 +823,7 @@ describe('ProjectService', () => {
       const result = await projectService.updateProjectStatus(
         'project-123',
         statusInput,
-        'developer-123',
-        'developer'
+        'developer-123'
       )
 
       expect(mockDbInsert).toHaveBeenCalled()
@@ -814,8 +836,7 @@ describe('ProjectService', () => {
         projectService.updateProjectStatus(
           'project-123',
           { newStatus: 'in_progress' },
-          undefined,
-          'developer'
+          undefined
         )
       ).rejects.toThrow(GraphQLError)
     })
@@ -827,8 +848,7 @@ describe('ProjectService', () => {
         projectService.updateProjectStatus(
           'project-123',
           { newStatus: 'in_progress' },
-          'developer-123',
-          'developer'
+          'developer-123'
         )
       ).rejects.toThrow(GraphQLError)
     })
@@ -845,8 +865,7 @@ describe('ProjectService', () => {
         projectService.updateProjectStatus(
           'project-123',
           { newStatus: 'in_progress' },
-          'client-123',
-          'client' // Use lowercase as expected by the service
+          'client-123'
         )
       ).rejects.toThrow(GraphQLError)
     })
@@ -1050,6 +1069,312 @@ describe('ProjectService', () => {
       const result = await projectService.getProjectRequestById('request-123')
 
       expect(result).toEqual(mockRequest)
+    })
+  })
+
+  describe('provisionProjectRepo', () => {
+    const mockRepo = {
+      html_url: 'https://github.com/c0d3ster/test-project',
+      name: 'test-project',
+      ssh_url: 'git@github.com:c0d3ster/test-project.git',
+      clone_url: 'https://github.com/c0d3ster/test-project.git',
+    }
+    const mockStagingUrl = 'https://test-project.vercel.app'
+    const mockProvisionedProject = {
+      ...mockProject,
+      repositoryUrl: mockRepo.html_url,
+      stagingUrl: mockStagingUrl,
+    }
+
+    const setupHappyPathTransaction = () => {
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([mockProject]),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+    }
+
+    beforeEach(() => {
+      mockCreateRepoFromTemplate.mockResolvedValue(mockRepo)
+      mockAddRepoSecret.mockResolvedValue(undefined)
+      mockCreateVercelProject.mockResolvedValue(mockStagingUrl)
+      mockIsAdminRole.mockReturnValue(false)
+    })
+
+    it('should provision repo and Vercel project for admin', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      const result = await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockCreateRepoFromTemplate).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String)
+      )
+      expect(mockCreateVercelProject).toHaveBeenCalledWith(expect.any(String))
+      expect(result).toEqual(mockProvisionedProject)
+    })
+
+    it('should provision repo for assigned developer', async () => {
+      setupHappyPathTransaction()
+
+      const result = await projectService.provisionProjectRepo(
+        'project-123',
+        'developer-123',
+        'developer'
+      )
+
+      expect(mockCreateRepoFromTemplate).toHaveBeenCalled()
+      expect(mockCreateVercelProject).toHaveBeenCalled()
+      expect(result).toEqual(mockProvisionedProject)
+    })
+
+    it('should add PROJECT_ID and PROJECT_NAME secrets', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddRepoSecret).toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_ID',
+        mockProject.id
+      )
+      expect(mockAddRepoSecret).toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_NAME',
+        mockProject.projectName
+      )
+    })
+
+    it('should add PROJECT_LOGO_KEY secret when project has an R2 logo', async () => {
+      const projectWithLogo = { ...mockProject, logo: 'projects/abc/logo.png' }
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([projectWithLogo]),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddRepoSecret).toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_LOGO_KEY',
+        'projects/abc/logo.png'
+      )
+    })
+
+    it('should not add PROJECT_LOGO_KEY when logo is a public URL', async () => {
+      const projectWithPublicLogo = {
+        ...mockProject,
+        logo: 'https://example.com/logo.png',
+      }
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([projectWithPublicLogo]),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddRepoSecret).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_LOGO_KEY',
+        expect.anything()
+      )
+    })
+
+    it('should throw FORBIDDEN for a non-admin non-assigned user', async () => {
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([mockProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'client-123',
+          'client'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'FORBIDDEN' },
+      })
+
+      expect(mockCreateRepoFromTemplate).not.toHaveBeenCalled()
+    })
+
+    it('should throw REPO_ALREADY_PROVISIONED when repositoryUrl is set', async () => {
+      const alreadyProvisioned = {
+        ...mockProject,
+        repositoryUrl: 'https://github.com/c0d3ster/existing',
+      }
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([alreadyProvisioned]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'REPO_ALREADY_PROVISIONED' },
+      })
+    })
+
+    it('should throw PROJECT_NOT_FOUND when project does not exist', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'PROJECT_NOT_FOUND' },
+      })
+    })
+
+    it('should propagate Vercel failure and not save to DB', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      mockCreateRepoFromTemplate.mockResolvedValue({
+        name: 'test-project',
+        html_url: 'https://github.com/org/test-project',
+        ssh_url: 'git@github.com:org/test-project.git',
+        clone_url: 'https://github.com/org/test-project.git',
+      })
+      mockCreateVercelProject.mockRejectedValue(
+        new GraphQLError('Vercel project creation failed', {
+          extensions: { code: 'VERCEL_PROJECT_CREATION_FAILED' },
+        })
+      )
+      const mockTxUpdate = vi.fn()
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([mockProject]),
+              }),
+            }),
+          }),
+          update: mockTxUpdate,
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'VERCEL_PROJECT_CREATION_FAILED' },
+      })
+
+      expect(mockTxUpdate).not.toHaveBeenCalled()
+      expect(mockDeleteRepo).toHaveBeenCalledWith('test-project')
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Provisioning GitHub repo',
+        expect.any(Object)
+      )
+      expect(mockLogger.info).not.toHaveBeenCalledWith(
+        'GitHub repo and Vercel project provisioned',
+        expect.any(Object)
+      )
     })
   })
 })

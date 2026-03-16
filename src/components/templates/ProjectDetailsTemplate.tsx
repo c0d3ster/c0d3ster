@@ -37,6 +37,9 @@ export const ProjectDetailsTemplate = ({
   const [repoUrl, setRepoUrl] = useState<string | null>(
     project.repositoryUrl || null
   )
+  const [stagingUrl, setStagingUrl] = useState<string | null>(
+    project.stagingUrl || null
+  )
   const [showLogoUpload, setShowLogoUpload] = useState(false)
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
     project.logo || null
@@ -88,10 +91,17 @@ export const ProjectDetailsTemplate = ({
       const result = await provisionProjectRepo({
         variables: { projectId: project.id },
       })
-      const url = result.data?.provisionProjectRepo?.repositoryUrl
-      if (url) {
-        setRepoUrl(url)
-        Toast.success('Repository provisioned successfully!')
+      const provisioned = result.data?.provisionProjectRepo
+      if (provisioned?.repositoryUrl) {
+        setRepoUrl(provisioned.repositoryUrl)
+      }
+      if (provisioned?.stagingUrl) {
+        setStagingUrl(provisioned.stagingUrl)
+      }
+      if (provisioned?.repositoryUrl && provisioned?.stagingUrl) {
+        Toast.success('Repository and staging environment provisioned!')
+      } else if (provisioned?.repositoryUrl) {
+        Toast.success('Repository provisioned!')
       }
     } catch (err: unknown) {
       const message =
@@ -264,7 +274,7 @@ export const ProjectDetailsTemplate = ({
         {/* Repository Section */}
         {(repoUrl || canProvisionRepo) && (
           <ScrollFade>
-            <div className='mt-12 text-center'>
+            <div className='mt-12 flex justify-center gap-4'>
               {repoUrl ? (
                 <Button href={repoUrl} external size='md'>
                   VIEW REPOSITORY
@@ -275,7 +285,12 @@ export const ProjectDetailsTemplate = ({
                   disabled={provisioning}
                   size='md'
                 >
-                  {provisioning ? 'PROVISIONING REPO...' : 'PROVISION REPO'}
+                  {provisioning ? 'PROVISIONING...' : 'PROVISION REPO'}
+                </Button>
+              )}
+              {stagingUrl && (
+                <Button href={stagingUrl} external size='md'>
+                  VIEW STAGING
                 </Button>
               )}
             </div>

@@ -36,40 +36,45 @@ cp .env.example .env.local
 Edit `.env.local` with your configuration:
 
 ```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/c0d3ster"
+# Database (Neon Postgres)
+DATABASE_URL="postgresql://username:password@host.neon.tech/c0d3ster?sslmode=require"
 
 # Authentication (Clerk)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
+CLERK_WEBHOOK_SECRET=your_clerk_webhook_secret
 
-# Other services
+# Analytics
 NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
-POSTHOG_SECRET=your_posthog_secret
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com  # or your self-hosted URL
+
+# File Storage (Cloudflare R2)
+R2_ACCOUNT_ID=your_account_id
+R2_ACCESS_KEY_ID=your_access_key_id
+R2_SECRET_ACCESS_KEY=your_secret_access_key
+R2_BUCKET_NAME=your_bucket_name
+R2_PUBLIC_URL=your_public_url
+
+# Email (Resend)
+RESEND_API_KEY=your_resend_api_key
+
+# Security (Arcjet)
+ARCJET_KEY=your_arcjet_key
+
+# Project Provisioning (GitHub)
+GITHUB_TOKEN=your_fine_grained_pat   # needs: Administration, Contents, Metadata, Secrets (read/write)
+GITHUB_ORG=your_github_org           # defaults to c0d3ster
+GITHUB_TEMPLATE_REPO=your_template   # defaults to nextjs-graphql-template
+
+# Project Provisioning (Vercel)
+VERCEL_TOKEN=your_vercel_personal_access_token
 ```
 
 ### 4. Database Setup
 
-#### Option A: Local PostgreSQL
-
-1. Create a new database:
-
-```sql
-CREATE DATABASE c0d3ster;
-```
-
-2. Run migrations:
+Set your `DATABASE_URL` to a Neon Postgres connection string, then run migrations:
 
 ```bash
-npm run db:migrate
-```
-
-#### Option B: Use Local SQLite (Development Only)
-
-For quick development, you can use SQLite:
-
-```bash
-npm run db:generate
 npm run db:migrate
 ```
 
@@ -97,7 +102,6 @@ npm run start        # Start production server
 npm run db:generate  # Generate new migration
 npm run db:migrate   # Run pending migrations
 npm run db:studio    # Open Drizzle Studio
-npm run db:seed      # Seed database with sample data
 ```
 
 ### Testing
@@ -115,7 +119,8 @@ npm run test:coverage # Generate coverage report
 npm run lint         # Run ESLint
 npm run lint:fix     # Fix ESLint issues
 npm run format       # Format code with Prettier
-npm run type-check   # Run TypeScript type checking
+npm run check:types  # Run TypeScript type checking
+npm run check:deps   # Check for unused dependencies and exports (Knip)
 ```
 
 ### GraphQL Code Generation
@@ -152,7 +157,7 @@ c0d3ster/
 
 ## Key Technologies
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: GraphQL with Apollo Server, type-graphql, Node.js
 - **Client**: Apollo Client for GraphQL operations
 - **Database**: PostgreSQL with Drizzle ORM

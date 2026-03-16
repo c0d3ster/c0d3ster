@@ -289,8 +289,7 @@ describe('ProjectResolver', () => {
           updateMessage: 'Status updated to in_progress',
           isClientVisible: true,
         },
-        currentUser.id,
-        currentUser.role
+        currentUser.id
       )
     })
   })

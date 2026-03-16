@@ -120,6 +120,17 @@ export const ASSIGN_PROJECT = gql`
   ${DASHBOARD_PROJECT_FRAGMENT}
 `
 
+export const PROVISION_PROJECT_REPO = gql`
+  mutation ProvisionProjectRepo($projectId: ID!) {
+    provisionProjectRepo(projectId: $projectId) {
+      id
+      projectName
+      repositoryUrl
+      stagingUrl
+    }
+  }
+`
+
 // Hooks for components
 export const useGetProjects = (filter?: ProjectFilter, userEmail?: string) =>
   useGetProjectsQuery({
