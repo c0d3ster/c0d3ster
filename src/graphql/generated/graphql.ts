@@ -565,7 +565,7 @@ export type ProvisionProjectRepoMutationVariables = Exact<{
 }>;
 
 
-export type ProvisionProjectRepoMutation = { readonly __typename?: 'Mutation', readonly provisionProjectRepo: { readonly __typename?: 'Project', readonly id: string, readonly projectName: string, readonly repositoryUrl?: string | null } };
+export type ProvisionProjectRepoMutation = { readonly __typename?: 'Mutation', readonly provisionProjectRepo: { readonly __typename?: 'Project', readonly id: string, readonly projectName: string, readonly repositoryUrl?: string | null, readonly stagingUrl?: string | null } };
 
 export type GetProjectRequestsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1124,6 +1124,7 @@ export const ProvisionProjectRepoDocument = gql`
     id
     projectName
     repositoryUrl
+    stagingUrl
   }
 }
     `;

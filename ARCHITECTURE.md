@@ -42,7 +42,7 @@ SERVICE LAYER (src/services/UserService.ts)
    │
    ▼
 DATABASE / EXTERNAL APIs
-   - Drizzle ORM / Clerk / Stripe / Resend
+   - Drizzle ORM / Clerk / Resend / Cloudflare R2 / GitHub / Vercel
 ```
 
 ## File Structure
@@ -50,16 +50,21 @@ DATABASE / EXTERNAL APIs
 ```
 src/
 ├── apiClients/           # Frontend API clients (GraphQL operations)
-│   ├── UserApiClient.ts
-│   ├── ProjectApiClient.ts
-│   ├── ProjectRequestApiClient.ts
-│   ├── ContactApiClient.ts
+│   ├── userApiClient.ts
+│   ├── projectApiClient.ts
+│   ├── projectRequestApiClient.ts
+│   ├── fileApiClient.ts
+│   ├── contactApiClient.ts
+│   ├── dashboardApiClient.ts
 │   └── index.ts
 ├── services/             # Backend business logic & authentication
 │   ├── UserService.ts    # Auth, permissions, user management
 │   ├── ProjectService.ts # Project business logic
 │   ├── ProjectRequestService.ts # Project request logic
+│   ├── FileService.ts    # File uploads and storage (Cloudflare R2)
 │   ├── ContactService.ts # Contact form handling
+│   ├── GitHubService.ts  # GitHub repo provisioning
+│   ├── VercelService.ts  # Vercel project provisioning
 │   └── index.ts
 ├── graphql/              # GraphQL server layer
 │   ├── schema/           # type-graphql schema definitions
@@ -107,12 +112,13 @@ src/
 
 ### 1. API Client Pattern (Apollo Client)
 
+Define a `gql` operation — codegen picks it up and generates a typed hook. The api client wraps the generated hook:
+
 ```typescript
-import { useQuery } from '@apollo/client/react'
-// src/apiClients/UserApiClient.ts
+// src/apiClients/userApiClient.ts
 import { gql } from 'graphql-tag'
 
-import type { GetMeQuery } from '@/graphql/generated/graphql'
+import { useGetMeQuery } from '@/graphql/generated/graphql'
 
 const GET_ME = gql`
   query GetMe {
@@ -126,9 +132,7 @@ const GET_ME = gql`
   }
 `
 
-export const useGetMe = () => {
-  return useQuery<GetMeQuery>(GET_ME)
-}
+export const useGetMe = () => useGetMeQuery()
 ```
 
 ### 2. type-graphql Schema Definition

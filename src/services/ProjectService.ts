@@ -19,6 +19,7 @@ import {
 import type { FileService } from './FileService'
 
 import { addRepoSecret, createRepoFromTemplate } from './GitHubService'
+import { createVercelProject } from './VercelService'
 
 export class ProjectService {
   constructor(private fileService: FileService) {}
@@ -794,9 +795,15 @@ export class ProjectService {
         await addRepoSecret(repo.name, 'PROJECT_LOGO_KEY', project.logo)
       }
 
+      const stagingUrl = await createVercelProject(repoName)
+
       const [updatedProject] = await tx
         .update(schemas.projects)
-        .set({ repositoryUrl: repo.html_url, updatedAt: new Date() })
+        .set({
+          repositoryUrl: repo.html_url,
+          stagingUrl,
+          updatedAt: new Date(),
+        })
         .where(eq(schemas.projects.id, projectId))
         .returning()
 
@@ -806,9 +813,10 @@ export class ProjectService {
         })
       }
 
-      logger.info('GitHub repo provisioned', {
+      logger.info('GitHub repo and Vercel project provisioned', {
         projectId,
         repoUrl: repo.html_url,
+        stagingUrl,
       })
 
       return updatedProject
