@@ -33,8 +33,8 @@ export async function createRepoFromTemplate(
   description?: string
 ): Promise<GitHubRepo> {
   const TOKEN = Env.GITHUB_TOKEN
-  const ORG = Env.GITHUB_ORG ?? 'c0d3ster'
-  const TEMPLATE_REPO = Env.GITHUB_TEMPLATE_REPO ?? 'nextjs-graphql-template'
+  const ORG = Env.GITHUB_ORG
+  const TEMPLATE_REPO = Env.GITHUB_TEMPLATE_REPO
 
   if (!TOKEN || !ORG || !TEMPLATE_REPO) {
     throw new GraphQLError(
@@ -76,7 +76,7 @@ export async function createRepoFromTemplate(
 
 export async function deleteRepo(repoName: string): Promise<void> {
   const TOKEN = Env.GITHUB_TOKEN
-  const ORG = Env.GITHUB_ORG ?? 'c0d3ster'
+  const ORG = Env.GITHUB_ORG
 
   if (!TOKEN || !ORG) {
     throw new GraphQLError(
@@ -166,7 +166,7 @@ export async function addRepoSecret(
   secretValue: string
 ): Promise<void> {
   const TOKEN = Env.GITHUB_TOKEN!
-  const ORG = Env.GITHUB_ORG ?? 'c0d3ster'
+  const ORG = Env.GITHUB_ORG
 
   const { key, key_id } = await fetchRepoPublicKey(TOKEN, ORG, repoName)
 

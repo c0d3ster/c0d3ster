@@ -14,6 +14,7 @@ import type { FileService, ProjectService, UserService } from '@/services'
 
 import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/constants/file'
 import { Environment, File, FileFilterInput, UserRole } from '@/graphql/schema'
+import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
 
 @Resolver(() => File)
@@ -108,7 +109,7 @@ export class FileResolver {
       this.userService.checkPermission(currentUser, UserRole.Admin)
     }
 
-    const env = process.env.APP_ENV?.toLowerCase() ?? 'dev'
+    const env = Env.APP_ENV
     const files = await this.fileService.listFiles(`${env}/users/${userId}/`)
 
     // Get metadata for each file
@@ -169,7 +170,7 @@ export class FileResolver {
 
     // Generate file key with environment prefix
     const timestamp = Date.now()
-    const env = process.env.APP_ENV?.toLowerCase() ?? 'dev'
+    const env = Env.APP_ENV
     const key = `${env}/projects/${projectId}/${timestamp}_${fileName}`
 
     // Upload directly to R2/S3 using the detected content type with metadata

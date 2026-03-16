@@ -7,7 +7,7 @@ const VERCEL_API = 'https://api.vercel.com'
 
 export async function createVercelProject(repoName: string): Promise<string> {
   const TOKEN = Env.VERCEL_TOKEN
-  const ORG = Env.GITHUB_ORG ?? 'c0d3ster'
+  const ORG = Env.GITHUB_ORG
 
   if (!TOKEN) {
     throw new GraphQLError(
