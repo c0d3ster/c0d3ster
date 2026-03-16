@@ -18,8 +18,15 @@ import {
 
 import type { FileService } from './FileService'
 
-import { addRepoSecret, createRepoFromTemplate } from './GitHubService'
-import { createVercelProject } from './VercelService'
+import {
+  addRepoSecret,
+  createRepoFromTemplate,
+  deleteRepo,
+} from './GitHubService'
+import {
+  createVercelProject,
+  deleteVercelProject,
+} from './VercelService'
 
 export class ProjectService {
   constructor(private fileService: FileService) {}
@@ -741,85 +748,112 @@ export class ProjectService {
     currentUserId: string,
     currentUserRole?: string
   ): Promise<ProjectRecord> {
-    return await db.transaction(async (tx) => {
-      const [project] = await tx
-        .select()
-        .from(schemas.projects)
-        .where(eq(schemas.projects.id, projectId))
-        .for('update')
+    let repo: { name: string; html_url: string } | null = null
+    let vercelProjectName: string | null = null
 
-      if (!project) {
-        throw new GraphQLError('Project not found', {
-          extensions: { code: 'PROJECT_NOT_FOUND' },
-        })
-      }
+    try {
+      return await db.transaction(async (tx) => {
+        const [project] = await tx
+          .select()
+          .from(schemas.projects)
+          .where(eq(schemas.projects.id, projectId))
+          .for('update')
 
-      // Only admins or the assigned developer may provision
-      const isAdmin = isAdminRole(currentUserRole)
-      const isAssignedDeveloper =
-        currentUserRole === UserRole.Developer &&
-        project.developerId === currentUserId
+        if (!project) {
+          throw new GraphQLError('Project not found', {
+            extensions: { code: 'PROJECT_NOT_FOUND' },
+          })
+        }
 
-      if (!isAdmin && !isAssignedDeveloper) {
-        throw new GraphQLError('Access denied', {
-          extensions: { code: 'FORBIDDEN' },
-        })
-      }
+        // Only admins or the assigned developer may provision
+        const isAdmin = isAdminRole(currentUserRole)
+        const isAssignedDeveloper =
+          currentUserRole === UserRole.Developer &&
+          project.developerId === currentUserId
 
-      if (project.repositoryUrl) {
-        throw new GraphQLError(
-          'Repository already provisioned for this project',
-          { extensions: { code: 'REPO_ALREADY_PROVISIONED' } }
+        if (!isAdmin && !isAssignedDeveloper) {
+          throw new GraphQLError('Access denied', {
+            extensions: { code: 'FORBIDDEN' },
+          })
+        }
+
+        if (project.repositoryUrl) {
+          throw new GraphQLError(
+            'Repository already provisioned for this project',
+            { extensions: { code: 'REPO_ALREADY_PROVISIONED' } }
+          )
+        }
+
+        const repoName = generateSlug(project.projectName)
+
+        logger.info('Provisioning GitHub repo', { projectId, repoName })
+
+        repo = await createRepoFromTemplate(
+          repoName,
+          `Repository for ${project.projectName}`
         )
-      }
 
-      const repoName = generateSlug(project.projectName)
+        try {
+          // Add project metadata as Actions secrets so devs can use them in workflows
+          await addRepoSecret(repo.name, 'PROJECT_ID', project.id)
+          await addRepoSecret(repo.name, 'PROJECT_NAME', project.projectName)
 
-      logger.info('Provisioning GitHub repo', { projectId, repoName })
+          // If the project has a logo stored in R2, add the object key as a secret
+          const isR2Key =
+            project.logo &&
+            (project.logo.includes('projects/') ||
+              project.logo.includes('users/'))
+          if (isR2Key && project.logo) {
+            await addRepoSecret(repo.name, 'PROJECT_LOGO_KEY', project.logo)
+          }
 
-      const repo = await createRepoFromTemplate(
-        repoName,
-        `Repository for ${project.projectName}`
-      )
+          const stagingUrl = await createVercelProject(repo.name)
+          vercelProjectName = repo.name
 
-      // Add project metadata as Actions secrets so devs can use them in workflows
-      await addRepoSecret(repo.name, 'PROJECT_ID', project.id)
-      await addRepoSecret(repo.name, 'PROJECT_NAME', project.projectName)
+          const [updatedProject] = await tx
+            .update(schemas.projects)
+            .set({
+              repositoryUrl: repo.html_url,
+              stagingUrl,
+              updatedAt: new Date(),
+            })
+            .where(eq(schemas.projects.id, projectId))
+            .returning()
 
-      // If the project has a logo stored in R2, add the object key as a secret
-      // so the new repo can fetch a fresh presigned URL from the management API at runtime
-      const isR2Key =
-        project.logo &&
-        (project.logo.includes('projects/') || project.logo.includes('users/'))
-      if (isR2Key && project.logo) {
-        await addRepoSecret(repo.name, 'PROJECT_LOGO_KEY', project.logo)
-      }
+          if (!updatedProject) {
+            await deleteRepo(repo.name)
+            await deleteVercelProject(repo.name)
+            throw new GraphQLError('Failed to save repository URL', {
+              extensions: { code: 'UPDATE_FAILED' },
+            })
+          }
 
-      const stagingUrl = await createVercelProject(repoName)
+          logger.info('GitHub repo and Vercel project provisioned', {
+            projectId,
+            repoUrl: repo.html_url,
+            stagingUrl,
+          })
 
-      const [updatedProject] = await tx
-        .update(schemas.projects)
-        .set({
-          repositoryUrl: repo.html_url,
-          stagingUrl,
-          updatedAt: new Date(),
-        })
-        .where(eq(schemas.projects.id, projectId))
-        .returning()
-
-      if (!updatedProject) {
-        throw new GraphQLError('Failed to save repository URL', {
-          extensions: { code: 'UPDATE_FAILED' },
-        })
-      }
-
-      logger.info('GitHub repo and Vercel project provisioned', {
-        projectId,
-        repoUrl: repo.html_url,
-        stagingUrl,
+          return updatedProject
+        } catch (vercelOrDbError) {
+          if (repo) {
+            await deleteRepo(repo.name)
+            if (vercelProjectName) {
+              await deleteVercelProject(vercelProjectName)
+            }
+          }
+          throw vercelOrDbError
+        }
       })
-
-      return updatedProject
-    })
+    } catch (error) {
+      if (repo !== null) {
+        const { name } = repo
+        await deleteRepo(name)
+        if (vercelProjectName) {
+          await deleteVercelProject(vercelProjectName)
+        }
+      }
+      throw error
+    }
   }
 }

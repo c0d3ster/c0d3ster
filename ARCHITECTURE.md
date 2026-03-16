@@ -47,7 +47,7 @@ DATABASE / EXTERNAL APIs
 
 ## File Structure
 
-```
+```text
 src/
 ├── apiClients/           # Frontend API clients (GraphQL operations)
 │   ├── userApiClient.ts

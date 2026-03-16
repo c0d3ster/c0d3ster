@@ -4,13 +4,13 @@ import { logger } from '@/libs/Logger'
 
 import { addRepoSecret, createRepoFromTemplate } from './GitHubService'
 
-vi.mock('@/libs/Env', () => ({
-  Env: {
-    GITHUB_TOKEN: 'test-github-token',
-    GITHUB_ORG: 'test-org',
-    GITHUB_TEMPLATE_REPO: 'test-template',
-  },
+const mockEnv = vi.hoisted(() => ({
+  GITHUB_TOKEN: 'test-github-token' as string | undefined,
+  GITHUB_ORG: 'test-org',
+  GITHUB_TEMPLATE_REPO: 'test-template',
 }))
+
+vi.mock('@/libs/Env', () => ({ Env: mockEnv }))
 
 // Mock libsodium-wrappers to avoid real crypto in tests
 vi.mock('libsodium-wrappers', () => ({
@@ -99,15 +99,13 @@ describe('GitHubService', () => {
     })
 
     it('should throw GITHUB_NOT_CONFIGURED when GITHUB_TOKEN is missing', async () => {
-      vi.resetModules()
-      vi.doMock('@/libs/Env', () => ({ Env: { GITHUB_TOKEN: undefined, GITHUB_ORG: 'test-org', GITHUB_TEMPLATE_REPO: 'test-template' } }))
-      const { createRepoFromTemplate: create } = await import('./GitHubService')
+      mockEnv.GITHUB_TOKEN = undefined
 
-      await expect(create('my-project')).rejects.toMatchObject({
+      await expect(createRepoFromTemplate('my-project')).rejects.toMatchObject({
         extensions: { code: 'GITHUB_NOT_CONFIGURED' },
       })
 
-      vi.doUnmock('@/libs/Env')
+      mockEnv.GITHUB_TOKEN = 'test-github-token'
     })
 
     it('should throw GITHUB_REPO_CREATION_FAILED on API error', async () => {

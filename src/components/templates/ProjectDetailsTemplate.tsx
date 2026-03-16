@@ -98,8 +98,10 @@ export const ProjectDetailsTemplate = ({
       if (provisioned?.stagingUrl) {
         setStagingUrl(provisioned.stagingUrl)
       }
-      if (provisioned?.repositoryUrl) {
+      if (provisioned?.repositoryUrl && provisioned?.stagingUrl) {
         Toast.success('Repository and staging environment provisioned!')
+      } else if (provisioned?.repositoryUrl) {
+        Toast.success('Repository provisioned!')
       }
     } catch (err: unknown) {
       const message =

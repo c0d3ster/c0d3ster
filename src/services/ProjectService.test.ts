@@ -11,7 +11,11 @@ import {
   isDeveloperOrHigherRole,
 } from '@/utils'
 
-import { addRepoSecret, createRepoFromTemplate } from './GitHubService'
+import {
+  addRepoSecret,
+  createRepoFromTemplate,
+  deleteRepo,
+} from './GitHubService'
 import { ProjectService } from './ProjectService'
 import { createVercelProject } from './VercelService'
 
@@ -19,10 +23,12 @@ import { createVercelProject } from './VercelService'
 vi.mock('./GitHubService', () => ({
   createRepoFromTemplate: vi.fn(),
   addRepoSecret: vi.fn(),
+  deleteRepo: vi.fn(),
 }))
 
 vi.mock('./VercelService', () => ({
   createVercelProject: vi.fn(),
+  deleteVercelProject: vi.fn(),
 }))
 
 // Mock FileService
@@ -61,6 +67,7 @@ describe('ProjectService', () => {
   const mockIsDeveloperOrHigherRole = vi.mocked(isDeveloperOrHigherRole)
   const mockCreateRepoFromTemplate = vi.mocked(createRepoFromTemplate)
   const mockAddRepoSecret = vi.mocked(addRepoSecret)
+  const mockDeleteRepo = vi.mocked(deleteRepo)
   const mockCreateVercelProject = vi.mocked(createVercelProject)
 
   const mockProject = {
@@ -1280,11 +1287,18 @@ describe('ProjectService', () => {
 
     it('should propagate Vercel failure and not save to DB', async () => {
       mockIsAdminRole.mockReturnValue(true)
+      mockCreateRepoFromTemplate.mockResolvedValue({
+        name: 'test-project',
+        html_url: 'https://github.com/org/test-project',
+        ssh_url: 'git@github.com:org/test-project.git',
+        clone_url: 'https://github.com/org/test-project.git',
+      })
       mockCreateVercelProject.mockRejectedValue(
         new GraphQLError('Vercel project creation failed', {
           extensions: { code: 'VERCEL_PROJECT_CREATION_FAILED' },
         })
       )
+      const mockTxUpdate = vi.fn()
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
           select: vi.fn().mockReturnValue({
@@ -1294,7 +1308,7 @@ describe('ProjectService', () => {
               }),
             }),
           }),
-          update: vi.fn(),
+          update: mockTxUpdate,
         }
         return callback(mockTx as any)
       })
@@ -1305,6 +1319,8 @@ describe('ProjectService', () => {
         extensions: { code: 'VERCEL_PROJECT_CREATION_FAILED' },
       })
 
+      expect(mockTxUpdate).not.toHaveBeenCalled()
+      expect(mockDeleteRepo).toHaveBeenCalledWith('test-project')
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Provisioning GitHub repo',
         expect.any(Object)
