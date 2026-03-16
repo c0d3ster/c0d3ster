@@ -795,6 +795,8 @@ export class ProjectService {
           if (!updatedProject) {
             await deleteRepo(repo.name)
             await deleteVercelProject(repo.name)
+            repo = null
+            vercelProjectName = null
             throw new GraphQLError('Failed to save repository URL', {
               extensions: { code: 'UPDATE_FAILED' },
             })
@@ -813,6 +815,8 @@ export class ProjectService {
             if (vercelProjectName) {
               await deleteVercelProject(vercelProjectName)
             }
+            repo = null
+            vercelProjectName = null
           }
           throw vercelOrDbError
         }
@@ -824,6 +828,8 @@ export class ProjectService {
         if (vercelProjectName) {
           await deleteVercelProject(vercelProjectName)
         }
+        repo = null
+        vercelProjectName = null
       }
       throw error
     }
