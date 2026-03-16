@@ -13,6 +13,10 @@ export const Env = createEnv({
     R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
     R2_BUCKET_NAME: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
+    GITHUB_TOKEN: z.string().min(1).optional(),
+    GITHUB_ORG: z.string().min(1).optional(),
+    GITHUB_TEMPLATE_REPO: z.string().min(1).optional(),
+    VERCEL_TOKEN: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().optional(),
@@ -35,6 +39,10 @@ export const Env = createEnv({
     R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
     R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+    GITHUB_ORG: process.env.GITHUB_ORG,
+    GITHUB_TEMPLATE_REPO: process.env.GITHUB_TEMPLATE_REPO,
+    VERCEL_TOKEN: process.env.VERCEL_TOKEN,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,

@@ -1,13 +1,13 @@
 import { GraphQLError } from 'graphql'
 import _sodium from 'libsodium-wrappers'
 
+import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
 
 const GITHUB_API = 'https://api.github.com'
-const ORG = process.env.GITHUB_ORG ?? 'c0d3ster'
-const TOKEN = process.env.GITHUB_TOKEN!
-const TEMPLATE_REPO =
-  process.env.GITHUB_TEMPLATE_REPO ?? 'nextjs-graphql-template'
+const ORG = Env.GITHUB_ORG ?? 'c0d3ster'
+const TOKEN = Env.GITHUB_TOKEN
+const TEMPLATE_REPO = Env.GITHUB_TEMPLATE_REPO ?? 'nextjs-graphql-template'
 
 async function encryptSecret(
   publicKeyB64: string,

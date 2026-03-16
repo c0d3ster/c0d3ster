@@ -1,10 +1,11 @@
 import { GraphQLError } from 'graphql'
 
+import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
 
 const VERCEL_API = 'https://api.vercel.com'
-const TOKEN = process.env.VERCEL_TOKEN!
-const ORG = process.env.GITHUB_ORG ?? 'c0d3ster'
+const TOKEN = Env.VERCEL_TOKEN
+const ORG = Env.GITHUB_ORG ?? 'c0d3ster'
 
 export async function createVercelProject(repoName: string): Promise<string> {
   if (!TOKEN) {

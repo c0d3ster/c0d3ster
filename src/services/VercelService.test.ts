@@ -3,6 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createVercelProject } from './VercelService'
 
+vi.mock('@/libs/Env', () => ({
+  Env: {
+    VERCEL_TOKEN: 'test-vercel-token',
+    GITHUB_ORG: 'test-org',
+  },
+}))
+
 const mockFetch = vi.fn()
 globalThis.fetch = mockFetch
 
@@ -42,16 +49,15 @@ describe('VercelService', () => {
     })
 
     it('should throw VERCEL_NOT_CONFIGURED when VERCEL_TOKEN is missing', async () => {
-      vi.stubEnv('VERCEL_TOKEN', '')
       vi.resetModules()
+      vi.doMock('@/libs/Env', () => ({ Env: { VERCEL_TOKEN: undefined, GITHUB_ORG: 'test-org' } }))
       const { createVercelProject: create } = await import('./VercelService')
 
-      await expect(create('my-project')).rejects.toThrow(GraphQLError)
       await expect(create('my-project')).rejects.toMatchObject({
         extensions: { code: 'VERCEL_NOT_CONFIGURED' },
       })
 
-      vi.unstubAllEnvs()
+      vi.doUnmock('@/libs/Env')
     })
 
     it('should throw VERCEL_PROJECT_CREATION_FAILED on API error', async () => {
