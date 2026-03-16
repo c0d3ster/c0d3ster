@@ -169,8 +169,7 @@ export class ProjectResolver {
         updateMessage: `Status updated to ${status}`,
         isClientVisible: true,
       },
-      currentUser.id,
-      currentUser.role
+      currentUser.id
     )
   }
 

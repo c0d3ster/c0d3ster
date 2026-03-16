@@ -823,8 +823,7 @@ describe('ProjectService', () => {
       const result = await projectService.updateProjectStatus(
         'project-123',
         statusInput,
-        'developer-123',
-        'developer'
+        'developer-123'
       )
 
       expect(mockDbInsert).toHaveBeenCalled()
@@ -837,8 +836,7 @@ describe('ProjectService', () => {
         projectService.updateProjectStatus(
           'project-123',
           { newStatus: 'in_progress' },
-          undefined,
-          'developer'
+          undefined
         )
       ).rejects.toThrow(GraphQLError)
     })
@@ -850,8 +848,7 @@ describe('ProjectService', () => {
         projectService.updateProjectStatus(
           'project-123',
           { newStatus: 'in_progress' },
-          'developer-123',
-          'developer'
+          'developer-123'
         )
       ).rejects.toThrow(GraphQLError)
     })
@@ -868,8 +865,7 @@ describe('ProjectService', () => {
         projectService.updateProjectStatus(
           'project-123',
           { newStatus: 'in_progress' },
-          'client-123',
-          'client' // Use lowercase as expected by the service
+          'client-123'
         )
       ).rejects.toThrow(GraphQLError)
     })
@@ -1155,10 +1151,22 @@ describe('ProjectService', () => {
       mockIsAdminRole.mockReturnValue(true)
       setupHappyPathTransaction()
 
-      await projectService.provisionProjectRepo('project-123', 'admin-user', 'admin')
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
 
-      expect(mockAddRepoSecret).toHaveBeenCalledWith(mockRepo.name, 'PROJECT_ID', mockProject.id)
-      expect(mockAddRepoSecret).toHaveBeenCalledWith(mockRepo.name, 'PROJECT_NAME', mockProject.projectName)
+      expect(mockAddRepoSecret).toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_ID',
+        mockProject.id
+      )
+      expect(mockAddRepoSecret).toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_NAME',
+        mockProject.projectName
+      )
     })
 
     it('should add PROJECT_LOGO_KEY secret when project has an R2 logo', async () => {
@@ -1184,13 +1192,24 @@ describe('ProjectService', () => {
         return callback(mockTx as any)
       })
 
-      await projectService.provisionProjectRepo('project-123', 'admin-user', 'admin')
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
 
-      expect(mockAddRepoSecret).toHaveBeenCalledWith(mockRepo.name, 'PROJECT_LOGO_KEY', 'projects/abc/logo.png')
+      expect(mockAddRepoSecret).toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_LOGO_KEY',
+        'projects/abc/logo.png'
+      )
     })
 
     it('should not add PROJECT_LOGO_KEY when logo is a public URL', async () => {
-      const projectWithPublicLogo = { ...mockProject, logo: 'https://example.com/logo.png' }
+      const projectWithPublicLogo = {
+        ...mockProject,
+        logo: 'https://example.com/logo.png',
+      }
       mockIsAdminRole.mockReturnValue(true)
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
@@ -1212,9 +1231,17 @@ describe('ProjectService', () => {
         return callback(mockTx as any)
       })
 
-      await projectService.provisionProjectRepo('project-123', 'admin-user', 'admin')
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
 
-      expect(mockAddRepoSecret).not.toHaveBeenCalledWith(mockRepo.name, 'PROJECT_LOGO_KEY', expect.anything())
+      expect(mockAddRepoSecret).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_LOGO_KEY',
+        expect.anything()
+      )
     })
 
     it('should throw FORBIDDEN for a non-admin non-assigned user', async () => {
@@ -1232,7 +1259,11 @@ describe('ProjectService', () => {
       })
 
       await expect(
-        projectService.provisionProjectRepo('project-123', 'client-123', 'client')
+        projectService.provisionProjectRepo(
+          'project-123',
+          'client-123',
+          'client'
+        )
       ).rejects.toMatchObject({
         extensions: { code: 'FORBIDDEN' },
       })
@@ -1241,7 +1272,10 @@ describe('ProjectService', () => {
     })
 
     it('should throw REPO_ALREADY_PROVISIONED when repositoryUrl is set', async () => {
-      const alreadyProvisioned = { ...mockProject, repositoryUrl: 'https://github.com/c0d3ster/existing' }
+      const alreadyProvisioned = {
+        ...mockProject,
+        repositoryUrl: 'https://github.com/c0d3ster/existing',
+      }
       mockIsAdminRole.mockReturnValue(true)
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
@@ -1257,7 +1291,11 @@ describe('ProjectService', () => {
       })
 
       await expect(
-        projectService.provisionProjectRepo('project-123', 'admin-user', 'admin')
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
       ).rejects.toMatchObject({
         extensions: { code: 'REPO_ALREADY_PROVISIONED' },
       })
@@ -1279,7 +1317,11 @@ describe('ProjectService', () => {
       })
 
       await expect(
-        projectService.provisionProjectRepo('project-123', 'admin-user', 'admin')
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
       ).rejects.toMatchObject({
         extensions: { code: 'PROJECT_NOT_FOUND' },
       })
@@ -1314,7 +1356,11 @@ describe('ProjectService', () => {
       })
 
       await expect(
-        projectService.provisionProjectRepo('project-123', 'admin-user', 'admin')
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
       ).rejects.toMatchObject({
         extensions: { code: 'VERCEL_PROJECT_CREATION_FAILED' },
       })

@@ -102,20 +102,11 @@ export class ProjectService {
       return project
     }
 
-    // Check access permissions
-    if (
-      currentUserRole === UserRole.Client &&
-      project.clientId !== currentUserId
-    ) {
-      throw new GraphQLError('Access denied', {
-        extensions: { code: 'FORBIDDEN' },
-      })
-    }
-
-    if (
-      currentUserRole === UserRole.Developer &&
-      project.developerId !== currentUserId
-    ) {
+    // Allow access if user is the client or developer of the project (regardless of role)
+    const hasProjectAccess =
+      project.clientId === currentUserId ||
+      project.developerId === currentUserId
+    if (!hasProjectAccess) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -171,17 +162,11 @@ export class ProjectService {
       return project
     }
 
-    // Check access permissions
-    if (currentUserRole === 'client' && project.clientId !== currentUserId) {
-      throw new GraphQLError('Access denied', {
-        extensions: { code: 'FORBIDDEN' },
-      })
-    }
-
-    if (
-      currentUserRole === UserRole.Developer &&
-      project.developerId !== currentUserId
-    ) {
+    // Allow access if user is the client or developer of the project (regardless of role)
+    const hasProjectAccess =
+      project.clientId === currentUserId ||
+      project.developerId === currentUserId
+    if (!hasProjectAccess) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -593,12 +578,7 @@ export class ProjectService {
     return updatedProject
   }
 
-  async updateProjectStatus(
-    id: string,
-    input: any,
-    currentUserId?: string,
-    currentUserRole?: string
-  ) {
+  async updateProjectStatus(id: string, input: any, currentUserId?: string) {
     if (!currentUserId) {
       throw new GraphQLError('Unauthorized', {
         extensions: { code: 'UNAUTHORIZED' },
@@ -615,17 +595,11 @@ export class ProjectService {
       })
     }
 
-    // Check permissions
-    if (currentUserRole === 'client' && project.clientId !== currentUserId) {
-      throw new GraphQLError('Access denied', {
-        extensions: { code: 'FORBIDDEN' },
-      })
-    }
-
-    if (
-      currentUserRole === UserRole.Developer &&
-      project.developerId !== currentUserId
-    ) {
+    // Allow access if user is the client or developer of the project (regardless of role)
+    const hasProjectAccess =
+      project.clientId === currentUserId ||
+      project.developerId === currentUserId
+    if (!hasProjectAccess) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
@@ -767,9 +741,7 @@ export class ProjectService {
 
         // Only admins or the assigned developer may provision
         const isAdmin = isAdminRole(currentUserRole)
-        const isAssignedDeveloper =
-          currentUserRole === UserRole.Developer &&
-          project.developerId === currentUserId
+        const isAssignedDeveloper = project.developerId === currentUserId
 
         if (!isAdmin && !isAssignedDeveloper) {
           throw new GraphQLError('Access denied', {
