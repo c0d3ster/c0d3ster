@@ -6,6 +6,7 @@ import type { ProjectRecord } from '@/models'
 
 import { ProjectStatus, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
+import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
 import { projectStatusEnum, schemas } from '@/models'
 import {
@@ -786,6 +787,22 @@ export class ProjectService {
           neonProjectId = neonId
 
           await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
+
+          if (Env.R2_ACCOUNT_ID)
+            await addVercelEnvVar(repo.name, 'R2_ACCOUNT_ID', Env.R2_ACCOUNT_ID)
+          if (Env.R2_ACCESS_KEY_ID)
+            await addVercelEnvVar(repo.name, 'R2_ACCESS_KEY_ID', Env.R2_ACCESS_KEY_ID)
+          if (Env.R2_SECRET_ACCESS_KEY)
+            await addVercelEnvVar(repo.name, 'R2_SECRET_ACCESS_KEY', Env.R2_SECRET_ACCESS_KEY)
+          if (Env.R2_BUCKET_NAME)
+            await addVercelEnvVar(repo.name, 'R2_BUCKET_NAME', Env.R2_BUCKET_NAME)
+
+          if (
+            project.logo &&
+            (project.logo.includes('projects/') || project.logo.includes('users/'))
+          ) {
+            await addVercelEnvVar(repo.name, 'PROJECT_LOGO_KEY', project.logo)
+          }
 
           await triggerVercelDeployment(repo.name)
 

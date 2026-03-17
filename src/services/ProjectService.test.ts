@@ -26,6 +26,15 @@ import {
   triggerVercelDeployment,
 } from './VercelService'
 
+const mockEnv = vi.hoisted(() => ({
+  R2_ACCOUNT_ID: 'test-r2-account-id' as string | undefined,
+  R2_ACCESS_KEY_ID: 'test-r2-access-key' as string | undefined,
+  R2_SECRET_ACCESS_KEY: 'test-r2-secret' as string | undefined,
+  R2_BUCKET_NAME: 'test-bucket' as string | undefined,
+}))
+
+vi.mock('@/libs/Env', () => ({ Env: mockEnv }))
+
 // Mock GitHub, Vercel, and Neon provisioning services
 vi.mock('./GitHubService', () => ({
   createRepoFromTemplate: vi.fn(),
@@ -1138,6 +1147,10 @@ describe('ProjectService', () => {
       mockAddVercelEnvVar.mockResolvedValue(undefined)
       mockTriggerVercelDeployment.mockResolvedValue(undefined)
       mockIsAdminRole.mockReturnValue(false)
+      mockEnv.R2_ACCOUNT_ID = 'test-r2-account-id'
+      mockEnv.R2_ACCESS_KEY_ID = 'test-r2-access-key'
+      mockEnv.R2_SECRET_ACCESS_KEY = 'test-r2-secret'
+      mockEnv.R2_BUCKET_NAME = 'test-bucket'
     })
 
     it('should provision repo and Vercel project for admin', async () => {
@@ -1187,6 +1200,115 @@ describe('ProjectService', () => {
         mockRepo.name,
         'DATABASE_URL',
         mockDatabaseUrl
+      )
+    })
+
+    it('should add R2 env vars to the provisioned Vercel project', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'R2_ACCOUNT_ID',
+        'test-r2-account-id'
+      )
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'R2_ACCESS_KEY_ID',
+        'test-r2-access-key'
+      )
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'R2_SECRET_ACCESS_KEY',
+        'test-r2-secret'
+      )
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'R2_BUCKET_NAME',
+        'test-bucket'
+      )
+    })
+
+    it('should not add R2 env vars when they are not configured', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      mockEnv.R2_ACCOUNT_ID = undefined
+      mockEnv.R2_ACCESS_KEY_ID = undefined
+      mockEnv.R2_SECRET_ACCESS_KEY = undefined
+      mockEnv.R2_BUCKET_NAME = undefined
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'R2_ACCOUNT_ID',
+        expect.anything()
+      )
+    })
+
+    it('should add PROJECT_LOGO_KEY env var when project has an R2 logo', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      const projectWithLogo = {
+        ...mockProject,
+        logo: 'projects/project-123/logo.png',
+      }
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([projectWithLogo]),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_LOGO_KEY',
+        'projects/project-123/logo.png'
+      )
+    })
+
+    it('should not add PROJECT_LOGO_KEY when project has no logo', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'PROJECT_LOGO_KEY',
+        expect.anything()
       )
     })
 
