@@ -778,6 +778,18 @@ export class ProjectService {
 
         const repoName = generateSlug(project.projectName)
 
+        const client = await tx
+          .select({ email: schemas.users.email })
+          .from(schemas.users)
+          .where(eq(schemas.users.id, project.clientId))
+          .then((rows) => rows[0])
+
+        if (!client) {
+          throw new GraphQLError('Client not found', {
+            extensions: { code: 'CLIENT_NOT_FOUND' },
+          })
+        }
+
         logger.info('Provisioning project', { projectId, repoName })
 
         try {
@@ -788,6 +800,9 @@ export class ProjectService {
 
           const stagingUrl = await createVercelProject(repo.name)
           vercelProjectName = repo.name
+
+          await addVercelEnvVar(repo.name, 'NEXT_PUBLIC_BRAND_NAME', project.projectName)
+          await addVercelEnvVar(repo.name, 'NEXT_PUBLIC_SUPPORT_EMAIL', client.email)
 
           const features = project.requirements?.features ?? []
 

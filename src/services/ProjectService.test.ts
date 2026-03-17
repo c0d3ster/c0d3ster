@@ -1165,6 +1165,7 @@ describe('ProjectService', () => {
     const mockStagingUrl = 'https://test-project.vercel.app'
     const mockNeonProjectId = 'neon-project-123'
     const mockDatabaseUrl = 'postgresql://user:pass@host/db'
+    const mockClientEmail = 'client@example.com'
     const mockProvisionedProject = {
       ...mockProject,
       repositoryUrl: mockRepo.html_url,
@@ -1172,16 +1173,26 @@ describe('ProjectService', () => {
       neonProjectId: mockNeonProjectId,
     }
 
+    const createMockSelectFn = (projectOverride?: any) =>
+      vi
+        .fn()
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              for: vi.fn().mockResolvedValue([projectOverride ?? mockProject]),
+            }),
+          }),
+        })
+        .mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([{ email: mockClientEmail }]),
+          }),
+        })
+
     const setupHappyPathTransaction = () => {
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1243,6 +1254,62 @@ describe('ProjectService', () => {
       expect(result).toEqual(mockProvisionedProject)
     })
 
+    it('should set NEXT_PUBLIC_BRAND_NAME and NEXT_PUBLIC_SUPPORT_EMAIL env vars', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'NEXT_PUBLIC_BRAND_NAME',
+        mockProject.projectName
+      )
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'NEXT_PUBLIC_SUPPORT_EMAIL',
+        mockClientEmail
+      )
+    })
+
+    it('should throw CLIENT_NOT_FOUND when client user does not exist', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn()
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  for: vi.fn().mockResolvedValue([mockProject]),
+                }),
+              }),
+            })
+            .mockReturnValue({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue([]),
+              }),
+            }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'CLIENT_NOT_FOUND' },
+      })
+
+      expect(mockCreateRepoFromTemplate).not.toHaveBeenCalled()
+    })
+
     it('should provision a Neon project and add DATABASE_URL when project has database feature', async () => {
       mockIsAdminRole.mockReturnValue(true)
       setupHappyPathTransaction()
@@ -1269,13 +1336,7 @@ describe('ProjectService', () => {
       }
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([projectWithoutDb]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(projectWithoutDb),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1326,13 +1387,7 @@ describe('ProjectService', () => {
       }
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([projectWithoutEmail]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(projectWithoutEmail),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1418,13 +1473,7 @@ describe('ProjectService', () => {
       }
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([projectWithLogo]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(projectWithLogo),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1471,13 +1520,7 @@ describe('ProjectService', () => {
       let capturedSet: any
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockImplementation((data) => {
               capturedSet = data
@@ -1596,13 +1639,7 @@ describe('ProjectService', () => {
       const mockTxUpdate = vi.fn()
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: mockTxUpdate,
         }
         return callback(mockTx as any)
@@ -1632,13 +1669,7 @@ describe('ProjectService', () => {
       const mockTxUpdate = vi.fn()
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: mockTxUpdate,
         }
         return callback(mockTx as any)
