@@ -18,6 +18,7 @@ export const Env = createEnv({
     GITHUB_TEMPLATE_REPO: z.string().min(1).default('nextjs-graphql-template'),
     APP_ENV: z.string().default('dev').transform((s) => s.toLowerCase()),
     VERCEL_TOKEN: z.string().min(1).optional(),
+    NEON_API_KEY: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().optional(),
@@ -45,6 +46,7 @@ export const Env = createEnv({
     GITHUB_TEMPLATE_REPO: process.env.GITHUB_TEMPLATE_REPO,
     APP_ENV: process.env.APP_ENV,
     VERCEL_TOKEN: process.env.VERCEL_TOKEN,
+    NEON_API_KEY: process.env.NEON_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,

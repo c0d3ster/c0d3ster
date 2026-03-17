@@ -19,13 +19,18 @@ import {
 import type { FileService } from './FileService'
 
 import {
-  addRepoSecret,
   createRepoFromTemplate,
   deleteRepo,
 } from './GitHubService'
 import {
+  createNeonProject,
+  deleteNeonProject,
+} from './NeonService'
+import {
+  addVercelEnvVar,
   createVercelProject,
   deleteVercelProject,
+  triggerVercelDeployment,
 } from './VercelService'
 
 export class ProjectService {
@@ -724,6 +729,13 @@ export class ProjectService {
   ): Promise<ProjectRecord> {
     let repo: { name: string; html_url: string } | null = null
     let vercelProjectName: string | null = null
+    let neonProjectId: string | null = null
+
+    const rollback = async () => {
+      if (repo) await deleteRepo(repo.name)
+      if (vercelProjectName) await deleteVercelProject(vercelProjectName)
+      if (neonProjectId) await deleteNeonProject(neonProjectId)
+    }
 
     try {
       return await db.transaction(async (tx) => {
@@ -758,79 +770,57 @@ export class ProjectService {
 
         const repoName = generateSlug(project.projectName)
 
-        logger.info('Provisioning GitHub repo', { projectId, repoName })
-
-        repo = await createRepoFromTemplate(
-          repoName,
-          `Repository for ${project.projectName}`
-        )
+        logger.info('Provisioning project', { projectId, repoName })
 
         try {
-          // Add project metadata as Actions secrets so devs can use them in workflows
-          await addRepoSecret(repo.name, 'PROJECT_ID', project.id)
-          await addRepoSecret(repo.name, 'PROJECT_NAME', project.projectName)
-
-          // If the project has a logo stored in R2, add the object key as a secret
-          const isR2Key =
-            project.logo &&
-            (project.logo.includes('projects/') ||
-              project.logo.includes('users/'))
-          if (isR2Key && project.logo) {
-            await addRepoSecret(repo.name, 'PROJECT_LOGO_KEY', project.logo)
-          }
+          repo = await createRepoFromTemplate(
+            repoName,
+            `Repository for ${project.projectName}`
+          )
 
           const stagingUrl = await createVercelProject(repo.name)
           vercelProjectName = repo.name
+
+          const { neonProjectId: neonId, databaseUrl } =
+            await createNeonProject(repoName)
+          neonProjectId = neonId
+
+          await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
+
+          await triggerVercelDeployment(repo.name)
 
           const [updatedProject] = await tx
             .update(schemas.projects)
             .set({
               repositoryUrl: repo.html_url,
               stagingUrl,
+              neonProjectId,
               updatedAt: new Date(),
             })
             .where(eq(schemas.projects.id, projectId))
             .returning()
 
           if (!updatedProject) {
-            await deleteRepo(repo.name)
-            await deleteVercelProject(repo.name)
-            repo = null
-            vercelProjectName = null
-            throw new GraphQLError('Failed to save repository URL', {
+            throw new GraphQLError('Failed to save provisioning data', {
               extensions: { code: 'UPDATE_FAILED' },
             })
           }
 
-          logger.info('GitHub repo and Vercel project provisioned', {
+          logger.info('Project provisioned', {
             projectId,
             repoUrl: repo.html_url,
             stagingUrl,
+            neonProjectId,
           })
 
           return updatedProject
-        } catch (vercelOrDbError) {
-          if (repo) {
-            await deleteRepo(repo.name)
-            if (vercelProjectName) {
-              await deleteVercelProject(vercelProjectName)
-            }
-            repo = null
-            vercelProjectName = null
-          }
-          throw vercelOrDbError
+        } catch (provisioningError) {
+          await rollback()
+          throw provisioningError
         }
       })
     } catch (error) {
-      if (repo !== null) {
-        const { name } = repo
-        await deleteRepo(name)
-        if (vercelProjectName) {
-          await deleteVercelProject(vercelProjectName)
-        }
-        repo = null
-        vercelProjectName = null
-      }
+      await rollback()
       throw error
     }
   }

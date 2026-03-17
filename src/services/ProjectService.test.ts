@@ -12,23 +12,36 @@ import {
 } from '@/utils'
 
 import {
-  addRepoSecret,
   createRepoFromTemplate,
   deleteRepo,
 } from './GitHubService'
+import {
+  createNeonProject,
+  deleteNeonProject,
+} from './NeonService'
 import { ProjectService } from './ProjectService'
-import { createVercelProject } from './VercelService'
+import {
+  addVercelEnvVar,
+  createVercelProject,
+  triggerVercelDeployment,
+} from './VercelService'
 
-// Mock GitHub and Vercel provisioning services
+// Mock GitHub, Vercel, and Neon provisioning services
 vi.mock('./GitHubService', () => ({
   createRepoFromTemplate: vi.fn(),
-  addRepoSecret: vi.fn(),
   deleteRepo: vi.fn(),
 }))
 
 vi.mock('./VercelService', () => ({
   createVercelProject: vi.fn(),
   deleteVercelProject: vi.fn(),
+  addVercelEnvVar: vi.fn(),
+  triggerVercelDeployment: vi.fn(),
+}))
+
+vi.mock('./NeonService', () => ({
+  createNeonProject: vi.fn(),
+  deleteNeonProject: vi.fn(),
 }))
 
 // Mock FileService
@@ -66,9 +79,12 @@ describe('ProjectService', () => {
   const mockIsAdminRole = vi.mocked(isAdminRole)
   const mockIsDeveloperOrHigherRole = vi.mocked(isDeveloperOrHigherRole)
   const mockCreateRepoFromTemplate = vi.mocked(createRepoFromTemplate)
-  const mockAddRepoSecret = vi.mocked(addRepoSecret)
   const mockDeleteRepo = vi.mocked(deleteRepo)
   const mockCreateVercelProject = vi.mocked(createVercelProject)
+  const mockAddVercelEnvVar = vi.mocked(addVercelEnvVar)
+  const mockTriggerVercelDeployment = vi.mocked(triggerVercelDeployment)
+  const mockCreateNeonProject = vi.mocked(createNeonProject)
+  const mockDeleteNeonProject = vi.mocked(deleteNeonProject)
 
   const mockProject = {
     id: 'project-123',
@@ -105,6 +121,7 @@ describe('ProjectService', () => {
     actualCompletionDate: null,
     repositoryUrl: null,
     stagingUrl: null,
+    neonProjectId: null,
     deploymentNotes: null,
     testingNotes: null,
     clientNotes: null,
@@ -1080,10 +1097,13 @@ describe('ProjectService', () => {
       clone_url: 'https://github.com/c0d3ster/test-project.git',
     }
     const mockStagingUrl = 'https://test-project.vercel.app'
+    const mockNeonProjectId = 'neon-project-123'
+    const mockDatabaseUrl = 'postgresql://user:pass@host/db'
     const mockProvisionedProject = {
       ...mockProject,
       repositoryUrl: mockRepo.html_url,
       stagingUrl: mockStagingUrl,
+      neonProjectId: mockNeonProjectId,
     }
 
     const setupHappyPathTransaction = () => {
@@ -1110,8 +1130,13 @@ describe('ProjectService', () => {
 
     beforeEach(() => {
       mockCreateRepoFromTemplate.mockResolvedValue(mockRepo)
-      mockAddRepoSecret.mockResolvedValue(undefined)
       mockCreateVercelProject.mockResolvedValue(mockStagingUrl)
+      mockCreateNeonProject.mockResolvedValue({
+        neonProjectId: mockNeonProjectId,
+        databaseUrl: mockDatabaseUrl,
+      })
+      mockAddVercelEnvVar.mockResolvedValue(undefined)
+      mockTriggerVercelDeployment.mockResolvedValue(undefined)
       mockIsAdminRole.mockReturnValue(false)
     })
 
@@ -1147,7 +1172,7 @@ describe('ProjectService', () => {
       expect(result).toEqual(mockProvisionedProject)
     })
 
-    it('should add PROJECT_ID and PROJECT_NAME secrets', async () => {
+    it('should provision a Neon project and add DATABASE_URL as a Vercel env var', async () => {
       mockIsAdminRole.mockReturnValue(true)
       setupHappyPathTransaction()
 
@@ -1157,35 +1182,36 @@ describe('ProjectService', () => {
         'admin'
       )
 
-      expect(mockAddRepoSecret).toHaveBeenCalledWith(
+      expect(mockCreateNeonProject).toHaveBeenCalledWith('test-project')
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
         mockRepo.name,
-        'PROJECT_ID',
-        mockProject.id
-      )
-      expect(mockAddRepoSecret).toHaveBeenCalledWith(
-        mockRepo.name,
-        'PROJECT_NAME',
-        mockProject.projectName
+        'DATABASE_URL',
+        mockDatabaseUrl
       )
     })
 
-    it('should add PROJECT_LOGO_KEY secret when project has an R2 logo', async () => {
-      const projectWithLogo = { ...mockProject, logo: 'projects/abc/logo.png' }
+    it('should save neonProjectId to the project record', async () => {
       mockIsAdminRole.mockReturnValue(true)
+      let capturedSet: any
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
           select: vi.fn().mockReturnValue({
             from: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([projectWithLogo]),
+                for: vi.fn().mockResolvedValue([mockProject]),
               }),
             }),
           }),
           update: vi.fn().mockReturnValue({
-            set: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
-              }),
+            set: vi.fn().mockImplementation((data) => {
+              capturedSet = data
+              return {
+                where: vi.fn().mockReturnValue({
+                  returning: vi
+                    .fn()
+                    .mockResolvedValue([mockProvisionedProject]),
+                }),
+              }
             }),
           }),
         }
@@ -1198,50 +1224,7 @@ describe('ProjectService', () => {
         'admin'
       )
 
-      expect(mockAddRepoSecret).toHaveBeenCalledWith(
-        mockRepo.name,
-        'PROJECT_LOGO_KEY',
-        'projects/abc/logo.png'
-      )
-    })
-
-    it('should not add PROJECT_LOGO_KEY when logo is a public URL', async () => {
-      const projectWithPublicLogo = {
-        ...mockProject,
-        logo: 'https://example.com/logo.png',
-      }
-      mockIsAdminRole.mockReturnValue(true)
-      mockDbTransaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([projectWithPublicLogo]),
-              }),
-            }),
-          }),
-          update: vi.fn().mockReturnValue({
-            set: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
-              }),
-            }),
-          }),
-        }
-        return callback(mockTx as any)
-      })
-
-      await projectService.provisionProjectRepo(
-        'project-123',
-        'admin-user',
-        'admin'
-      )
-
-      expect(mockAddRepoSecret).not.toHaveBeenCalledWith(
-        mockRepo.name,
-        'PROJECT_LOGO_KEY',
-        expect.anything()
-      )
+      expect(capturedSet).toMatchObject({ neonProjectId: mockNeonProjectId })
     })
 
     it('should throw FORBIDDEN for a non-admin non-assigned user', async () => {
@@ -1327,14 +1310,8 @@ describe('ProjectService', () => {
       })
     })
 
-    it('should propagate Vercel failure and not save to DB', async () => {
+    it('should propagate Vercel failure, rollback repo, and not save to DB', async () => {
       mockIsAdminRole.mockReturnValue(true)
-      mockCreateRepoFromTemplate.mockResolvedValue({
-        name: 'test-project',
-        html_url: 'https://github.com/org/test-project',
-        ssh_url: 'git@github.com:org/test-project.git',
-        clone_url: 'https://github.com/org/test-project.git',
-      })
       mockCreateVercelProject.mockRejectedValue(
         new GraphQLError('Vercel project creation failed', {
           extensions: { code: 'VERCEL_PROJECT_CREATION_FAILED' },
@@ -1367,14 +1344,43 @@ describe('ProjectService', () => {
 
       expect(mockTxUpdate).not.toHaveBeenCalled()
       expect(mockDeleteRepo).toHaveBeenCalledWith('test-project')
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Provisioning GitHub repo',
-        expect.any(Object)
+    })
+
+    it('should rollback repo, Vercel, and Neon on Neon failure', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      mockCreateNeonProject.mockRejectedValue(
+        new GraphQLError('Neon project creation failed', {
+          extensions: { code: 'NEON_PROJECT_CREATION_FAILED' },
+        })
       )
-      expect(mockLogger.info).not.toHaveBeenCalledWith(
-        'GitHub repo and Vercel project provisioned',
-        expect.any(Object)
-      )
+      const mockTxUpdate = vi.fn()
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([mockProject]),
+              }),
+            }),
+          }),
+          update: mockTxUpdate,
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'NEON_PROJECT_CREATION_FAILED' },
+      })
+
+      expect(mockTxUpdate).not.toHaveBeenCalled()
+      expect(mockDeleteRepo).toHaveBeenCalledWith('test-project')
+      expect(mockDeleteNeonProject).not.toHaveBeenCalled()
     })
   })
 })
