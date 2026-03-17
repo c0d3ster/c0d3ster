@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createVercelProject } from './VercelService'
+import {
+  addVercelEnvVar,
+  createVercelProject,
+  triggerVercelDeployment,
+} from './VercelService'
 
 const mockEnv = vi.hoisted(() => ({
   VERCEL_TOKEN: 'test-vercel-token' as string | undefined,
@@ -18,37 +22,27 @@ describe('VercelService', () => {
   })
 
   describe('createVercelProject', () => {
-    it('should create a Vercel project, trigger a deployment, and return the staging URL', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: vi.fn().mockResolvedValue({ name: 'my-project' }),
-        })
-        .mockResolvedValueOnce({ ok: true })
+    it('should create a Vercel project and return the staging URL without triggering deployment', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ name: 'my-project' }),
+      })
 
       const result = await createVercelProject('my-project')
 
       expect(result).toBe('https://my-project.vercel.app')
-      expect(mockFetch).toHaveBeenCalledTimes(2)
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        1,
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      expect(mockFetch).toHaveBeenCalledWith(
         'https://api.vercel.com/v10/projects',
-        expect.objectContaining({ method: 'POST' })
-      )
-      expect(mockFetch).toHaveBeenNthCalledWith(
-        2,
-        'https://api.vercel.com/v13/deployments',
         expect.objectContaining({ method: 'POST' })
       )
     })
 
     it('should use the returned project name for the staging URL', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: vi.fn().mockResolvedValue({ name: 'my-project-1' }),
-        })
-        .mockResolvedValueOnce({ ok: true })
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ name: 'my-project-1' }),
+      })
 
       const result = await createVercelProject('my-project')
 
@@ -78,12 +72,10 @@ describe('VercelService', () => {
     })
 
     it('should include the GitHub repo link in the project creation body', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: vi.fn().mockResolvedValue({ name: 'my-project' }),
-        })
-        .mockResolvedValueOnce({ ok: true })
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ name: 'my-project' }),
+      })
 
       await createVercelProject('my-project')
 
@@ -95,42 +87,107 @@ describe('VercelService', () => {
       })
       expect(body.framework).toBe('nextjs')
     })
+  })
 
-    it('should trigger deployment with correct gitSource', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: vi.fn().mockResolvedValue({ name: 'my-project' }),
-        })
-        .mockResolvedValueOnce({ ok: true })
+  describe('triggerVercelDeployment', () => {
+    it('should trigger a deployment with correct gitSource', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true })
 
-      await createVercelProject('my-project')
+      await triggerVercelDeployment('my-project')
 
-      const deployBody = JSON.parse(mockFetch.mock.calls[1]![1].body)
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vercel.com/v13/deployments',
+        expect.objectContaining({ method: 'POST' })
+      )
 
-      expect(deployBody.gitSource).toEqual({
+      const body = JSON.parse(mockFetch.mock.calls[0]![1].body)
+
+      expect(body.gitSource).toEqual({
         type: 'github',
         org: 'test-org',
         repo: 'my-project',
         ref: 'main',
       })
-      expect(deployBody.target).toBe('production')
+      expect(body.target).toBe('production')
+    })
+
+    it('should throw VERCEL_NOT_CONFIGURED when VERCEL_TOKEN is missing', async () => {
+      mockEnv.VERCEL_TOKEN = undefined
+
+      await expect(triggerVercelDeployment('my-project')).rejects.toMatchObject({
+        extensions: { code: 'VERCEL_NOT_CONFIGURED' },
+      })
+
+      mockEnv.VERCEL_TOKEN = 'test-vercel-token'
     })
 
     it('should throw VERCEL_DEPLOYMENT_FAILED when deployment trigger fails', async () => {
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: vi.fn().mockResolvedValue({ name: 'my-project' }),
-        })
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 400,
-          text: vi.fn().mockResolvedValue('Bad request'),
-        })
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: vi.fn().mockResolvedValue('Bad request'),
+      })
 
-      await expect(createVercelProject('my-project')).rejects.toMatchObject({
+      await expect(triggerVercelDeployment('my-project')).rejects.toMatchObject({
         extensions: { code: 'VERCEL_DEPLOYMENT_FAILED' },
+      })
+    })
+  })
+
+  describe('addVercelEnvVar', () => {
+    it('should add an env var to a Vercel project with all targets by default', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true })
+
+      await addVercelEnvVar('my-project', 'DATABASE_URL', 'postgresql://...')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vercel.com/v10/projects/my-project/env',
+        expect.objectContaining({ method: 'POST' })
+      )
+
+      const body = JSON.parse(mockFetch.mock.calls[0]![1].body)
+
+      expect(body).toEqual({
+        key: 'DATABASE_URL',
+        value: 'postgresql://...',
+        type: 'encrypted',
+        target: ['production', 'preview', 'development'],
+      })
+    })
+
+    it('should support custom targets', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true })
+
+      await addVercelEnvVar('my-project', 'SOME_KEY', 'value', ['production'])
+
+      const body = JSON.parse(mockFetch.mock.calls[0]![1].body)
+
+      expect(body.target).toEqual(['production'])
+    })
+
+    it('should throw VERCEL_NOT_CONFIGURED when VERCEL_TOKEN is missing', async () => {
+      mockEnv.VERCEL_TOKEN = undefined
+
+      await expect(
+        addVercelEnvVar('my-project', 'DATABASE_URL', 'value')
+      ).rejects.toMatchObject({
+        extensions: { code: 'VERCEL_NOT_CONFIGURED' },
+      })
+
+      mockEnv.VERCEL_TOKEN = 'test-vercel-token'
+    })
+
+    it('should throw VERCEL_ENV_VAR_FAILED on API error', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: vi.fn().mockResolvedValue('Bad request'),
+      })
+
+      await expect(
+        addVercelEnvVar('my-project', 'DATABASE_URL', 'value')
+      ).rejects.toMatchObject({
+        extensions: { code: 'VERCEL_ENV_VAR_FAILED' },
       })
     })
   })

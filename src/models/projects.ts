@@ -94,6 +94,7 @@ export const projects = pgTable(
     techStack: json('tech_stack').$type<string[]>(), // Array of technologies
     repositoryUrl: text('repository_url'),
     stagingUrl: text('staging_url'),
+    neonProjectId: text('neon_project_id'),
     liveUrl: text('live_url'),
     clientNotes: text('client_notes'),
     internalNotes: text('internal_notes'),
