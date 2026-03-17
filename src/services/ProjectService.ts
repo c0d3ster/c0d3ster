@@ -802,7 +802,7 @@ export class ProjectService {
           vercelProjectName = repo.name
 
           await addVercelEnvVar(repo.name, 'NEXT_PUBLIC_BRAND_NAME', project.projectName)
-          await addVercelEnvVar(repo.name, 'NEXT_PUBLIC_SUPPORT_EMAIL', client.email)
+          await addVercelEnvVar(repo.name, 'SUPPORT_EMAIL', client.email)
 
           const features = project.requirements?.features ?? []
 

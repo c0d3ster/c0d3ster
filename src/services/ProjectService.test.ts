@@ -1254,7 +1254,7 @@ describe('ProjectService', () => {
       expect(result).toEqual(mockProvisionedProject)
     })
 
-    it('should set NEXT_PUBLIC_BRAND_NAME and NEXT_PUBLIC_SUPPORT_EMAIL env vars', async () => {
+    it('should set NEXT_PUBLIC_BRAND_NAME and SUPPORT_EMAIL env vars', async () => {
       mockIsAdminRole.mockReturnValue(true)
       setupHappyPathTransaction()
 
@@ -1271,7 +1271,7 @@ describe('ProjectService', () => {
       )
       expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
         mockRepo.name,
-        'NEXT_PUBLIC_SUPPORT_EMAIL',
+        'SUPPORT_EMAIL',
         mockClientEmail
       )
     })
