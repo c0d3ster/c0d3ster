@@ -12,7 +12,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-import type { ProjectFeature} from '@/graphql/schema';
+import type { ProjectFeature } from '@/graphql/schema'
 
 import { ProjectPriority, ProjectStatus } from '@/graphql/schema'
 
