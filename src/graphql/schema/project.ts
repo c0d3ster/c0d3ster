@@ -38,6 +38,12 @@ export enum ProjectType {
   Other = 'other',
 }
 
+export enum ProjectFeature {
+  Database = 'database',
+  Auth = 'auth',
+  Email = 'email',
+}
+
 registerEnumType(ProjectStatus, {
   name: 'ProjectStatus',
   description: 'Status of a project',
@@ -46,6 +52,11 @@ registerEnumType(ProjectStatus, {
 registerEnumType(ProjectType, {
   name: 'ProjectType',
   description: 'Type of project',
+})
+
+registerEnumType(ProjectFeature, {
+  name: 'ProjectFeature',
+  description: 'Infrastructure feature required by a project',
 })
 
 registerEnumType(ProjectPriority, {

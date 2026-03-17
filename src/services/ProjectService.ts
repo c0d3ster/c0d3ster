@@ -4,10 +4,11 @@ import { GraphQLError } from 'graphql'
 import type { ProjectFilter } from '@/graphql/schema'
 import type { ProjectRecord } from '@/models'
 
-import { ProjectStatus, UserRole } from '@/graphql/schema'
+import { ProjectFeature, ProjectStatus, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
+import { getDefaultFeatures } from '@/libs/projectTypeFeatures'
 import { projectStatusEnum, schemas } from '@/models'
 import {
   findProjectBySlug,
@@ -297,6 +298,12 @@ export class ProjectService {
       )
     }
 
+    const defaultFeatures = getDefaultFeatures(input.projectType)
+    const requirements = {
+      ...input.requirements,
+      features: input.requirements?.features ?? defaultFeatures,
+    }
+
     const [project] = await db
       .insert(schemas.projects)
       .values({
@@ -307,7 +314,7 @@ export class ProjectService {
         description: input.description,
         projectType: input.projectType,
         budget: input.budget,
-        requirements: input.requirements,
+        requirements,
         techStack: input.techStack,
         status: input.status,
         featured: false,
@@ -782,11 +789,18 @@ export class ProjectService {
           const stagingUrl = await createVercelProject(repo.name)
           vercelProjectName = repo.name
 
-          const { neonProjectId: neonId, databaseUrl } =
-            await createNeonProject(repoName)
-          neonProjectId = neonId
+          const features = project.requirements?.features ?? []
 
-          await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
+          if (features.includes(ProjectFeature.Database)) {
+            const { neonProjectId: neonId, databaseUrl } =
+              await createNeonProject(repoName)
+            neonProjectId = neonId
+            await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
+          }
+
+          if (features.includes(ProjectFeature.Email) && Env.RESEND_API_KEY) {
+            await addVercelEnvVar(repo.name, 'RESEND_API_KEY', Env.RESEND_API_KEY)
+          }
 
           if (Env.R2_ACCOUNT_ID)
             await addVercelEnvVar(repo.name, 'R2_ACCOUNT_ID', Env.R2_ACCOUNT_ID)

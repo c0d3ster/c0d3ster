@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectStatus } from '@/graphql/schema'
+import { ProjectFeature, ProjectStatus, ProjectType } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import {
@@ -31,6 +31,7 @@ const mockEnv = vi.hoisted(() => ({
   R2_ACCESS_KEY_ID: 'test-r2-access-key' as string | undefined,
   R2_SECRET_ACCESS_KEY: 'test-r2-secret' as string | undefined,
   R2_BUCKET_NAME: 'test-bucket' as string | undefined,
+  RESEND_API_KEY: 'test-resend-key' as string | undefined,
 }))
 
 vi.mock('@/libs/Env', () => ({ Env: mockEnv }))
@@ -103,9 +104,11 @@ describe('ProjectService', () => {
     projectName: 'Test Project',
     title: 'Test Title',
     description: 'Test Description',
-    projectType: 'WEB_APP',
+    projectType: ProjectType.WebApp,
     budget: 5000,
-    requirements: ['Feature 1', 'Feature 2'],
+    requirements: {
+      features: [ProjectFeature.Database, ProjectFeature.Auth, ProjectFeature.Email],
+    },
     techStack: ['React', 'Node.js'],
     status: ProjectStatus.Approved,
     progressPercentage: 50,
@@ -484,6 +487,60 @@ describe('ProjectService', () => {
       await expect(projectService.createProject(createInput)).rejects.toThrow(
         GraphQLError
       )
+    })
+
+    it('should seed features from projectType defaults', async () => {
+      const createInput = {
+        clientId: 'client-123',
+        projectName: 'New Website',
+        description: 'A simple website',
+        projectType: ProjectType.Website,
+        status: ProjectStatus.Approved,
+      }
+
+      mockDbQuery.findMany.mockResolvedValue([])
+      mockHasSlugConflict.mockReturnValue(false)
+
+      let capturedValues: any
+      mockDbInsert.mockReturnValue({
+        values: vi.fn().mockImplementation((v) => {
+          capturedValues = v
+          return { returning: vi.fn().mockResolvedValue([mockProject]) }
+        }),
+      } as any)
+
+      await projectService.createProject(createInput)
+
+      expect(capturedValues.requirements.features).toEqual([ProjectFeature.Email])
+    })
+
+    it('should preserve explicit features over type defaults', async () => {
+      const createInput = {
+        clientId: 'client-123',
+        projectName: 'Custom Project',
+        description: 'A project with custom features',
+        projectType: ProjectType.Website,
+        status: ProjectStatus.Approved,
+        requirements: { features: [ProjectFeature.Database, ProjectFeature.Email] },
+      }
+
+      mockDbQuery.findMany.mockResolvedValue([])
+      mockHasSlugConflict.mockReturnValue(false)
+
+      let capturedValues: any
+      mockDbInsert.mockReturnValue({
+        values: vi.fn().mockImplementation((v) => {
+          capturedValues = v
+          return { returning: vi.fn().mockResolvedValue([mockProject]) }
+        }),
+      } as any)
+
+      await projectService.createProject(createInput)
+
+      expect(capturedValues.requirements.features).toEqual([
+        ProjectFeature.Database,
+        ProjectFeature.Email,
+      ])
     })
 
     it('should throw error when creation fails', async () => {
@@ -1082,7 +1139,7 @@ describe('ProjectService', () => {
         projectType: 'web_app',
         budget: 5000,
         timeline: '3 months',
-        requirements: ['Feature 1'],
+        requirements: { features: [] },
         contactPreference: 'EMAIL',
         additionalInfo: 'Additional info',
         status: 'requested',
@@ -1151,6 +1208,7 @@ describe('ProjectService', () => {
       mockEnv.R2_ACCESS_KEY_ID = 'test-r2-access-key'
       mockEnv.R2_SECRET_ACCESS_KEY = 'test-r2-secret'
       mockEnv.R2_BUCKET_NAME = 'test-bucket'
+      mockEnv.RESEND_API_KEY = 'test-resend-key'
     })
 
     it('should provision repo and Vercel project for admin', async () => {
@@ -1185,7 +1243,7 @@ describe('ProjectService', () => {
       expect(result).toEqual(mockProvisionedProject)
     })
 
-    it('should provision a Neon project and add DATABASE_URL as a Vercel env var', async () => {
+    it('should provision a Neon project and add DATABASE_URL when project has database feature', async () => {
       mockIsAdminRole.mockReturnValue(true)
       setupHappyPathTransaction()
 
@@ -1200,6 +1258,102 @@ describe('ProjectService', () => {
         mockRepo.name,
         'DATABASE_URL',
         mockDatabaseUrl
+      )
+    })
+
+    it('should not provision Neon when project has no database feature', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      const projectWithoutDb = {
+        ...mockProject,
+        requirements: { features: [ProjectFeature.Email] },
+      }
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([projectWithoutDb]),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockCreateNeonProject).not.toHaveBeenCalled()
+      expect(mockAddVercelEnvVar).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'DATABASE_URL',
+        expect.anything()
+      )
+    })
+
+    it('should add RESEND_API_KEY env var when project has email feature', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'RESEND_API_KEY',
+        'test-resend-key'
+      )
+    })
+
+    it('should not add RESEND_API_KEY when project has no email feature', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      const projectWithoutEmail = {
+        ...mockProject,
+        requirements: { features: [ProjectFeature.Database] },
+      }
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([projectWithoutEmail]),
+              }),
+            }),
+          }),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'RESEND_API_KEY',
+        expect.anything()
       )
     })
 

@@ -114,7 +114,7 @@ export class ProjectRequestService {
         projectType: input.projectType,
         budget: input.budget,
         timeline: input.timeline,
-        requirements: input.requirements,
+        requirements: input.requirements as any,
         contactPreference: input.contactPreference,
         additionalInfo: input.additionalInfo,
       })

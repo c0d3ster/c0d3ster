@@ -30,7 +30,7 @@ describe('ProjectRequestService', () => {
     projectType: ProjectType.WebApp,
     budget: 5000,
     timeline: '3 months',
-    requirements: ['Feature 1', 'Feature 2'],
+    requirements: { features: [] },
     contactPreference: 'EMAIL',
     additionalInfo: 'Additional info',
     status: 'requested',

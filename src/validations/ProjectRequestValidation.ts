@@ -1,6 +1,7 @@
 import z from 'zod'
 
 import { ProjectType } from '@/graphql/generated/graphql'
+import { ProjectFeature } from '@/graphql/schema'
 
 // Project request form validation schema
 export const projectRequestSchema = z.object({
@@ -37,7 +38,7 @@ export const projectRequestSchema = z.object({
       needsMaintenance: z.boolean().optional(),
       needsContentCreation: z.boolean().optional(),
       needsSEO: z.boolean().optional(),
-      features: z.array(z.string()).optional(),
+      features: z.array(z.nativeEnum(ProjectFeature)).optional(),
     })
     .optional(),
 })
