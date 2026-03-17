@@ -797,10 +797,7 @@ export class ProjectService {
           if (Env.R2_BUCKET_NAME)
             await addVercelEnvVar(repo.name, 'R2_BUCKET_NAME', Env.R2_BUCKET_NAME)
 
-          if (
-            project.logo &&
-            (project.logo.includes('projects/') || project.logo.includes('users/'))
-          ) {
+          if (project.logo && project.logo.includes('projects/')) {
             await addVercelEnvVar(repo.name, 'PROJECT_LOGO_KEY', project.logo)
           }
 
