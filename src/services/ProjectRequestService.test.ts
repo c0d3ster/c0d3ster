@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectType } from '@/graphql/schema'
+import { ProjectStatus, ProjectType } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { isAdminRole } from '@/utils'
 
@@ -30,10 +30,10 @@ describe('ProjectRequestService', () => {
     projectType: ProjectType.WebApp,
     budget: 5000,
     timeline: '3 months',
-    requirements: { features: [] },
+    requirements: { hasDesign: false },
     contactPreference: 'EMAIL',
     additionalInfo: 'Additional info',
-    status: 'requested',
+    status: ProjectStatus.Requested,
     createdAt: new Date(),
     updatedAt: new Date(),
     reviewedAt: null,
@@ -47,7 +47,7 @@ describe('ProjectRequestService', () => {
     projectType: ProjectType.WebApp,
     budget: 3000,
     timeline: '2 months',
-    requirements: 'Requirement 1',
+    requirements: { hasDesign: false },
     contactPreference: 'EMAIL',
     additionalInfo: 'Info',
   }
@@ -76,7 +76,7 @@ describe('ProjectRequestService', () => {
       mockDbQuery.findMany.mockResolvedValue(mockRequests)
 
       const result = await projectRequestService.getProjectRequests({
-        status: 'requested',
+        status: ProjectStatus.Requested,
       })
 
       expect(mockDbQuery.findMany).toHaveBeenCalled()
@@ -110,7 +110,7 @@ describe('ProjectRequestService', () => {
       mockDbQuery.findMany.mockResolvedValue(mockRequests)
 
       const result = await projectRequestService.getProjectRequests({
-        status: 'requested',
+        status: ProjectStatus.Requested,
         projectType: ProjectType.WebApp,
         userId: 'user-123',
       })
@@ -343,7 +343,7 @@ describe('ProjectRequestService', () => {
 
   describe('approveProjectRequest', () => {
     it('should approve project request and create project', async () => {
-      const inReviewRequest = { ...mockProjectRequest, status: 'in_review' }
+      const inReviewRequest = { ...mockProjectRequest, status: ProjectStatus.InReview }
       const mockProject = {
         id: 'project-123',
         clientId: 'user-123',
@@ -479,7 +479,7 @@ describe('ProjectRequestService', () => {
           entityType: 'project_request',
           entityId: 'request-123',
           oldStatus: null,
-          newStatus: 'in_review',
+          newStatus: ProjectStatus.InReview,
           updateMessage: 'Request moved to review',
           isClientVisible: true,
           updatedBy: 'admin-123',
@@ -490,8 +490,8 @@ describe('ProjectRequestService', () => {
           progressPercentage: null,
           entityType: 'project_request',
           entityId: 'request-123',
-          oldStatus: 'in_review',
-          newStatus: 'approved',
+          oldStatus: ProjectStatus.InReview,
+          newStatus: ProjectStatus.Approved,
           updateMessage: 'Request approved',
           isClientVisible: false,
           updatedBy: 'admin-123',
@@ -519,7 +519,7 @@ describe('ProjectRequestService', () => {
           entityType: 'project_request',
           entityId: 'request-123',
           oldStatus: null,
-          newStatus: 'in_review',
+          newStatus: ProjectStatus.InReview,
           updateMessage: 'Request moved to review',
           isClientVisible: true,
           updatedBy: 'admin-123',

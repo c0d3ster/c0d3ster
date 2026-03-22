@@ -39,7 +39,14 @@ export const CREATE_PROJECT_REQUEST = gql`
       projectType
       budget
       timeline
-      requirements
+      requirements {
+        hasDesign
+        needsHosting
+        hasDomain
+        needsMaintenance
+        needsContentCreation
+        needsSEO
+      }
       contactPreference
       additionalInfo
       status

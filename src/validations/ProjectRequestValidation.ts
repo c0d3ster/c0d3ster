@@ -37,7 +37,6 @@ export const projectRequestSchema = z.object({
       needsMaintenance: z.boolean().optional(),
       needsContentCreation: z.boolean().optional(),
       needsSEO: z.boolean().optional(),
-      features: z.array(z.string()).optional(),
     })
     .optional(),
 })

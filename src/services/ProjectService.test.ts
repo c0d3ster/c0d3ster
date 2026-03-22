@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectFeature, ProjectStatus, ProjectType } from '@/graphql/schema'
+import { ProjectFeature, ProjectPriority, ProjectStatus, ProjectType } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import {
@@ -106,9 +106,8 @@ describe('ProjectService', () => {
     description: 'Test Description',
     projectType: ProjectType.WebApp,
     budget: 5000,
-    requirements: {
-      features: [ProjectFeature.Database, ProjectFeature.Auth, ProjectFeature.Email],
-    },
+    requirements: null,
+    features: [ProjectFeature.Database, ProjectFeature.Auth, ProjectFeature.Email],
     techStack: ['React', 'Node.js'],
     status: ProjectStatus.Approved,
     progressPercentage: 50,
@@ -118,7 +117,7 @@ describe('ProjectService', () => {
     updatedAt: new Date(),
     // Add missing required properties
     overview: null,
-    priority: 'medium',
+    priority: ProjectPriority.Medium,
     paidAmount: null,
     startDate: null,
     endDate: null,
@@ -511,7 +510,7 @@ describe('ProjectService', () => {
 
       await projectService.createProject(createInput)
 
-      expect(capturedValues.requirements.features).toEqual([ProjectFeature.Email])
+      expect(capturedValues.features).toEqual([ProjectFeature.Email])
     })
 
     it('should preserve explicit features over type defaults', async () => {
@@ -521,7 +520,7 @@ describe('ProjectService', () => {
         description: 'A project with custom features',
         projectType: ProjectType.Website,
         status: ProjectStatus.Approved,
-        requirements: { features: [ProjectFeature.Database, ProjectFeature.Email] },
+        features: [ProjectFeature.Database, ProjectFeature.Email],
       }
 
       mockDbQuery.findMany.mockResolvedValue([])
@@ -537,7 +536,7 @@ describe('ProjectService', () => {
 
       await projectService.createProject(createInput)
 
-      expect(capturedValues.requirements.features).toEqual([
+      expect(capturedValues.features).toEqual([
         ProjectFeature.Database,
         ProjectFeature.Email,
       ])
@@ -885,7 +884,7 @@ describe('ProjectService', () => {
   describe('updateProjectStatus', () => {
     it('should update project status successfully', async () => {
       const statusInput = {
-        newStatus: 'in_progress',
+        newStatus: ProjectStatus.InProgress,
         progressPercentage: 25,
         updateMessage: 'Started development',
         isClientVisible: true,
@@ -918,7 +917,7 @@ describe('ProjectService', () => {
       await expect(
         projectService.updateProjectStatus(
           'project-123',
-          { newStatus: 'in_progress' },
+          { newStatus: ProjectStatus.InProgress },
           undefined
         )
       ).rejects.toThrow(GraphQLError)
@@ -930,7 +929,7 @@ describe('ProjectService', () => {
       await expect(
         projectService.updateProjectStatus(
           'project-123',
-          { newStatus: 'in_progress' },
+          { newStatus: ProjectStatus.InProgress },
           'developer-123'
         )
       ).rejects.toThrow(GraphQLError)
@@ -947,7 +946,7 @@ describe('ProjectService', () => {
       await expect(
         projectService.updateProjectStatus(
           'project-123',
-          { newStatus: 'in_progress' },
+          { newStatus: ProjectStatus.InProgress },
           'client-123'
         )
       ).rejects.toThrow(GraphQLError)
@@ -977,7 +976,7 @@ describe('ProjectService', () => {
           entityType: 'project',
           entityId: 'project-123',
           oldStatus: ProjectStatus.Approved,
-          newStatus: 'in_progress',
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           updatedBy: 'developer-123',
         },
@@ -1003,7 +1002,7 @@ describe('ProjectService', () => {
           entityType: 'project',
           entityId: 'project-123',
           oldStatus: null,
-          newStatus: 'in_progress',
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           isClientVisible: true,
           updatedBy: 'developer-123',
@@ -1033,7 +1032,7 @@ describe('ProjectService', () => {
           entityType: 'project_request',
           entityId: 'request-123',
           oldStatus: null,
-          newStatus: 'in_review',
+          newStatus: ProjectStatus.InReview,
           updateMessage: 'Request moved to review',
           isClientVisible: true,
           updatedBy: 'admin-123',
@@ -1044,8 +1043,8 @@ describe('ProjectService', () => {
           progressPercentage: null,
           entityType: 'project',
           entityId: 'project-123',
-          oldStatus: 'approved',
-          newStatus: 'in_progress',
+          oldStatus: ProjectStatus.Approved,
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           isClientVisible: true,
           updatedBy: 'developer-123',
@@ -1079,7 +1078,7 @@ describe('ProjectService', () => {
           entityType: 'project',
           entityId: 'project-123',
           oldStatus: null,
-          newStatus: 'in_progress',
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           isClientVisible: true,
           updatedBy: 'developer-123',
@@ -1136,13 +1135,13 @@ describe('ProjectService', () => {
         projectName: 'Test Project',
         title: 'Test Title',
         description: 'Test Description',
-        projectType: 'web_app',
+        projectType: ProjectType.WebApp,
         budget: 5000,
         timeline: '3 months',
-        requirements: { features: [] },
+        requirements: null,
         contactPreference: 'EMAIL',
         additionalInfo: 'Additional info',
-        status: 'requested',
+        status: ProjectStatus.Requested,
         reviewedAt: null,
         reviewedBy: null,
       }
@@ -1332,7 +1331,7 @@ describe('ProjectService', () => {
       mockIsAdminRole.mockReturnValue(true)
       const projectWithoutDb = {
         ...mockProject,
-        requirements: { features: [ProjectFeature.Email] },
+        features: [ProjectFeature.Email],
       }
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
@@ -1383,7 +1382,7 @@ describe('ProjectService', () => {
       mockIsAdminRole.mockReturnValue(true)
       const projectWithoutEmail = {
         ...mockProject,
-        requirements: { features: [ProjectFeature.Database] },
+        features: [ProjectFeature.Database],
       }
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {

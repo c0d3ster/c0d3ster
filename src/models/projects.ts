@@ -97,6 +97,7 @@ export const projects = pgTable(
     repositoryUrl: text('repository_url'),
     stagingUrl: text('staging_url'),
     neonProjectId: text('neon_project_id'),
+    features: json('features').$type<ProjectFeature[]>(),
     liveUrl: text('live_url'),
     clientNotes: text('client_notes'),
     internalNotes: text('internal_notes'),
@@ -179,7 +180,6 @@ export type ProjectRequirements = {
   needsMaintenance?: boolean
   needsContentCreation?: boolean
   needsSEO?: boolean
-  features?: ProjectFeature[]
 }
 
 // Type exports for use in services and resolvers

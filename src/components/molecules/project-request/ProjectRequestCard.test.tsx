@@ -24,7 +24,7 @@ const mockProjectRequest = createMockFullProjectRequest({
   title: 'Test Project Request',
   description: 'A test project request for testing purposes',
   additionalInfo: 'This is additional information',
-  requirements: 'Requirement 1\nRequirement 2\nRequirement 3',
+  requirements: { hasDesign: true, needsHosting: true },
   user: {
     id: 'user1',
     firstName: 'John',

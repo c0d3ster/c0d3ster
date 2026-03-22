@@ -82,7 +82,7 @@ describe('ProjectRequestResolver', () => {
         description: 'A new project request',
         projectType: ProjectType.WebApp,
         budget: 5000,
-        requirements: 'Some requirements',
+        requirements: { hasDesign: false },
       }
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)

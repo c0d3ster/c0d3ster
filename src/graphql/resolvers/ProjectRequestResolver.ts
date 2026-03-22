@@ -14,6 +14,7 @@ import {
   CreateProjectRequestInput,
   ProjectRequest,
   ProjectRequestFilter,
+  ProjectRequirements,
   StatusUpdate,
   User,
   UserRole,
@@ -136,25 +137,25 @@ export class ProjectRequestResolver {
     return user
   }
 
-  @FieldResolver(() => String, { nullable: true })
-  requirements(@Root() parent: ProjectRequest) {
-    if (!parent.requirements) return null
+  /** Return structured JSON so nested fields (hasDesign, needsHosting, …) resolve correctly. */
+  @FieldResolver(() => ProjectRequirements, { nullable: true })
+  requirements(@Root() parent: ProjectRequest): ProjectRequirements | null {
+    const raw = parent.requirements as unknown
+    if (raw == null) return null
 
-    // If it's already a string, return it
-    if (typeof parent.requirements === 'string') {
-      return parent.requirements
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw) as ProjectRequirements
+      } catch (error) {
+        logger.error('Error parsing requirements JSON', {
+          error: String(error),
+          requirements: raw,
+        })
+        return null
+      }
     }
 
-    // If it's an object, stringify it and let the client handle formatting
-    try {
-      return JSON.stringify(parent.requirements)
-    } catch (error) {
-      logger.error('Error serializing requirements object', {
-        error: String(error),
-        requirements: parent.requirements,
-      })
-      return null
-    }
+    return raw as ProjectRequirements
   }
 
   @FieldResolver(() => String, { nullable: true })

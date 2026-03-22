@@ -9,8 +9,10 @@ import type { ProjectRequestRecord } from '@/models'
 
 import { ProjectStatus } from '@/graphql/schema'
 import { db } from '@/libs/DB'
+import { getDefaultFeatures } from '@/libs/projectTypeFeatures'
 import { schemas } from '@/models'
 import { isAdminRole } from '@/utils'
+import { normalizeProjectStatusInput } from '@/utils/projectStatus'
 
 export class ProjectRequestService {
   async getProjectRequests(
@@ -114,7 +116,7 @@ export class ProjectRequestService {
         projectType: input.projectType,
         budget: input.budget,
         timeline: input.timeline,
-        requirements: input.requirements as any,
+        requirements: input.requirements,
         contactPreference: input.contactPreference,
         additionalInfo: input.additionalInfo,
       })
@@ -152,8 +154,24 @@ export class ProjectRequestService {
       })
     }
 
+    let normalizedStatus: ProjectStatus | undefined
+    if (input.status !== undefined) {
+      try {
+        normalizedStatus = normalizeProjectStatusInput(input.status)
+      } catch {
+        throw new GraphQLError(`Invalid status: ${input.status}`, {
+          extensions: { code: 'INVALID_STATUS' },
+        })
+      }
+    }
+
+    const inputWithStatus = {
+      ...input,
+      ...(normalizedStatus !== undefined ? { status: normalizedStatus } : {}),
+    }
+
     // Block setting Approved via updateProjectRequest to prevent bypassing the atomic approval flow
-    if (input.status === ProjectStatus.Approved) {
+    if (inputWithStatus.status === ProjectStatus.Approved) {
       throw new GraphQLError(
         'Use approveProjectRequest() for approvals to ensure atomic project creation and logging',
         { extensions: { code: 'INVALID_STATUS_TRANSITION' } }
@@ -174,13 +192,15 @@ export class ProjectRequestService {
     ] as const
 
     const sanitizedInput = Object.fromEntries(
-      Object.entries(input).filter(([key]) =>
+      Object.entries(inputWithStatus).filter(([key]) =>
         allowedFields.includes(key as (typeof allowedFields)[number])
       )
     )
 
     // Check if status is being changed
-    const isStatusChange = input.status && input.status !== request.status
+    const isStatusChange =
+      inputWithStatus.status &&
+      inputWithStatus.status !== request.status
 
     const [updatedRequest] = await db
       .update(schemas.projectRequests)
@@ -203,8 +223,8 @@ export class ProjectRequestService {
         entityType: 'project_request',
         entityId: id,
         oldStatus: request.status,
-        newStatus: input.status! as ProjectStatus,
-        updateMessage: `Status updated to ${input.status}`,
+        newStatus: inputWithStatus.status! as ProjectStatus,
+        updateMessage: `Status updated to ${inputWithStatus.status}`,
         isClientVisible: true,
         updatedBy: currentUserId,
       })
@@ -276,6 +296,7 @@ export class ProjectRequestService {
           projectType: request.projectType,
           budget: request.budget,
           requirements: request.requirements,
+          features: getDefaultFeatures(request.projectType),
           status: ProjectStatus.Approved,
           featured: false,
         })

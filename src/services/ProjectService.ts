@@ -299,10 +299,6 @@ export class ProjectService {
     }
 
     const defaultFeatures = getDefaultFeatures(input.projectType)
-    const requirements = {
-      ...input.requirements,
-      features: input.requirements?.features ?? defaultFeatures,
-    }
 
     const [project] = await db
       .insert(schemas.projects)
@@ -314,7 +310,8 @@ export class ProjectService {
         description: input.description,
         projectType: input.projectType,
         budget: input.budget,
-        requirements,
+        requirements: input.requirements,
+        features: input.features ?? defaultFeatures,
         techStack: input.techStack,
         status: input.status,
         featured: false,
@@ -804,7 +801,7 @@ export class ProjectService {
           await addVercelEnvVar(repo.name, 'NEXT_PUBLIC_BRAND_NAME', project.projectName)
           await addVercelEnvVar(repo.name, 'SUPPORT_EMAIL', client.email)
 
-          const features = project.requirements?.features ?? []
+          const features = project.features ?? []
 
           if (features.includes(ProjectFeature.Database)) {
             const { neonProjectId: neonId, databaseUrl } =

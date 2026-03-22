@@ -6,7 +6,11 @@ import {
   registerEnumType,
 } from 'type-graphql'
 
-import { ProjectRequest } from './projectRequest'
+import {
+  ProjectRequest,
+  ProjectRequirements,
+  ProjectRequirementsInput,
+} from './projectRequest'
 import { User } from './user'
 
 export enum ProjectStatus {
@@ -87,8 +91,11 @@ export class Project {
   @Field(() => Number, { nullable: true })
   budget?: number
 
-  @Field(() => String, { nullable: true })
-  requirements?: string
+  @Field(() => ProjectRequirements, { nullable: true })
+  requirements?: ProjectRequirements
+
+  @Field(() => [ProjectFeature], { nullable: true })
+  features?: ProjectFeature[]
 
   @Field(() => [String], { nullable: true })
   techStack?: string[]
@@ -267,8 +274,8 @@ export class CreateProjectInput {
   @Field(() => Number, { nullable: true })
   budget?: number
 
-  @Field(() => String, { nullable: true })
-  requirements?: string
+  @Field(() => ProjectRequirementsInput, { nullable: true })
+  requirements?: ProjectRequirementsInput
 
   @Field(() => [String], { nullable: true })
   techStack?: string[]
@@ -306,8 +313,8 @@ export class UpdateProjectInput {
   @Field(() => Number, { nullable: true })
   budget?: number
 
-  @Field(() => String, { nullable: true })
-  requirements?: string
+  @Field(() => ProjectRequirementsInput, { nullable: true })
+  requirements?: ProjectRequirementsInput
 
   @Field(() => [String], { nullable: true })
   techStack?: string[]

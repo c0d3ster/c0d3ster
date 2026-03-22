@@ -1,6 +1,6 @@
 import { ProjectFeature, ProjectType } from '@/graphql/schema/project'
 
-export const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeature[]> = {
+const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeature[]> = {
   [ProjectType.Website]: [ProjectFeature.Email],
   [ProjectType.WebApp]: [
     ProjectFeature.Database,

@@ -3,6 +3,48 @@ import { Field, ID, InputType, ObjectType } from 'type-graphql'
 import { ProjectStatus, ProjectType } from './project'
 import { User } from './user'
 
+@ObjectType('ProjectRequirements')
+export class ProjectRequirements {
+  @Field(() => Boolean, { nullable: true })
+  hasDesign?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsHosting?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  hasDomain?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsMaintenance?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsContentCreation?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsSEO?: boolean
+}
+
+@InputType('ProjectRequirementsInput')
+export class ProjectRequirementsInput {
+  @Field(() => Boolean, { nullable: true })
+  hasDesign?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsHosting?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  hasDomain?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsMaintenance?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsContentCreation?: boolean
+
+  @Field(() => Boolean, { nullable: true })
+  needsSEO?: boolean
+}
+
 @ObjectType('ProjectRequest')
 export class ProjectRequest {
   @Field(() => ID)
@@ -26,8 +68,8 @@ export class ProjectRequest {
   @Field(() => String, { nullable: true })
   timeline?: string
 
-  @Field(() => String, { nullable: true })
-  requirements?: string
+  @Field(() => ProjectRequirements, { nullable: true })
+  requirements?: ProjectRequirements
 
   @Field(() => String, { nullable: true })
   contactPreference?: string
@@ -78,8 +120,8 @@ export class CreateProjectRequestInput {
   @Field(() => String, { nullable: true })
   timeline?: string
 
-  @Field(() => String, { nullable: true })
-  requirements?: string
+  @Field(() => ProjectRequirementsInput, { nullable: true })
+  requirements?: ProjectRequirementsInput
 
   @Field(() => String, { nullable: true })
   contactPreference?: string
