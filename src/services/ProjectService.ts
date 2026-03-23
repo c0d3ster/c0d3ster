@@ -305,7 +305,7 @@ export class ProjectService {
       .values({
         clientId: input.clientId,
         requestId: input.requestId,
-        title: input.title,
+        title: input.title ?? input.projectName,
         projectName: input.projectName,
         description: input.description,
         projectType: input.projectType,

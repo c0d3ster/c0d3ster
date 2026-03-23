@@ -120,6 +120,13 @@
       "when": 1774202048753,
       "tag": "0016_add_features_column",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1774239224162,
+      "tag": "0017_set_project_requests_title_not_null",
+      "breakpoints": true
     }
   ]
 }

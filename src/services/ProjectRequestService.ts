@@ -111,7 +111,7 @@ export class ProjectRequestService {
       .values({
         userId: currentUserId,
         projectName: input.projectName,
-        title: input.title,
+        title: input.title ?? input.projectName,
         description: input.description,
         projectType: input.projectType,
         budget: input.budget,
@@ -291,7 +291,7 @@ export class ProjectRequestService {
           clientId: request.userId,
           requestId: id, // Link the project to its original request
           projectName: request.projectName,
-          title: request.title,
+          title: request.title ?? request.projectName,
           description: request.description,
           projectType: request.projectType,
           budget: request.budget,
