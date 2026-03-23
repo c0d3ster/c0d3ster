@@ -72,7 +72,6 @@ export const ProjectRequestForm = () => {
       needsMaintenance: false,
       needsContentCreation: false,
       needsSEO: false,
-      features: [],
     },
   })
 
@@ -140,9 +139,7 @@ export const ProjectRequestForm = () => {
             budget: validatedData.budget
               ? Number.parseFloat(validatedData.budget)
               : undefined,
-            requirements: validatedData.requirements
-              ? JSON.stringify(validatedData.requirements)
-              : undefined,
+            requirements: validatedData.requirements,
           },
         },
       })
@@ -185,7 +182,7 @@ export const ProjectRequestForm = () => {
             value={formData.projectName}
             onChange={(e) => handleInputChange('projectName', e.target.value)}
             className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-            placeholder='e.g., My E-commerce Store'
+            placeholder='e.g. My E-commerce Store'
           />
           <ErrorMessage error={errors.projectName} />
         </div>
@@ -256,7 +253,7 @@ export const ProjectRequestForm = () => {
               value={formData.budget}
               onChange={(e) => handleInputChange('budget', e.target.value)}
               className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-              placeholder='e.g., 5000'
+              placeholder='e.g. 5000'
               min='0'
             />
             <ErrorMessage error={errors.budget} />
@@ -278,7 +275,7 @@ export const ProjectRequestForm = () => {
               value={formData.timeline}
               onChange={(e) => handleInputChange('timeline', e.target.value)}
               className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-              placeholder='e.g., 2-3 months, ASAP, by end of year'
+              placeholder='e.g. 2-3 months, ASAP, by end of year'
             />
             <ErrorMessage error={errors.timeline} />
           </div>

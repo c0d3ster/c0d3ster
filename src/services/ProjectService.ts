@@ -4,10 +4,11 @@ import { GraphQLError } from 'graphql'
 import type { ProjectFilter } from '@/graphql/schema'
 import type { ProjectRecord } from '@/models'
 
-import { ProjectStatus, UserRole } from '@/graphql/schema'
+import { ProjectFeature, ProjectStatus, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
+import { getDefaultFeatures } from '@/libs/projectTypeFeatures'
 import { projectStatusEnum, schemas } from '@/models'
 import {
   findProjectBySlug,
@@ -297,6 +298,8 @@ export class ProjectService {
       )
     }
 
+    const defaultFeatures = getDefaultFeatures(input.projectType)
+
     const [project] = await db
       .insert(schemas.projects)
       .values({
@@ -308,6 +311,7 @@ export class ProjectService {
         projectType: input.projectType,
         budget: input.budget,
         requirements: input.requirements,
+        features: input.features ?? defaultFeatures,
         techStack: input.techStack,
         status: input.status,
         featured: false,
@@ -771,6 +775,18 @@ export class ProjectService {
 
         const repoName = generateSlug(project.projectName)
 
+        const client = await tx
+          .select({ email: schemas.users.email })
+          .from(schemas.users)
+          .where(eq(schemas.users.id, project.clientId))
+          .then((rows) => rows[0])
+
+        if (!client) {
+          throw new GraphQLError('Client not found', {
+            extensions: { code: 'CLIENT_NOT_FOUND' },
+          })
+        }
+
         logger.info('Provisioning project', { projectId, repoName })
 
         try {
@@ -782,11 +798,21 @@ export class ProjectService {
           const stagingUrl = await createVercelProject(repo.name)
           vercelProjectName = repo.name
 
-          const { neonProjectId: neonId, databaseUrl } =
-            await createNeonProject(repoName)
-          neonProjectId = neonId
+          await addVercelEnvVar(repo.name, 'NEXT_PUBLIC_BRAND_NAME', project.projectName)
+          await addVercelEnvVar(repo.name, 'SUPPORT_EMAIL', client.email)
 
-          await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
+          const features = project.features ?? []
+
+          if (features.includes(ProjectFeature.Database)) {
+            const { neonProjectId: neonId, databaseUrl } =
+              await createNeonProject(repoName)
+            neonProjectId = neonId
+            await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
+          }
+
+          if (features.includes(ProjectFeature.Email) && Env.RESEND_API_KEY) {
+            await addVercelEnvVar(repo.name, 'RESEND_API_KEY', Env.RESEND_API_KEY)
+          }
 
           if (Env.R2_ACCOUNT_ID)
             await addVercelEnvVar(repo.name, 'R2_ACCOUNT_ID', Env.R2_ACCOUNT_ID)

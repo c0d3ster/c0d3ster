@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectStatus } from '@/graphql/schema'
+import { ProjectFeature, ProjectPriority, ProjectStatus, ProjectType } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import {
@@ -31,6 +31,7 @@ const mockEnv = vi.hoisted(() => ({
   R2_ACCESS_KEY_ID: 'test-r2-access-key' as string | undefined,
   R2_SECRET_ACCESS_KEY: 'test-r2-secret' as string | undefined,
   R2_BUCKET_NAME: 'test-bucket' as string | undefined,
+  RESEND_API_KEY: 'test-resend-key' as string | undefined,
 }))
 
 vi.mock('@/libs/Env', () => ({ Env: mockEnv }))
@@ -103,9 +104,10 @@ describe('ProjectService', () => {
     projectName: 'Test Project',
     title: 'Test Title',
     description: 'Test Description',
-    projectType: 'WEB_APP',
+    projectType: ProjectType.WebApp,
     budget: 5000,
-    requirements: ['Feature 1', 'Feature 2'],
+    requirements: null,
+    features: [ProjectFeature.Database, ProjectFeature.Auth, ProjectFeature.Email],
     techStack: ['React', 'Node.js'],
     status: ProjectStatus.Approved,
     progressPercentage: 50,
@@ -115,7 +117,7 @@ describe('ProjectService', () => {
     updatedAt: new Date(),
     // Add missing required properties
     overview: null,
-    priority: 'medium',
+    priority: ProjectPriority.Medium,
     paidAmount: null,
     startDate: null,
     endDate: null,
@@ -486,6 +488,60 @@ describe('ProjectService', () => {
       )
     })
 
+    it('should seed features from projectType defaults', async () => {
+      const createInput = {
+        clientId: 'client-123',
+        projectName: 'New Website',
+        description: 'A simple website',
+        projectType: ProjectType.Website,
+        status: ProjectStatus.Approved,
+      }
+
+      mockDbQuery.findMany.mockResolvedValue([])
+      mockHasSlugConflict.mockReturnValue(false)
+
+      let capturedValues: any
+      mockDbInsert.mockReturnValue({
+        values: vi.fn().mockImplementation((v) => {
+          capturedValues = v
+          return { returning: vi.fn().mockResolvedValue([mockProject]) }
+        }),
+      } as any)
+
+      await projectService.createProject(createInput)
+
+      expect(capturedValues.features).toEqual([ProjectFeature.Email])
+    })
+
+    it('should preserve explicit features over type defaults', async () => {
+      const createInput = {
+        clientId: 'client-123',
+        projectName: 'Custom Project',
+        description: 'A project with custom features',
+        projectType: ProjectType.Website,
+        status: ProjectStatus.Approved,
+        features: [ProjectFeature.Database, ProjectFeature.Email],
+      }
+
+      mockDbQuery.findMany.mockResolvedValue([])
+      mockHasSlugConflict.mockReturnValue(false)
+
+      let capturedValues: any
+      mockDbInsert.mockReturnValue({
+        values: vi.fn().mockImplementation((v) => {
+          capturedValues = v
+          return { returning: vi.fn().mockResolvedValue([mockProject]) }
+        }),
+      } as any)
+
+      await projectService.createProject(createInput)
+
+      expect(capturedValues.features).toEqual([
+        ProjectFeature.Database,
+        ProjectFeature.Email,
+      ])
+    })
+
     it('should throw error when creation fails', async () => {
       const createInput = {
         clientId: 'client-123',
@@ -828,7 +884,7 @@ describe('ProjectService', () => {
   describe('updateProjectStatus', () => {
     it('should update project status successfully', async () => {
       const statusInput = {
-        newStatus: 'in_progress',
+        newStatus: ProjectStatus.InProgress,
         progressPercentage: 25,
         updateMessage: 'Started development',
         isClientVisible: true,
@@ -861,7 +917,7 @@ describe('ProjectService', () => {
       await expect(
         projectService.updateProjectStatus(
           'project-123',
-          { newStatus: 'in_progress' },
+          { newStatus: ProjectStatus.InProgress },
           undefined
         )
       ).rejects.toThrow(GraphQLError)
@@ -873,7 +929,7 @@ describe('ProjectService', () => {
       await expect(
         projectService.updateProjectStatus(
           'project-123',
-          { newStatus: 'in_progress' },
+          { newStatus: ProjectStatus.InProgress },
           'developer-123'
         )
       ).rejects.toThrow(GraphQLError)
@@ -890,7 +946,7 @@ describe('ProjectService', () => {
       await expect(
         projectService.updateProjectStatus(
           'project-123',
-          { newStatus: 'in_progress' },
+          { newStatus: ProjectStatus.InProgress },
           'client-123'
         )
       ).rejects.toThrow(GraphQLError)
@@ -920,7 +976,7 @@ describe('ProjectService', () => {
           entityType: 'project',
           entityId: 'project-123',
           oldStatus: ProjectStatus.Approved,
-          newStatus: 'in_progress',
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           updatedBy: 'developer-123',
         },
@@ -946,7 +1002,7 @@ describe('ProjectService', () => {
           entityType: 'project',
           entityId: 'project-123',
           oldStatus: null,
-          newStatus: 'in_progress',
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           isClientVisible: true,
           updatedBy: 'developer-123',
@@ -976,7 +1032,7 @@ describe('ProjectService', () => {
           entityType: 'project_request',
           entityId: 'request-123',
           oldStatus: null,
-          newStatus: 'in_review',
+          newStatus: ProjectStatus.InReview,
           updateMessage: 'Request moved to review',
           isClientVisible: true,
           updatedBy: 'admin-123',
@@ -987,8 +1043,8 @@ describe('ProjectService', () => {
           progressPercentage: null,
           entityType: 'project',
           entityId: 'project-123',
-          oldStatus: 'approved',
-          newStatus: 'in_progress',
+          oldStatus: ProjectStatus.Approved,
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           isClientVisible: true,
           updatedBy: 'developer-123',
@@ -1022,7 +1078,7 @@ describe('ProjectService', () => {
           entityType: 'project',
           entityId: 'project-123',
           oldStatus: null,
-          newStatus: 'in_progress',
+          newStatus: ProjectStatus.InProgress,
           updateMessage: 'Project started',
           isClientVisible: true,
           updatedBy: 'developer-123',
@@ -1079,13 +1135,13 @@ describe('ProjectService', () => {
         projectName: 'Test Project',
         title: 'Test Title',
         description: 'Test Description',
-        projectType: 'web_app',
+        projectType: ProjectType.WebApp,
         budget: 5000,
         timeline: '3 months',
-        requirements: ['Feature 1'],
+        requirements: null,
         contactPreference: 'EMAIL',
         additionalInfo: 'Additional info',
-        status: 'requested',
+        status: ProjectStatus.Requested,
         reviewedAt: null,
         reviewedBy: null,
       }
@@ -1108,6 +1164,7 @@ describe('ProjectService', () => {
     const mockStagingUrl = 'https://test-project.vercel.app'
     const mockNeonProjectId = 'neon-project-123'
     const mockDatabaseUrl = 'postgresql://user:pass@host/db'
+    const mockClientEmail = 'client@example.com'
     const mockProvisionedProject = {
       ...mockProject,
       repositoryUrl: mockRepo.html_url,
@@ -1115,16 +1172,26 @@ describe('ProjectService', () => {
       neonProjectId: mockNeonProjectId,
     }
 
+    const createMockSelectFn = (projectOverride?: any) =>
+      vi
+        .fn()
+        .mockReturnValueOnce({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              for: vi.fn().mockResolvedValue([projectOverride ?? mockProject]),
+            }),
+          }),
+        })
+        .mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockResolvedValue([{ email: mockClientEmail }]),
+          }),
+        })
+
     const setupHappyPathTransaction = () => {
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1151,6 +1218,7 @@ describe('ProjectService', () => {
       mockEnv.R2_ACCESS_KEY_ID = 'test-r2-access-key'
       mockEnv.R2_SECRET_ACCESS_KEY = 'test-r2-secret'
       mockEnv.R2_BUCKET_NAME = 'test-bucket'
+      mockEnv.RESEND_API_KEY = 'test-resend-key'
     })
 
     it('should provision repo and Vercel project for admin', async () => {
@@ -1185,7 +1253,63 @@ describe('ProjectService', () => {
       expect(result).toEqual(mockProvisionedProject)
     })
 
-    it('should provision a Neon project and add DATABASE_URL as a Vercel env var', async () => {
+    it('should set NEXT_PUBLIC_BRAND_NAME and SUPPORT_EMAIL env vars', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'NEXT_PUBLIC_BRAND_NAME',
+        mockProject.projectName
+      )
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'SUPPORT_EMAIL',
+        mockClientEmail
+      )
+    })
+
+    it('should throw CLIENT_NOT_FOUND when client user does not exist', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn()
+            .mockReturnValueOnce({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  for: vi.fn().mockResolvedValue([mockProject]),
+                }),
+              }),
+            })
+            .mockReturnValue({
+              from: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue([]),
+              }),
+            }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'CLIENT_NOT_FOUND' },
+      })
+
+      expect(mockCreateRepoFromTemplate).not.toHaveBeenCalled()
+    })
+
+    it('should provision a Neon project and add DATABASE_URL when project has database feature', async () => {
       mockIsAdminRole.mockReturnValue(true)
       setupHappyPathTransaction()
 
@@ -1200,6 +1324,90 @@ describe('ProjectService', () => {
         mockRepo.name,
         'DATABASE_URL',
         mockDatabaseUrl
+      )
+    })
+
+    it('should not provision Neon when project has no database feature', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      const projectWithoutDb = {
+        ...mockProject,
+        features: [ProjectFeature.Email],
+      }
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: createMockSelectFn(projectWithoutDb),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockCreateNeonProject).not.toHaveBeenCalled()
+      expect(mockAddVercelEnvVar).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'DATABASE_URL',
+        expect.anything()
+      )
+    })
+
+    it('should add RESEND_API_KEY env var when project has email feature', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).toHaveBeenCalledWith(
+        mockRepo.name,
+        'RESEND_API_KEY',
+        'test-resend-key'
+      )
+    })
+
+    it('should not add RESEND_API_KEY when project has no email feature', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      const projectWithoutEmail = {
+        ...mockProject,
+        features: [ProjectFeature.Database],
+      }
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: createMockSelectFn(projectWithoutEmail),
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([mockProvisionedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockAddVercelEnvVar).not.toHaveBeenCalledWith(
+        mockRepo.name,
+        'RESEND_API_KEY',
+        expect.anything()
       )
     })
 
@@ -1264,13 +1472,7 @@ describe('ProjectService', () => {
       }
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([projectWithLogo]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(projectWithLogo),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockReturnValue({
               where: vi.fn().mockReturnValue({
@@ -1317,13 +1519,7 @@ describe('ProjectService', () => {
       let capturedSet: any
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: vi.fn().mockReturnValue({
             set: vi.fn().mockImplementation((data) => {
               capturedSet = data
@@ -1442,13 +1638,7 @@ describe('ProjectService', () => {
       const mockTxUpdate = vi.fn()
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: mockTxUpdate,
         }
         return callback(mockTx as any)
@@ -1478,13 +1668,7 @@ describe('ProjectService', () => {
       const mockTxUpdate = vi.fn()
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
-          select: vi.fn().mockReturnValue({
-            from: vi.fn().mockReturnValue({
-              where: vi.fn().mockReturnValue({
-                for: vi.fn().mockResolvedValue([mockProject]),
-              }),
-            }),
-          }),
+          select: createMockSelectFn(),
           update: mockTxUpdate,
         }
         return callback(mockTx as any)

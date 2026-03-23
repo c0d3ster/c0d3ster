@@ -12,6 +12,8 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
+import type { ProjectFeature } from '@/graphql/schema'
+
 import { ProjectPriority, ProjectStatus } from '@/graphql/schema'
 
 import {
@@ -35,7 +37,7 @@ export const projectRequests = pgTable(
     projectType: projectTypeEnum('project_type').notNull(),
     budget: decimal('budget', { precision: 10, scale: 2, mode: 'number' }),
     timeline: varchar('timeline', { length: 100 }),
-    requirements: json('requirements'), // Structured requirements data
+    requirements: json('requirements').$type<ProjectRequirements>(), // Structured requirements data
     contactPreference: varchar('contact_preference', { length: 50 }),
     additionalInfo: text('additional_info'),
     status: projectStatusEnum('status')
@@ -90,11 +92,12 @@ export const projects = pgTable(
     startDate: timestamp('start_date'),
     estimatedCompletionDate: timestamp('estimated_completion_date'),
     actualCompletionDate: timestamp('actual_completion_date'),
-    requirements: json('requirements'),
+    requirements: json('requirements').$type<ProjectRequirements>(),
     techStack: json('tech_stack').$type<string[]>(), // Array of technologies
     repositoryUrl: text('repository_url'),
     stagingUrl: text('staging_url'),
     neonProjectId: text('neon_project_id'),
+    features: json('features').$type<ProjectFeature[]>(),
     liveUrl: text('live_url'),
     clientNotes: text('client_notes'),
     internalNotes: text('internal_notes'),
@@ -169,6 +172,15 @@ export const projectCollaborators = pgTable(
     ),
   })
 )
+
+export type ProjectRequirements = {
+  hasDesign?: boolean
+  needsHosting?: boolean
+  hasDomain?: boolean
+  needsMaintenance?: boolean
+  needsContentCreation?: boolean
+  needsSEO?: boolean
+}
 
 // Type exports for use in services and resolvers
 export type ProjectRecord = typeof projects.$inferSelect

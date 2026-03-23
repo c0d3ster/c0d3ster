@@ -10,15 +10,15 @@ import {
 // Project-related enums - derived from GraphQL schema
 export const projectStatusEnum = pgEnum(
   'project_status',
-  Object.values(ProjectStatus) as [string, ...string[]]
+  Object.values(ProjectStatus) as [ProjectStatus, ...ProjectStatus[]]
 )
 export const projectPriorityEnum = pgEnum(
   'project_priority',
-  Object.values(ProjectPriority) as [string, ...string[]]
+  Object.values(ProjectPriority) as [ProjectPriority, ...ProjectPriority[]]
 )
 export const projectTypeEnum = pgEnum(
   'project_type',
-  Object.values(ProjectType) as [string, ...string[]]
+  Object.values(ProjectType) as [ProjectType, ...ProjectType[]]
 )
 
 // Domain-related enums

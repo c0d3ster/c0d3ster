@@ -19,6 +19,7 @@ import {
   ProjectCollaborator,
   ProjectFilter,
   ProjectRequest,
+  ProjectRequirements,
   StatusUpdate,
   UpdateProjectInput,
   User,
@@ -328,20 +329,24 @@ export class ProjectResolver {
     }
   }
 
-  @FieldResolver(() => String, { nullable: true })
-  requirements(@Root() parent: ProjectRecord) {
-    if (!parent.requirements) return null
-    try {
-      return typeof parent.requirements === 'string'
-        ? parent.requirements
-        : JSON.stringify(parent.requirements)
-    } catch (error) {
-      logger.error('Error formatting requirements', {
-        value: parent.requirements,
-        error,
-      })
-      return null
+  @FieldResolver(() => ProjectRequirements, { nullable: true })
+  requirements(@Root() parent: ProjectRecord): ProjectRequirements | null {
+    const raw = parent.requirements as unknown
+    if (raw == null) return null
+
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw) as ProjectRequirements
+      } catch (error) {
+        logger.error('Error parsing requirements JSON', {
+          error: String(error),
+          requirements: raw,
+        })
+        return null
+      }
     }
+
+    return raw as ProjectRequirements
   }
 
   @FieldResolver(() => String, { nullable: true })
