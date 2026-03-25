@@ -5,17 +5,18 @@ import { apolloClient } from '@/libs/ApolloClient'
 import {
   DELETE_FILE,
   deleteFile,
+  FINALIZE_PROJECT_LOGO_UPLOAD,
   GET_FILE,
   GET_FILES,
-  UPLOAD_PROJECT_LOGO,
+  REQUEST_PROJECT_LOGO_UPLOAD,
   uploadProjectLogo,
   useDeleteFile,
+  useFinalizeProjectLogoUpload,
   useGetFile,
   useGetFiles,
-  useUploadProjectLogo,
+  useRequestProjectLogoUpload,
 } from './fileApiClient'
 
-// Mock Apollo Client
 vi.mock('@/libs/ApolloClient', () => ({
   apolloClient: {
     query: vi.fn(),
@@ -23,7 +24,6 @@ vi.mock('@/libs/ApolloClient', () => ({
   },
 }))
 
-// Mock the generated GraphQL hooks
 vi.mock('@/graphql/generated/graphql', () => ({
   useMutation: vi.fn(),
   useQuery: vi.fn(),
@@ -36,12 +36,14 @@ describe('File API Client', () => {
 
   describe('GraphQL Operations', () => {
     it('should define all GraphQL operations', () => {
-      expect(UPLOAD_PROJECT_LOGO).toBeDefined()
+      expect(REQUEST_PROJECT_LOGO_UPLOAD).toBeDefined()
+      expect(FINALIZE_PROJECT_LOGO_UPLOAD).toBeDefined()
       expect(GET_FILES).toBeDefined()
       expect(GET_FILE).toBeDefined()
       expect(DELETE_FILE).toBeDefined()
 
-      expect(UPLOAD_PROJECT_LOGO.definitions.length).toBeGreaterThan(0)
+      expect(REQUEST_PROJECT_LOGO_UPLOAD.definitions.length).toBeGreaterThan(0)
+      expect(FINALIZE_PROJECT_LOGO_UPLOAD.definitions.length).toBeGreaterThan(0)
       expect(GET_FILES.definitions.length).toBeGreaterThan(0)
       expect(GET_FILE.definitions.length).toBeGreaterThan(0)
       expect(DELETE_FILE.definitions.length).toBeGreaterThan(0)
@@ -50,12 +52,14 @@ describe('File API Client', () => {
 
   describe('Hooks', () => {
     it('should export all required hooks', () => {
-      expect(useUploadProjectLogo).toBeDefined()
+      expect(useRequestProjectLogoUpload).toBeDefined()
+      expect(useFinalizeProjectLogoUpload).toBeDefined()
       expect(useDeleteFile).toBeDefined()
       expect(useGetFiles).toBeDefined()
       expect(useGetFile).toBeDefined()
 
-      expect(typeof useUploadProjectLogo).toBe('function')
+      expect(typeof useRequestProjectLogoUpload).toBe('function')
+      expect(typeof useFinalizeProjectLogoUpload).toBe('function')
       expect(typeof useDeleteFile).toBe('function')
       expect(typeof useGetFiles).toBe('function')
       expect(typeof useGetFile).toBe('function')
@@ -64,74 +68,142 @@ describe('File API Client', () => {
 
   describe('Async Functions', () => {
     describe('uploadProjectLogo', () => {
-      it('should successfully upload project logo', async () => {
+      it('should request presigned URL, PUT file, then finalize', async () => {
         const mockProjectId = 'project-1'
-        const mockFile = 'base64data'
-        const mockFileName = 'logo.png'
-        const mockContentType = 'image/png'
-        const mockResponse = {
-          data: {
-            uploadProjectLogo: 'uploaded-file-key',
-          },
-        }
+        const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
 
-        vi.mocked(apolloClient.mutate).mockResolvedValue(mockResponse)
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+        })
 
-        const result = await uploadProjectLogo(
-          mockProjectId,
-          mockFile,
-          mockFileName,
-          mockContentType
-        )
+        vi.mocked(apolloClient.mutate)
+          .mockResolvedValueOnce({
+            data: {
+              requestProjectLogoUpload: {
+                uploadUrl: 'https://r2.example/put',
+                key: 'dev/projects/project-1/k.png',
+                projectId: mockProjectId,
+                metadata: {
+                  key: 'dev/projects/project-1/k.png',
+                  fileName: 'logo.png',
+                  originalFileName: 'logo.png',
+                  fileSize: 1,
+                  contentType: 'image/png',
+                  environment: 'DEV',
+                  uploadedAt: '2024-01-01T00:00:00.000Z',
+                },
+              },
+            },
+          })
+          .mockResolvedValueOnce({
+            data: {
+              finalizeProjectLogoUpload: 'https://download.example/logo',
+            },
+          })
 
-        expect(apolloClient.mutate).toHaveBeenCalledWith({
-          mutation: UPLOAD_PROJECT_LOGO,
+        const result = await uploadProjectLogo(mockProjectId, mockFile)
+
+        expect(apolloClient.mutate).toHaveBeenNthCalledWith(1, {
+          mutation: REQUEST_PROJECT_LOGO_UPLOAD,
           variables: {
             projectId: mockProjectId,
-            file: mockFile,
-            fileName: mockFileName,
-            contentType: mockContentType,
+            fileName: 'logo.png',
+            contentType: 'image/png',
+            fileSize: mockFile.size,
           },
         })
-        expect(result).toBe('uploaded-file-key')
+        expect(globalThis.fetch).toHaveBeenCalledWith(
+          'https://r2.example/put',
+          expect.objectContaining({
+            method: 'PUT',
+            body: mockFile,
+          })
+        )
+        expect(apolloClient.mutate).toHaveBeenNthCalledWith(2, {
+          mutation: FINALIZE_PROJECT_LOGO_UPLOAD,
+          variables: {
+            projectId: mockProjectId,
+            key: 'dev/projects/project-1/k.png',
+          },
+        })
+        expect(result).toBe('https://download.example/logo')
       })
 
-      it('should throw error when apollo client returns error', async () => {
-        const mockProjectId = 'project-1'
-        const mockFile = 'base64data'
-        const mockFileName = 'logo.png'
-        const mockContentType = 'image/png'
-        const error = new Error('Upload failed')
+      it('should throw error when first mutation returns error', async () => {
+        const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
+        const error = new Error('Request failed')
 
         vi.mocked(apolloClient.mutate).mockResolvedValue({ error } as any)
 
-        await expect(
-          uploadProjectLogo(
-            mockProjectId,
-            mockFile,
-            mockFileName,
-            mockContentType
-          )
-        ).rejects.toThrow('Upload failed')
+        await expect(uploadProjectLogo('project-1', mockFile)).rejects.toThrow(
+          'Request failed'
+        )
       })
 
-      it('should return undefined when no data is returned', async () => {
-        const mockProjectId = 'project-1'
-        const mockFile = 'base64data'
-        const mockFileName = 'logo.png'
-        const mockContentType = 'image/png'
-        const mockResponse = {
+      it('should throw when presigned request returns no data', async () => {
+        const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
+
+        vi.mocked(apolloClient.mutate).mockResolvedValueOnce({
           data: null,
-        }
+        })
 
-        vi.mocked(apolloClient.mutate).mockResolvedValue(mockResponse)
-
-        const result = await uploadProjectLogo(
-          mockProjectId,
-          mockFile,
-          mockFileName,
-          mockContentType
+        await expect(uploadProjectLogo('project-1', mockFile)).rejects.toThrow(
+          'Failed to get upload URL'
         )
+      })
+
+      it('should throw when PUT to R2 fails', async () => {
+        const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
+
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: false,
+          status: 403,
+          statusText: 'Forbidden',
+        })
+
+        vi.mocked(apolloClient.mutate).mockResolvedValueOnce({
+          data: {
+            requestProjectLogoUpload: {
+              uploadUrl: 'https://r2.example/put',
+              key: 'k',
+              projectId: 'project-1',
+              metadata: {},
+            },
+          },
+        })
+
+        await expect(uploadProjectLogo('project-1', mockFile)).rejects.toThrow(
+          'Direct upload failed: 403 Forbidden'
+        )
+      })
+
+      it('should return undefined when finalize returns no data', async () => {
+        const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
+
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+        })
+
+        vi.mocked(apolloClient.mutate)
+          .mockResolvedValueOnce({
+            data: {
+              requestProjectLogoUpload: {
+                uploadUrl: 'https://r2.example/put',
+                key: 'k',
+                projectId: 'project-1',
+                metadata: {},
+              },
+            },
+          })
+          .mockResolvedValueOnce({
+            data: null,
+          })
+
+        const result = await uploadProjectLogo('project-1', mockFile)
 
         expect(result).toBeUndefined()
       })

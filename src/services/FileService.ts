@@ -1,5 +1,3 @@
-import type { Buffer } from 'node:buffer'
-
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -10,6 +8,7 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { eq } from 'drizzle-orm'
+import { Buffer } from 'node:buffer'
 
 import type { FileUploadInput } from '@/graphql/schema'
 
@@ -45,6 +44,123 @@ export class FileService {
       },
     })
     this.bucketName = Env.R2_BUCKET_NAME
+  }
+
+  private appEnvToEnvironment(): Environment {
+    return Env.APP_ENV === 'prod' ? Environment.PROD : Environment.DEV
+  }
+
+  /**
+   * Presigned PUT for project logos. File bytes go directly to R2 from the browser
+   * (avoids Vercel’s ~4.5MB request body limit on GraphQL).
+   */
+  async generateProjectLogoPresignedUpload(options: {
+    projectId: string
+    userId: string
+    fileName: string
+    originalFileName: string
+    fileSize: number
+    contentType: string
+  }): Promise<{
+    uploadUrl: string
+    key: string
+    metadata: {
+      key: string
+      fileName: string
+      originalFileName: string
+      fileSize: number
+      contentType: string
+      environment: Environment
+      uploadedAt: Date
+    }
+  }> {
+    const {
+      projectId,
+      userId,
+      fileName,
+      originalFileName,
+      fileSize,
+      contentType,
+    } = options
+    const timestamp = Date.now()
+    const sanitizedFileName = fileName.replace(/[^a-z0-9.-]/gi, '_')
+    const env = Env.APP_ENV
+    const key = `${env}/projects/${projectId}/${timestamp}_${sanitizedFileName}`
+
+    const metadata = {
+      key,
+      fileName,
+      originalFileName,
+      fileSize,
+      contentType,
+      environment: this.appEnvToEnvironment(),
+      uploadedAt: new Date(),
+    }
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: contentType,
+      ContentLength: fileSize,
+      Metadata: {
+        filename: fileName,
+        originalfilename: originalFileName,
+        filesize: fileSize.toString(),
+        uploadedby: userId,
+        projectid: projectId,
+        environment: env,
+        uploadedat: new Date().toISOString(),
+      },
+    })
+
+    const uploadUrl = await getSignedUrl(this.s3Client, command, {
+      expiresIn: 900,
+    })
+
+    return { uploadUrl, key, metadata }
+  }
+
+  async getObjectHeadInfo(
+    key: string
+  ): Promise<{ contentLength: number; contentType: string } | null> {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      })
+      const response = await this.s3Client.send(command)
+      return {
+        contentLength: response.ContentLength ?? 0,
+        contentType: response.ContentType ?? '',
+      }
+    } catch (error) {
+      logger.error('Error in head object:', { error, key })
+      return null
+    }
+  }
+
+  async getObjectBufferRange(
+    key: string,
+    maxBytes: number
+  ): Promise<Buffer | null> {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Range: `bytes=0-${maxBytes - 1}`,
+      })
+      const response = await this.s3Client.send(command)
+      if (!response.Body) return null
+      const chunks: Buffer[] = []
+      const stream = response.Body as import('node:stream').Readable
+      for await (const chunk of stream) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+      }
+      return Buffer.concat(chunks)
+    } catch (error) {
+      logger.error('Error reading object range:', { error, key })
+      return null
+    }
   }
 
   private generateKey(options: FileUploadInput & { userId: string }): string {

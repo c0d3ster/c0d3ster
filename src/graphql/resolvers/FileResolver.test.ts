@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FileResolver } from '@/graphql/resolvers/FileResolver'
@@ -244,85 +245,108 @@ describe('FileResolver', () => {
     })
   })
 
-  describe('uploadProjectLogo', () => {
-    it('should upload project logo successfully', async () => {
+  describe('requestProjectLogoUpload', () => {
+    it('should return presigned upload payload', async () => {
       const currentUser = createMockUser()
       const mockProject = createMockProject()
-      const fileBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD'
-      const fileName = 'logo.jpg'
-      const contentType = 'image/jpeg'
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(mockProject)
-      mockFileService.uploadFile.mockResolvedValue(undefined)
-      mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
+      mockFileService.generateProjectLogoPresignedUpload.mockResolvedValue({
+        uploadUrl: 'https://r2.example.com/put',
+        key: 'dev/projects/project-1/1_logo.jpg',
+        metadata: {
+          key: 'dev/projects/project-1/1_logo.jpg',
+          fileName: 'logo.jpg',
+          originalFileName: 'logo.jpg',
+          fileSize: 1024,
+          contentType: 'image/jpeg',
+          environment: Environment.DEV,
+          uploadedAt: new Date('2024-01-01'),
+        },
+      })
+
+      const result = await fileResolver.requestProjectLogoUpload(
+        'project-1',
+        'logo.jpg',
+        'image/jpeg',
+        1024
+      )
+
+      expect(result.uploadUrl).toBe('https://r2.example.com/put')
+      expect(result.key).toBe('dev/projects/project-1/1_logo.jpg')
+      expect(result.projectId).toBe('project-1')
+      expect(
+        mockFileService.generateProjectLogoPresignedUpload
+      ).toHaveBeenCalled()
+    })
+
+    it('should throw when project not found', async () => {
+      const currentUser = createMockUser()
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(null)
+
+      await expect(
+        fileResolver.requestProjectLogoUpload(
+          'project-1',
+          'logo.jpg',
+          'image/jpeg',
+          1024
+        )
+      ).rejects.toThrow('Project not found or access denied')
+    })
+  })
+
+  describe('finalizeProjectLogoUpload', () => {
+    it('should finalize logo and return download URL', async () => {
+      const currentUser = createMockUser()
+      const mockProject = createMockProject({
+        id: 'project-1',
+        logo: 'dev/projects/project-1/old.png',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 1024,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xff, 0xd8])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: 'dev/projects/project-1/1_logo.jpg',
+        fileName: 'logo.jpg',
+        originalFileName: 'logo.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
       mockFileService.generatePresignedDownloadUrl.mockResolvedValue(
         'https://presigned-url.com'
       )
+      mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
+      mockFileService.deleteFile.mockResolvedValue(undefined)
+      mockFileService.deleteProjectFileRecordByPath.mockResolvedValue([])
 
-      // Mock file-type detection
       const { fileTypeFromBuffer } = await import('file-type')
       vi.mocked(fileTypeFromBuffer).mockResolvedValue({
         mime: 'image/jpeg',
         ext: 'jpg',
       })
 
-      const result = await fileResolver.uploadProjectLogo(
+      const result = await fileResolver.finalizeProjectLogoUpload(
         'project-1',
-        fileBase64,
-        fileName,
-        contentType
+        'dev/projects/project-1/1_logo.jpg'
       )
 
       expect(result).toBe('https://presigned-url.com')
-      expect(mockFileService.uploadFile).toHaveBeenCalled()
       expect(mockProjectService.updateProject).toHaveBeenCalled()
-    })
-
-    it('should throw error when project not found', async () => {
-      const currentUser = createMockUser()
-      const fileBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD'
-      const fileName = 'logo.jpg'
-      const contentType = 'image/jpeg'
-
-      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockProjectService.getProjectById.mockResolvedValue(null)
-
-      await expect(
-        fileResolver.uploadProjectLogo(
-          'project-1',
-          fileBase64,
-          fileName,
-          contentType
-        )
-      ).rejects.toThrow('Project not found or access denied')
-    })
-
-    it('should throw error for invalid file type', async () => {
-      const currentUser = createMockUser()
-      const mockProject = createMockProject()
-      const fileBase64 = 'data:text/plain;base64,SGVsbG8gV29ybGQ='
-      const fileName = 'document.txt'
-      const contentType = 'text/plain'
-
-      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockProjectService.getProjectById.mockResolvedValue(mockProject)
-
-      // Mock file-type detection
-      const { fileTypeFromBuffer } = await import('file-type')
-      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
-        mime: 'text/plain',
-        ext: 'txt',
-      })
-
-      await expect(
-        fileResolver.uploadProjectLogo(
-          'project-1',
-          fileBase64,
-          fileName,
-          contentType
-        )
-      ).rejects.toThrow('Invalid file upload parameters')
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalled()
     })
   })
 

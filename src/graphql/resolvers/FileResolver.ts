@@ -1,9 +1,9 @@
 import { fileTypeFromBuffer } from 'file-type'
-import { Buffer } from 'node:buffer'
 import {
   Arg,
   FieldResolver,
   ID,
+  Int,
   Mutation,
   Query,
   Resolver,
@@ -12,8 +12,19 @@ import {
 
 import type { FileService, ProjectService, UserService } from '@/services'
 
-import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/constants/file'
-import { Environment, File, FileFilterInput, UserRole } from '@/graphql/schema'
+import {
+  ALLOWED_IMAGE_TYPES,
+  isAllowedImageContentType,
+  MAX_FILE_SIZE,
+  normalizeImageContentType,
+} from '@/constants/file'
+import {
+  Environment,
+  File,
+  FileFilterInput,
+  ProjectLogoUploadResult,
+  UserRole,
+} from '@/graphql/schema'
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
 
@@ -120,16 +131,19 @@ export class FileResolver {
     return fileMetadata.filter(Boolean)
   }
 
-  @Mutation(() => String)
-  async uploadProjectLogo(
+  /**
+   * Step 1: Returns a presigned PUT URL so the browser uploads directly to R2
+   * (GraphQL request stays small; avoids Vercel 4.5MB body limit).
+   */
+  @Mutation(() => ProjectLogoUploadResult)
+  async requestProjectLogoUpload(
     @Arg('projectId', () => ID) projectId: string,
-    @Arg('file', () => String) fileBase64: string,
     @Arg('fileName', () => String) fileName: string,
-    @Arg('contentType', () => String) contentType: string
+    @Arg('contentType', () => String) contentType: string,
+    @Arg('fileSize', () => Int) fileSize: number
   ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
 
-    // Ensure user can update this project
     const project = await this.projectService.getProjectById(
       projectId,
       currentUser.id,
@@ -139,52 +153,115 @@ export class FileResolver {
       throw new Error('Project not found or access denied')
     }
 
-    // Decode base64 to get file size
-    const fileBuffer = Buffer.from(fileBase64, 'base64')
-    const fileSize = fileBuffer.length
+    const trimmedName = fileName.trim()
+    if (!trimmedName) {
+      throw new Error('Invalid file upload parameters. File name is required.')
+    }
 
-    // Validate content type using magic bytes to prevent spoofed contentType
-    const detected = await fileTypeFromBuffer(fileBuffer)
-    const effectiveType = detected?.mime ?? contentType
+    if (fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
+      throw new Error(
+        `Invalid file upload parameters. File size: ${fileSize}, Max size: ${MAX_FILE_SIZE}`
+      )
+    }
 
-    logger.info('Upload validation:', {
-      contentType,
-      effectiveType,
+    if (!isAllowedImageContentType(contentType)) {
+      throw new Error(
+        `Invalid file upload parameters. Content type: ${contentType} is not allowed`
+      )
+    }
+
+    const normalizedType = normalizeImageContentType(contentType)
+    const result = await this.fileService.generateProjectLogoPresignedUpload({
+      projectId,
+      userId: currentUser.id,
+      fileName: trimmedName,
+      originalFileName: trimmedName,
       fileSize,
-      fileName,
+      contentType: normalizedType,
+    })
+
+    return {
+      uploadUrl: result.uploadUrl,
+      key: result.key,
+      metadata: {
+        key: result.metadata.key,
+        fileName: result.metadata.fileName,
+        originalFileName: result.metadata.originalFileName,
+        fileSize: result.metadata.fileSize,
+        contentType: result.metadata.contentType,
+        environment: result.metadata.environment,
+        uploadedAt: result.metadata.uploadedAt,
+      },
+      projectId,
+    }
+  }
+
+  /**
+   * Step 2: After the client PUTs the file to R2, call this to validate the object,
+   * update the project, and return a presigned download URL.
+   */
+  @Mutation(() => String)
+  async finalizeProjectLogoUpload(
+    @Arg('projectId', () => ID) projectId: string,
+    @Arg('key', () => String) key: string
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+
+    const project = await this.projectService.getProjectById(
+      projectId,
+      currentUser.id,
+      currentUser.role
+    )
+    if (!project) {
+      throw new Error('Project not found or access denied')
+    }
+
+    const expectedPrefix = `${Env.APP_ENV}/projects/${projectId}/`
+    if (!key.startsWith(expectedPrefix) || key.includes('..')) {
+      throw new Error('Invalid logo key')
+    }
+
+    const head = await this.fileService.getObjectHeadInfo(key)
+    if (!head || head.contentLength <= 0) {
+      throw new Error('Uploaded file not found or empty')
+    }
+
+    if (head.contentLength > MAX_FILE_SIZE) {
+      throw new Error(
+        `Invalid file upload parameters. File size: ${head.contentLength}, Max size: ${MAX_FILE_SIZE}`
+      )
+    }
+
+    const buffer = await this.fileService.getObjectBufferRange(key, 16_384)
+    if (!buffer?.length) {
+      throw new Error('Could not read uploaded file for validation')
+    }
+
+    const detected = await fileTypeFromBuffer(buffer)
+    const effectiveType = detected?.mime
+      ? normalizeImageContentType(detected.mime)
+      : normalizeImageContentType(head.contentType)
+
+    logger.info('Logo finalize validation:', {
+      effectiveType,
+      fileSize: head.contentLength,
       allowedTypes: ALLOWED_IMAGE_TYPES,
       maxSize: MAX_FILE_SIZE,
     })
 
-    if (
-      !ALLOWED_IMAGE_TYPES.includes(effectiveType as any) ||
-      fileSize > MAX_FILE_SIZE
-    ) {
+    if (!isAllowedImageContentType(effectiveType)) {
       throw new Error(
-        `Invalid file upload parameters. Content type: ${effectiveType}, File size: ${fileSize}, Max size: ${MAX_FILE_SIZE}`
+        `Invalid file upload parameters. Content type: ${effectiveType}, File size: ${head.contentLength}, Max size: ${MAX_FILE_SIZE}`
       )
     }
 
-    // Get current project logo before updating
+    const meta = await this.fileService.getFileMetadata(key)
+    if (!meta) {
+      throw new Error('Could not read uploaded file metadata')
+    }
+
     const oldLogoKey = project.logo
 
-    // Generate file key with environment prefix
-    const timestamp = Date.now()
-    const env = Env.APP_ENV
-    const key = `${env}/projects/${projectId}/${timestamp}_${fileName}`
-
-    // Upload directly to R2/S3 using the detected content type with metadata
-    await this.fileService.uploadFile(key, fileBuffer, effectiveType, {
-      filename: fileName,
-      originalfilename: fileName,
-      uploadedby: currentUser.id,
-      projectid: projectId,
-      environment: env,
-      uploadedat: new Date().toISOString(),
-      filesize: fileSize.toString(),
-    })
-
-    // Update project logo field
     await this.projectService.updateProject(
       projectId,
       { logo: key },
@@ -192,44 +269,35 @@ export class FileResolver {
       currentUser.role
     )
 
-    // Create project_files entry for new logo
     await this.fileService.createProjectFileRecord({
       projectId,
-      fileName,
-      originalFileName: fileName,
+      fileName: meta.fileName,
+      originalFileName: meta.originalFileName,
       contentType: effectiveType,
-      fileSize,
+      fileSize: head.contentLength,
       filePath: key,
       uploadedBy: currentUser.id,
       isClientVisible: true,
       description: 'Project logo',
     })
 
-    // Clean up old logo AFTER successful upload and database updates
     if (
       oldLogoKey &&
       (oldLogoKey.includes('projects/') || oldLogoKey.includes('users/'))
     ) {
       try {
-        // Delete old logo file from storage
         await this.fileService.deleteFile(oldLogoKey)
         logger.info(`Deleted old logo file: ${oldLogoKey}`)
-
-        // Delete old logo entry from project_files table using the correct method
         await this.fileService.deleteProjectFileRecordByPath(oldLogoKey)
         logger.info(`Deleted old logo database entry: ${oldLogoKey}`)
       } catch (error) {
         logger.warn(`Failed to clean up old logo: ${oldLogoKey}`, {
           error: String(error),
         })
-        // Don't throw - cleanup failure shouldn't affect the successful upload
       }
     }
 
-    // Generate and return presigned URL for the new logo
-    const presignedUrl =
-      await this.fileService.generatePresignedDownloadUrl(key)
-    return presignedUrl
+    return await this.fileService.generatePresignedDownloadUrl(key)
   }
 
   @Mutation(() => Boolean)

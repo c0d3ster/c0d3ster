@@ -17,6 +17,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  DateTimeISO: { input: any; output: any; }
 };
 
 export type ContactFormInput = {
@@ -93,6 +94,17 @@ export type FileFilterInput = {
   readonly userId?: InputMaybe<Scalars['ID']['input']>;
 };
 
+export type FileUploadMetadata = {
+  readonly __typename?: 'FileUploadMetadata';
+  readonly contentType: Scalars['String']['output'];
+  readonly environment: Environment;
+  readonly fileName: Scalars['String']['output'];
+  readonly fileSize: Scalars['Int']['output'];
+  readonly key: Scalars['String']['output'];
+  readonly originalFileName: Scalars['String']['output'];
+  readonly uploadedAt: Scalars['DateTimeISO']['output'];
+};
+
 export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly approveProjectRequest: Scalars['String']['output'];
@@ -100,15 +112,16 @@ export type Mutation = {
   readonly createProject: Project;
   readonly createProjectRequest: ProjectRequest;
   readonly deleteFile: Scalars['Boolean']['output'];
+  readonly finalizeProjectLogoUpload: Scalars['String']['output'];
   readonly provisionProjectRepo: Project;
   readonly rejectProjectRequest: Scalars['String']['output'];
+  readonly requestProjectLogoUpload: ProjectLogoUploadResult;
   readonly submitContactForm: ContactFormSubmission;
   readonly updateProject: Project;
   readonly updateProjectRequest: ProjectRequest;
   readonly updateProjectRequestStatus: ProjectRequest;
   readonly updateProjectStatus: Project;
   readonly updateUser: User;
-  readonly uploadProjectLogo: Scalars['String']['output'];
 };
 
 
@@ -138,6 +151,12 @@ export type MutationDeleteFileArgs = {
 };
 
 
+export type MutationFinalizeProjectLogoUploadArgs = {
+  key: Scalars['String']['input'];
+  projectId: Scalars['ID']['input'];
+};
+
+
 export type MutationProvisionProjectRepoArgs = {
   projectId: Scalars['ID']['input'];
 };
@@ -145,6 +164,14 @@ export type MutationProvisionProjectRepoArgs = {
 
 export type MutationRejectProjectRequestArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationRequestProjectLogoUploadArgs = {
+  contentType: Scalars['String']['input'];
+  fileName: Scalars['String']['input'];
+  fileSize: Scalars['Int']['input'];
+  projectId: Scalars['ID']['input'];
 };
 
 
@@ -181,14 +208,6 @@ export type MutationUpdateProjectStatusArgs = {
 export type MutationUpdateUserArgs = {
   id: Scalars['ID']['input'];
   input: UpdateUserInput;
-};
-
-
-export type MutationUploadProjectLogoArgs = {
-  contentType: Scalars['String']['input'];
-  file: Scalars['String']['input'];
-  fileName: Scalars['String']['input'];
-  projectId: Scalars['ID']['input'];
 };
 
 export type Project = {
@@ -248,6 +267,14 @@ export type ProjectFilter = {
   readonly priority?: InputMaybe<ProjectPriority>;
   readonly projectType?: InputMaybe<ProjectType>;
   readonly status?: InputMaybe<ProjectStatus>;
+};
+
+export type ProjectLogoUploadResult = {
+  readonly __typename?: 'ProjectLogoUploadResult';
+  readonly key: Scalars['String']['output'];
+  readonly metadata: FileUploadMetadata;
+  readonly projectId: Scalars['ID']['output'];
+  readonly uploadUrl: Scalars['String']['output'];
 };
 
 /** Priority level of a project */
@@ -518,15 +545,23 @@ export type GetMyDashboardQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetMyDashboardQuery = { readonly __typename?: 'Query', readonly myDashboard: { readonly __typename?: 'UserDashboard', readonly summary: { readonly __typename?: 'ProjectSummary', readonly totalProjects: number, readonly activeProjects: number, readonly completedProjects: number, readonly totalRequests: number, readonly pendingReviewRequests: number, readonly inReviewRequests: number }, readonly projects: ReadonlyArray<{ readonly __typename?: 'Project', readonly budget?: number | null, readonly progressPercentage?: number | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly updatedAt: string, readonly stagingUrl?: string | null, readonly requestId?: string | null, readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly status: ProjectStatus, readonly techStack?: ReadonlyArray<string> | null, readonly featured: boolean, readonly logo?: string | null, readonly liveUrl?: string | null, readonly repositoryUrl?: string | null, readonly createdAt: string, readonly projectRequest?: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }>, readonly projectRequests: ReadonlyArray<{ readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }>, readonly availableProjects: ReadonlyArray<{ readonly __typename?: 'Project', readonly budget?: number | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly updatedAt: string, readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly status: ProjectStatus, readonly techStack?: ReadonlyArray<string> | null, readonly featured: boolean, readonly logo?: string | null, readonly liveUrl?: string | null, readonly repositoryUrl?: string | null, readonly createdAt: string, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }>, readonly assignedProjects: ReadonlyArray<{ readonly __typename?: 'Project', readonly budget?: number | null, readonly progressPercentage?: number | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly updatedAt: string, readonly stagingUrl?: string | null, readonly requestId?: string | null, readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly status: ProjectStatus, readonly techStack?: ReadonlyArray<string> | null, readonly featured: boolean, readonly logo?: string | null, readonly liveUrl?: string | null, readonly repositoryUrl?: string | null, readonly createdAt: string, readonly projectRequest?: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> } };
 
-export type UploadProjectLogoMutationVariables = Exact<{
+export type RequestProjectLogoUploadMutationVariables = Exact<{
   projectId: Scalars['ID']['input'];
-  file: Scalars['String']['input'];
   fileName: Scalars['String']['input'];
   contentType: Scalars['String']['input'];
+  fileSize: Scalars['Int']['input'];
 }>;
 
 
-export type UploadProjectLogoMutation = { readonly __typename?: 'Mutation', readonly uploadProjectLogo: string };
+export type RequestProjectLogoUploadMutation = { readonly __typename?: 'Mutation', readonly requestProjectLogoUpload: { readonly __typename?: 'ProjectLogoUploadResult', readonly uploadUrl: string, readonly key: string, readonly projectId: string, readonly metadata: { readonly __typename?: 'FileUploadMetadata', readonly key: string, readonly fileName: string, readonly originalFileName: string, readonly fileSize: number, readonly contentType: string, readonly environment: Environment, readonly uploadedAt: any } } };
+
+export type FinalizeProjectLogoUploadMutationVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+  key: Scalars['String']['input'];
+}>;
+
+
+export type FinalizeProjectLogoUploadMutation = { readonly __typename?: 'Mutation', readonly finalizeProjectLogoUpload: string };
 
 export type GetFilesQueryVariables = Exact<{
   filter?: InputMaybe<FileFilterInput>;
@@ -819,42 +854,84 @@ export function useGetMyDashboardLazyQuery(baseOptions?: ApolloReactHooks.LazyQu
         }
 export type GetMyDashboardQueryHookResult = ReturnType<typeof useGetMyDashboardQuery>;
 export type GetMyDashboardLazyQueryHookResult = ReturnType<typeof useGetMyDashboardLazyQuery>;
-export const UploadProjectLogoDocument = gql`
-    mutation UploadProjectLogo($projectId: ID!, $file: String!, $fileName: String!, $contentType: String!) {
-  uploadProjectLogo(
+export const RequestProjectLogoUploadDocument = gql`
+    mutation RequestProjectLogoUpload($projectId: ID!, $fileName: String!, $contentType: String!, $fileSize: Int!) {
+  requestProjectLogoUpload(
     projectId: $projectId
-    file: $file
     fileName: $fileName
     contentType: $contentType
-  )
+    fileSize: $fileSize
+  ) {
+    uploadUrl
+    key
+    projectId
+    metadata {
+      key
+      fileName
+      originalFileName
+      fileSize
+      contentType
+      environment
+      uploadedAt
+    }
+  }
 }
     `;
 
 /**
- * __useUploadProjectLogoMutation__
+ * __useRequestProjectLogoUploadMutation__
  *
- * To run a mutation, you first call `useUploadProjectLogoMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUploadProjectLogoMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useRequestProjectLogoUploadMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRequestProjectLogoUploadMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [uploadProjectLogoMutation, { data, loading, error }] = useUploadProjectLogoMutation({
+ * const [requestProjectLogoUploadMutation, { data, loading, error }] = useRequestProjectLogoUploadMutation({
  *   variables: {
  *      projectId: // value for 'projectId'
- *      file: // value for 'file'
  *      fileName: // value for 'fileName'
  *      contentType: // value for 'contentType'
+ *      fileSize: // value for 'fileSize'
  *   },
  * });
  */
-export function useUploadProjectLogoMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UploadProjectLogoMutation, UploadProjectLogoMutationVariables>) {
+export function useRequestProjectLogoUploadMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RequestProjectLogoUploadMutation, RequestProjectLogoUploadMutationVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useMutation<UploadProjectLogoMutation, UploadProjectLogoMutationVariables>(UploadProjectLogoDocument, options);
+        return ApolloReactHooks.useMutation<RequestProjectLogoUploadMutation, RequestProjectLogoUploadMutationVariables>(RequestProjectLogoUploadDocument, options);
       }
-export type UploadProjectLogoMutationHookResult = ReturnType<typeof useUploadProjectLogoMutation>;
+export type RequestProjectLogoUploadMutationHookResult = ReturnType<typeof useRequestProjectLogoUploadMutation>;
+export const FinalizeProjectLogoUploadDocument = gql`
+    mutation FinalizeProjectLogoUpload($projectId: ID!, $key: String!) {
+  finalizeProjectLogoUpload(projectId: $projectId, key: $key)
+}
+    `;
+
+/**
+ * __useFinalizeProjectLogoUploadMutation__
+ *
+ * To run a mutation, you first call `useFinalizeProjectLogoUploadMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useFinalizeProjectLogoUploadMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [finalizeProjectLogoUploadMutation, { data, loading, error }] = useFinalizeProjectLogoUploadMutation({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *      key: // value for 'key'
+ *   },
+ * });
+ */
+export function useFinalizeProjectLogoUploadMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<FinalizeProjectLogoUploadMutation, FinalizeProjectLogoUploadMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<FinalizeProjectLogoUploadMutation, FinalizeProjectLogoUploadMutationVariables>(FinalizeProjectLogoUploadDocument, options);
+      }
+export type FinalizeProjectLogoUploadMutationHookResult = ReturnType<typeof useFinalizeProjectLogoUploadMutation>;
 export const GetFilesDocument = gql`
     query GetFiles($filter: FileFilterInput) {
   files(filter: $filter) {

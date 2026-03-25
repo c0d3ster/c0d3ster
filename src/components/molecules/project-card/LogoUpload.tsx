@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 
-import { useUploadProjectLogo } from '@/apiClients'
+import { uploadProjectLogo } from '@/apiClients'
 
 type LogoUploadProps = {
   projectId: string
@@ -20,50 +20,16 @@ export const LogoUpload = ({
   const [internalShowCancel, setInternalShowCancel] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [uploadLogo] = useUploadProjectLogo()
-
   const handleUpload = async (fileToUpload: File) => {
     try {
       setIsUploading(true)
-      setUploadStatus('Converting file...')
-
-      // Convert file to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-          const result = reader.result
-          if (!result || typeof result !== 'string') {
-            reject(new Error('Failed to read file'))
-            return
-          }
-          // Remove data URL prefix (e.g., "data:image/png;base64,")
-          const base64Data = result.split(',')[1]
-          if (!base64Data) {
-            reject(new Error('Failed to extract base64 data'))
-            return
-          }
-          resolve(base64Data)
-        }
-        reader.onerror = reject
-        reader.readAsDataURL(fileToUpload)
-      })
-
       setUploadStatus('Uploading logo...')
 
-      // Upload file directly via single mutation
-      const result = await uploadLogo({
-        variables: {
-          projectId,
-          file: base64,
-          fileName: fileToUpload.name,
-          contentType: fileToUpload.type,
-        },
-      })
+      const downloadUrl = await uploadProjectLogo(projectId, fileToUpload)
 
-      if (result.data?.uploadProjectLogo) {
+      if (downloadUrl) {
         setUploadStatus('Logo uploaded successfully!')
-        // Pass the presigned URL directly to update the display
-        onLogoUploadedAction(result.data.uploadProjectLogo)
+        onLogoUploadedAction(downloadUrl)
         setInternalShowCancel(false)
       } else {
         throw new Error('Upload failed - no data returned')
