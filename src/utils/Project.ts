@@ -3,6 +3,7 @@
  */
 
 import { ProjectStatus } from '@/graphql/generated/graphql'
+import { ProjectStatus as ProjectStatusDb } from '@/graphql/schema'
 
 /**
  * Generates a URL-friendly slug from a project name
@@ -161,4 +162,23 @@ export const getStatusCardStyling = (
     default:
       return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
   }
+}
+
+const DB_STATUS_VALUES = new Set(
+  Object.values(ProjectStatusDb) as string[]
+)
+
+/**
+ * Coerces status strings from clients (e.g. GraphQL codegen using enum keys like
+ * "InReview") to the canonical DB / enum values (e.g. "in_review").
+ */
+export function normalizeProjectStatusInput(status: string): ProjectStatusDb {
+  if (DB_STATUS_VALUES.has(status)) {
+    return status as ProjectStatusDb
+  }
+  const fromKey = ProjectStatusDb[status as keyof typeof ProjectStatusDb]
+  if (typeof fromKey === 'string' && DB_STATUS_VALUES.has(fromKey)) {
+    return fromKey as ProjectStatusDb
+  }
+  throw new Error(`Invalid project status: ${status}`)
 }

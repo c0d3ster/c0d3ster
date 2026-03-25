@@ -3,11 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FileResolver } from '@/graphql/resolvers/FileResolver'
 import { Environment, UserRole } from '@/graphql/schema'
+import { Env } from '@/libs/Env'
 import { createMockUser } from '@/tests/mocks/auth'
 import { createMockProject } from '@/tests/mocks/projects'
 import {
   createMockFileService,
-  createMockProjectService,
+  createMockProjectService, 
   createMockUserService,
 } from '@/tests/mocks/services'
 
@@ -301,9 +302,11 @@ describe('FileResolver', () => {
   describe('finalizeProjectLogoUpload', () => {
     it('should finalize logo and return download URL', async () => {
       const currentUser = createMockUser()
+      const logoKey = `${Env.APP_ENV}/projects/project-1/1_logo.jpg`
+      const oldLogoKey = `${Env.APP_ENV}/projects/project-1/old.png`
       const mockProject = createMockProject({
         id: 'project-1',
-        logo: 'dev/projects/project-1/old.png',
+        logo: oldLogoKey,
       })
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
@@ -316,7 +319,7 @@ describe('FileResolver', () => {
         Buffer.from([0xff, 0xd8])
       )
       mockFileService.getFileMetadata.mockResolvedValue({
-        key: 'dev/projects/project-1/1_logo.jpg',
+        key: logoKey,
         fileName: 'logo.jpg',
         originalFileName: 'logo.jpg',
         fileSize: 1024,
@@ -341,7 +344,7 @@ describe('FileResolver', () => {
 
       const result = await fileResolver.finalizeProjectLogoUpload(
         'project-1',
-        'dev/projects/project-1/1_logo.jpg'
+        logoKey
       )
 
       expect(result).toBe('https://presigned-url.com')

@@ -12,12 +12,7 @@ import {
 
 import type { FileService, ProjectService, UserService } from '@/services'
 
-import {
-  ALLOWED_IMAGE_TYPES,
-  isAllowedImageContentType,
-  MAX_FILE_SIZE,
-  normalizeImageContentType,
-} from '@/constants/file'
+import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/constants/file'
 import {
   Environment,
   File,
@@ -27,6 +22,10 @@ import {
 } from '@/graphql/schema'
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
+import {
+  isAllowedImageContentType,
+  normalizeImageContentType,
+} from '@/utils/File'
 
 @Resolver(() => File)
 export class FileResolver {
