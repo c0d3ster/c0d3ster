@@ -12,7 +12,7 @@ import { db } from '@/libs/DB'
 import { getDefaultFeatures } from '@/libs/projectTypeFeatures'
 import { schemas } from '@/models'
 import { isAdminRole } from '@/utils'
-import { normalizeProjectStatusInput } from '@/utils/projectStatus'
+import { normalizeProjectStatusInput } from '@/utils/ProjectStatus'
 
 export class ProjectRequestService {
   async getProjectRequests(

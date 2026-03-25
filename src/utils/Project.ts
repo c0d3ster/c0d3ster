@@ -1,5 +1,11 @@
 /**
- * Utility functions for handling project slugs and status
+ * **Client-safe** project utilities: slugs, URLs, and **display** formatting for
+ * status (labels, icons, Tailwind classes).
+ *
+ * Uses `@/graphql/generated/graphql` `ProjectStatus` only — safe for the browser.
+ *
+ * **Not** for persisting or coercing status to DB/schema values. For that (server
+ * only), use `@/utils/ProjectStatus` (`normalizeProjectStatusInput`).
  */
 
 import { ProjectStatus } from '@/graphql/generated/graphql'
@@ -63,9 +69,8 @@ export const findProjectBySlug = <T extends { projectName: string }>(
 }
 
 /**
- * Formats project status for display (e.g., "in_progress" -> "IN PROGRESS")
- * @param status - The project status to format
- * @returns Formatted status string
+ * Formats project status for **UI display** (e.g., "in_progress" -> "IN PROGRESS").
+ * See `@/utils/ProjectStatus` for DB/schema input normalization (server only).
  */
 export const formatStatus = (status: string): string => {
   if (!status) return 'UNKNOWN'

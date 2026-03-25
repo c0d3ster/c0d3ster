@@ -1,4 +1,5 @@
 export * from './DateUtils'
 export * from './Env'
+export * from './File'
 export * from './Project'
 export * from './RoleConstants'

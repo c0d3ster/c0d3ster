@@ -1,46 +1,13 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { uploadProjectLogo } from '@/apiClients'
 
 import { LogoUpload } from './LogoUpload'
 
-// Mock the API client
-const mockUploadLogo = vi.fn()
 vi.mock('@/apiClients', () => ({
-  useUploadProjectLogo: () => [mockUploadLogo],
+  uploadProjectLogo: vi.fn(),
 }))
-
-// Mock FileReader
-const mockFileReader = {
-  readAsDataURL: vi.fn(),
-  onload: null as ((event: any) => void) | null,
-  onerror: null as ((event: any) => void) | null,
-  result: null as string | null,
-}
-
-// Mock global FileReader
-const originalFileReader = window.FileReader
-
-beforeAll(() => {
-  Object.defineProperty(window, 'FileReader', {
-    writable: true,
-    value: vi.fn(() => mockFileReader),
-  })
-})
-
-afterAll(() => {
-  Object.defineProperty(window, 'FileReader', {
-    writable: true,
-    value: originalFileReader,
-  })
-})
 
 describe('LogoUpload', () => {
   const mockOnLogoUploadedAction = vi.fn()
@@ -51,9 +18,6 @@ describe('LogoUpload', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFileReader.onload = null
-    mockFileReader.onerror = null
-    mockFileReader.result = null
   })
 
   it('renders correctly with default props', () => {
@@ -78,25 +42,8 @@ describe('LogoUpload', () => {
     const mockFile = new File(['fake-image-content'], 'test.png', {
       type: 'image/png',
     })
-    const mockBase64 = 'data:image/png;base64,fake-base64-data'
-    const mockBase64Data = 'fake-base64-data'
 
-    // Mock FileReader behavior
-    mockFileReader.result = mockBase64
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({ target: { result: mockBase64 } })
-        }
-      }, 0)
-    })
-
-    // Mock successful upload
-    mockUploadLogo.mockResolvedValue({
-      data: {
-        uploadProjectLogo: 'https://example.com/logo.png',
-      },
-    })
+    vi.mocked(uploadProjectLogo).mockResolvedValue('https://example.com/logo.png')
 
     render(<LogoUpload {...defaultProps} />)
 
@@ -104,18 +51,14 @@ describe('LogoUpload', () => {
     fireEvent.change(fileInput, { target: { files: [mockFile] } })
 
     await waitFor(() => {
-      expect(screen.getByText('Converting file...')).toBeInTheDocument()
+      expect(screen.getByText('Uploading logo...')).toBeInTheDocument()
     })
 
     await waitFor(() => {
-      expect(mockUploadLogo).toHaveBeenCalledWith({
-        variables: {
-          projectId: 'test-project-123',
-          file: mockBase64Data,
-          fileName: 'test.png',
-          contentType: 'image/png',
-        },
-      })
+      expect(uploadProjectLogo).toHaveBeenCalledWith(
+        'test-project-123',
+        mockFile
+      )
     })
 
     await waitFor(() => {
@@ -143,7 +86,7 @@ describe('LogoUpload', () => {
       screen.getByText('Please select an image file (PNG, JPG, etc.)')
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
-    expect(mockUploadLogo).not.toHaveBeenCalled()
+    expect(uploadProjectLogo).not.toHaveBeenCalled()
   })
 
   it('handles file selection with no file', () => {
@@ -152,112 +95,16 @@ describe('LogoUpload', () => {
     const fileInput = screen.getByDisplayValue('')
     fireEvent.change(fileInput, { target: { files: [] } })
 
-    expect(screen.queryByText('Converting file...')).not.toBeInTheDocument()
-    expect(mockUploadLogo).not.toHaveBeenCalled()
-  })
-
-  it('handles FileReader error during file conversion', async () => {
-    const mockFile = new File(['fake-image-content'], 'test.png', {
-      type: 'image/png',
-    })
-
-    // Mock FileReader error
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onerror) {
-          mockFileReader.onerror(new Error('File read error'))
-        }
-      }, 0)
-    })
-
-    render(<LogoUpload {...defaultProps} />)
-
-    const fileInput = screen.getByDisplayValue('')
-    fireEvent.change(fileInput, { target: { files: [mockFile] } })
-
-    await waitFor(() => {
-      expect(screen.getByText(/Error: File read error/)).toBeInTheDocument()
-    })
-
-    expect(mockUploadLogo).not.toHaveBeenCalled()
-  })
-
-  it('handles FileReader result that is not a string', async () => {
-    const mockFile = new File(['fake-image-content'], 'test.png', {
-      type: 'image/png',
-    })
-
-    // Mock FileReader with non-string result
-    mockFileReader.result = null
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({ target: { result: null } })
-        }
-      }, 0)
-    })
-
-    render(<LogoUpload {...defaultProps} />)
-
-    const fileInput = screen.getByDisplayValue('')
-    fireEvent.change(fileInput, { target: { files: [mockFile] } })
-
-    await waitFor(() => {
-      expect(screen.getByText(/Error: Failed to read file/)).toBeInTheDocument()
-    })
-
-    expect(mockUploadLogo).not.toHaveBeenCalled()
-  })
-
-  it('handles FileReader result without base64 data', async () => {
-    const mockFile = new File(['fake-image-content'], 'test.png', {
-      type: 'image/png',
-    })
-
-    // Mock FileReader with result that doesn't contain base64 data
-    mockFileReader.result = 'data:image/png;base64,'
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({
-            target: { result: 'data:image/png;base64,' },
-          })
-        }
-      }, 0)
-    })
-
-    render(<LogoUpload {...defaultProps} />)
-
-    const fileInput = screen.getByDisplayValue('')
-    fireEvent.change(fileInput, { target: { files: [mockFile] } })
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Error: Failed to extract base64 data/)
-      ).toBeInTheDocument()
-    })
-
-    expect(mockUploadLogo).not.toHaveBeenCalled()
+    expect(screen.queryByText('Uploading logo...')).not.toBeInTheDocument()
+    expect(uploadProjectLogo).not.toHaveBeenCalled()
   })
 
   it('handles upload API error', async () => {
     const mockFile = new File(['fake-image-content'], 'test.png', {
       type: 'image/png',
     })
-    const mockBase64 = 'data:image/png;base64,fake-base64-data'
 
-    // Mock FileReader behavior
-    mockFileReader.result = mockBase64
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({ target: { result: mockBase64 } })
-        }
-      }, 0)
-    })
-
-    // Mock API error
-    mockUploadLogo.mockRejectedValue(new Error('Upload failed'))
+    vi.mocked(uploadProjectLogo).mockRejectedValue(new Error('Upload failed'))
 
     render(<LogoUpload {...defaultProps} />)
 
@@ -271,26 +118,14 @@ describe('LogoUpload', () => {
     expect(mockOnLogoUploadedAction).not.toHaveBeenCalled()
   })
 
-  it('handles upload API response without data', async () => {
+  it('handles finalize returning no download URL', async () => {
     const mockFile = new File(['fake-image-content'], 'test.png', {
       type: 'image/png',
     })
-    const mockBase64 = 'data:image/png;base64,fake-base64-data'
 
-    // Mock FileReader behavior
-    mockFileReader.result = mockBase64
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({ target: { result: mockBase64 } })
-        }
-      }, 0)
-    })
-
-    // Mock API response without data
-    mockUploadLogo.mockResolvedValue({
-      data: null,
-    })
+    vi.mocked(uploadProjectLogo).mockRejectedValue(
+      new Error('Finalize logo upload returned no download URL')
+    )
 
     render(<LogoUpload {...defaultProps} />)
 
@@ -299,7 +134,7 @@ describe('LogoUpload', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('Error: Upload failed - no data returned')
+        screen.getByText('Error: Finalize logo upload returned no download URL')
       ).toBeInTheDocument()
     })
 
@@ -320,6 +155,8 @@ describe('LogoUpload', () => {
       type: 'image/png',
     })
 
+    vi.mocked(uploadProjectLogo).mockResolvedValue('https://example.com/x.png')
+
     render(<LogoUpload {...defaultProps} />)
 
     const fileInput = screen.getByDisplayValue('')
@@ -332,21 +169,9 @@ describe('LogoUpload', () => {
     const mockFile = new File(['fake-image-content'], 'test.png', {
       type: 'image/png',
     })
-    const mockBase64 = 'data:image/png;base64,fake-base64-data'
 
-    // Mock FileReader behavior
-    mockFileReader.result = mockBase64
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({ target: { result: mockBase64 } })
-        }
-      }, 0)
-    })
-
-    // Mock slow upload
-    mockUploadLogo.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100))
+    vi.mocked(uploadProjectLogo).mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve('https://x'), 100))
     )
 
     render(<LogoUpload {...defaultProps} />)
@@ -354,18 +179,16 @@ describe('LogoUpload', () => {
     const fileInput = screen.getByDisplayValue('')
     fireEvent.change(fileInput, { target: { files: [mockFile] } })
 
-    // Wait for cancel button to appear
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: /cancel/i })
       ).toBeInTheDocument()
     })
 
-    // Check that cancel button is disabled during upload
     expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled()
   })
 
-  it('shows error status in red color', async () => {
+  it('shows error status in red color', () => {
     const mockFile = new File(['fake-image-content'], 'test.txt', {
       type: 'text/plain',
     })
@@ -386,24 +209,8 @@ describe('LogoUpload', () => {
     const mockFile = new File(['fake-image-content'], 'test.png', {
       type: 'image/png',
     })
-    const mockBase64 = 'data:image/png;base64,fake-base64-data'
 
-    // Mock FileReader behavior
-    mockFileReader.result = mockBase64
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({ target: { result: mockBase64 } })
-        }
-      }, 0)
-    })
-
-    // Mock successful upload
-    mockUploadLogo.mockResolvedValue({
-      data: {
-        uploadProjectLogo: 'https://example.com/logo.png',
-      },
-    })
+    vi.mocked(uploadProjectLogo).mockResolvedValue('https://example.com/logo.png')
 
     render(<LogoUpload {...defaultProps} />)
 
@@ -421,20 +228,8 @@ describe('LogoUpload', () => {
     const mockFile = new File(['fake-image-content'], 'test.png', {
       type: 'image/png',
     })
-    const mockBase64 = 'data:image/png;base64,fake-base64-data'
 
-    // Mock FileReader behavior
-    mockFileReader.result = mockBase64
-    mockFileReader.readAsDataURL.mockImplementation(() => {
-      setTimeout(() => {
-        if (mockFileReader.onload) {
-          mockFileReader.onload({ target: { result: mockBase64 } })
-        }
-      }, 0)
-    })
-
-    // Mock API error with non-Error object
-    mockUploadLogo.mockRejectedValue('Unknown error')
+    vi.mocked(uploadProjectLogo).mockRejectedValue('Unknown error')
 
     render(<LogoUpload {...defaultProps} />)
 

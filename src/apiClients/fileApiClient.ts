@@ -5,27 +5,48 @@ import type {
   DeleteFileMutation,
   DeleteFileMutationVariables,
   FileFilterInput,
+  FinalizeProjectLogoUploadMutation,
+  FinalizeProjectLogoUploadMutationVariables,
   GetFileQuery,
   GetFileQueryVariables,
-  UploadProjectLogoMutation,
-  UploadProjectLogoMutationVariables,
+  RequestProjectLogoUploadMutation,
+  RequestProjectLogoUploadMutationVariables,
 } from '@/graphql/generated/graphql'
 
 import { apolloClient } from '@/libs/ApolloClient'
 
-export const UPLOAD_PROJECT_LOGO = gql`
-  mutation UploadProjectLogo(
+export const REQUEST_PROJECT_LOGO_UPLOAD = gql`
+  mutation RequestProjectLogoUpload(
     $projectId: ID!
-    $file: String!
     $fileName: String!
     $contentType: String!
+    $fileSize: Int!
   ) {
-    uploadProjectLogo(
+    requestProjectLogoUpload(
       projectId: $projectId
-      file: $file
       fileName: $fileName
       contentType: $contentType
-    )
+      fileSize: $fileSize
+    ) {
+      uploadUrl
+      key
+      projectId
+      metadata {
+        key
+        fileName
+        originalFileName
+        fileSize
+        contentType
+        environment
+        uploadedAt
+      }
+    }
+  }
+`
+
+export const FINALIZE_PROJECT_LOGO_UPLOAD = gql`
+  mutation FinalizeProjectLogoUpload($projectId: ID!, $key: String!) {
+    finalizeProjectLogoUpload(projectId: $projectId, key: $key)
   }
 `
 
@@ -66,11 +87,18 @@ export const DELETE_FILE = gql`
 `
 
 // Hooks
-export const useUploadProjectLogo = () => {
+export const useRequestProjectLogoUpload = () => {
   return useMutation<
-    UploadProjectLogoMutation,
-    UploadProjectLogoMutationVariables
-  >(UPLOAD_PROJECT_LOGO)
+    RequestProjectLogoUploadMutation,
+    RequestProjectLogoUploadMutationVariables
+  >(REQUEST_PROJECT_LOGO_UPLOAD)
+}
+
+export const useFinalizeProjectLogoUpload = () => {
+  return useMutation<
+    FinalizeProjectLogoUploadMutation,
+    FinalizeProjectLogoUploadMutationVariables
+  >(FINALIZE_PROJECT_LOGO_UPLOAD)
 }
 
 export const useDeleteFile = () => {
@@ -86,28 +114,69 @@ export const useGetFiles = (filter?: FileFilterInput) => {
 export const useGetFile = (key: string) => {
   return useQuery<GetFileQuery, GetFileQueryVariables>(GET_FILE, {
     variables: { key },
-    skip: !key, // Skip the query if key is empty
+    skip: !key,
   })
 }
 
-// Async functions
+/**
+ * Uploads a project logo directly to R2 via presigned URL (avoids sending file bytes through GraphQL).
+ */
+export const uploadProjectLogo = async (projectId: string, file: File) => {
+  const contentType =
+    file.type?.trim() || 'application/octet-stream'
 
-export const uploadProjectLogo = async (
-  projectId: string,
-  file: string,
-  fileName: string,
-  contentType: string
-) => {
-  const result = await apolloClient.mutate<
-    UploadProjectLogoMutation,
-    UploadProjectLogoMutationVariables
+  const requestResult = await apolloClient.mutate<
+    RequestProjectLogoUploadMutation,
+    RequestProjectLogoUploadMutationVariables
   >({
-    mutation: UPLOAD_PROJECT_LOGO,
-    variables: { projectId, file, fileName, contentType },
+    mutation: REQUEST_PROJECT_LOGO_UPLOAD,
+    variables: {
+      projectId,
+      fileName: file.name,
+      contentType,
+      fileSize: file.size,
+    },
   })
 
-  if (result.error) throw new Error(result.error.message)
-  return result.data?.uploadProjectLogo
+  if (requestResult.error) throw new Error(requestResult.error.message)
+
+  const uploadPayload = requestResult.data?.requestProjectLogoUpload
+  if (!uploadPayload) {
+    throw new Error('Failed to get upload URL')
+  }
+
+  const putResponse = await fetch(uploadPayload.uploadUrl, {
+    method: 'PUT',
+    body: file,
+    headers: {
+      'Content-Type': contentType,
+    },
+  })
+
+  if (!putResponse.ok) {
+    throw new Error(
+      `Direct upload failed: ${putResponse.status} ${putResponse.statusText}`
+    )
+  }
+
+  const finalizeResult = await apolloClient.mutate<
+    FinalizeProjectLogoUploadMutation,
+    FinalizeProjectLogoUploadMutationVariables
+  >({
+    mutation: FINALIZE_PROJECT_LOGO_UPLOAD,
+    variables: {
+      projectId,
+      key: uploadPayload.key,
+    },
+  })
+
+  if (finalizeResult.error) throw new Error(finalizeResult.error.message)
+
+  const downloadUrl = finalizeResult.data?.finalizeProjectLogoUpload
+  if (!downloadUrl) {
+    throw new Error('Finalize logo upload returned no download URL')
+  }
+  return downloadUrl
 }
 
 export const deleteFile = async (key: string) => {
