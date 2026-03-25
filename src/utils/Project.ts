@@ -1,9 +1,14 @@
 /**
- * Utility functions for handling project slugs and status
+ * **Client-safe** project utilities: slugs, URLs, and **display** formatting for
+ * status (labels, icons, Tailwind classes).
+ *
+ * Uses `@/graphql/generated/graphql` `ProjectStatus` only — safe for the browser.
+ *
+ * **Not** for persisting or coercing status to DB/schema values. For that (server
+ * only), use `@/utils/ProjectStatus` (`normalizeProjectStatusInput`).
  */
 
 import { ProjectStatus } from '@/graphql/generated/graphql'
-import { ProjectStatus as ProjectStatusDb } from '@/graphql/schema'
 
 /**
  * Generates a URL-friendly slug from a project name
@@ -64,9 +69,8 @@ export const findProjectBySlug = <T extends { projectName: string }>(
 }
 
 /**
- * Formats project status for display (e.g., "in_progress" -> "IN PROGRESS")
- * @param status - The project status to format
- * @returns Formatted status string
+ * Formats project status for **UI display** (e.g., "in_progress" -> "IN PROGRESS").
+ * See `@/utils/ProjectStatus` for DB/schema input normalization (server only).
  */
 export const formatStatus = (status: string): string => {
   if (!status) return 'UNKNOWN'
@@ -162,23 +166,4 @@ export const getStatusCardStyling = (
     default:
       return 'border-gray-400/40 bg-gray-400/20 text-gray-400'
   }
-}
-
-const DB_STATUS_VALUES = new Set(
-  Object.values(ProjectStatusDb) as string[]
-)
-
-/**
- * Coerces status strings from clients (e.g. GraphQL codegen using enum keys like
- * "InReview") to the canonical DB / enum values (e.g. "in_review").
- */
-export function normalizeProjectStatusInput(status: string): ProjectStatusDb {
-  if (DB_STATUS_VALUES.has(status)) {
-    return status as ProjectStatusDb
-  }
-  const fromKey = ProjectStatusDb[status as keyof typeof ProjectStatusDb]
-  if (typeof fromKey === 'string' && DB_STATUS_VALUES.has(fromKey)) {
-    return fromKey as ProjectStatusDb
-  }
-  throw new Error(`Invalid project status: ${status}`)
 }
