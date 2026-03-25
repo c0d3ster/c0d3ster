@@ -61,6 +61,10 @@ vi.mock('@/libs/Toast', () => ({
 // =============================================================================
 // Mocks for Next.js components and utilities used across multiple test files
 
+// `server-only` throws when imported outside Next server components; Vitest is not
+// that environment, so stub it for any module that uses `import 'server-only'`.
+vi.mock('server-only', () => ({}))
+
 // Mock next/image globally for all tests
 // Used in: 10+ component test files
 vi.mock('next/image', () => ({
