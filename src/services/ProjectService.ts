@@ -742,8 +742,7 @@ export class ProjectService {
       if (neonProjectId) await deleteNeonProject(neonProjectId)
     }
 
-    try {
-      return await db.transaction(async (tx) => {
+    return await db.transaction(async (tx) => {
         const [project] = await tx
           .select()
           .from(schemas.projects)
@@ -859,9 +858,5 @@ export class ProjectService {
           throw provisioningError
         }
       })
-    } catch (error) {
-      await rollback()
-      throw error
-    }
   }
 }
