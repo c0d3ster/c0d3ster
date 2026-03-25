@@ -22,7 +22,7 @@ export async function createNeonProject(
       Authorization: `Bearer ${API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ project: { name } }),
+    body: JSON.stringify({ project: { name, org_id: Env.NEON_ORG_ID } }),
   })
 
   if (!res.ok) {
