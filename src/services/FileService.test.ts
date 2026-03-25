@@ -1,5 +1,7 @@
+import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Buffer } from 'node:buffer'
+import { Readable } from 'node:stream'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { Environment } from '@/graphql/schema'
@@ -62,6 +64,7 @@ describe('FileService', () => {
       R2_ACCESS_KEY_ID: 'test-access-key',
       R2_SECRET_ACCESS_KEY: 'test-secret-key',
       R2_BUCKET_NAME: 'test-bucket',
+      APP_ENV: 'dev',
     })
     // Initialize mockS3Send before creating FileService
     mockS3Send = vi.fn()
@@ -135,6 +138,130 @@ describe('FileService', () => {
         await fileService.generatePresignedUploadUrl(fileWithSpaces)
 
       expect(result.key).toMatch(/test_file_with_spaces___special_chars_\.jpg/)
+    })
+  })
+
+  describe('generateProjectLogoPresignedUpload', () => {
+    it('should return presigned URL, key, and metadata without S3 Metadata on command', async () => {
+      mockGetSignedUrl.mockResolvedValue('https://presigned-put.example')
+
+      const result = await fileService.generateProjectLogoPresignedUpload({
+        projectId: 'project-1',
+        userId: 'user-1',
+        fileName: 'logo..png',
+        originalFileName: 'logo..png',
+        fileSize: 2048,
+        contentType: 'image/png',
+      })
+
+      expect(result.uploadUrl).toBe('https://presigned-put.example')
+      expect(result.key).toMatch(/^dev\/projects\/project-1\/\d+_logo\.\.png$/)
+      expect(result.metadata.fileName).toBe('logo..png')
+      expect(result.metadata.contentType).toBe('image/png')
+      expect(result.metadata.fileSize).toBe(2048)
+      expect(result.metadata.environment).toBe(Environment.DEV)
+
+      const firstPut = vi.mocked(PutObjectCommand).mock.calls[0]
+
+      expect(firstPut).toBeDefined()
+
+      const putInput = firstPut![0] as {
+        Bucket?: string
+        ContentType?: string
+        ContentLength?: number
+        Metadata?: unknown
+      }
+
+      expect(putInput).toMatchObject({
+        Bucket: 'test-bucket',
+        ContentType: 'image/png',
+        ContentLength: 2048,
+      })
+      expect(putInput.Metadata).toBeUndefined()
+    })
+
+    it('should use PROD environment in metadata when APP_ENV is prod', async () => {
+      Object.assign(Env, { APP_ENV: 'prod' })
+      mockGetSignedUrl.mockResolvedValue('https://put')
+      fileService = new FileService()
+
+      const result = await fileService.generateProjectLogoPresignedUpload({
+        projectId: 'p1',
+        userId: 'u1',
+        fileName: 'a.png',
+        originalFileName: 'a.png',
+        fileSize: 100,
+        contentType: 'image/png',
+      })
+
+      expect(result.metadata.environment).toBe(Environment.PROD)
+      expect(result.key).toMatch(/^prod\/projects\/p1\//)
+
+      Object.assign(Env, { APP_ENV: 'dev' })
+      fileService = new FileService()
+    })
+  })
+
+  describe('getObjectHeadInfo', () => {
+    it('should return content length and type from HeadObject', async () => {
+      mockS3Send.mockResolvedValue({
+        ContentLength: 4096,
+        ContentType: 'image/webp',
+      })
+
+      const result = await fileService.getObjectHeadInfo('dev/projects/p/k')
+
+      expect(result).toEqual({
+        contentLength: 4096,
+        contentType: 'image/webp',
+      })
+    })
+
+    it('should return null and log on S3 error', async () => {
+      mockS3Send.mockRejectedValue(new Error('not found'))
+
+      const result = await fileService.getObjectHeadInfo('missing')
+
+      expect(result).toBeNull()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error in head object:',
+        expect.objectContaining({ key: 'missing' })
+      )
+    })
+  })
+
+  describe('getObjectBufferRange', () => {
+    it('should concatenate streamed chunks into a buffer', async () => {
+      const body = Readable.from([
+        Buffer.from([0xff, 0xd8]),
+        Buffer.from([0xff, 0xe0]),
+      ])
+      mockS3Send.mockResolvedValue({ Body: body })
+
+      const result = await fileService.getObjectBufferRange('k', 8192)
+
+      expect(result).toEqual(Buffer.from([0xff, 0xd8, 0xff, 0xe0]))
+      expect(mockS3Send).toHaveBeenCalled()
+    })
+
+    it('should return null when Body is missing', async () => {
+      mockS3Send.mockResolvedValue({ Body: undefined })
+
+      const result = await fileService.getObjectBufferRange('k', 100)
+
+      expect(result).toBeNull()
+    })
+
+    it('should return null and log on read error', async () => {
+      mockS3Send.mockRejectedValue(new Error('read failed'))
+
+      const result = await fileService.getObjectBufferRange('k', 100)
+
+      expect(result).toBeNull()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error reading object range:',
+        expect.objectContaining({ key: 'k' })
+      )
     })
   })
 

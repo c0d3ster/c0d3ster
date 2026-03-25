@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { MAX_FILE_SIZE } from '@/constants/file'
 import { FileResolver } from '@/graphql/resolvers/FileResolver'
 import { Environment, UserRole } from '@/graphql/schema'
 import { Env } from '@/libs/Env'
@@ -8,7 +9,7 @@ import { createMockUser } from '@/tests/mocks/auth'
 import { createMockProject } from '@/tests/mocks/projects'
 import {
   createMockFileService,
-  createMockProjectService, 
+  createMockProjectService,
   createMockUserService,
 } from '@/tests/mocks/services'
 
@@ -297,6 +298,92 @@ describe('FileResolver', () => {
         )
       ).rejects.toThrow('Project not found or access denied')
     })
+
+    it('should throw when file name is empty after trim', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.requestProjectLogoUpload(
+          'project-1',
+          '   ',
+          'image/jpeg',
+          1024
+        )
+      ).rejects.toThrow('File name is required')
+    })
+
+    it('should throw when file size is invalid', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.requestProjectLogoUpload(
+          'project-1',
+          'logo.jpg',
+          'image/jpeg',
+          0
+        )
+      ).rejects.toThrow('Invalid file upload parameters')
+
+      await expect(
+        fileResolver.requestProjectLogoUpload(
+          'project-1',
+          'logo.jpg',
+          'image/jpeg',
+          MAX_FILE_SIZE + 1
+        )
+      ).rejects.toThrow('Invalid file upload parameters')
+    })
+
+    it('should throw when content type is not allowed', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.requestProjectLogoUpload(
+          'project-1',
+          'logo.jpg',
+          'application/octet-stream',
+          1024
+        )
+      ).rejects.toThrow('not allowed')
+    })
+
+    it('should normalize image/jpeg with MIME parameters before presign', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.generateProjectLogoPresignedUpload.mockResolvedValue({
+        uploadUrl: 'https://put',
+        key: 'k',
+        metadata: {
+          key: 'k',
+          fileName: 'a.jpg',
+          originalFileName: 'a.jpg',
+          fileSize: 10,
+          contentType: 'image/jpeg',
+          environment: Environment.DEV,
+          uploadedAt: new Date(),
+        },
+      })
+
+      await fileResolver.requestProjectLogoUpload(
+        'project-1',
+        'a.jpg',
+        'image/jpeg; charset=binary',
+        10
+      )
+
+      expect(mockFileService.generateProjectLogoPresignedUpload).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType: 'image/jpeg',
+        })
+      )
+    })
   })
 
   describe('finalizeProjectLogoUpload', () => {
@@ -350,6 +437,166 @@ describe('FileResolver', () => {
       expect(result).toBe('https://presigned-url.com')
       expect(mockProjectService.updateProject).toHaveBeenCalled()
       expect(mockFileService.createProjectFileRecord).toHaveBeenCalled()
+      expect(mockFileService.deleteFile).toHaveBeenCalledWith(oldLogoKey)
+    })
+
+    it('should reject key with wrong project prefix', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload(
+          'project-1',
+          `${Env.APP_ENV}/projects/other-project/x.jpg`
+        )
+      ).rejects.toThrow('Invalid logo key')
+    })
+
+    it('should reject key with parent path segment', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      const badKey = `${Env.APP_ENV}/projects/project-1/../evil/x.jpg`
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', badKey)
+      ).rejects.toThrow('Invalid logo key')
+    })
+
+    it('should throw when object head is missing', async () => {
+      const currentUser = createMockUser()
+      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue(null)
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('Uploaded file not found or empty')
+    })
+
+    it('should throw when object is larger than max', async () => {
+      const currentUser = createMockUser()
+      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: MAX_FILE_SIZE + 1,
+        contentType: 'image/jpeg',
+      })
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('Invalid file upload parameters')
+    })
+
+    it('should throw when buffer range is empty', async () => {
+      const currentUser = createMockUser()
+      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 100,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(null)
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('Could not read uploaded file for validation')
+    })
+
+    it('should throw when detected type is not allowed', async () => {
+      const currentUser = createMockUser()
+      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 100,
+        contentType: 'application/octet-stream',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(Buffer.from([1]))
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'application/pdf',
+        ext: 'pdf',
+      })
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('Invalid file upload parameters')
+    })
+
+    it('should throw when getFileMetadata returns null', async () => {
+      const currentUser = createMockUser()
+      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 100,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xff, 0xd8])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue(null)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'image/jpeg',
+        ext: 'jpg',
+      })
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('Could not read uploaded file metadata')
+    })
+
+    it('should not delete storage when old logo key equals new key', async () => {
+      const currentUser = createMockUser()
+      const logoKey = `${Env.APP_ENV}/projects/project-1/1_logo.jpg`
+      const mockProject = createMockProject({
+        id: 'project-1',
+        logo: logoKey,
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 1024,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xff, 0xd8])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: logoKey,
+        fileName: 'logo.jpg',
+        originalFileName: 'logo.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.generatePresignedDownloadUrl.mockResolvedValue(
+        'https://presigned-url.com'
+      )
+      mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'image/jpeg',
+        ext: 'jpg',
+      })
+
+      await fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+
+      expect(mockFileService.deleteFile).not.toHaveBeenCalled()
     })
   })
 

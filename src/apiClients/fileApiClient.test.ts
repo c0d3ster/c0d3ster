@@ -179,6 +179,34 @@ describe('File API Client', () => {
         )
       })
 
+      it('should throw when finalize mutation returns GraphQL error', async () => {
+        const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
+        const err = new Error('Finalize failed')
+
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+        })
+
+        vi.mocked(apolloClient.mutate)
+          .mockResolvedValueOnce({
+            data: {
+              requestProjectLogoUpload: {
+                uploadUrl: 'https://r2.example/put',
+                key: 'k',
+                projectId: 'project-1',
+                metadata: {},
+              },
+            },
+          })
+          .mockResolvedValueOnce({ error: err } as any)
+
+        await expect(uploadProjectLogo('project-1', mockFile)).rejects.toThrow(
+          'Finalize failed'
+        )
+      })
+
       it('should throw when finalize returns no download URL', async () => {
         const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
 
