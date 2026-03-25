@@ -179,7 +179,7 @@ describe('File API Client', () => {
         )
       })
 
-      it('should return undefined when finalize returns no data', async () => {
+      it('should throw when finalize returns no download URL', async () => {
         const mockFile = new File(['x'], 'logo.png', { type: 'image/png' })
 
         globalThis.fetch = vi.fn().mockResolvedValue({
@@ -203,9 +203,9 @@ describe('File API Client', () => {
             data: null,
           })
 
-        const result = await uploadProjectLogo('project-1', mockFile)
-
-        expect(result).toBeUndefined()
+        await expect(uploadProjectLogo('project-1', mockFile)).rejects.toThrow(
+          'Finalize logo upload returned no download URL'
+        )
       })
     })
 

@@ -74,14 +74,8 @@ export class FileService {
       uploadedAt: Date
     }
   }> {
-    const {
-      projectId,
-      userId,
-      fileName,
-      originalFileName,
-      fileSize,
-      contentType,
-    } = options
+    const { projectId, fileName, originalFileName, fileSize, contentType } =
+      options
     const timestamp = Date.now()
     const sanitizedFileName = fileName.replace(/[^a-z0-9.-]/gi, '_')
     const env = Env.APP_ENV
@@ -97,20 +91,13 @@ export class FileService {
       uploadedAt: new Date(),
     }
 
+    // No Metadata on presigned PUT: SigV4 would require matching x-amz-meta-* on the
+    // browser request; client only sends Content-Type. Metadata is recorded in DB on finalize.
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
       ContentType: contentType,
       ContentLength: fileSize,
-      Metadata: {
-        filename: fileName,
-        originalfilename: originalFileName,
-        filesize: fileSize.toString(),
-        uploadedby: userId,
-        projectid: projectId,
-        environment: env,
-        uploadedat: new Date().toISOString(),
-      },
     })
 
     const uploadUrl = await getSignedUrl(this.s3Client, command, {

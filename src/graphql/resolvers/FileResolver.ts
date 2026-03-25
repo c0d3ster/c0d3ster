@@ -216,7 +216,10 @@ export class FileResolver {
     }
 
     const expectedPrefix = `${Env.APP_ENV}/projects/${projectId}/`
-    if (!key.startsWith(expectedPrefix) || key.includes('..')) {
+    if (!key.startsWith(expectedPrefix)) {
+      throw new Error('Invalid logo key')
+    }
+    if (key.split('/').includes('..')) {
       throw new Error('Invalid logo key')
     }
 
@@ -282,6 +285,7 @@ export class FileResolver {
 
     if (
       oldLogoKey &&
+      oldLogoKey !== key &&
       (oldLogoKey.includes('projects/') || oldLogoKey.includes('users/'))
     ) {
       try {

@@ -27,13 +27,9 @@ export const LogoUpload = ({
 
       const downloadUrl = await uploadProjectLogo(projectId, fileToUpload)
 
-      if (downloadUrl) {
-        setUploadStatus('Logo uploaded successfully!')
-        onLogoUploadedAction(downloadUrl)
-        setInternalShowCancel(false)
-      } else {
-        throw new Error('Upload failed - no data returned')
-      }
+      setUploadStatus('Logo uploaded successfully!')
+      onLogoUploadedAction(downloadUrl)
+      setInternalShowCancel(false)
     } catch (error) {
       setUploadStatus(
         `Error: ${error instanceof Error ? error.message : 'Unknown error'}`

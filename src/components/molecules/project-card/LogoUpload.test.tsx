@@ -118,12 +118,14 @@ describe('LogoUpload', () => {
     expect(mockOnLogoUploadedAction).not.toHaveBeenCalled()
   })
 
-  it('handles upload API response without download URL', async () => {
+  it('handles finalize returning no download URL', async () => {
     const mockFile = new File(['fake-image-content'], 'test.png', {
       type: 'image/png',
     })
 
-    vi.mocked(uploadProjectLogo).mockResolvedValue(undefined)
+    vi.mocked(uploadProjectLogo).mockRejectedValue(
+      new Error('Finalize logo upload returned no download URL')
+    )
 
     render(<LogoUpload {...defaultProps} />)
 
@@ -132,7 +134,7 @@ describe('LogoUpload', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('Error: Upload failed - no data returned')
+        screen.getByText('Error: Finalize logo upload returned no download URL')
       ).toBeInTheDocument()
     })
 

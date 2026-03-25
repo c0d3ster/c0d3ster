@@ -172,7 +172,11 @@ export const uploadProjectLogo = async (projectId: string, file: File) => {
 
   if (finalizeResult.error) throw new Error(finalizeResult.error.message)
 
-  return finalizeResult.data?.finalizeProjectLogoUpload
+  const downloadUrl = finalizeResult.data?.finalizeProjectLogoUpload
+  if (!downloadUrl) {
+    throw new Error('Finalize logo upload returned no download URL')
+  }
+  return downloadUrl
 }
 
 export const deleteFile = async (key: string) => {
