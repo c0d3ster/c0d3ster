@@ -17,6 +17,7 @@ import {
   isAdminRole,
   isDeveloperOrHigherRole,
 } from '@/utils'
+import { normalizeProjectStatusInput } from '@/utils/ProjectStatus'
 
 import type { FileService } from './FileService'
 
@@ -588,7 +589,7 @@ export class ProjectService {
     return updatedProject
   }
 
-  async updateProjectStatus(id: string, input: any, currentUserId?: string) {
+  async updateProjectStatus(id: string, input: any, currentUserId?: string, currentUserRole?: string) {
     if (!currentUserId) {
       throw new GraphQLError('Unauthorized', {
         extensions: { code: 'UNAUTHORIZED' },
@@ -605,13 +606,23 @@ export class ProjectService {
       })
     }
 
-    // Allow access if user is the client or developer of the project (regardless of role)
+    const isAdmin = isAdminRole(currentUserRole)
     const hasProjectAccess =
+      isAdmin ||
       project.clientId === currentUserId ||
       project.developerId === currentUserId
     if (!hasProjectAccess) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
+    let newStatus: ProjectStatus
+    try {
+      newStatus = normalizeProjectStatusInput(String(input.newStatus))
+    } catch {
+      throw new GraphQLError(`Invalid project status: ${String(input.newStatus)}`, {
+        extensions: { code: 'BAD_USER_INPUT' },
       })
     }
 
@@ -622,7 +633,7 @@ export class ProjectService {
         entityType: 'project',
         entityId: id,
         oldStatus: project.status,
-        newStatus: input.newStatus,
+        newStatus,
         progressPercentage: input.progressPercentage,
         updateMessage: input.updateMessage,
         isClientVisible: input.isClientVisible,
@@ -634,7 +645,7 @@ export class ProjectService {
     await db
       .update(schemas.projects)
       .set({
-        status: input.newStatus,
+        status: newStatus,
         progressPercentage: input.progressPercentage,
         updatedAt: new Date(),
       })
@@ -834,6 +845,7 @@ export class ProjectService {
               repositoryUrl: repo.html_url,
               stagingUrl,
               neonProjectId,
+              progressPercentage: 30,
               updatedAt: new Date(),
             })
             .where(eq(schemas.projects.id, projectId))
@@ -844,6 +856,17 @@ export class ProjectService {
               extensions: { code: 'UPDATE_FAILED' },
             })
           }
+
+          await tx.insert(schemas.statusUpdates).values({
+            entityType: 'project',
+            entityId: projectId,
+            oldStatus: project.status,
+            newStatus: project.status,
+            progressPercentage: 30,
+            updateMessage: 'Repository, database, and deployment pipeline provisioned.',
+            isClientVisible: false,
+            updatedBy: currentUserId,
+          })
 
           logger.info('Project provisioned', {
             projectId,

@@ -154,23 +154,29 @@ export class ProjectResolver {
     )
   }
 
-  @Mutation(() => Project)
+  @Mutation(() => StatusUpdate)
   async updateProjectStatus(
     @Arg('id', () => ID) id: string,
     @Arg('status', () => String) status: string,
-    @Arg('progressPercentage', () => Number, { nullable: true })
-    progressPercentage?: number
+    @Arg('progressPercentage', () => Number, { nullable: true }) progressPercentage?: number,
+    @Arg('updateMessage', () => String, { nullable: true }) updateMessage?: string,
+    @Arg('isClientVisible', () => Boolean, { nullable: true }) isClientVisible?: boolean
   ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
+    const trimmedMessage = updateMessage?.trim()
+    const resolvedMessage =
+      trimmedMessage ||
+      `Status updated to ${status}`
     return await this.projectService.updateProjectStatus(
       id,
       {
         newStatus: status,
         progressPercentage,
-        updateMessage: `Status updated to ${status}`,
-        isClientVisible: true,
+        updateMessage: resolvedMessage,
+        isClientVisible: isClientVisible ?? true,
       },
-      currentUser.id
+      currentUser.id,
+      currentUser.role
     )
   }
 

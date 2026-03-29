@@ -7,13 +7,18 @@ type ScrollFadeProps = {
   className?: string
 }
 
+/** When the block is taller than this fraction of the viewport, fade by viewport intersection instead of top-edge only (avoids hiding tall columns while scrolling). */
+const TALL_ELEMENT_HEIGHT_RATIO = 0.45
+
 export const ScrollFade = ({ children, className = '' }: ScrollFadeProps) => {
   const [scrollY, setScrollY] = useState(0)
   const [elementTop, setElementTop] = useState(0)
+  const [elementHeight, setElementHeight] = useState(0)
   const [isClient, setIsClient] = useState(false)
   const elementRef = useRef<HTMLDivElement>(null)
   const setScrollYRef = useRef(setScrollY)
   const setElementTopRef = useRef(setElementTop)
+  const setElementHeightRef = useRef(setElementHeight)
   const setIsClientRef = useRef(setIsClient)
 
   useEffect(() => {
@@ -21,17 +26,22 @@ export const ScrollFade = ({ children, className = '' }: ScrollFadeProps) => {
   }, [])
 
   useEffect(() => {
-    const handleScroll = () => {
+    const updatePosition = () => {
       setScrollYRef.current(window.scrollY)
       if (elementRef.current) {
         const rect = elementRef.current.getBoundingClientRect()
         setElementTopRef.current(rect.top + window.scrollY)
+        setElementHeightRef.current(rect.height)
       }
     }
 
-    handleScroll() // Initial position
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    updatePosition()
+    window.addEventListener('scroll', updatePosition, { passive: true })
+    window.addEventListener('resize', updatePosition)
+    return () => {
+      window.removeEventListener('scroll', updatePosition)
+      window.removeEventListener('resize', updatePosition)
+    }
   }, [])
 
   // Calculate animation based on element position relative to viewport
@@ -52,7 +62,22 @@ export const ScrollFade = ({ children, className = '' }: ScrollFadeProps) => {
   // If element is already in the stable center zone when component mounts, keep it at full opacity
   const isInStableZone = elementPosition <= center && elementPosition >= top15
 
-  if (elementPosition > viewportHeight) {
+  const isTallBlock =
+    elementHeight > 0 &&
+    viewportHeight > 0 &&
+    elementHeight > viewportHeight * TALL_ELEMENT_HEIGHT_RATIO
+
+  if (isTallBlock) {
+    // Top-edge-only zones would fade the whole block out while the user scrolls inside a tall column.
+    // Show full opacity whenever any part of the block intersects the viewport; hide only when fully off-screen.
+    const top = elementPosition
+    const bottom = top + elementHeight
+    if (bottom <= 0 || top >= viewportHeight) {
+      opacity = 0
+    } else {
+      opacity = 1
+    }
+  } else if (elementPosition > viewportHeight) {
     // Below viewport: invisible
     opacity = 0
   } else if (elementPosition > bottom15) {
@@ -67,8 +92,11 @@ export const ScrollFade = ({ children, className = '' }: ScrollFadeProps) => {
     // Top zone: linear fade from 1 at top15 to 0 at viewport top
     const linearProgress = elementPosition / top15
     opacity = linearProgress // 1 to 0 linearly
+  } else if (elementPosition + elementHeight > 0) {
+    // Top edge is above the viewport but the block still intersects it (short blocks, or before tall-branch threshold)
+    opacity = 1
   } else {
-    // Above viewport: invisible
+    // Fully scrolled past (above viewport)
     opacity = 0
   }
 

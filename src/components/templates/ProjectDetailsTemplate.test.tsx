@@ -116,6 +116,20 @@ describe('ProjectDetailsTemplate', () => {
     )
   })
 
+  it('renders completion progress when progressPercentage is set', () => {
+    render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(screen.getByText('COMPLETION')).toBeInTheDocument()
+    expect(screen.getByText('100%')).toBeInTheDocument()
+  })
+
+  it('does not render completion block when progressPercentage is null', () => {
+    const noProgress = { ...mockProject, progressPercentage: null }
+    render(<ProjectDetailsTemplate project={noProgress} />)
+
+    expect(screen.queryByText('COMPLETION')).not.toBeInTheDocument()
+  })
+
   it('renders technologies used section', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 

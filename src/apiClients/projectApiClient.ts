@@ -139,6 +139,39 @@ export const PROVISION_PROJECT_REPO = gql`
   }
 `
 
+export const UPDATE_PROJECT_STATUS = gql`
+  mutation UpdateProjectStatus(
+    $id: ID!
+    $status: String!
+    $progressPercentage: Float
+    $updateMessage: String
+    $isClientVisible: Boolean
+  ) {
+    updateProjectStatus(
+      id: $id
+      status: $status
+      progressPercentage: $progressPercentage
+      updateMessage: $updateMessage
+      isClientVisible: $isClientVisible
+    ) {
+      id
+      entityType
+      entityId
+      oldStatus
+      newStatus
+      progressPercentage
+      updateMessage
+      isClientVisible
+      updatedBy
+      createdAt
+      updatedByUser {
+        ...UserDisplay
+      }
+    }
+  }
+  ${USER_DISPLAY_FRAGMENT}
+`
+
 // Hooks for components
 export const useGetProjects = (filter?: ProjectFilter, userEmail?: string) =>
   useGetProjectsQuery({
@@ -159,6 +192,7 @@ export const useGetProjectBySlug = (slug: string) =>
 
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 export const useProvisionProjectRepo = () => useProvisionProjectRepoMutation()
+export const useUpdateProjectStatus = () => useMutation(UPDATE_PROJECT_STATUS)
 
 // Async functions for SSR / non-hook usage
 export const getProjects = async (

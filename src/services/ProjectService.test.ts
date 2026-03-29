@@ -913,6 +913,36 @@ describe('ProjectService', () => {
       expect(result).toEqual({ id: 'status-123' })
     })
 
+    it('normalizes codegen-style status strings (e.g. InProgress) to DB enum values', async () => {
+      const valuesSpy = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([{ id: 'status-123' }]),
+      })
+      mockDbInsert.mockReturnValue({ values: valuesSpy } as any)
+      mockDbUpdate.mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(undefined),
+        }),
+      } as any)
+      mockDbQuery.findFirst.mockResolvedValue(mockProject)
+
+      await projectService.updateProjectStatus(
+        'project-123',
+        {
+          newStatus: 'InProgress' as any,
+          updateMessage: 'provisioned it',
+          isClientVisible: true,
+        },
+        'developer-123',
+        'developer'
+      )
+
+      expect(valuesSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          newStatus: 'in_progress',
+        })
+      )
+    })
+
     it('should throw error when user not authenticated', async () => {
       await expect(
         projectService.updateProjectStatus(
