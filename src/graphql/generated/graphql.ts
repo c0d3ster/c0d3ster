@@ -120,7 +120,7 @@ export type Mutation = {
   readonly updateProject: Project;
   readonly updateProjectRequest: ProjectRequest;
   readonly updateProjectRequestStatus: ProjectRequest;
-  readonly updateProjectStatus: Project;
+  readonly updateProjectStatus: StatusUpdate;
   readonly updateUser: User;
 };
 
@@ -200,8 +200,10 @@ export type MutationUpdateProjectRequestStatusArgs = {
 
 export type MutationUpdateProjectStatusArgs = {
   id: Scalars['ID']['input'];
+  isClientVisible?: InputMaybe<Scalars['Boolean']['input']>;
   progressPercentage?: InputMaybe<Scalars['Float']['input']>;
   status: Scalars['String']['input'];
+  updateMessage?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -628,6 +630,17 @@ export type ProvisionProjectRepoMutationVariables = Exact<{
 
 
 export type ProvisionProjectRepoMutation = { readonly __typename?: 'Mutation', readonly provisionProjectRepo: { readonly __typename?: 'Project', readonly id: string, readonly projectName: string, readonly repositoryUrl?: string | null, readonly stagingUrl?: string | null } };
+
+export type UpdateProjectStatusMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  status: Scalars['String']['input'];
+  progressPercentage?: InputMaybe<Scalars['Float']['input']>;
+  updateMessage?: InputMaybe<Scalars['String']['input']>;
+  isClientVisible?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type UpdateProjectStatusMutation = { readonly __typename?: 'Mutation', readonly updateProjectStatus: { readonly __typename?: 'StatusUpdate', readonly id: string, readonly entityType: string, readonly entityId: string, readonly oldStatus?: ProjectStatus | null, readonly newStatus: ProjectStatus, readonly progressPercentage?: number | null, readonly updateMessage: string, readonly isClientVisible: boolean, readonly updatedBy: string, readonly createdAt: string, readonly updatedByUser?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } };
 
 export type GetProjectRequestsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1270,6 +1283,58 @@ export function useProvisionProjectRepoMutation(baseOptions?: ApolloReactHooks.M
         return ApolloReactHooks.useMutation<ProvisionProjectRepoMutation, ProvisionProjectRepoMutationVariables>(ProvisionProjectRepoDocument, options);
       }
 export type ProvisionProjectRepoMutationHookResult = ReturnType<typeof useProvisionProjectRepoMutation>;
+export const UpdateProjectStatusDocument = gql`
+    mutation UpdateProjectStatus($id: ID!, $status: String!, $progressPercentage: Float, $updateMessage: String, $isClientVisible: Boolean) {
+  updateProjectStatus(
+    id: $id
+    status: $status
+    progressPercentage: $progressPercentage
+    updateMessage: $updateMessage
+    isClientVisible: $isClientVisible
+  ) {
+    id
+    entityType
+    entityId
+    oldStatus
+    newStatus
+    progressPercentage
+    updateMessage
+    isClientVisible
+    updatedBy
+    createdAt
+    updatedByUser {
+      ...UserDisplay
+    }
+  }
+}
+    ${UserDisplayFragmentDoc}`;
+
+/**
+ * __useUpdateProjectStatusMutation__
+ *
+ * To run a mutation, you first call `useUpdateProjectStatusMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateProjectStatusMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateProjectStatusMutation, { data, loading, error }] = useUpdateProjectStatusMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      status: // value for 'status'
+ *      progressPercentage: // value for 'progressPercentage'
+ *      updateMessage: // value for 'updateMessage'
+ *      isClientVisible: // value for 'isClientVisible'
+ *   },
+ * });
+ */
+export function useUpdateProjectStatusMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateProjectStatusMutation, UpdateProjectStatusMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateProjectStatusMutation, UpdateProjectStatusMutationVariables>(UpdateProjectStatusDocument, options);
+      }
+export type UpdateProjectStatusMutationHookResult = ReturnType<typeof useUpdateProjectStatusMutation>;
 export const GetProjectRequestsDocument = gql`
     query GetProjectRequests {
   projectRequests {

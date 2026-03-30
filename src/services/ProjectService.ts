@@ -17,17 +17,12 @@ import {
   isAdminRole,
   isDeveloperOrHigherRole,
 } from '@/utils'
+import { normalizeProjectStatusInput } from '@/utils/ProjectStatus'
 
 import type { FileService } from './FileService'
 
-import {
-  createRepoFromTemplate,
-  deleteRepo,
-} from './GitHubService'
-import {
-  createNeonProject,
-  deleteNeonProject,
-} from './NeonService'
+import { createRepoFromTemplate, deleteRepo } from './GitHubService'
+import { createNeonProject, deleteNeonProject } from './NeonService'
 import {
   addVercelEnvVar,
   createVercelProject,
@@ -588,7 +583,12 @@ export class ProjectService {
     return updatedProject
   }
 
-  async updateProjectStatus(id: string, input: any, currentUserId?: string) {
+  async updateProjectStatus(
+    id: string,
+    input: any,
+    currentUserId?: string,
+    currentUserRole?: string
+  ) {
     if (!currentUserId) {
       throw new GraphQLError('Unauthorized', {
         extensions: { code: 'UNAUTHORIZED' },
@@ -605,14 +605,24 @@ export class ProjectService {
       })
     }
 
-    // Allow access if user is the client or developer of the project (regardless of role)
-    const hasProjectAccess =
-      project.clientId === currentUserId ||
-      project.developerId === currentUserId
+    const isAdmin = isAdminRole(currentUserRole)
+    const hasProjectAccess = isAdmin || project.developerId === currentUserId
     if (!hasProjectAccess) {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
+    }
+
+    let newStatus: ProjectStatus
+    try {
+      newStatus = normalizeProjectStatusInput(String(input.newStatus))
+    } catch {
+      throw new GraphQLError(
+        `Invalid project status: ${String(input.newStatus)}`,
+        {
+          extensions: { code: 'BAD_USER_INPUT' },
+        }
+      )
     }
 
     // Create status update
@@ -622,7 +632,7 @@ export class ProjectService {
         entityType: 'project',
         entityId: id,
         oldStatus: project.status,
-        newStatus: input.newStatus,
+        newStatus,
         progressPercentage: input.progressPercentage,
         updateMessage: input.updateMessage,
         isClientVisible: input.isClientVisible,
@@ -634,7 +644,7 @@ export class ProjectService {
     await db
       .update(schemas.projects)
       .set({
-        status: input.newStatus,
+        status: newStatus,
         progressPercentage: input.progressPercentage,
         updatedAt: new Date(),
       })
@@ -743,120 +753,145 @@ export class ProjectService {
     }
 
     return await db.transaction(async (tx) => {
-        const [project] = await tx
-          .select()
-          .from(schemas.projects)
-          .where(eq(schemas.projects.id, projectId))
-          .for('update')
+      const [project] = await tx
+        .select()
+        .from(schemas.projects)
+        .where(eq(schemas.projects.id, projectId))
+        .for('update')
 
-        if (!project) {
-          throw new GraphQLError('Project not found', {
-            extensions: { code: 'PROJECT_NOT_FOUND' },
-          })
+      if (!project) {
+        throw new GraphQLError('Project not found', {
+          extensions: { code: 'PROJECT_NOT_FOUND' },
+        })
+      }
+
+      // Only admins or the assigned developer may provision
+      const isAdmin = isAdminRole(currentUserRole)
+      const isAssignedDeveloper = project.developerId === currentUserId
+
+      if (!isAdmin && !isAssignedDeveloper) {
+        throw new GraphQLError('Access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
+
+      if (project.repositoryUrl) {
+        throw new GraphQLError(
+          'Repository already provisioned for this project',
+          { extensions: { code: 'REPO_ALREADY_PROVISIONED' } }
+        )
+      }
+
+      const repoName = generateSlug(project.projectName)
+
+      const client = await tx
+        .select({ email: schemas.users.email })
+        .from(schemas.users)
+        .where(eq(schemas.users.id, project.clientId))
+        .then((rows) => rows[0])
+
+      if (!client) {
+        throw new GraphQLError('Client not found', {
+          extensions: { code: 'CLIENT_NOT_FOUND' },
+        })
+      }
+
+      logger.info('Provisioning project', { projectId, repoName })
+
+      try {
+        repo = await createRepoFromTemplate(
+          repoName,
+          `Repository for ${project.projectName}`
+        )
+
+        const stagingUrl = await createVercelProject(repo.name)
+        vercelProjectName = repo.name
+
+        await addVercelEnvVar(
+          repo.name,
+          'NEXT_PUBLIC_BRAND_NAME',
+          project.projectName
+        )
+        await addVercelEnvVar(repo.name, 'SUPPORT_EMAIL', client.email)
+
+        const features = project.features ?? []
+
+        if (features.includes(ProjectFeature.Database)) {
+          const { neonProjectId: neonId, databaseUrl } =
+            await createNeonProject(repoName)
+          neonProjectId = neonId
+          await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
         }
 
-        // Only admins or the assigned developer may provision
-        const isAdmin = isAdminRole(currentUserRole)
-        const isAssignedDeveloper = project.developerId === currentUserId
-
-        if (!isAdmin && !isAssignedDeveloper) {
-          throw new GraphQLError('Access denied', {
-            extensions: { code: 'FORBIDDEN' },
-          })
+        if (features.includes(ProjectFeature.Email) && Env.RESEND_API_KEY) {
+          await addVercelEnvVar(repo.name, 'RESEND_API_KEY', Env.RESEND_API_KEY)
         }
 
-        if (project.repositoryUrl) {
-          throw new GraphQLError(
-            'Repository already provisioned for this project',
-            { extensions: { code: 'REPO_ALREADY_PROVISIONED' } }
+        if (Env.R2_ACCOUNT_ID)
+          await addVercelEnvVar(repo.name, 'R2_ACCOUNT_ID', Env.R2_ACCOUNT_ID)
+        if (Env.R2_ACCESS_KEY_ID)
+          await addVercelEnvVar(
+            repo.name,
+            'R2_ACCESS_KEY_ID',
+            Env.R2_ACCESS_KEY_ID
           )
-        }
-
-        const repoName = generateSlug(project.projectName)
-
-        const client = await tx
-          .select({ email: schemas.users.email })
-          .from(schemas.users)
-          .where(eq(schemas.users.id, project.clientId))
-          .then((rows) => rows[0])
-
-        if (!client) {
-          throw new GraphQLError('Client not found', {
-            extensions: { code: 'CLIENT_NOT_FOUND' },
-          })
-        }
-
-        logger.info('Provisioning project', { projectId, repoName })
-
-        try {
-          repo = await createRepoFromTemplate(
-            repoName,
-            `Repository for ${project.projectName}`
+        if (Env.R2_SECRET_ACCESS_KEY)
+          await addVercelEnvVar(
+            repo.name,
+            'R2_SECRET_ACCESS_KEY',
+            Env.R2_SECRET_ACCESS_KEY
           )
+        if (Env.R2_BUCKET_NAME)
+          await addVercelEnvVar(repo.name, 'R2_BUCKET_NAME', Env.R2_BUCKET_NAME)
 
-          const stagingUrl = await createVercelProject(repo.name)
-          vercelProjectName = repo.name
+        if (project.logo && project.logo.includes('projects/')) {
+          await addVercelEnvVar(repo.name, 'PROJECT_LOGO_KEY', project.logo)
+        }
 
-          await addVercelEnvVar(repo.name, 'NEXT_PUBLIC_BRAND_NAME', project.projectName)
-          await addVercelEnvVar(repo.name, 'SUPPORT_EMAIL', client.email)
+        await triggerVercelDeployment(repo.name)
 
-          const features = project.features ?? []
-
-          if (features.includes(ProjectFeature.Database)) {
-            const { neonProjectId: neonId, databaseUrl } =
-              await createNeonProject(repoName)
-            neonProjectId = neonId
-            await addVercelEnvVar(repo.name, 'DATABASE_URL', databaseUrl)
-          }
-
-          if (features.includes(ProjectFeature.Email) && Env.RESEND_API_KEY) {
-            await addVercelEnvVar(repo.name, 'RESEND_API_KEY', Env.RESEND_API_KEY)
-          }
-
-          if (Env.R2_ACCOUNT_ID)
-            await addVercelEnvVar(repo.name, 'R2_ACCOUNT_ID', Env.R2_ACCOUNT_ID)
-          if (Env.R2_ACCESS_KEY_ID)
-            await addVercelEnvVar(repo.name, 'R2_ACCESS_KEY_ID', Env.R2_ACCESS_KEY_ID)
-          if (Env.R2_SECRET_ACCESS_KEY)
-            await addVercelEnvVar(repo.name, 'R2_SECRET_ACCESS_KEY', Env.R2_SECRET_ACCESS_KEY)
-          if (Env.R2_BUCKET_NAME)
-            await addVercelEnvVar(repo.name, 'R2_BUCKET_NAME', Env.R2_BUCKET_NAME)
-
-          if (project.logo && project.logo.includes('projects/')) {
-            await addVercelEnvVar(repo.name, 'PROJECT_LOGO_KEY', project.logo)
-          }
-
-          await triggerVercelDeployment(repo.name)
-
-          const [updatedProject] = await tx
-            .update(schemas.projects)
-            .set({
-              repositoryUrl: repo.html_url,
-              stagingUrl,
-              neonProjectId,
-              updatedAt: new Date(),
-            })
-            .where(eq(schemas.projects.id, projectId))
-            .returning()
-
-          if (!updatedProject) {
-            throw new GraphQLError('Failed to save provisioning data', {
-              extensions: { code: 'UPDATE_FAILED' },
-            })
-          }
-
-          logger.info('Project provisioned', {
-            projectId,
-            repoUrl: repo.html_url,
+        const [updatedProject] = await tx
+          .update(schemas.projects)
+          .set({
+            repositoryUrl: repo.html_url,
             stagingUrl,
             neonProjectId,
+            progressPercentage: 30,
+            updatedAt: new Date(),
           })
+          .where(eq(schemas.projects.id, projectId))
+          .returning()
 
-          return updatedProject
-        } catch (provisioningError) {
-          await rollback()
-          throw provisioningError
+        if (!updatedProject) {
+          throw new GraphQLError('Failed to save provisioning data', {
+            extensions: { code: 'UPDATE_FAILED' },
+          })
         }
-      })
+
+        await tx.insert(schemas.statusUpdates).values({
+          entityType: 'project',
+          entityId: projectId,
+          oldStatus: project.status,
+          newStatus: project.status,
+          progressPercentage: 30,
+          updateMessage:
+            'Repository, database, and deployment pipeline provisioned.',
+          isClientVisible: false,
+          updatedBy: currentUserId,
+        })
+
+        logger.info('Project provisioned', {
+          projectId,
+          repoUrl: repo.html_url,
+          stagingUrl,
+          neonProjectId,
+        })
+
+        return updatedProject
+      } catch (provisioningError) {
+        await rollback()
+        throw provisioningError
+      }
+    })
   }
 }

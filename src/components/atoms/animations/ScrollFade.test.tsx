@@ -51,6 +51,11 @@ describe('ScrollFade', () => {
 
     expect(addEventListenerSpy).toHaveBeenCalledWith(
       'scroll',
+      expect.any(Function),
+      { passive: true }
+    )
+    expect(addEventListenerSpy).toHaveBeenCalledWith(
+      'resize',
       expect.any(Function)
     )
   })
@@ -67,6 +72,10 @@ describe('ScrollFade', () => {
 
     expect(removeEventListenerSpy).toHaveBeenCalledWith(
       'scroll',
+      expect.any(Function)
+    )
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'resize',
       expect.any(Function)
     )
   })

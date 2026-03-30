@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
 import { FaPencilAlt } from 'react-icons/fa'
 
 import type { Project } from '@/graphql/generated/graphql'
@@ -16,6 +17,7 @@ import {
 import {
   AnimatedHeading,
   LogoUpload,
+  PostUpdatePanel,
   StatusHistory,
 } from '@/components/molecules'
 import { UserRole } from '@/graphql/generated/graphql'
@@ -31,6 +33,7 @@ type ProjectDetailsTemplateProps = {
 export const ProjectDetailsTemplate = ({
   project,
 }: ProjectDetailsTemplateProps) => {
+  const router = useRouter()
   const { data: meData, loading: meLoading } = useGetMe()
   const [provisionProjectRepo, { loading: provisioning }] =
     useProvisionProjectRepo()
@@ -40,6 +43,8 @@ export const ProjectDetailsTemplate = ({
   const [stagingUrl, setStagingUrl] = useState<string | null>(
     project.stagingUrl || null
   )
+  const [optimisticStatus, setOptimisticStatus] = useOptimistic(project.status)
+  const [optimisticProgress, setOptimisticProgress] = useOptimistic(project.progressPercentage)
   const [showLogoUpload, setShowLogoUpload] = useState(false)
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
     project.logo || null
@@ -86,6 +91,14 @@ export const ProjectDetailsTemplate = ({
         meData.me.id === project.developerId)) &&
     !repoUrl
 
+  const canPostUpdate =
+    !meLoading &&
+    meData?.me &&
+    (meData.me.role === UserRole.Admin ||
+      meData.me.role === UserRole.SuperAdmin ||
+      (meData.me.role === UserRole.Developer &&
+        meData.me.id === project.developerId))
+
   const handleProvisionRepo = async () => {
     try {
       const result = await provisionProjectRepo({
@@ -119,7 +132,7 @@ export const ProjectDetailsTemplate = ({
   return (
     <CleanPageTemplate>
       <BackButton useBack text='BACK' />
-      <div className='container mx-auto px-4'>
+      <div className='container mx-auto px-4 pb-8 md:pb-12'>
         {/* Project Header */}
         <ScrollFade>
           <div className='mb-16 text-center'>
@@ -219,9 +232,9 @@ export const ProjectDetailsTemplate = ({
               {/* Status Badge */}
               <div className='text-center'>
                 <span
-                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusCardStyling(project.status)}`}
+                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusCardStyling(optimisticStatus)}`}
                 >
-                  {formatStatus(project.status)}
+                  {formatStatus(optimisticStatus)}
                 </span>
               </div>
             </div>
@@ -230,6 +243,45 @@ export const ProjectDetailsTemplate = ({
           {/* Project Details */}
           <ScrollFade>
             <div className='space-y-8'>
+              {/* Post update — primary action for admins / assigned dev */}
+              {canPostUpdate && (
+                <PostUpdatePanel
+                  projectId={project.id}
+                  currentStatus={optimisticStatus}
+                  currentProgress={optimisticProgress}
+                  onSuccess={(newStatus, newProgress) => {
+                    startTransition(() => {
+                      setOptimisticStatus(newStatus)
+                      if (newProgress !== undefined) setOptimisticProgress(newProgress)
+                      router.refresh()
+                    })
+                  }}
+                />
+              )}
+
+              {/* Completion */}
+              {optimisticProgress != null && (
+                <div className='space-y-2'>
+                  <h3 className='font-mono text-xl font-bold text-green-400'>
+                    COMPLETION
+                  </h3>
+                  <div className='flex justify-between font-mono text-sm'>
+                    <span className='text-green-300/60'>Progress</span>
+                    <span className='text-green-400'>
+                      {Math.round(optimisticProgress)}%
+                    </span>
+                  </div>
+                  <div className='h-2 w-full rounded-full bg-green-400/20'>
+                    <div
+                      className='h-full max-w-full rounded-full bg-green-400 transition-all duration-300'
+                      style={{
+                        width: `${Math.min(100, Math.max(0, optimisticProgress))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Tech Stack */}
               {(project.techStack ?? []).filter(
                 (t: string | null | undefined): t is string => Boolean(t)
@@ -266,7 +318,10 @@ export const ProjectDetailsTemplate = ({
               </div>
 
               {/* Status History */}
-              <StatusHistory statusUpdates={project.statusUpdates || []} />
+              <StatusHistory
+                statusUpdates={project.statusUpdates || []}
+                hideInternal={!canPostUpdate}
+              />
             </div>
           </ScrollFade>
         </div>

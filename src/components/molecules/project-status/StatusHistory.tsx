@@ -11,17 +11,21 @@ import {
 
 type StatusHistoryProps = {
   statusUpdates: ReadonlyArray<StatusUpdate | null | undefined>
+  hideInternal?: boolean
 }
 
-export const StatusHistory = ({ statusUpdates }: StatusHistoryProps) => {
+export const StatusHistory = ({ statusUpdates, hideInternal = false }: StatusHistoryProps) => {
   // Don't render if no status updates
   if (!statusUpdates || statusUpdates.length === 0) {
     return null
   }
 
-  // Filter out null/undefined updates and sort by creation date (oldest first)
+  // Filter out null/undefined updates, and optionally internal-only ones
   const validUpdates = statusUpdates.filter(
-    (update): update is StatusUpdate => update !== null && update !== undefined
+    (update): update is StatusUpdate =>
+      update !== null &&
+      update !== undefined &&
+      (!hideInternal || update.isClientVisible)
   )
 
   if (validUpdates.length === 0) {
