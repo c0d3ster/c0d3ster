@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
 import { FaPencilAlt } from 'react-icons/fa'
 
 import type { Project } from '@/graphql/generated/graphql'
@@ -43,6 +43,8 @@ export const ProjectDetailsTemplate = ({
   const [stagingUrl, setStagingUrl] = useState<string | null>(
     project.stagingUrl || null
   )
+  const [optimisticStatus, setOptimisticStatus] = useOptimistic(project.status)
+  const [optimisticProgress, setOptimisticProgress] = useOptimistic(project.progressPercentage)
   const [showLogoUpload, setShowLogoUpload] = useState(false)
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
     project.logo || null
@@ -230,9 +232,9 @@ export const ProjectDetailsTemplate = ({
               {/* Status Badge */}
               <div className='text-center'>
                 <span
-                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusCardStyling(project.status)}`}
+                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusCardStyling(optimisticStatus)}`}
                 >
-                  {formatStatus(project.status)}
+                  {formatStatus(optimisticStatus)}
                 </span>
               </div>
             </div>
@@ -245,14 +247,20 @@ export const ProjectDetailsTemplate = ({
               {canPostUpdate && (
                 <PostUpdatePanel
                   projectId={project.id}
-                  currentStatus={project.status}
-                  currentProgress={project.progressPercentage}
-                  onSuccess={() => router.refresh()}
+                  currentStatus={optimisticStatus}
+                  currentProgress={optimisticProgress}
+                  onSuccess={(newStatus, newProgress) => {
+                    startTransition(() => {
+                      setOptimisticStatus(newStatus)
+                      if (newProgress !== undefined) setOptimisticProgress(newProgress)
+                      router.refresh()
+                    })
+                  }}
                 />
               )}
 
               {/* Completion */}
-              {project.progressPercentage != null && (
+              {optimisticProgress != null && (
                 <div className='space-y-2'>
                   <h3 className='font-mono text-xl font-bold text-green-400'>
                     COMPLETION
@@ -260,14 +268,14 @@ export const ProjectDetailsTemplate = ({
                   <div className='flex justify-between font-mono text-sm'>
                     <span className='text-green-300/60'>Progress</span>
                     <span className='text-green-400'>
-                      {Math.round(project.progressPercentage)}%
+                      {Math.round(optimisticProgress)}%
                     </span>
                   </div>
                   <div className='h-2 w-full rounded-full bg-green-400/20'>
                     <div
                       className='h-full max-w-full rounded-full bg-green-400 transition-all duration-300'
                       style={{
-                        width: `${Math.min(100, Math.max(0, project.progressPercentage))}%`,
+                        width: `${Math.min(100, Math.max(0, optimisticProgress))}%`,
                       }}
                     />
                   </div>
@@ -310,7 +318,10 @@ export const ProjectDetailsTemplate = ({
               </div>
 
               {/* Status History */}
-              <StatusHistory statusUpdates={project.statusUpdates || []} />
+              <StatusHistory
+                statusUpdates={project.statusUpdates || []}
+                hideInternal={!canPostUpdate}
+              />
             </div>
           </ScrollFade>
         </div>

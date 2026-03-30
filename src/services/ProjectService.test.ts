@@ -1218,6 +1218,12 @@ describe('ProjectService', () => {
           }),
         })
 
+    /** provisionProjectRepo inserts a status update inside the same transaction */
+    const createMockTxInsert = () =>
+      vi.fn().mockReturnValue({
+        values: vi.fn().mockResolvedValue(undefined),
+      })
+
     const setupHappyPathTransaction = () => {
       mockDbTransaction.mockImplementation(async (callback) => {
         const mockTx = {
@@ -1229,6 +1235,7 @@ describe('ProjectService', () => {
               }),
             }),
           }),
+          insert: createMockTxInsert(),
         }
         return callback(mockTx as any)
       })
@@ -1373,6 +1380,7 @@ describe('ProjectService', () => {
               }),
             }),
           }),
+          insert: createMockTxInsert(),
         }
         return callback(mockTx as any)
       })
@@ -1424,6 +1432,7 @@ describe('ProjectService', () => {
               }),
             }),
           }),
+          insert: createMockTxInsert(),
         }
         return callback(mockTx as any)
       })
@@ -1510,6 +1519,7 @@ describe('ProjectService', () => {
               }),
             }),
           }),
+          insert: createMockTxInsert(),
         }
         return callback(mockTx as any)
       })
@@ -1562,6 +1572,7 @@ describe('ProjectService', () => {
               }
             }),
           }),
+          insert: createMockTxInsert(),
         }
         return callback(mockTx as any)
       })

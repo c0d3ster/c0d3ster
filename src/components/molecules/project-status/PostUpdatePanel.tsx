@@ -12,7 +12,7 @@ type PostUpdatePanelProps = {
   projectId: string
   currentStatus: ProjectStatus
   currentProgress: number | null | undefined
-  onSuccess: () => void
+  onSuccess: (newStatus: ProjectStatus, newProgress: number | undefined) => void
 }
 
 const ALL_STATUSES = [
@@ -82,7 +82,7 @@ export const PostUpdatePanel = ({
       })
       Toast.success('Update posted.')
       setMessage('')
-      onSuccess()
+      onSuccess(status, parsedProgress)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to post update.'
       Toast.error(msg)
