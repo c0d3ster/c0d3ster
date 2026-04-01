@@ -1,6 +1,7 @@
 'use client'
 
 import { ApolloProvider } from '@apollo/client/react'
+import { Analytics } from '@vercel/analytics/next'
 
 import { PostHogProvider } from '@/analytics'
 import { ToastContainer } from '@/components/atoms'
@@ -22,6 +23,7 @@ export default function RootLayout({
               <QueryProvider>
                 {children}
                 <ToastContainer />
+                <Analytics />
               </QueryProvider>
             </ApolloProvider>
           </PostHogProvider>
