@@ -119,6 +119,15 @@ export const GET_PROJECT_BY_SLUG = gql`
   ${USER_DISPLAY_FRAGMENT}
 `
 
+export const UPDATE_PROJECT = gql`
+  mutation UpdateProject($id: ID!, $featured: Boolean) {
+    updateProject(id: $id, input: { featured: $featured }) {
+      id
+      featured
+    }
+  }
+`
+
 export const ASSIGN_PROJECT = gql`
   mutation AssignProject($projectId: ID!, $developerId: ID!) {
     assignProject(projectId: $projectId, developerId: $developerId) {
@@ -190,6 +199,7 @@ export const useGetProjectBySlug = (slug: string) =>
     variables: { slug },
   })
 
+export const useUpdateProject = () => useMutation(UPDATE_PROJECT)
 export const useAssignProject = () => useMutation(ASSIGN_PROJECT)
 export const useProvisionProjectRepo = () => useProvisionProjectRepoMutation()
 export const useUpdateProjectStatus = () => useMutation(UPDATE_PROJECT_STATUS)

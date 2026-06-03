@@ -3,11 +3,11 @@
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
-import { FaPencilAlt } from 'react-icons/fa'
+import { FaPencilAlt, FaRegStar, FaStar } from 'react-icons/fa'
 
 import type { Project } from '@/graphql/generated/graphql'
 
-import { useGetFile, useGetMe, useProvisionProjectRepo } from '@/apiClients'
+import { useGetFile, useGetMe, useProvisionProjectRepo, useUpdateProject } from '@/apiClients'
 import {
   BackButton,
   Button,
@@ -37,12 +37,14 @@ export const ProjectDetailsTemplate = ({
   const { data: meData, loading: meLoading } = useGetMe()
   const [provisionProjectRepo, { loading: provisioning }] =
     useProvisionProjectRepo()
+  const [updateProject, { loading: updatingFeatured }] = useUpdateProject()
   const [repoUrl, setRepoUrl] = useState<string | null>(
     project.repositoryUrl || null
   )
   const [stagingUrl, setStagingUrl] = useState<string | null>(
     project.stagingUrl || null
   )
+  const [featured, setFeatured] = useState(project.featured)
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(project.status)
   const [optimisticProgress, setOptimisticProgress] = useOptimistic(project.progressPercentage)
   const [showLogoUpload, setShowLogoUpload] = useState(false)
@@ -127,6 +129,17 @@ export const ProjectDetailsTemplate = ({
     // Update the logo URL directly with the presigned URL from the mutation
     setCurrentLogoUrl(logoUrl)
     setShowLogoUpload(false)
+  }
+
+  const handleToggleFeatured = async () => {
+    const next = !featured
+    setFeatured(next)
+    try {
+      await updateProject({ variables: { id: project.id, featured: next } })
+    } catch {
+      setFeatured(!next)
+      Toast.error('Failed to update featured status')
+    }
   }
 
   return (
@@ -243,6 +256,23 @@ export const ProjectDetailsTemplate = ({
           {/* Project Details */}
           <ScrollFade>
             <div className='space-y-8'>
+              {/* Featured toggle — client only */}
+              {isClient && (
+                <div className='flex justify-end'>
+                  <button
+                    type='button'
+                    onClick={handleToggleFeatured}
+                    disabled={updatingFeatured}
+                    className='cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
+                    title={featured ? 'Remove from featured' : 'Add to featured'}
+                  >
+                    {featured
+                      ? <FaStar className='h-5 w-5' />
+                      : <FaRegStar className='h-5 w-5' />}
+                  </button>
+                </div>
+              )}
+
               {/* Post update — primary action for admins / assigned dev */}
               {canPostUpdate && (
                 <PostUpdatePanel

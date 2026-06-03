@@ -616,6 +616,14 @@ export type GetProjectBySlugQueryVariables = Exact<{
 
 export type GetProjectBySlugQuery = { readonly __typename?: 'Query', readonly projectBySlug?: { readonly __typename?: 'Project', readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly budget?: number | null, readonly features?: ReadonlyArray<ProjectFeature> | null, readonly techStack?: ReadonlyArray<string> | null, readonly status: ProjectStatus, readonly progressPercentage?: number | null, readonly priority?: ProjectPriority | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly repositoryUrl?: string | null, readonly liveUrl?: string | null, readonly stagingUrl?: string | null, readonly featured: boolean, readonly logo?: string | null, readonly createdAt: string, readonly updatedAt: string, readonly clientId: string, readonly developerId?: string | null, readonly requestId?: string | null, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly collaborators?: ReadonlyArray<{ readonly __typename?: 'ProjectCollaborator', readonly id: string, readonly role: string, readonly joinedAt: string, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> | null, readonly statusUpdates?: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly entityType: string, readonly entityId: string, readonly oldStatus?: ProjectStatus | null, readonly newStatus: ProjectStatus, readonly progressPercentage?: number | null, readonly updateMessage: string, readonly isClientVisible: boolean, readonly updatedBy: string, readonly createdAt: string, readonly updatedByUser?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> | null } | null };
 
+export type UpdateProjectMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  featured?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type UpdateProjectMutation = { readonly __typename?: 'Mutation', readonly updateProject: { readonly __typename?: 'Project', readonly id: string, readonly featured: boolean } };
+
 export type AssignProjectMutationVariables = Exact<{
   projectId: Scalars['ID']['input'];
   developerId: Scalars['ID']['input'];
@@ -1219,6 +1227,38 @@ export function useGetProjectBySlugLazyQuery(baseOptions?: ApolloReactHooks.Lazy
         }
 export type GetProjectBySlugQueryHookResult = ReturnType<typeof useGetProjectBySlugQuery>;
 export type GetProjectBySlugLazyQueryHookResult = ReturnType<typeof useGetProjectBySlugLazyQuery>;
+export const UpdateProjectDocument = gql`
+    mutation UpdateProject($id: ID!, $featured: Boolean) {
+  updateProject(id: $id, input: {featured: $featured}) {
+    id
+    featured
+  }
+}
+    `;
+
+/**
+ * __useUpdateProjectMutation__
+ *
+ * To run a mutation, you first call `useUpdateProjectMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateProjectMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateProjectMutation, { data, loading, error }] = useUpdateProjectMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      featured: // value for 'featured'
+ *   },
+ * });
+ */
+export function useUpdateProjectMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateProjectMutation, UpdateProjectMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateProjectMutation, UpdateProjectMutationVariables>(UpdateProjectDocument, options);
+      }
+export type UpdateProjectMutationHookResult = ReturnType<typeof useUpdateProjectMutation>;
 export const AssignProjectDocument = gql`
     mutation AssignProject($projectId: ID!, $developerId: ID!) {
   assignProject(projectId: $projectId, developerId: $developerId) {
