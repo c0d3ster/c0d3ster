@@ -101,6 +101,12 @@ export const ProjectDetailsTemplate = ({
       (meData.me.role === UserRole.Developer &&
         meData.me.id === project.developerId))
 
+  const canManageFeatured =
+    !meLoading &&
+    meData?.me &&
+    (meData.me.role === UserRole.Admin ||
+      meData.me.role === UserRole.SuperAdmin)
+
   const handleProvisionRepo = async () => {
     try {
       const result = await provisionProjectRepo({
@@ -256,8 +262,8 @@ export const ProjectDetailsTemplate = ({
           {/* Project Details */}
           <ScrollFade>
             <div className='space-y-8'>
-              {/* Featured toggle — client only */}
-              {isClient && (
+              {/* Featured toggle — admin only (controls public portfolio) */}
+              {canManageFeatured && (
                 <div className='flex justify-end'>
                   <button
                     type='button'
@@ -265,6 +271,8 @@ export const ProjectDetailsTemplate = ({
                     disabled={updatingFeatured}
                     className='cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
                     title={featured ? 'Remove from featured' : 'Add to featured'}
+                    aria-label={featured ? 'Remove from featured' : 'Add to featured'}
+                    aria-pressed={featured}
                   >
                     {featured
                       ? <FaStar className='h-5 w-5' />

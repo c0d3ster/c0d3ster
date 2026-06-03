@@ -20,6 +20,7 @@ vi.mock('@/apiClients', async () => {
     useGetMe: () => mockGetMe(),
     useGetFile: () => mockGetFile(),
     useProvisionProjectRepo: () => [mockProvisionProjectRepo, { loading: false }],
+    useUpdateProject: () => [vi.fn(), { loading: false }],
   }
 })
 

@@ -364,6 +364,19 @@ export class ProjectService {
       )
     }
 
+    const isAdmin = isAdminRole(currentUserRole)
+
+    if (
+      'featured' in input &&
+      input.featured !== undefined &&
+      !isAdmin &&
+      project.clientId !== currentUserId
+    ) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
     // Whitelist allowed fields to prevent mass assignment
     const allowedFields = [
       'title',
