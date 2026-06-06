@@ -364,6 +364,19 @@ export class ProjectService {
       )
     }
 
+    const isAdmin = isAdminRole(currentUserRole)
+
+    if (
+      'featured' in input &&
+      input.featured !== undefined &&
+      !isAdmin &&
+      project.clientId !== currentUserId
+    ) {
+      throw new GraphQLError('Access denied', {
+        extensions: { code: 'FORBIDDEN' },
+      })
+    }
+
     // Whitelist allowed fields to prevent mass assignment
     const allowedFields = [
       'title',
@@ -376,12 +389,11 @@ export class ProjectService {
       'status',
       'progressPercentage',
       'logo',
-    ] as const
+      'featured',
+    ]
     const sanitizedInput = Object.fromEntries(
-      Object.entries(input).filter(([k]) =>
-        (allowedFields as readonly string[]).includes(k)
-      )
-    ) as Partial<Record<(typeof allowedFields)[number], any>>
+      Object.entries(input).filter(([k]) => allowedFields.includes(k))
+    )
 
     // Check if status is being changed
     const nextStatus = sanitizedInput.status as ProjectStatus | undefined

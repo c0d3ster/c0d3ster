@@ -648,6 +648,47 @@ describe('ProjectService', () => {
 
       expect(mockDbTransaction).toHaveBeenCalled()
     })
+
+    it('should reject featured updates from non-admin non-owner users', async () => {
+      mockDbQuery.findFirst.mockResolvedValue(mockProject)
+
+      await expect(
+        projectService.updateProject(
+          'project-123',
+          { featured: true },
+          'other-client-456',
+          'client'
+        )
+      ).rejects.toThrow(GraphQLError)
+    })
+
+    it('should allow featured updates from admin users', async () => {
+      const updatedProject = { ...mockProject, featured: true }
+
+      mockDbQuery.findFirst.mockResolvedValue(mockProject)
+      mockIsAdminRole.mockReturnValueOnce(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        return callback({
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([updatedProject]),
+              }),
+            }),
+          }),
+          insert: vi.fn(),
+        } as any)
+      })
+
+      const result = await projectService.updateProject(
+        'project-123',
+        { featured: true },
+        'admin-123',
+        'admin'
+      )
+
+      expect(result).toEqual(updatedProject)
+    })
   })
 
   describe('updateProjectLogo', () => {
