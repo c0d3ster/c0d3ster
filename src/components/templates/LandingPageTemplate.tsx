@@ -1,6 +1,11 @@
 'use client'
 
-import { MatrixBackground } from '@/components/atoms'
+import dynamic from 'next/dynamic'
+
+const MatrixBackground = dynamic(
+  () => import('@/components/atoms').then((m) => ({ default: m.MatrixBackground })),
+  { ssr: false }
+)
 
 type LandingPageTemplateProps = {
   children: React.ReactNode
