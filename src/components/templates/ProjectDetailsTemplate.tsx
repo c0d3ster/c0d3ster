@@ -248,6 +248,37 @@ export const ProjectDetailsTemplate = ({
                 )}
               </div>
 
+              {/* People */}
+              <div className='w-[300px] space-y-4'>
+                {([
+                  { label: 'CLIENT', user: project.client },
+                  { label: 'DEVELOPER', user: project.developer },
+                ] as const).map(({ label, user }) => {
+                  const initials = user
+                    ? (`${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`
+                        .toUpperCase() || '?')
+                    : null
+                  const fullName = user
+                    ? ([user.firstName, user.lastName].filter(Boolean).join(' ') || user.email)
+                    : null
+                  return (
+                    <div key={label} className='flex items-center gap-3'>
+                      <span className='w-20 font-mono text-xs text-green-400/50'>{label}</span>
+                      {user ? (
+                        <>
+                          <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-xs text-green-400'>
+                            {initials}
+                          </div>
+                          <span className='font-mono text-sm text-green-300'>{fullName}</span>
+                        </>
+                      ) : (
+                        <span className='font-mono text-sm text-green-400/40'>UNASSIGNED</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
               {/* Status Badge */}
               <div className='text-center'>
                 <span
