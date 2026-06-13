@@ -53,7 +53,7 @@ export const DashboardContent = () => {
                     Available:
                   </span>
                   <span className='font-mono text-sm font-bold text-blue-400'>
-                    {(availableProjects as any[])?.length || 0}
+                    {availableProjects?.length || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>
@@ -61,7 +61,7 @@ export const DashboardContent = () => {
                     Assigned:
                   </span>
                   <span className='font-mono text-sm font-bold text-green-400'>
-                    {(assignedProjects as any[])?.length || 0}
+                    {assignedProjects?.length || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-center space-x-3 lg:justify-end'>

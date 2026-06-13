@@ -8,5 +8,5 @@ export function normalizeImageContentType(ct: string): string {
 
 export function isAllowedImageContentType(ct: string): boolean {
   const n = normalizeImageContentType(ct)
-  return (ALLOWED_IMAGE_TYPES as readonly string[]).includes(n)
+  return ALLOWED_IMAGE_TYPES.includes(n)
 }
