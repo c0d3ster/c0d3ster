@@ -3,9 +3,10 @@
 import Link from 'next/link'
 
 import { useGetProjectRequestById } from '@/apiClients/projectRequestApiClient'
-import { RequirementsList } from '@/components/molecules'
 import { formatCardDate } from '@/utils'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
+
+import { RequirementsList } from './RequirementsList'
 
 type ProjectRequestDetailProps = {
   id: string

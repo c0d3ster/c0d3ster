@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 
-import { AnimatedHeading } from '@/components/molecules'
+import { AnimatedHeading, ProjectRequestDetail  } from '@/components/molecules'
 import { CleanPageTemplate } from '@/components/templates'
 import { BRAND_NAME } from '@/constants'
 
-import { ProjectRequestDetail } from './ProjectRequestDetail'
+
 
 export const metadata: Metadata = {
   title: `Project Request - ${BRAND_NAME}`,
