@@ -105,7 +105,7 @@ export const ClerkProvider = ({
       signInUrl='/sign-in'
       signUpUrl='/sign-up'
       signInFallbackRedirectUrl='/dashboard'
-      signUpFallbackRedirectUrl='/dashboard'
+      signUpFallbackRedirectUrl='/api/sync-user'
       afterSignOutUrl='/'
     >
       {children}
