@@ -61,13 +61,10 @@ export class UserResolver {
     @Arg('input', () => UpdateUserInput) input: UpdateUserInput
   ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
-    this.userService.checkPermission(currentUser, UserRole.Admin)
 
-    // Users can only update themselves, or admins can update anyone
-    if (currentUser.id !== id && currentUser.role !== UserRole.Admin) {
-      throw new GraphQLError('Access denied', {
-        extensions: { code: 'FORBIDDEN' },
-      })
+    // Users can only update themselves; admins can update anyone
+    if (currentUser.id !== id) {
+      this.userService.checkPermission(currentUser, UserRole.Admin)
     }
 
     const isAdmin = currentUser.role === UserRole.Admin
@@ -80,8 +77,8 @@ export class UserResolver {
       'portfolio',
       'skills',
       'hourlyRate',
-    ] as const
-    const PRIVILEGED_FIELDS = ['role'] as const
+    ]
+    const PRIVILEGED_FIELDS = ['role']
 
     const sanitizedInput = Object.fromEntries(
       Object.entries(input).filter(([key]) =>
