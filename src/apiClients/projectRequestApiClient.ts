@@ -1,4 +1,4 @@
-import { useMutation } from '@apollo/client/react'
+import { useMutation, useQuery } from '@apollo/client/react'
 import { gql } from 'graphql-tag'
 
 import type {
@@ -6,6 +6,8 @@ import type {
   ApproveProjectRequestMutationVariables,
   CreateProjectRequestMutation,
   CreateProjectRequestMutationVariables,
+  GetProjectRequestByIdQuery,
+  GetProjectRequestByIdQueryVariables,
   GetProjectRequestsQuery,
 } from '@/graphql/generated/graphql'
 
@@ -23,6 +25,15 @@ import { PROJECT_REQUEST_DISPLAY_FRAGMENT } from './fragments'
 export const GET_PROJECT_REQUESTS = gql`
   query GetProjectRequests {
     projectRequests {
+      ...ProjectRequestDisplay
+    }
+  }
+  ${PROJECT_REQUEST_DISPLAY_FRAGMENT}
+`
+
+export const GET_PROJECT_REQUEST_BY_ID = gql`
+  query GetProjectRequestById($id: ID!) {
+    projectRequest(id: $id) {
       ...ProjectRequestDisplay
     }
   }
@@ -74,6 +85,11 @@ export const UPDATE_PROJECT_REQUEST_STATUS = gql`
 
 // Hooks for components
 export const useGetProjectRequests = () => useGetProjectRequestsQuery()
+export const useGetProjectRequestById = (id: string) =>
+  useQuery<GetProjectRequestByIdQuery, GetProjectRequestByIdQueryVariables>(
+    GET_PROJECT_REQUEST_BY_ID,
+    { variables: { id } }
+  )
 export const useCreateProjectRequest = () => useCreateProjectRequestMutation()
 export const useApproveProjectRequest = () =>
   useMutation(APPROVE_PROJECT_REQUEST)

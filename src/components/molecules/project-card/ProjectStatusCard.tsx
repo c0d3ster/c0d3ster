@@ -173,7 +173,11 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
       {/* Action Links */}
       <div className='mb-3 flex flex-wrap gap-2'>
         <Link
-          href={`/projects/${generateSlug(item.projectName || item.title || 'untitled')}`}
+          href={
+            item.__typename === 'Project'
+              ? `/projects/${generateSlug(item.projectName || item.title || 'untitled')}`
+              : `/dashboard/project-requests/${item.id}`
+          }
           className='min-w-0 flex-1 cursor-pointer rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60 transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/20 hover:text-green-400'
         >
           {item.__typename === 'Project' ? 'VIEW DETAILS' : 'VIEW REQUEST'}
