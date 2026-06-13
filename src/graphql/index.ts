@@ -82,7 +82,7 @@ async function createSchema(): Promise<GraphQLSchema> {
             )
           if (someClass === StatusUpdateResolver)
             return new StatusUpdateResolver(userService)
-          return new (someClass as any)()
+          throw new Error(`Unregistered resolver class: ${String(someClass)}`)
         },
       },
     })

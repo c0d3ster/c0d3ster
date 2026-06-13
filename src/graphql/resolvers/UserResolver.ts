@@ -84,9 +84,7 @@ export class UserResolver {
       Object.entries(input).filter(([key]) =>
         isAdmin
           ? true
-          : ALLOWED_SELF_UPDATE_FIELDS.includes(
-              key as (typeof ALLOWED_SELF_UPDATE_FIELDS)[number]
-            )
+          : ALLOWED_SELF_UPDATE_FIELDS.includes(key)
       )
     )
 
@@ -94,7 +92,7 @@ export class UserResolver {
     if (
       !isAdmin &&
       Object.keys(input).some((k) =>
-        PRIVILEGED_FIELDS.includes(k as (typeof PRIVILEGED_FIELDS)[number])
+        PRIVILEGED_FIELDS.includes(k)
       )
     ) {
       throw new GraphQLError('Cannot modify restricted fields', {

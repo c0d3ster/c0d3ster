@@ -96,12 +96,12 @@ export class UserService {
     })
   }
 
-  async getUsers(filter?: { role?: string; email?: string }) {
+  async getUsers(filter?: { role?: UserRole; email?: string }) {
     let whereClause: SQL | undefined
     if (filter) {
       const conditions: SQL[] = []
       if (filter.role) {
-        conditions.push(eq(schemas.users.role, filter.role as any))
+        conditions.push(eq(schemas.users.role, filter.role))
       }
       if (filter.email) {
         conditions.push(eq(schemas.users.email, filter.email))
