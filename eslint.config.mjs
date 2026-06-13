@@ -55,6 +55,7 @@ export default antfu(
       'test/padding-around-all': 'error', // Add padding in test files
       'test/prefer-lowercase-title': 'off', // Allow using uppercase titles in test titles
       'react-hooks-extra/no-unnecessary-use-prefix': 'off', // Disable the annoying use prefix rule
+      'react-hooks/exhaustive-deps': 'error', // Enforce exhaustive dependency arrays
       'perfectionist/sort-imports': [
         'error',
         {

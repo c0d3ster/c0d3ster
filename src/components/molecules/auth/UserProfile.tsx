@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useGetMe, useUpdateUser } from '@/apiClients'
 import { logger } from '@/libs/Logger'
@@ -22,12 +22,14 @@ export const UserProfile = () => {
   const [updateUser] = useUpdateUser()
 
   // Set form data when user data is loaded
-  if (meData?.me && formData.firstName === '' && formData.lastName === '') {
-    setFormData({
-      firstName: meData.me.firstName || '',
-      lastName: meData.me.lastName || '',
-    })
-  }
+  useEffect(() => {
+    if (meData?.me) {
+      setFormData({
+        firstName: meData.me.firstName || '',
+        lastName: meData.me.lastName || '',
+      })
+    }
+  }, [meData])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
