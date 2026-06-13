@@ -153,7 +153,11 @@ describe('UserResolver', () => {
       const input = { firstName: 'Updated' }
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockUserService.checkPermission.mockImplementation(() => {})
+      mockUserService.checkPermission.mockImplementation(() => {
+        throw new GraphQLError('Access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      })
 
       await expect(userResolver.updateUser('user-2', input)).rejects.toThrow(
         GraphQLError
