@@ -24,6 +24,7 @@ export const UserProfile = () => {
   // Set form data when user data is loaded
   useEffect(() => {
     if (meData?.me) {
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setFormData({
         firstName: meData.me.firstName || '',
         lastName: meData.me.lastName || '',
