@@ -4,6 +4,7 @@ import { GraphQLError } from 'graphql'
 import type { ProjectFilter } from '@/graphql/schema'
 import type { ProjectRecord } from '@/models'
 
+import { SUPPORT_EMAIL } from '@/constants'
 import { ProjectFeature, ProjectStatus, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
@@ -122,9 +123,7 @@ export class ProjectService {
     currentUserId?: string,
     currentUserRole?: string
   ): Promise<ProjectRecord> {
-    // Get all projects and find the one that matches the slug
     const allProjects = await db.query.projects.findMany()
-
     const project = findProjectBySlug<ProjectRecord>(slug, allProjects)
 
     if (!project) {
@@ -133,48 +132,35 @@ export class ProjectService {
       })
     }
 
-    // If no user is provided (public access), only allow access to c0d3ster's projects
-    if (!currentUserId || !currentUserRole) {
-      // Get c0d3ster's user ID
-      const c0d3sterUser = await db.query.users.findFirst({
-        where: eq(schemas.users.email, 'support@c0d3ster.com'),
-      })
-
-      if (!c0d3sterUser) {
-        throw new GraphQLError('Access denied', {
-          extensions: { code: 'FORBIDDEN' },
-        })
-      }
-
-      // Only allow public access if c0d3ster is the developer or the client
-      if (
-        project.developerId !== c0d3sterUser.id &&
-        project.clientId !== c0d3sterUser.id
-      ) {
-        throw new GraphQLError('Access denied', {
-          extensions: { code: 'FORBIDDEN' },
-        })
-      }
-
-      return project
-    }
-
     // Admins can access all projects
     if (isAdminRole(currentUserRole)) {
       return project
     }
 
-    // Allow access if user is the client or developer of the project (regardless of role)
-    const hasProjectAccess =
-      project.clientId === currentUserId ||
-      project.developerId === currentUserId
-    if (!hasProjectAccess) {
-      throw new GraphQLError('Access denied', {
-        extensions: { code: 'FORBIDDEN' },
-      })
+    // Project owner (client or developer) can always access
+    if (
+      currentUserId &&
+      (project.clientId === currentUserId || project.developerId === currentUserId)
+    ) {
+      return project
     }
 
-    return project
+    // Anyone (authenticated or not) can view c0d3ster's projects
+    const c0d3sterUser = await db.query.users.findFirst({
+      where: eq(schemas.users.email, SUPPORT_EMAIL),
+    })
+
+    if (
+      c0d3sterUser &&
+      (project.developerId === c0d3sterUser.id ||
+        project.clientId === c0d3sterUser.id)
+    ) {
+      return project
+    }
+
+    throw new GraphQLError('Access denied', {
+      extensions: { code: 'FORBIDDEN' },
+    })
   }
 
   async getMyProjects(

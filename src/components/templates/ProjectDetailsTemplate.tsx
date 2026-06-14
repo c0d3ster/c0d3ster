@@ -287,6 +287,39 @@ export const ProjectDetailsTemplate = ({
                   {formatStatus(optimisticStatus)}
                 </span>
               </div>
+
+              {/* Repo / Staging / Live links */}
+              {(repoUrl || canProvisionRepo || stagingUrl || project.liveUrl) && (
+                <div className='flex w-[300px] flex-col gap-3'>
+                  {repoUrl ? (
+                    <Button href={repoUrl} external size='md'>
+                      VIEW REPOSITORY
+                    </Button>
+                  ) : canProvisionRepo ? (
+                    <Button
+                      onClick={handleProvisionRepo}
+                      disabled={provisioning}
+                      size='md'
+                    >
+                      {provisioning ? 'PROVISIONING...' : 'PROVISION REPO'}
+                    </Button>
+                  ) : null}
+                  {stagingUrl && (
+                    <Button href={stagingUrl} external size='md'>
+                      VIEW STAGING
+                    </Button>
+                  )}
+                  {project.liveUrl && (
+                    <Button
+                      href={project.liveUrl}
+                      external={project.liveUrl.startsWith('http')}
+                      size='md'
+                    >
+                      ACCESS PROJECT
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </ScrollFade>
 
@@ -395,46 +428,6 @@ export const ProjectDetailsTemplate = ({
           </ScrollFade>
         </div>
 
-        {/* Repository Section */}
-        {(repoUrl || canProvisionRepo) && (
-          <ScrollFade>
-            <div className='mt-12 flex justify-center gap-4'>
-              {repoUrl ? (
-                <Button href={repoUrl} external size='md'>
-                  VIEW REPOSITORY
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleProvisionRepo}
-                  disabled={provisioning}
-                  size='md'
-                >
-                  {provisioning ? 'PROVISIONING...' : 'PROVISION REPO'}
-                </Button>
-              )}
-              {stagingUrl && (
-                <Button href={stagingUrl} external size='md'>
-                  VIEW STAGING
-                </Button>
-              )}
-            </div>
-          </ScrollFade>
-        )}
-
-        {/* Access Project Button */}
-        {project.liveUrl && (
-          <ScrollFade>
-            <div className='mt-8 text-center'>
-              <Button
-                href={project.liveUrl}
-                external={project.liveUrl.startsWith('http')}
-                size='md'
-              >
-                ACCESS PROJECT
-              </Button>
-            </div>
-          </ScrollFade>
-        )}
       </div>
     </CleanPageTemplate>
   )
