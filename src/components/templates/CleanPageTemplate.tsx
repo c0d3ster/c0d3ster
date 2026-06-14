@@ -5,5 +5,5 @@ type CleanPageTemplateProps = {
 }
 
 export const CleanPageTemplate = ({ children }: CleanPageTemplateProps) => {
-  return <div className='min-h-screen bg-black pt-32'>{children}</div>
+  return <div className='min-h-screen bg-black pt-32 pb-8'>{children}</div>
 }
