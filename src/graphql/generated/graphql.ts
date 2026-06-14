@@ -655,6 +655,13 @@ export type GetProjectRequestsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetProjectRequestsQuery = { readonly __typename?: 'Query', readonly projectRequests: ReadonlyArray<{ readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> };
 
+export type GetProjectRequestByIdQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetProjectRequestByIdQuery = { readonly __typename?: 'Query', readonly projectRequest?: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } | null };
+
 export type CreateProjectRequestMutationVariables = Exact<{
   input: CreateProjectRequestInput;
 }>;
@@ -1408,6 +1415,40 @@ export function useGetProjectRequestsLazyQuery(baseOptions?: ApolloReactHooks.La
         }
 export type GetProjectRequestsQueryHookResult = ReturnType<typeof useGetProjectRequestsQuery>;
 export type GetProjectRequestsLazyQueryHookResult = ReturnType<typeof useGetProjectRequestsLazyQuery>;
+export const GetProjectRequestByIdDocument = gql`
+    query GetProjectRequestById($id: ID!) {
+  projectRequest(id: $id) {
+    ...ProjectRequestDisplay
+  }
+}
+    ${ProjectRequestDisplayFragmentDoc}`;
+
+/**
+ * __useGetProjectRequestByIdQuery__
+ *
+ * To run a query within a React component, call `useGetProjectRequestByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetProjectRequestByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetProjectRequestByIdQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetProjectRequestByIdQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetProjectRequestByIdQuery, GetProjectRequestByIdQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetProjectRequestByIdQuery, GetProjectRequestByIdQueryVariables>(GetProjectRequestByIdDocument, options);
+      }
+export function useGetProjectRequestByIdLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetProjectRequestByIdQuery, GetProjectRequestByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetProjectRequestByIdQuery, GetProjectRequestByIdQueryVariables>(GetProjectRequestByIdDocument, options);
+        }
+export type GetProjectRequestByIdQueryHookResult = ReturnType<typeof useGetProjectRequestByIdQuery>;
+export type GetProjectRequestByIdLazyQueryHookResult = ReturnType<typeof useGetProjectRequestByIdLazyQuery>;
 export const CreateProjectRequestDocument = gql`
     mutation CreateProjectRequest($input: CreateProjectRequestInput!) {
   createProjectRequest(input: $input) {

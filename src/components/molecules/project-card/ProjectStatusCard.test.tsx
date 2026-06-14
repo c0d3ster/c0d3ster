@@ -142,7 +142,7 @@ describe('ProjectStatusCard', () => {
     expect(viewLink).toBeInTheDocument()
     expect(viewLink.closest('a')).toHaveAttribute(
       'href',
-      '/projects/test-request'
+      '/dashboard/project-requests/1'
     )
   })
 
