@@ -64,7 +64,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
         </div>
 
         {/* Status */}
-        <div className='flex items-center justify-between'>
+        <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
           <span
             className={`font-mono text-xs font-bold ${getStatusStyling(project.status)}`}
           >
