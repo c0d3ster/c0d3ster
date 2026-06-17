@@ -2,6 +2,8 @@
 
 @import 'tailwindcss';
 
+@custom-variant hover (&:hover); /* Override Tailwind v4's @media (hover: hover) wrapper — fixes Chromium bug on touch-capable devices */
+
 @layer theme {
   :root {
     --font-size-2xs: 12px;
