@@ -35,7 +35,7 @@ export const DashboardContent = () => {
   return (
     <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
       {/* User Profile */}
-      <div className='mb-8 rounded-lg border border-green-400/20 bg-black/60 p-6 backdrop-blur-sm'>
+      <div className='mb-8 rounded-lg border border-green-400/20 bg-black/60 p-3 backdrop-blur-sm sm:p-6'>
         <div className='flex flex-col items-center justify-between space-y-4 lg:flex-row lg:space-y-0'>
           <CompactUserProfile />
           <div className='grid gap-4 text-center lg:text-right'>
@@ -123,7 +123,7 @@ export const DashboardContent = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className='mb-8 rounded-lg border border-green-400/20 bg-black/60 p-6 backdrop-blur-sm'>
+      <div className='mb-8 rounded-lg border border-green-400/20 bg-black/60 p-3 backdrop-blur-sm sm:p-6'>
         <h3 className='mb-4 font-mono text-lg font-bold text-green-400'>
           QUICK ACTIONS
         </h3>
@@ -145,8 +145,8 @@ export const DashboardContent = () => {
 
       {/* Admin Project Requests Management Section */}
       {isAdmin && (
-        <div className='mb-8 rounded-lg border border-purple-400/20 bg-black/40 p-6 backdrop-blur-sm'>
-          <div className='mb-6 flex items-center justify-between'>
+        <div className='mb-8 rounded-lg border border-purple-400/20 bg-black/40 p-3 backdrop-blur-sm sm:p-6'>
+          <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
             <h3 className='font-mono text-lg font-bold text-purple-400'>
               🔧 PROJECT REQUESTS MANAGEMENT
             </h3>
@@ -185,7 +185,7 @@ export const DashboardContent = () => {
       )}
 
       {/* Main Projects & Requests Section */}
-      <div className='rounded-lg border border-green-400/20 bg-black/40 p-6 backdrop-blur-sm'>
+      <div className='rounded-lg border border-green-400/20 bg-black/40 p-3 backdrop-blur-sm sm:p-6'>
         {/* Role-specific Content */}
         {isContentLoading ? (
           <div className='flex items-center justify-center'>

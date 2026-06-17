@@ -14,7 +14,7 @@ export default function Dashboard() {
   return (
     <CleanPageTemplate>
       <div className='container mx-auto px-4'>
-        <div className='mx-auto max-w-6xl'>
+        <div className='mx-auto max-w-7xl'>
           {/* Header Section */}
           <div className='mb-16 text-center'>
             <AnimatedHeading

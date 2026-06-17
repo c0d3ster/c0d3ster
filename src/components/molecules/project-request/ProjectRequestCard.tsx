@@ -80,37 +80,37 @@ export const ProjectRequestCard = ({
   return (
     <div className='rounded-lg border border-green-400/20 bg-black/60 p-6 backdrop-blur-sm'>
       {/* Header */}
-      <div className='mb-4 flex items-start justify-between'>
-        <div>
-          <h3 className='mb-2 font-mono text-lg font-bold text-green-400'>
+      <div className='mb-4'>
+        <div className='mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
+          <h3 className='font-mono text-lg font-bold text-green-400'>
             {request.title}
           </h3>
-          <div className='space-y-1 text-sm'>
-            <p className='text-green-300'>
-              <span className='text-green-300/60'>Client:</span> {userName} (
-              {request.user?.email})
-            </p>
-            <p className='text-green-300'>
-              <span className='text-green-300/60'>Type:</span>{' '}
-              {request.projectType}
-            </p>
-            {request.budget && (
-              <p className='text-green-300'>
-                <span className='text-green-300/60'>Budget:</span> $
-                {request.budget}
-              </p>
-            )}
-            <p className='text-green-300'>
-              <span className='text-green-300/60'>Submitted:</span>{' '}
-              {formatDate(request.createdAt)}
-            </p>
-          </div>
+          <span
+            className={`self-start rounded border px-3 py-1 font-mono text-xs font-bold uppercase sm:flex-shrink-0 ${getStatusCardStyling(request.status || 'unknown')}`}
+          >
+            {formatStatus(request.status || 'unknown')}
+          </span>
         </div>
-        <span
-          className={`rounded border px-3 py-1 font-mono text-xs font-bold uppercase ${getStatusCardStyling(request.status || 'unknown')}`}
-        >
-          {formatStatus(request.status || 'unknown')}
-        </span>
+        <div className='space-y-1 text-sm'>
+          <p className='break-words text-green-300'>
+            <span className='text-green-300/60'>Client:</span> {userName} (
+            {request.user?.email})
+          </p>
+          <p className='text-green-300'>
+            <span className='text-green-300/60'>Type:</span>{' '}
+            {request.projectType}
+          </p>
+          {request.budget && (
+            <p className='text-green-300'>
+              <span className='text-green-300/60'>Budget:</span> $
+              {request.budget}
+            </p>
+          )}
+          <p className='text-green-300'>
+            <span className='text-green-300/60'>Submitted:</span>{' '}
+            {formatDate(request.createdAt)}
+          </p>
+        </div>
       </div>
 
       {/* Description */}
