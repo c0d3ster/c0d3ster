@@ -40,12 +40,12 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
         )}
 
         {/* Project Title */}
-        <h3 className='mb-2 pr-12 font-mono text-lg font-bold text-green-400'>
+        <h3 className='mb-2 pr-14 font-mono text-lg font-bold text-green-400'>
           {project.title || project.projectName}
         </h3>
 
         {/* Project Description */}
-        <p className='mb-4 pr-12 font-mono text-sm text-green-300 opacity-80'>
+        <p className='mb-4 pr-14 font-mono text-sm text-green-300 opacity-80'>
           {project.overview || project.description}
         </p>
 
