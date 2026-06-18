@@ -180,7 +180,7 @@ export const DashboardContent = () => {
               </div>
             </div>
           </div>
-          <AdminDashboardSection />
+          <AdminDashboardSection onDataRefreshAction={refetchDashboard} />
         </div>
       )}
 
