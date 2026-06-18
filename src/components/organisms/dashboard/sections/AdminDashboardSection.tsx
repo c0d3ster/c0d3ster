@@ -10,7 +10,11 @@ import {
 import { ProjectRequestCard } from '@/components/molecules'
 import { Toast } from '@/libs/Toast'
 
-export const AdminDashboardSection = () => {
+type AdminDashboardSectionProps = {
+  onDataRefreshAction?: () => void
+}
+
+export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSectionProps) => {
   const {
     data: projectRequestsData,
     loading: adminLoading,
@@ -31,6 +35,7 @@ export const AdminDashboardSection = () => {
       await updateStatusMutation({ variables: { id: requestId, status } })
       Toast.success(`Project request status updated to ${status}`)
       await adminRefetch()
+      onDataRefreshAction?.()
     } catch (error) {
       Toast.error('Failed to update request status')
       console.error('Update request status error:', error)
@@ -45,6 +50,7 @@ export const AdminDashboardSection = () => {
       await approveMutation({ variables: { id: requestId } })
       Toast.success('Project request approved and project created!')
       await adminRefetch()
+      onDataRefreshAction?.()
     } catch (error) {
       Toast.error('Failed to approve request')
       console.error('Approve request error:', error)
