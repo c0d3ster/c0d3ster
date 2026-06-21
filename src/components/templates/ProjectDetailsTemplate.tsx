@@ -20,7 +20,7 @@ import {
   PostUpdatePanel,
   StatusHistory,
 } from '@/components/molecules'
-import { UserRole } from '@/graphql/generated/graphql'
+import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 import { formatStatus, getStatusCardStyling } from '@/utils'
 
@@ -51,6 +51,9 @@ export const ProjectDetailsTemplate = ({
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
     project.logo || null
   )
+  const [liveUrl, setLiveUrl] = useState<string>(project.liveUrl || '')
+  const [editingLiveUrl, setEditingLiveUrl] = useState(false)
+  const [liveUrlDraft, setLiveUrlDraft] = useState<string>(project.liveUrl || '')
   const setCurrentLogoUrlRef = useRef(setCurrentLogoUrl)
 
   // Check if the project logo is a public URL or a storage key
@@ -83,7 +86,9 @@ export const ProjectDetailsTemplate = ({
   // Check if user is the client (for personalized messages)
   const isClient = meData?.me?.id === project.clientId
 
-  // Only admins or the assigned developer (with Developer role) can provision a repo
+  // Only admins or the assigned developer (with Developer role) can provision a repo,
+  // and only once a developer is assigned and the project is approved or in progress.
+  const provisionableStatuses = [ProjectStatus.Approved, ProjectStatus.InProgress]
   const canProvisionRepo =
     !meLoading &&
     meData?.me &&
@@ -91,6 +96,8 @@ export const ProjectDetailsTemplate = ({
       meData.me.role === UserRole.SuperAdmin ||
       (meData.me.role === UserRole.Developer &&
         meData.me.id === project.developerId)) &&
+    !!project.developerId &&
+    provisionableStatuses.includes(optimisticStatus as ProjectStatus) &&
     !repoUrl
 
   const canPostUpdate =
@@ -135,6 +142,17 @@ export const ProjectDetailsTemplate = ({
     // Update the logo URL directly with the presigned URL from the mutation
     setCurrentLogoUrl(logoUrl)
     setShowLogoUpload(false)
+  }
+
+  const handleSaveLiveUrl = async () => {
+    const trimmed = liveUrlDraft.trim()
+    try {
+      await updateProject({ variables: { id: project.id, liveUrl: trimmed || null } })
+      setLiveUrl(trimmed)
+      setEditingLiveUrl(false)
+    } catch {
+      Toast.error('Failed to save live URL')
+    }
   }
 
   const handleToggleFeatured = async () => {
@@ -289,7 +307,7 @@ export const ProjectDetailsTemplate = ({
               </div>
 
               {/* Repo / Staging / Live links */}
-              {(repoUrl || canProvisionRepo || stagingUrl || project.liveUrl) && (
+              {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
                 <div className='flex w-[300px] flex-col gap-3'>
                   {repoUrl ? (
                     <Button href={repoUrl} external size='md'>
@@ -309,14 +327,62 @@ export const ProjectDetailsTemplate = ({
                       VIEW STAGING
                     </Button>
                   )}
-                  {project.liveUrl && (
-                    <Button
-                      href={project.liveUrl}
-                      external={project.liveUrl.startsWith('http')}
-                      size='md'
+                  {liveUrl && !editingLiveUrl && (
+                    <div className='group relative'>
+                      <Button
+                        href={liveUrl}
+                        external={liveUrl.startsWith('http')}
+                        size='md'
+                      >
+                        ACCESS PROJECT
+                      </Button>
+                      {canPostUpdate && (
+                        <button
+                          type='button'
+                          onClick={() => { setLiveUrlDraft(liveUrl); setEditingLiveUrl(true) }}
+                          className='absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-green-500/20 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-green-500/40'
+                          title='Edit live URL'
+                        >
+                          <FaPencilAlt className='h-3 w-3' />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {canPostUpdate && editingLiveUrl && (
+                    <div className='flex flex-col gap-2'>
+                      <input
+                        type='url'
+                        value={liveUrlDraft}
+                        onChange={(e) => setLiveUrlDraft(e.target.value)}
+                        placeholder='https://...'
+                        className='w-full rounded border border-green-400/30 bg-black/50 px-3 py-2 font-mono text-sm text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
+                      />
+                      <div className='flex gap-2'>
+                        <button
+                          type='button'
+                          onClick={handleSaveLiveUrl}
+                          className='flex-1 rounded border border-green-400/30 bg-green-400/10 px-3 py-1.5 font-mono text-xs text-green-400 hover:bg-green-400 hover:text-black'
+                        >
+                          SAVE
+                        </button>
+                        <button
+                          type='button'
+                          onClick={() => setEditingLiveUrl(false)}
+                          className='flex-1 rounded border border-green-400/10 bg-black/40 px-3 py-1.5 font-mono text-xs text-green-400/50 hover:bg-green-400/10'
+                        >
+                          CANCEL
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {canPostUpdate && !liveUrl && !editingLiveUrl && (
+                    <button
+                      type='button'
+                      onClick={() => { setLiveUrlDraft(''); setEditingLiveUrl(true) }}
+                      className='w-full rounded border border-green-400/10 bg-black/20 px-3 py-2 font-mono text-xs text-green-400/40 hover:border-green-400/30 hover:text-green-400/70'
                     >
-                      ACCESS PROJECT
-                    </Button>
+                      + SET LIVE URL
+                    </button>
                   )}
                 </div>
               )}
@@ -362,7 +428,7 @@ export const ProjectDetailsTemplate = ({
               )}
 
               {/* Completion */}
-              {optimisticProgress != null && (
+              {optimisticProgress != null && optimisticProgress < 100 && (
                 <div className='space-y-2'>
                   <h3 className='font-mono text-xl font-bold text-green-400'>
                     COMPLETION

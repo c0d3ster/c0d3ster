@@ -376,6 +376,7 @@ export class ProjectService {
       'progressPercentage',
       'logo',
       'featured',
+      'liveUrl',
     ]
     const sanitizedInput = Object.fromEntries(
       Object.entries(input).filter(([k]) => allowedFields.includes(k))

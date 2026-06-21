@@ -470,6 +470,7 @@ export type UpdateProjectInput = {
   readonly description?: InputMaybe<Scalars['String']['input']>;
   readonly estimatedCompletionDate?: InputMaybe<Scalars['String']['input']>;
   readonly featured?: InputMaybe<Scalars['Boolean']['input']>;
+  readonly liveUrl?: InputMaybe<Scalars['String']['input']>;
   readonly logo?: InputMaybe<Scalars['String']['input']>;
   readonly progressPercentage?: InputMaybe<Scalars['Float']['input']>;
   readonly projectName?: InputMaybe<Scalars['String']['input']>;
@@ -619,10 +620,11 @@ export type GetProjectBySlugQuery = { readonly __typename?: 'Query', readonly pr
 export type UpdateProjectMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   featured?: InputMaybe<Scalars['Boolean']['input']>;
+  liveUrl?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type UpdateProjectMutation = { readonly __typename?: 'Mutation', readonly updateProject: { readonly __typename?: 'Project', readonly id: string, readonly featured: boolean } };
+export type UpdateProjectMutation = { readonly __typename?: 'Mutation', readonly updateProject: { readonly __typename?: 'Project', readonly id: string, readonly featured: boolean, readonly liveUrl?: string | null } };
 
 export type AssignProjectMutationVariables = Exact<{
   projectId: Scalars['ID']['input'];
@@ -1235,10 +1237,11 @@ export function useGetProjectBySlugLazyQuery(baseOptions?: ApolloReactHooks.Lazy
 export type GetProjectBySlugQueryHookResult = ReturnType<typeof useGetProjectBySlugQuery>;
 export type GetProjectBySlugLazyQueryHookResult = ReturnType<typeof useGetProjectBySlugLazyQuery>;
 export const UpdateProjectDocument = gql`
-    mutation UpdateProject($id: ID!, $featured: Boolean) {
-  updateProject(id: $id, input: {featured: $featured}) {
+    mutation UpdateProject($id: ID!, $featured: Boolean, $liveUrl: String) {
+  updateProject(id: $id, input: {featured: $featured, liveUrl: $liveUrl}) {
     id
     featured
+    liveUrl
   }
 }
     `;
@@ -1258,6 +1261,7 @@ export const UpdateProjectDocument = gql`
  *   variables: {
  *      id: // value for 'id'
  *      featured: // value for 'featured'
+ *      liveUrl: // value for 'liveUrl'
  *   },
  * });
  */

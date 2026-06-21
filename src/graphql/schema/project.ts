@@ -339,6 +339,9 @@ export class UpdateProjectInput {
 
   @Field(() => String, { nullable: true })
   logo?: string
+
+  @Field(() => String, { nullable: true })
+  liveUrl?: string
 }
 
 @InputType('ProjectFilter')
