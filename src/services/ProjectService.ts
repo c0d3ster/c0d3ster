@@ -17,6 +17,7 @@ import {
   hasSlugConflict,
   isAdminRole,
   isDeveloperOrHigherRole,
+  normalizeHttpUrl,
 } from '@/utils'
 import { normalizeProjectStatusInput } from '@/utils/ProjectStatus'
 
@@ -361,6 +362,32 @@ export class ProjectService {
       throw new GraphQLError('Access denied', {
         extensions: { code: 'FORBIDDEN' },
       })
+    }
+
+    if ('liveUrl' in input && input.liveUrl !== undefined) {
+      const canUpdateLiveUrl =
+        isAdmin ||
+        (currentUserRole === UserRole.Developer &&
+          project.developerId === currentUserId)
+
+      if (!canUpdateLiveUrl) {
+        throw new GraphQLError('Access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
+
+      if (input.liveUrl === null || input.liveUrl === '') {
+        input.liveUrl = null
+      } else {
+        const normalized = normalizeHttpUrl(String(input.liveUrl))
+        if (!normalized) {
+          throw new GraphQLError(
+            'Invalid live URL. Must be a valid http(s) URL.',
+            { extensions: { code: 'INVALID_URL' } }
+          )
+        }
+        input.liveUrl = normalized
+      }
     }
 
     // Whitelist allowed fields to prevent mass assignment
@@ -772,6 +799,32 @@ export class ProjectService {
         throw new GraphQLError('Access denied', {
           extensions: { code: 'FORBIDDEN' },
         })
+      }
+
+      if (!isAdmin && currentUserRole !== UserRole.Developer) {
+        throw new GraphQLError('Access denied', {
+          extensions: { code: 'FORBIDDEN' },
+        })
+      }
+
+      if (!project.developerId) {
+        throw new GraphQLError(
+          'A developer must be assigned before provisioning a repository',
+          { extensions: { code: 'DEVELOPER_NOT_ASSIGNED' } }
+        )
+      }
+
+      const provisionableStatuses = [
+        ProjectStatus.Approved,
+        ProjectStatus.InProgress,
+      ]
+      if (
+        !provisionableStatuses.includes(project.status as ProjectStatus)
+      ) {
+        throw new GraphQLError(
+          'Repository can only be provisioned for approved or in-progress projects',
+          { extensions: { code: 'INVALID_STATUS' } }
+        )
       }
 
       if (project.repositoryUrl) {

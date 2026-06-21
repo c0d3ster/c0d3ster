@@ -22,7 +22,7 @@ import {
 } from '@/components/molecules'
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
-import { formatStatus, getStatusCardStyling } from '@/utils'
+import { formatStatus, getStatusCardStyling, normalizeHttpUrl } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
 
@@ -146,9 +146,20 @@ export const ProjectDetailsTemplate = ({
 
   const handleSaveLiveUrl = async () => {
     const trimmed = liveUrlDraft.trim()
+    let value: string | null = null
+
+    if (trimmed) {
+      const normalized = normalizeHttpUrl(trimmed)
+      if (!normalized) {
+        Toast.error('Enter a valid http(s) URL')
+        return
+      }
+      value = normalized
+    }
+
     try {
-      await updateProject({ variables: { id: project.id, liveUrl: trimmed || null } })
-      setLiveUrl(trimmed)
+      await updateProject({ variables: { id: project.id, liveUrl: value } })
+      setLiveUrl(value ?? '')
       setEditingLiveUrl(false)
     } catch {
       Toast.error('Failed to save live URL')
@@ -333,6 +344,7 @@ export const ProjectDetailsTemplate = ({
                         href={liveUrl}
                         external={liveUrl.startsWith('http')}
                         size='md'
+                        className='w-full'
                       >
                         ACCESS PROJECT
                       </Button>
@@ -340,17 +352,22 @@ export const ProjectDetailsTemplate = ({
                         <button
                           type='button'
                           onClick={() => { setLiveUrlDraft(liveUrl); setEditingLiveUrl(true) }}
-                          className='absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-green-500/20 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-green-500/40'
+                          className='absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400'
                           title='Edit live URL'
+                          aria-label='Edit live URL'
                         >
-                          <FaPencilAlt className='h-3 w-3' />
+                          <FaPencilAlt className='h-3 w-3' aria-hidden />
                         </button>
                       )}
                     </div>
                   )}
                   {canPostUpdate && editingLiveUrl && (
                     <div className='flex flex-col gap-2'>
+                      <label htmlFor='live-url-input' className='font-mono text-xs text-green-400/70'>
+                        Live URL
+                      </label>
                       <input
+                        id='live-url-input'
                         type='url'
                         value={liveUrlDraft}
                         onChange={(e) => setLiveUrlDraft(e.target.value)}
