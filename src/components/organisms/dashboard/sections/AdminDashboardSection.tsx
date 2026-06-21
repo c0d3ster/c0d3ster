@@ -8,6 +8,7 @@ import {
   useUpdateProjectRequestStatus,
 } from '@/apiClients'
 import { ProjectRequestCard } from '@/components/molecules'
+import { ProjectStatus } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 
 type AdminDashboardSectionProps = {
@@ -24,7 +25,7 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
   const [approveMutation] = useApproveProjectRequest()
   const [updateStatusMutation] = useUpdateProjectRequestStatus()
 
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all')
 
   // Get the project requests directly from GraphQL
   const adminRequests = projectRequestsData?.projectRequests || []
@@ -84,23 +85,28 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
     <>
       {/* Filter Bar */}
       <div className='mb-6 flex flex-wrap gap-2'>
-        {['all', 'requested', 'in_review', 'approved', 'cancelled'].map(
-          (status) => (
-            <button
-              key={status}
-              type='button'
-              onClick={() => setStatusFilter(status)}
-              className={`rounded border px-3 py-1 font-mono text-xs font-bold transition-all duration-300 ${
-                statusFilter === status
-                  ? 'border-green-400 bg-green-400 text-black'
-                  : 'border-green-400/30 bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-black'
-              }`}
-            >
-              {status.toUpperCase().replace('_', ' ')} (
-              {statusCounts[status as keyof typeof statusCounts] || 0})
-            </button>
-          )
-        )}
+        {(
+          [
+            ['all', 'ALL'],
+            [ProjectStatus.Requested, 'REQUESTED'],
+            [ProjectStatus.InReview, 'IN REVIEW'],
+            [ProjectStatus.Approved, 'APPROVED'],
+            [ProjectStatus.Cancelled, 'CANCELLED'],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type='button'
+            onClick={() => setStatusFilter(value)}
+            className={`rounded border px-3 py-1 font-mono text-xs font-bold transition-all duration-300 ${
+              statusFilter === value
+                ? 'border-green-400 bg-green-400 text-black'
+                : 'border-green-400/30 bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-black'
+            }`}
+          >
+            {label} ({statusCounts[value as keyof typeof statusCounts] || 0})
+          </button>
+        ))}
       </div>
 
       {/* Admin Section - Project Requests */}
@@ -135,7 +141,7 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
           <p className='mb-2 font-mono text-sm text-green-300'>
             {statusFilter === 'all'
               ? 'No project requests found'
-              : `No ${(statusFilter || 'unknown').replace('_', ' ')} requests`}
+              : `No ${statusFilter.replace(/([A-Z])/g, ' $1').trim().toLowerCase()} requests`}
           </p>
           <p className='font-mono text-xs text-green-300/60'>
             Requests will appear here when clients submit them
