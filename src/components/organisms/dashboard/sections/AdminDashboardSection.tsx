@@ -25,7 +25,7 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
   const [approveMutation] = useApproveProjectRequest()
   const [updateStatusMutation] = useUpdateProjectRequestStatus()
 
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all' | 'actionable'>('actionable')
 
   // Get the project requests directly from GraphQL
   const adminRequests = projectRequestsData?.projectRequests || []
@@ -61,22 +61,22 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
   // Admin request filtering
   const filteredRequests = adminRequests.filter((request: any) => {
     if (statusFilter === 'all') return true
+    if (statusFilter === 'actionable')
+      return request.status === ProjectStatus.Requested || request.status === ProjectStatus.InReview
     return request.status === statusFilter
   })
 
   const getStatusCounts = () => {
-    const counts = {
+    const requested = adminRequests.filter((r: any) => r.status === ProjectStatus.Requested).length
+    const inReview = adminRequests.filter((r: any) => r.status === ProjectStatus.InReview).length
+    return {
+      actionable: requested + inReview,
       all: adminRequests.length,
-      requested: adminRequests.filter((r: any) => r.status === 'requested')
-        .length,
-      in_review: adminRequests.filter((r: any) => r.status === 'in_review')
-        .length,
-      approved: adminRequests.filter((r: any) => r.status === 'approved')
-        .length,
-      cancelled: adminRequests.filter((r: any) => r.status === 'cancelled')
-        .length,
+      [ProjectStatus.Requested]: requested,
+      [ProjectStatus.InReview]: inReview,
+      [ProjectStatus.Approved]: adminRequests.filter((r: any) => r.status === ProjectStatus.Approved).length,
+      [ProjectStatus.Cancelled]: adminRequests.filter((r: any) => r.status === ProjectStatus.Cancelled).length,
     }
-    return counts
   }
 
   const statusCounts = getStatusCounts()
@@ -87,6 +87,7 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
       <div className='mb-6 flex flex-wrap gap-2'>
         {(
           [
+            ['actionable', 'ACTIONABLE'],
             ['all', 'ALL'],
             [ProjectStatus.Requested, 'REQUESTED'],
             [ProjectStatus.InReview, 'IN REVIEW'],
@@ -139,7 +140,7 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
         <div className='flex flex-col items-center justify-center py-12 text-center'>
           <div className='mb-4 text-4xl'>📋</div>
           <p className='mb-2 font-mono text-sm text-green-300'>
-            {statusFilter === 'all'
+            {statusFilter === 'all' || statusFilter === 'actionable'
               ? 'No project requests found'
               : `No ${statusFilter.replace(/([A-Z])/g, ' $1').trim().toLowerCase()} requests`}
           </p>
