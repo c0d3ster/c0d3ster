@@ -117,16 +117,23 @@ describe('ProjectDetailsTemplate', () => {
     )
   })
 
-  it('renders completion progress when progressPercentage is set', () => {
-    render(<ProjectDetailsTemplate project={mockProject} />)
+  it('renders completion progress when progressPercentage is set and below 100', () => {
+    const inProgressProject = { ...mockProject, progressPercentage: 75 }
+    render(<ProjectDetailsTemplate project={inProgressProject} />)
 
     expect(screen.getByText('COMPLETION')).toBeInTheDocument()
-    expect(screen.getByText('100%')).toBeInTheDocument()
+    expect(screen.getByText('75%')).toBeInTheDocument()
   })
 
   it('does not render completion block when progressPercentage is null', () => {
     const noProgress = { ...mockProject, progressPercentage: null }
     render(<ProjectDetailsTemplate project={noProgress} />)
+
+    expect(screen.queryByText('COMPLETION')).not.toBeInTheDocument()
+  })
+
+  it('does not render completion block when progressPercentage is 100', () => {
+    render(<ProjectDetailsTemplate project={mockProject} />)
 
     expect(screen.queryByText('COMPLETION')).not.toBeInTheDocument()
   })

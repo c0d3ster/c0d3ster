@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectFeature, ProjectPriority, ProjectStatus, ProjectType } from '@/graphql/schema'
+import { ProjectFeature, ProjectPriority, ProjectStatus, ProjectType, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import {
@@ -62,13 +62,17 @@ const mockFileService = {
 }
 
 // Mock specific dependencies not covered by global setup
-vi.mock('@/utils', () => ({
-  findProjectBySlug: vi.fn(),
-  hasSlugConflict: vi.fn(),
-  isAdminRole: vi.fn(),
-  isDeveloperOrHigherRole: vi.fn(),
-  generateSlug: vi.fn().mockReturnValue('test-project'),
-}))
+vi.mock('@/utils', async () => {
+  const { normalizeHttpUrl } = await import('@/utils/Url')
+  return {
+    findProjectBySlug: vi.fn(),
+    hasSlugConflict: vi.fn(),
+    isAdminRole: vi.fn(),
+    isDeveloperOrHigherRole: vi.fn(),
+    generateSlug: vi.fn().mockReturnValue('test-project'),
+    normalizeHttpUrl,
+  }
+})
 
 describe('ProjectService', () => {
   let projectService: ProjectService
@@ -688,6 +692,67 @@ describe('ProjectService', () => {
       )
 
       expect(result).toEqual(updatedProject)
+    })
+
+    it('should reject liveUrl updates from unauthorized users', async () => {
+      mockDbQuery.findFirst.mockResolvedValue(mockProject)
+
+      await expect(
+        projectService.updateProject(
+          'project-123',
+          { liveUrl: 'https://example.com' },
+          'client-123',
+          'client'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'FORBIDDEN' },
+      })
+    })
+
+    it('should allow liveUrl updates from assigned developer', async () => {
+      const updatedProject = {
+        ...mockProject,
+        liveUrl: 'https://example.com/',
+      }
+
+      mockDbQuery.findFirst.mockResolvedValue(mockProject)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        return callback({
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([updatedProject]),
+              }),
+            }),
+          }),
+          insert: vi.fn(),
+        } as any)
+      })
+
+      const result = await projectService.updateProject(
+        'project-123',
+        { liveUrl: 'example.com' },
+        'developer-123',
+        UserRole.Developer
+      )
+
+      expect(result).toEqual(updatedProject)
+    })
+
+    it('should reject invalid liveUrl values', async () => {
+      mockDbQuery.findFirst.mockResolvedValue(mockProject)
+      mockIsAdminRole.mockReturnValueOnce(true)
+
+      await expect(
+        projectService.updateProject(
+          'project-123',
+          { liveUrl: 'not a url' },
+          'admin-123',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'INVALID_URL' },
+      })
     })
   })
 
@@ -1682,6 +1747,67 @@ describe('ProjectService', () => {
       ).rejects.toMatchObject({
         extensions: { code: 'REPO_ALREADY_PROVISIONED' },
       })
+    })
+
+    it('should throw DEVELOPER_NOT_ASSIGNED when no developer is assigned', async () => {
+      const unassignedProject = { ...mockProject, developerId: null }
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([unassignedProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'DEVELOPER_NOT_ASSIGNED' },
+      })
+
+      expect(mockCreateRepoFromTemplate).not.toHaveBeenCalled()
+    })
+
+    it('should throw INVALID_STATUS when project is not approved or in progress', async () => {
+      const pendingProject = {
+        ...mockProject,
+        status: ProjectStatus.InReview,
+      }
+      mockIsAdminRole.mockReturnValue(true)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                for: vi.fn().mockResolvedValue([pendingProject]),
+              }),
+            }),
+          }),
+        }
+        return callback(mockTx as any)
+      })
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({
+        extensions: { code: 'INVALID_STATUS' },
+      })
+
+      expect(mockCreateRepoFromTemplate).not.toHaveBeenCalled()
     })
 
     it('should throw PROJECT_NOT_FOUND when project does not exist', async () => {

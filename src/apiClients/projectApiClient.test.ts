@@ -150,6 +150,7 @@ describe('Project API Client', () => {
         expect(apolloClient.query).toHaveBeenCalledWith({
           query: 'GET_PROJECT_BY_SLUG_DOCUMENT',
           variables: { slug: mockSlug },
+          fetchPolicy: 'network-only',
         })
         expect(result).toEqual(mockProject)
       })

@@ -120,10 +120,11 @@ export const GET_PROJECT_BY_SLUG = gql`
 `
 
 export const UPDATE_PROJECT = gql`
-  mutation UpdateProject($id: ID!, $featured: Boolean) {
-    updateProject(id: $id, input: { featured: $featured }) {
+  mutation UpdateProject($id: ID!, $featured: Boolean, $liveUrl: String) {
+    updateProject(id: $id, input: { featured: $featured, liveUrl: $liveUrl }) {
       id
       featured
+      liveUrl
     }
   }
 `
@@ -224,6 +225,7 @@ export const getProjectBySlug = async (slug: string) => {
   const result = await apolloClient.query<GetProjectBySlugQuery>({
     query: GetProjectBySlugDocument,
     variables: { slug },
+    fetchPolicy: 'network-only',
   })
   if (result.error) {
     throw new Error(result.error.message)
