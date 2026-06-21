@@ -328,7 +328,7 @@ export const ProjectDetailsTemplate = ({
                     </Button>
                   )}
                   {liveUrl && !editingLiveUrl && (
-                    <div className='group relative'>
+                    <div className='group relative w-full'>
                       <Button
                         href={liveUrl}
                         external={liveUrl.startsWith('http')}
