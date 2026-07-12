@@ -195,7 +195,7 @@ export const SiteHeader = ({
           </div>
 
           {/* Dropdown menu */}
-          <div className='absolute top-full right-0 z-50 mt-2 min-w-32 rounded-lg border border-green-400/20 bg-black/90 opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100'>
+          <div className='pointer-events-none absolute top-full right-0 z-50 mt-2 min-w-32 rounded-lg border border-green-400/20 bg-black/90 opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100'>
             <div className='py-2'>
               <SignOutButton>
                 <button
@@ -231,7 +231,7 @@ export const SiteHeader = ({
           </div>
 
           {/* Dropdown menu */}
-          <div className='absolute top-full right-0 z-50 mt-2 min-w-32 rounded-lg border border-green-400/20 bg-black/90 opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100'>
+          <div className='pointer-events-none absolute top-full right-0 z-50 mt-2 min-w-32 rounded-lg border border-green-400/20 bg-black/90 opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100'>
             <div className='py-2'>
               {isLoaded && user ? (
                 <>
