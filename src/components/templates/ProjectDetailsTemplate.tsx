@@ -180,6 +180,25 @@ export const ProjectDetailsTemplate = ({
   return (
     <CleanPageTemplate>
       <BackButton useBack text='BACK' />
+      {canManageFeatured && (
+        <div className='fixed top-24 right-0 left-0 z-40'>
+          <div className='container mx-auto px-4'>
+            <div className='flex justify-end'>
+              <button
+                type='button'
+                onClick={handleToggleFeatured}
+                disabled={updatingFeatured}
+                className='cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
+                title={featured ? 'Remove from featured' : 'Add to featured'}
+                aria-label={featured ? 'Remove from featured' : 'Add to featured'}
+                aria-pressed={featured}
+              >
+                {featured ? <FaStar className='h-5 w-5' /> : <FaRegStar className='h-5 w-5' />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className='container mx-auto px-4 pb-8 md:pb-12'>
         {/* Project Header */}
         <ScrollFade>
@@ -409,25 +428,6 @@ export const ProjectDetailsTemplate = ({
           {/* Project Details */}
           <ScrollFade>
             <div className='space-y-8'>
-              {/* Featured toggle — admin only (controls public portfolio) */}
-              {canManageFeatured && (
-                <div className='flex justify-end'>
-                  <button
-                    type='button'
-                    onClick={handleToggleFeatured}
-                    disabled={updatingFeatured}
-                    className='cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
-                    title={featured ? 'Remove from featured' : 'Add to featured'}
-                    aria-label={featured ? 'Remove from featured' : 'Add to featured'}
-                    aria-pressed={featured}
-                  >
-                    {featured
-                      ? <FaStar className='h-5 w-5' />
-                      : <FaRegStar className='h-5 w-5' />}
-                  </button>
-                </div>
-              )}
-
               {/* Post update — primary action for admins / assigned dev */}
               {canPostUpdate && (
                 <PostUpdatePanel
