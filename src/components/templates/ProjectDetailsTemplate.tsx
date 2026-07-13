@@ -296,37 +296,6 @@ export const ProjectDetailsTemplate = ({
                 )}
               </div>
 
-              {/* People */}
-              <div className='w-[300px] space-y-4'>
-                {([
-                  { label: 'CLIENT', user: project.client },
-                  { label: 'DEVELOPER', user: project.developer },
-                ] as const).map(({ label, user }) => {
-                  const initials = user
-                    ? (`${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`
-                        .toUpperCase() || '?')
-                    : null
-                  const fullName = user
-                    ? ([user.firstName, user.lastName].filter(Boolean).join(' ') || user.email)
-                    : null
-                  return (
-                    <div key={label} className='flex items-center gap-3'>
-                      <span className='w-20 font-mono text-xs text-green-400/50'>{label}</span>
-                      {user ? (
-                        <>
-                          <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-xs text-green-400'>
-                            {initials}
-                          </div>
-                          <span className='font-mono text-sm text-green-300'>{fullName}</span>
-                        </>
-                      ) : (
-                        <span className='font-mono text-sm text-green-400/40'>UNASSIGNED</span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
 
               {/* Repo / Staging / Live links */}
               {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
@@ -420,16 +389,37 @@ export const ProjectDetailsTemplate = ({
           {/* Project Details */}
           <ScrollFade>
             <div className='space-y-8'>
-              {/* Status + Created At */}
-              <div className='flex items-center justify-between'>
-                <span className='font-mono text-xs text-green-400/50'>
-                  Created {formatCardDate(project.createdAt)}
-                </span>
-                <span
-                  className={`rounded-full border px-4 py-1.5 font-mono text-xs font-bold ${getStatusCardStyling(optimisticStatus)}`}
-                >
-                  {formatStatus(optimisticStatus)}
-                </span>
+              {/* People + Status */}
+              <div className='space-y-4'>
+                <div className='flex items-center gap-3'>
+                  <span className='w-24 font-mono text-xl font-bold text-green-400'>CLIENT</span>
+                  {project.client ? (
+                    <>
+                      <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                        {(`${project.client.firstName?.[0] ?? ''}${project.client.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
+                      </div>
+                      <span className='font-mono text-base text-green-300'>
+                        {[project.client.firstName, project.client.lastName].filter(Boolean).join(' ') || project.client.email}
+                      </span>
+                    </>
+                  ) : (
+                    <span className='font-mono text-base text-green-400/40'>UNASSIGNED</span>
+                  )}
+                  <span className={`ml-auto rounded-full border px-4 py-1.5 font-mono text-xs font-bold ${getStatusCardStyling(optimisticStatus)}`}>
+                    {formatStatus(optimisticStatus)}
+                  </span>
+                </div>
+                {project.developer && (
+                  <div className='flex items-center gap-3'>
+                    <span className='w-24 font-mono text-xl font-bold text-green-400'>DEVELOPER</span>
+                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                      {(`${project.developer.firstName?.[0] ?? ''}${project.developer.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
+                    </div>
+                    <span className='font-mono text-base text-green-300'>
+                      {[project.developer.firstName, project.developer.lastName].filter(Boolean).join(' ') || project.developer.email}
+                    </span>
+                  </div>
+                )}
               </div>
               {/* Post update — primary action for admins / assigned dev */}
               {canPostUpdate && (
@@ -510,6 +500,11 @@ export const ProjectDetailsTemplate = ({
                 statusUpdates={project.statusUpdates || []}
                 hideInternal={!canPostUpdate}
               />
+
+              {/* Created date */}
+              <p className='border-t border-green-400/10 pt-4 font-mono text-xs text-green-400/30'>
+                Created {formatCardDate(project.createdAt)}
+              </p>
             </div>
           </ScrollFade>
         </div>
