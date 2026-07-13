@@ -22,7 +22,7 @@ import {
 } from '@/components/molecules'
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
-import { formatStatus, getStatusCardStyling, normalizeHttpUrl } from '@/utils'
+import { formatCardDate, formatStatus, getStatusCardStyling, normalizeHttpUrl } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
 
@@ -327,14 +327,6 @@ export const ProjectDetailsTemplate = ({
                 })}
               </div>
 
-              {/* Status Badge */}
-              <div className='text-center'>
-                <span
-                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusCardStyling(optimisticStatus)}`}
-                >
-                  {formatStatus(optimisticStatus)}
-                </span>
-              </div>
 
               {/* Repo / Staging / Live links */}
               {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
@@ -428,6 +420,17 @@ export const ProjectDetailsTemplate = ({
           {/* Project Details */}
           <ScrollFade>
             <div className='space-y-8'>
+              {/* Status + Created At */}
+              <div className='flex items-center justify-between'>
+                <span className='font-mono text-xs text-green-400/50'>
+                  Created {formatCardDate(project.createdAt)}
+                </span>
+                <span
+                  className={`rounded-full border px-4 py-1.5 font-mono text-xs font-bold ${getStatusCardStyling(optimisticStatus)}`}
+                >
+                  {formatStatus(optimisticStatus)}
+                </span>
+              </div>
               {/* Post update — primary action for admins / assigned dev */}
               {canPostUpdate && (
                 <PostUpdatePanel
