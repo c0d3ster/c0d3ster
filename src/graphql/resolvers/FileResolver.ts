@@ -14,13 +14,11 @@ import type { FileService, ProjectService, UserService } from '@/services'
 
 import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/constants/file'
 import {
-  Environment,
   File,
   FileFilterInput,
   ProjectLogoUploadResult,
   UserRole,
 } from '@/graphql/schema'
-import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
 import {
   isAllowedImageContentType,
@@ -41,16 +39,15 @@ export class FileResolver {
     filter?: FileFilterInput
   ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
-    const env = filter?.environment ?? Environment.DEV
     let prefix = ''
     if (filter?.projectId) {
-      prefix = `${env.toLowerCase()}/projects/${filter.projectId}/`
+      prefix = `projects/${filter.projectId}/`
     } else if (filter?.userId) {
       // Only allow users to list their own files, or admins to list any user's files
       if (filter.userId !== currentUser.id) {
         this.userService.checkPermission(currentUser, UserRole.Admin)
       }
-      prefix = `${env.toLowerCase()}/users/${filter.userId}/`
+      prefix = `users/${filter.userId}/`
     }
 
     // Get list of file keys
@@ -61,7 +58,15 @@ export class FileResolver {
       fileKeys.map((key: string) => this.fileService.getFileMetadata(key))
     )
 
-    return fileMetadata.filter(Boolean)
+    const results = fileMetadata.filter(
+      (file): file is NonNullable<typeof file> => file !== null
+    )
+    // The bucket is already environment-scoped, so this only matters if a
+    // caller explicitly wants to cross-check recorded upload metadata.
+    if (filter?.environment) {
+      return results.filter((file) => file.environment === filter.environment)
+    }
+    return results
   }
 
   @Query(() => File, { nullable: true })
@@ -119,8 +124,7 @@ export class FileResolver {
       this.userService.checkPermission(currentUser, UserRole.Admin)
     }
 
-    const env = Env.APP_ENV
-    const files = await this.fileService.listFiles(`${env}/users/${userId}/`)
+    const files = await this.fileService.listFiles(`users/${userId}/`)
 
     // Get metadata for each file
     const fileMetadata = await Promise.all(
@@ -215,7 +219,7 @@ export class FileResolver {
       throw new Error('Project not found or access denied')
     }
 
-    const expectedPrefix = `${Env.APP_ENV}/projects/${projectId}/`
+    const expectedPrefix = `projects/${projectId}/`
     if (!key.startsWith(expectedPrefix)) {
       throw new Error('Invalid logo key')
     }

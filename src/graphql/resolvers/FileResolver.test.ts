@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MAX_FILE_SIZE } from '@/constants/file'
 import { FileResolver } from '@/graphql/resolvers/FileResolver'
 import { Environment, UserRole } from '@/graphql/schema'
-import { Env } from '@/libs/Env'
 import { createMockUser } from '@/tests/mocks/auth'
 import { createMockProject } from '@/tests/mocks/projects'
 import {
@@ -26,6 +25,7 @@ const createMockFile = (overrides = {}) => ({
   fileSize: 1024,
   uploadedBy: 'user-1',
   projectId: 'project-1',
+  environment: Environment.DEV,
   uploadedAt: new Date('2024-01-01'),
   ...overrides,
 })
@@ -61,7 +61,7 @@ describe('FileResolver', () => {
 
       expect(result).toEqual(mockFiles)
       expect(mockFileService.listFiles).toHaveBeenCalledWith(
-        'dev/projects/project-1/'
+        'projects/project-1/'
       )
     })
 
@@ -83,7 +83,7 @@ describe('FileResolver', () => {
         UserRole.Admin
       )
       expect(mockFileService.listFiles).toHaveBeenCalledWith(
-        'dev/users/user-2/'
+        'users/user-2/'
       )
     })
 
@@ -101,7 +101,7 @@ describe('FileResolver', () => {
       expect(result).toEqual(mockFiles)
       expect(mockUserService.checkPermission).not.toHaveBeenCalled()
       expect(mockFileService.listFiles).toHaveBeenCalledWith(
-        'dev/users/user-1/'
+        'users/user-1/'
       )
     })
 
@@ -256,9 +256,9 @@ describe('FileResolver', () => {
       mockProjectService.getProjectById.mockResolvedValue(mockProject)
       mockFileService.generateProjectLogoPresignedUpload.mockResolvedValue({
         uploadUrl: 'https://r2.example.com/put',
-        key: 'dev/projects/project-1/1_logo.jpg',
+        key: 'projects/project-1/1_logo.jpg',
         metadata: {
-          key: 'dev/projects/project-1/1_logo.jpg',
+          key: 'projects/project-1/1_logo.jpg',
           fileName: 'logo.jpg',
           originalFileName: 'logo.jpg',
           fileSize: 1024,
@@ -276,7 +276,7 @@ describe('FileResolver', () => {
       )
 
       expect(result.uploadUrl).toBe('https://r2.example.com/put')
-      expect(result.key).toBe('dev/projects/project-1/1_logo.jpg')
+      expect(result.key).toBe('projects/project-1/1_logo.jpg')
       expect(result.projectId).toBe('project-1')
       expect(
         mockFileService.generateProjectLogoPresignedUpload
@@ -389,8 +389,8 @@ describe('FileResolver', () => {
   describe('finalizeProjectLogoUpload', () => {
     it('should finalize logo and return download URL', async () => {
       const currentUser = createMockUser()
-      const logoKey = `${Env.APP_ENV}/projects/project-1/1_logo.jpg`
-      const oldLogoKey = `${Env.APP_ENV}/projects/project-1/old.png`
+      const logoKey = 'projects/project-1/1_logo.jpg'
+      const oldLogoKey = 'projects/project-1/old.png'
       const mockProject = createMockProject({
         id: 'project-1',
         logo: oldLogoKey,
@@ -448,7 +448,7 @@ describe('FileResolver', () => {
       await expect(
         fileResolver.finalizeProjectLogoUpload(
           'project-1',
-          `${Env.APP_ENV}/projects/other-project/x.jpg`
+          'projects/other-project/x.jpg'
         )
       ).rejects.toThrow('Invalid logo key')
     })
@@ -458,7 +458,7 @@ describe('FileResolver', () => {
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(createMockProject())
 
-      const badKey = `${Env.APP_ENV}/projects/project-1/../evil/x.jpg`
+      const badKey = 'projects/project-1/../evil/x.jpg'
 
       await expect(
         fileResolver.finalizeProjectLogoUpload('project-1', badKey)
@@ -467,7 +467,7 @@ describe('FileResolver', () => {
 
     it('should throw when object head is missing', async () => {
       const currentUser = createMockUser()
-      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      const logoKey = 'projects/project-1/k.jpg'
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(createMockProject())
       mockFileService.getObjectHeadInfo.mockResolvedValue(null)
@@ -479,7 +479,7 @@ describe('FileResolver', () => {
 
     it('should throw when object is larger than max', async () => {
       const currentUser = createMockUser()
-      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      const logoKey = 'projects/project-1/k.jpg'
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(createMockProject())
       mockFileService.getObjectHeadInfo.mockResolvedValue({
@@ -494,7 +494,7 @@ describe('FileResolver', () => {
 
     it('should throw when buffer range is empty', async () => {
       const currentUser = createMockUser()
-      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      const logoKey = 'projects/project-1/k.jpg'
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(createMockProject())
       mockFileService.getObjectHeadInfo.mockResolvedValue({
@@ -510,7 +510,7 @@ describe('FileResolver', () => {
 
     it('should throw when detected type is not allowed', async () => {
       const currentUser = createMockUser()
-      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      const logoKey = 'projects/project-1/k.jpg'
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(createMockProject())
       mockFileService.getObjectHeadInfo.mockResolvedValue({
@@ -532,7 +532,7 @@ describe('FileResolver', () => {
 
     it('should throw when getFileMetadata returns null', async () => {
       const currentUser = createMockUser()
-      const logoKey = `${Env.APP_ENV}/projects/project-1/k.jpg`
+      const logoKey = 'projects/project-1/k.jpg'
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(createMockProject())
       mockFileService.getObjectHeadInfo.mockResolvedValue({
@@ -557,7 +557,7 @@ describe('FileResolver', () => {
 
     it('should not delete storage when old logo key equals new key', async () => {
       const currentUser = createMockUser()
-      const logoKey = `${Env.APP_ENV}/projects/project-1/1_logo.jpg`
+      const logoKey = 'projects/project-1/1_logo.jpg'
       const mockProject = createMockProject({
         id: 'project-1',
         logo: logoKey,
@@ -659,7 +659,7 @@ describe('FileResolver', () => {
       })
 
       it('should return presigned URL for R2 path', async () => {
-        const file = createMockFile({ key: 'dev/projects/project-1/logo.jpg' })
+        const file = createMockFile({ key: 'projects/project-1/logo.jpg' })
         const currentUser = createMockUser()
 
         mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
@@ -678,7 +678,7 @@ describe('FileResolver', () => {
 
       it('should throw error when access denied', async () => {
         const file = createMockFile({
-          key: 'dev/projects/project-1/logo.jpg',
+          key: 'projects/project-1/logo.jpg',
           uploadedBy: 'other-user',
           projectId: null,
         })

@@ -64,7 +64,6 @@ describe('FileService', () => {
       R2_ACCESS_KEY_ID: 'test-access-key',
       R2_SECRET_ACCESS_KEY: 'test-secret-key',
       R2_BUCKET_NAME: 'test-bucket',
-      APP_ENV: 'dev',
     })
     // Initialize mockS3Send before creating FileService
     mockS3Send = vi.fn()
@@ -98,9 +97,7 @@ describe('FileService', () => {
       const result = await fileService.generatePresignedUploadUrl(mockFileInput)
 
       expect(result.uploadUrl).toBe('https://signed-url.com')
-      expect(result.key).toMatch(
-        /dev\/projects\/project-123\/\d+_test-file\.jpg/
-      )
+      expect(result.key).toMatch(/projects\/project-123\/\d+_test-file\.jpg/)
       expect(result.metadata).toEqual({
         fileName: mockFileInput.fileName,
         originalFileName: mockFileInput.originalFileName,
@@ -111,7 +108,7 @@ describe('FileService', () => {
         environment: mockFileInput.environment,
         uploadedAt: expect.any(Date),
         key: expect.stringMatching(
-          /dev\/projects\/project-123\/\d+_test-file\.jpg/
+          /projects\/project-123\/\d+_test-file\.jpg/
         ),
       })
     })
@@ -123,7 +120,7 @@ describe('FileService', () => {
       const result = await fileService.generatePresignedUploadUrl(userFileInput)
 
       expect(result.uploadUrl).toBe('https://signed-url.com')
-      expect(result.key).toMatch(/dev\/users\/user-123\/\d+_test-file\.jpg/)
+      expect(result.key).toMatch(/users\/user-123\/\d+_test-file\.jpg/)
       expect(result.metadata.projectId).toBeUndefined()
     })
 
@@ -155,7 +152,7 @@ describe('FileService', () => {
       })
 
       expect(result.uploadUrl).toBe('https://presigned-put.example')
-      expect(result.key).toMatch(/^dev\/projects\/project-1\/\d+_logo\.\.png$/)
+      expect(result.key).toMatch(/^projects\/project-1\/\d+_logo\.\.png$/)
       expect(result.metadata.fileName).toBe('logo..png')
       expect(result.metadata.contentType).toBe('image/png')
       expect(result.metadata.fileSize).toBe(2048)
@@ -180,8 +177,8 @@ describe('FileService', () => {
       expect(putInput.Metadata).toBeUndefined()
     })
 
-    it('should use PROD environment in metadata when APP_ENV is prod', async () => {
-      Object.assign(Env, { APP_ENV: 'prod' })
+    it('should use PROD environment in metadata when R2_BUCKET_NAME is prod', async () => {
+      Object.assign(Env, { R2_BUCKET_NAME: 'prod' })
       mockGetSignedUrl.mockResolvedValue('https://put')
       fileService = new FileService()
 
@@ -195,9 +192,9 @@ describe('FileService', () => {
       })
 
       expect(result.metadata.environment).toBe(Environment.PROD)
-      expect(result.key).toMatch(/^prod\/projects\/p1\//)
+      expect(result.key).toMatch(/^projects\/p1\//)
 
-      Object.assign(Env, { APP_ENV: 'dev' })
+      Object.assign(Env, { R2_BUCKET_NAME: 'test-bucket' })
       fileService = new FileService()
     })
   })

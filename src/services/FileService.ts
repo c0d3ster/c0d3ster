@@ -46,8 +46,10 @@ export class FileService {
     this.bucketName = Env.R2_BUCKET_NAME
   }
 
-  private appEnvToEnvironment(): Environment {
-    return Env.APP_ENV === 'prod' ? Environment.PROD : Environment.DEV
+  // The R2 bucket itself is environment-scoped (R2_BUCKET_NAME), so this
+  // reflects which bucket we're actually talking to rather than APP_ENV.
+  private resolveEnvironment(): Environment {
+    return this.bucketName === 'prod' ? Environment.PROD : Environment.DEV
   }
 
   /**
@@ -78,8 +80,7 @@ export class FileService {
       options
     const timestamp = Date.now()
     const sanitizedFileName = fileName.replace(/[^a-z0-9.-]/gi, '_')
-    const env = Env.APP_ENV
-    const key = `${env}/projects/${projectId}/${timestamp}_${sanitizedFileName}`
+    const key = `projects/${projectId}/${timestamp}_${sanitizedFileName}`
 
     const metadata = {
       key,
@@ -87,7 +88,7 @@ export class FileService {
       originalFileName,
       fileSize,
       contentType,
-      environment: this.appEnvToEnvironment(),
+      environment: this.resolveEnvironment(),
       uploadedAt: new Date(),
     }
 
@@ -153,13 +154,12 @@ export class FileService {
   private generateKey(options: FileUploadInput & { userId: string }): string {
     const timestamp = Date.now()
     const sanitizedFileName = options.fileName.replace(/[^a-z0-9.-]/gi, '_')
-    const env = options.environment || Environment.DEV
 
     if (options.projectId) {
-      return `${env.toLowerCase()}/projects/${options.projectId}/${timestamp}_${sanitizedFileName}`
+      return `projects/${options.projectId}/${timestamp}_${sanitizedFileName}`
     }
 
-    return `${env.toLowerCase()}/users/${options.userId}/${timestamp}_${sanitizedFileName}`
+    return `users/${options.userId}/${timestamp}_${sanitizedFileName}`
   }
 
   async generatePresignedUploadUrl(
