@@ -107,12 +107,3 @@ Invoice implementation rule (from doc): never hand-write migration SQL — edit 
 ## Discovered
 
 <!-- Agent: add newly discovered work here during sessions, one line + location. Do not implement in the same session. -->
-
----
-
-## Archive stub
-
-The following Verify tasks were confirmed complete before this file was created (2026-07-13):
-
-- [x] Admin request panel default sort excludes approved requests. ✓ confirmed.
-- [x] Favorite star fixed right below header; login hover fixed. ✓ confirmed.
