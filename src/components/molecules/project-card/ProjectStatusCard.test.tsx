@@ -146,6 +146,24 @@ describe('ProjectStatusCard', () => {
     )
   })
 
+  it('renders a manage files link for projects only', () => {
+    render(<ProjectStatusCard item={mockProject} />)
+
+    const manageFilesLink = screen.getByText('MANAGE FILES')
+
+    expect(manageFilesLink).toBeInTheDocument()
+    expect(manageFilesLink.closest('a')).toHaveAttribute(
+      'href',
+      `/dashboard/projects/${mockProject.id}`
+    )
+  })
+
+  it('does not render a manage files link for project requests', () => {
+    render(<ProjectStatusCard item={mockProjectRequest} />)
+
+    expect(screen.queryByText('MANAGE FILES')).not.toBeInTheDocument()
+  })
+
   it('handles missing client information gracefully', () => {
     const projectWithoutClient = { ...mockProject, client: null }
     render(<ProjectStatusCard item={projectWithoutClient} />)
