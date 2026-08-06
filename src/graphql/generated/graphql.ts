@@ -57,6 +57,7 @@ export type CreateProjectRequestInput = {
   readonly budget?: InputMaybe<Scalars['Float']['input']>;
   readonly contactPreference?: InputMaybe<Scalars['String']['input']>;
   readonly description: Scalars['String']['input'];
+  readonly features?: InputMaybe<ReadonlyArray<ProjectFeature>>;
   readonly projectName: Scalars['String']['input'];
   readonly projectType: ProjectType;
   readonly requirements?: InputMaybe<ProjectRequirementsInput>;
@@ -258,9 +259,23 @@ export type ProjectCollaborator = {
 
 /** Infrastructure feature required by a project */
 export enum ProjectFeature {
+  AdminDashboard = 'AdminDashboard',
+  Analytics = 'Analytics',
   Auth = 'Auth',
+  CmsIntegration = 'CmsIntegration',
+  Consultation = 'Consultation',
+  CustomApi = 'CustomApi',
   Database = 'Database',
-  Email = 'Email'
+  Deployment = 'Deployment',
+  DomainConfig = 'DomainConfig',
+  Email = 'Email',
+  FileUploads = 'FileUploads',
+  PaymentProcessing = 'PaymentProcessing',
+  ProjectManagement = 'ProjectManagement',
+  ResponsiveDesign = 'ResponsiveDesign',
+  Seo = 'Seo',
+  Testing = 'Testing',
+  ThirdPartyIntegrations = 'ThirdPartyIntegrations'
 }
 
 export type ProjectFilter = {
@@ -294,6 +309,7 @@ export type ProjectRequest = {
   readonly contactPreference?: Maybe<Scalars['String']['output']>;
   readonly createdAt: Scalars['String']['output'];
   readonly description: Scalars['String']['output'];
+  readonly features?: Maybe<ReadonlyArray<ProjectFeature>>;
   readonly id: Scalars['ID']['output'];
   readonly projectName: Scalars['String']['output'];
   readonly projectType: ProjectType;
@@ -669,7 +685,7 @@ export type CreateProjectRequestMutationVariables = Exact<{
 }>;
 
 
-export type CreateProjectRequestMutation = { readonly __typename?: 'Mutation', readonly createProjectRequest: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly contactPreference?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null } };
+export type CreateProjectRequestMutation = { readonly __typename?: 'Mutation', readonly createProjectRequest: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly features?: ReadonlyArray<ProjectFeature> | null, readonly contactPreference?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null } };
 
 export type ApproveProjectRequestMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1471,6 +1487,7 @@ export const CreateProjectRequestDocument = gql`
       needsContentCreation
       needsSEO
     }
+    features
     contactPreference
     additionalInfo
     status

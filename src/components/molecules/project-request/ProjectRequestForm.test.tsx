@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectType } from '@/graphql/generated/graphql'
+import { ProjectFeature, ProjectType } from '@/graphql/generated/graphql'
 
 import { ProjectRequestForm } from './ProjectRequestForm'
 
@@ -45,6 +45,11 @@ vi.mock('@/validations', () => ({
     { value: 'email', label: 'Email' },
     { value: 'phone', label: 'Phone Call' },
     { value: 'text', label: 'Text Message' },
+  ],
+  projectFeatureOptions: [
+    { value: ProjectFeature.Database, label: 'Database' },
+    { value: ProjectFeature.Auth, label: 'Auth' },
+    { value: ProjectFeature.PaymentProcessing, label: 'Payment processing' },
   ],
 }))
 
@@ -319,6 +324,34 @@ describe('ProjectRequestForm', () => {
         screen.getByRole('button', { name: 'SUBMIT REQUEST' })
       ).toBeInTheDocument()
     })
+  })
+
+  it('renders advanced options collapsed by default', () => {
+    render(<ProjectRequestForm />)
+
+    expect(screen.getByText('▸ ADVANCED OPTIONS')).toBeInTheDocument()
+    expect(screen.queryByText('Database')).not.toBeInTheDocument()
+    expect(screen.queryByText('Auth')).not.toBeInTheDocument()
+  })
+
+  it('expands advanced options and toggles feature selection', () => {
+    render(<ProjectRequestForm />)
+
+    fireEvent.click(screen.getByText('▸ ADVANCED OPTIONS'))
+
+    expect(screen.getByText('▾ ADVANCED OPTIONS')).toBeInTheDocument()
+
+    const databaseCheckbox = screen.getByLabelText('Database')
+
+    expect(databaseCheckbox).not.toBeChecked()
+
+    fireEvent.click(databaseCheckbox)
+
+    expect(databaseCheckbox).toBeChecked()
+
+    fireEvent.click(databaseCheckbox)
+
+    expect(databaseCheckbox).not.toBeChecked()
   })
 
   it('handles budget field correctly', () => {

@@ -1,6 +1,6 @@
 import z from 'zod'
 
-import { ProjectType } from '@/graphql/generated/graphql'
+import { ProjectFeature, ProjectType } from '@/graphql/generated/graphql'
 
 // Project request form validation schema
 export const projectRequestSchema = z.object({
@@ -39,6 +39,7 @@ export const projectRequestSchema = z.object({
       needsSEO: z.boolean().optional(),
     })
     .optional(),
+  features: z.array(z.nativeEnum(ProjectFeature)).optional(),
 })
 
 // Infer the TypeScript type from the schema
@@ -64,6 +65,20 @@ export const projectTypeOptions = Object.values(ProjectType).map((value) => ({
 // maintenance -> "Maintenance"
 // consultation -> "Consultation"
 // other -> "Other"
+
+// Feature options for the advanced request options section - labels only, no pricing
+// (pricing is admin-only reference data in src/libs/featurePricing.ts)
+export const projectFeatureOptions = Object.values(ProjectFeature).map(
+  (value) => ({
+    value,
+    label: value
+      .replace(/_/g, ' ') // Replace underscores with spaces
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters (for camelCase)
+      .replace(/^./, (str) => str.toUpperCase()) // Capitalize first letter
+      .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+      .trim(), // Remove leading/trailing spaces
+  })
+)
 
 // Contact preference options
 export const contactPreferenceOptions = [
