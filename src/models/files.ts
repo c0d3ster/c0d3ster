@@ -9,6 +9,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
+import { filePlacementEnum } from './enums'
 import { projects } from './projects'
 import { users } from './users'
 
@@ -30,6 +31,8 @@ export const projectFiles = pgTable(
       .references(() => users.id),
     isClientVisible: boolean('is_client_visible').default(true),
     description: text('description'),
+    caption: text('caption'),
+    placement: filePlacementEnum('placement'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => ({
@@ -37,3 +40,5 @@ export const projectFiles = pgTable(
     uploadedByIdx: index('idx_project_files_uploaded_by').on(table.uploadedBy),
   })
 )
+
+export type ProjectFileRecord = typeof projectFiles.$inferSelect
