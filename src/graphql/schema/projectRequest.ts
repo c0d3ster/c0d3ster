@@ -1,6 +1,6 @@
 import { Field, ID, InputType, ObjectType } from 'type-graphql'
 
-import { ProjectStatus, ProjectType } from './project'
+import { ProjectFeature, ProjectStatus, ProjectType } from './project'
 import { User } from './user'
 
 @ObjectType('ProjectRequirements')
@@ -71,6 +71,9 @@ export class ProjectRequest {
   @Field(() => ProjectRequirements, { nullable: true })
   requirements?: ProjectRequirements
 
+  @Field(() => [ProjectFeature], { nullable: true })
+  features?: ProjectFeature[]
+
   @Field(() => String, { nullable: true })
   contactPreference?: string
 
@@ -122,6 +125,9 @@ export class CreateProjectRequestInput {
 
   @Field(() => ProjectRequirementsInput, { nullable: true })
   requirements?: ProjectRequirementsInput
+
+  @Field(() => [ProjectFeature], { nullable: true })
+  features?: ProjectFeature[]
 
   @Field(() => String, { nullable: true })
   contactPreference?: string

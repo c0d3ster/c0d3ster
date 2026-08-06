@@ -46,6 +46,20 @@ export enum ProjectFeature {
   Database = 'database',
   Auth = 'auth',
   Email = 'email',
+  AdminDashboard = 'admin_dashboard',
+  PaymentProcessing = 'payment_processing',
+  FileUploads = 'file_uploads',
+  CustomApi = 'custom_api',
+  Deployment = 'deployment',
+  DomainConfig = 'domain_config',
+  Seo = 'seo',
+  CmsIntegration = 'cms_integration',
+  ResponsiveDesign = 'responsive_design',
+  ThirdPartyIntegrations = 'third_party_integrations',
+  Analytics = 'analytics',
+  Testing = 'testing',
+  Consultation = 'consultation',
+  ProjectManagement = 'project_management',
 }
 
 registerEnumType(ProjectStatus, {

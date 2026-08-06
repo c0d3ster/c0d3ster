@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectStatus, ProjectType } from '@/graphql/schema'
+import { ProjectFeature, ProjectStatus, ProjectType } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { isAdminRole } from '@/utils'
 
@@ -31,6 +31,7 @@ describe('ProjectRequestService', () => {
     budget: 5000,
     timeline: '3 months',
     requirements: { hasDesign: false },
+    features: null,
     contactPreference: 'EMAIL',
     additionalInfo: 'Additional info',
     status: ProjectStatus.Requested,
@@ -236,6 +237,27 @@ describe('ProjectRequestService', () => {
       expect(result).toEqual(mockProjectRequest)
     })
 
+    it('should persist client-selected features', async () => {
+      const mockValues = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockProjectRequest]),
+      })
+      mockDbInsert.mockReturnValue({ values: mockValues } as any)
+
+      await projectRequestService.createProjectRequest(
+        {
+          ...mockCreateInput,
+          features: [ProjectFeature.Auth, ProjectFeature.PaymentProcessing],
+        },
+        'user-123'
+      )
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          features: [ProjectFeature.Auth, ProjectFeature.PaymentProcessing],
+        })
+      )
+    })
+
     it('should throw error when creation fails', async () => {
       mockDbInsert.mockReturnValue({
         values: vi.fn().mockReturnValue({
@@ -379,6 +401,91 @@ describe('ProjectRequestService', () => {
 
       expect(mockDbTransaction).toHaveBeenCalled()
       expect(result).toEqual(mockProject)
+    })
+
+    it("should prefer the request's explicit features over project-type defaults", async () => {
+      const inReviewRequest = {
+        ...mockProjectRequest,
+        status: ProjectStatus.InReview,
+        features: [ProjectFeature.PaymentProcessing],
+      }
+      const mockProject = { id: 'project-123', clientId: 'user-123' }
+      const insertValues = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockProject]),
+      })
+
+      mockDbQuery.findFirst.mockResolvedValue(inReviewRequest)
+      mockIsAdminRole.mockReturnValue(true)
+
+      mockDbTransaction.mockImplementation(async (callback) => {
+        return callback({
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([{ id: 'request-123' }]),
+              }),
+            }),
+          }),
+          insert: vi.fn().mockReturnValue({ values: insertValues }),
+        } as any)
+      })
+
+      await projectRequestService.approveProjectRequest(
+        'request-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          features: [ProjectFeature.PaymentProcessing],
+        })
+      )
+    })
+
+    it('should fall back to project-type default features when the request has none', async () => {
+      const inReviewRequest = {
+        ...mockProjectRequest,
+        status: ProjectStatus.InReview,
+        projectType: ProjectType.WebApp,
+        features: null,
+      }
+      const mockProject = { id: 'project-123', clientId: 'user-123' }
+      const insertValues = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockProject]),
+      })
+
+      mockDbQuery.findFirst.mockResolvedValue(inReviewRequest)
+      mockIsAdminRole.mockReturnValue(true)
+
+      mockDbTransaction.mockImplementation(async (callback) => {
+        return callback({
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([{ id: 'request-123' }]),
+              }),
+            }),
+          }),
+          insert: vi.fn().mockReturnValue({ values: insertValues }),
+        } as any)
+      })
+
+      await projectRequestService.approveProjectRequest(
+        'request-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          features: [
+            ProjectFeature.Database,
+            ProjectFeature.Auth,
+            ProjectFeature.Email,
+          ],
+        })
+      )
     })
 
     it('should throw access denied error for non-admin', async () => {

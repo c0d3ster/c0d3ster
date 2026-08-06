@@ -38,6 +38,7 @@ export const projectRequests = pgTable(
     budget: decimal('budget', { precision: 10, scale: 2, mode: 'number' }),
     timeline: varchar('timeline', { length: 100 }),
     requirements: json('requirements').$type<ProjectRequirements>(), // Structured requirements data
+    features: json('features').$type<ProjectFeature[]>(),
     contactPreference: varchar('contact_preference', { length: 50 }),
     additionalInfo: text('additional_info'),
     status: projectStatusEnum('status')
