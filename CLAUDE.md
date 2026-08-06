@@ -9,22 +9,12 @@ A dev-agency/client platform: it showcases the author's work and lets prospectiv
 ## Commands
 
 ```bash
-npm run dev                 # next dev --turbopack + codegen:watch in parallel
 npm run build:ci            # next build only (what CI runs)
 npm run build:prod          # production build (scripts/build.js)
 
 npm run test                # vitest run (all projects)
-npx vitest run path/to/File.test.ts        # single file
-npx vitest run -t "test name"              # single test by name
-npm run test:coverage
-npm run test:e2e            # Playwright
-
-npm run lint / lint:fix
-npm run format / format:check
-npm run check:types         # tsc --noEmit
 npm run check:deps          # knip — unused deps/exports
 
-npm run db:generate / db:migrate / db:studio   # Drizzle
 npm run codegen / codegen:watch                # regenerate GraphQL client types — run after any change to src/graphql/schema/* or a gql operation in src/apiClients/*
 ```
 
@@ -46,7 +36,6 @@ Adding a feature end-to-end touches: `graphql/schema` (type-graphql decorator cl
 
 - **Auth/permissions are centralized in services**, not resolvers — `UserService.getCurrentUserWithAuth()` and `checkPermission()`. Resolvers call services directly; there is no separate repository/DAO layer.
 - `src/graphql/generated` is gitignored and codegen-produced — never hand-edit.
-- Path aliases: `@/*` → `src/*`, `@/public/*` → `public/*`, `@/tests/*` → `tests/*`.
 - Route groups: `app/(auth)` = signed-in dashboard (project requests, user profile), `app/(public)` = marketing/project pages, plus `app/api` for GraphQL, Clerk webhooks, and user sync.
 - `services/` includes provisioning integrations beyond CRUD: `GitHubService` (repo creation from template), `VercelService` (deployment provisioning), `NeonService` (DB provisioning), `FileService` (Cloudflare R2), `ContactService` (contact form → email via Resend).
 
@@ -62,4 +51,3 @@ E2E specs (`*.spec.ts`/`*.e2e.ts`) are excluded from `tsc` and from the vitest g
 
 - Commit messages must be Conventional Commits (commitlint + lefthook `commit-msg` hook); `semantic-release` on `main` drives GitHub releases from that history. Use `npm run commit` for an interactive prompt.
 - lefthook `pre-commit` runs `eslint --fix` and `check:types` on staged files — don't bypass with `--no-verify`.
-- ESLint (antfu config) enforces alphabetically-sorted imports and `type` over `interface` for type definitions — matches the global TypeScript style already in effect.
