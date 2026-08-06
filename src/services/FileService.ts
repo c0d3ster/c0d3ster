@@ -10,7 +10,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { eq } from 'drizzle-orm'
 import { Buffer } from 'node:buffer'
 
-import type { FileUploadInput } from '@/graphql/schema'
+import type { FilePlacement, FileUploadInput } from '@/graphql/schema'
 
 import { Environment } from '@/graphql/schema'
 import { db } from '@/libs/DB'
@@ -50,19 +50,21 @@ export class FileService {
   // reflects which bucket we're actually talking to rather than APP_ENV.
   // Contract: the production bucket must be named "prod" (case-insensitive)
   // for uploads to resolve to Environment.PROD; any other bucket name is DEV.
-  private resolveEnvironment(): Environment {
+  // Public so callers (e.g. FileResolver mapping DB rows to the File type)
+  // can derive environment consistently without re-deriving it from a key.
+  resolveEnvironment(): Environment {
     return this.bucketName.toLowerCase() === 'prod'
       ? Environment.PROD
       : Environment.DEV
   }
 
   /**
-   * Presigned PUT for project logos. File bytes go directly to R2 from the browser
-   * (avoids Vercel’s ~4.5MB request body limit on GraphQL).
+   * Shared by the project logo and generic project file 2-step upload flows: presigned PUT,
+   * no Metadata on the PUT (SigV4 would require matching x-amz-meta-* on the browser request;
+   * client only sends Content-Type). Metadata is recorded in DB on finalize.
    */
-  async generateProjectLogoPresignedUpload(options: {
+  private async presignProjectUpload(options: {
     projectId: string
-    userId: string
     fileName: string
     originalFileName: string
     fileSize: number
@@ -96,8 +98,6 @@ export class FileService {
       uploadedAt: new Date(),
     }
 
-    // No Metadata on presigned PUT: SigV4 would require matching x-amz-meta-* on the
-    // browser request; client only sends Content-Type. Metadata is recorded in DB on finalize.
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
@@ -110,6 +110,36 @@ export class FileService {
     })
 
     return { uploadUrl, key, metadata }
+  }
+
+  /**
+   * Presigned PUT for project logos. File bytes go directly to R2 from the browser
+   * (avoids Vercel’s ~4.5MB request body limit on GraphQL).
+   */
+  async generateProjectLogoPresignedUpload(options: {
+    projectId: string
+    userId: string
+    fileName: string
+    originalFileName: string
+    fileSize: number
+    contentType: string
+  }) {
+    return this.presignProjectUpload(options)
+  }
+
+  /**
+   * Presigned PUT for arbitrary project files (gallery images, documents). Same 2-step
+   * flow as the logo upload, but for any allowed content type rather than images only.
+   */
+  async generateProjectFilePresignedUpload(options: {
+    projectId: string
+    userId: string
+    fileName: string
+    originalFileName: string
+    fileSize: number
+    contentType: string
+  }) {
+    return this.presignProjectUpload(options)
   }
 
   async getObjectHeadInfo(
@@ -357,6 +387,8 @@ export class FileService {
     uploadedBy: string
     isClientVisible?: boolean
     description?: string
+    caption?: string
+    placement?: FilePlacement
   }) {
     const [projectFile] = await db
       .insert(schemas.projectFiles)
@@ -370,6 +402,8 @@ export class FileService {
         uploadedBy: options.uploadedBy,
         isClientVisible: options.isClientVisible ?? true,
         description: options.description,
+        caption: options.caption,
+        placement: options.placement,
       })
       .returning()
 
