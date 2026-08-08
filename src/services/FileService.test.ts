@@ -97,7 +97,7 @@ describe('FileService', () => {
       const result = await fileService.generatePresignedUploadUrl(mockFileInput)
 
       expect(result.uploadUrl).toBe('https://signed-url.com')
-      expect(result.key).toMatch(/projects\/project-123\/\d+_test-file\.jpg/)
+      expect(result.key).toMatch(/^projects\/project-123\/\d+_test-file\.jpg$/)
       expect(result.metadata).toEqual({
         fileName: mockFileInput.fileName,
         originalFileName: mockFileInput.originalFileName,
@@ -108,7 +108,7 @@ describe('FileService', () => {
         environment: mockFileInput.environment,
         uploadedAt: expect.any(Date),
         key: expect.stringMatching(
-          /projects\/project-123\/\d+_test-file\.jpg/
+          /^projects\/project-123\/\d+_test-file\.jpg$/
         ),
       })
     })
@@ -120,8 +120,24 @@ describe('FileService', () => {
       const result = await fileService.generatePresignedUploadUrl(userFileInput)
 
       expect(result.uploadUrl).toBe('https://signed-url.com')
-      expect(result.key).toMatch(/users\/user-123\/\d+_test-file\.jpg/)
+      expect(result.key).toMatch(/^users\/user-123\/\d+_test-file\.jpg$/)
       expect(result.metadata.projectId).toBeUndefined()
+    })
+
+    it('derives environment from the bucket, not the caller-supplied input', async () => {
+      Object.assign(Env, { R2_BUCKET_NAME: 'prod' })
+      fileService = new FileService()
+      mockGetSignedUrl.mockResolvedValue('https://signed-url.com')
+
+      const result = await fileService.generatePresignedUploadUrl({
+        ...mockFileInput,
+        environment: Environment.DEV,
+      })
+
+      expect(result.metadata.environment).toBe(Environment.PROD)
+
+      Object.assign(Env, { R2_BUCKET_NAME: 'test-bucket' })
+      fileService = new FileService()
     })
 
     it('should sanitize file names', async () => {
@@ -419,6 +435,29 @@ describe('FileService', () => {
         uploadedAt: expect.any(Date),
         key: 'test-key',
       })
+    })
+
+    it('defaults environment to the bucket, not DEV, when metadata omits it', async () => {
+      // Logo PUTs never write S3 Metadata, so this is the real-world case
+      // that fed this fallback for uploads to the prod bucket.
+      Object.assign(Env, { R2_BUCKET_NAME: 'prod' })
+      fileService = new FileService()
+      mockS3Send.mockResolvedValue({
+        Metadata: {
+          fileName: 'test.jpg',
+          fileSize: '1024',
+          contentType: 'image/jpeg',
+          uploadedBy: 'user-123',
+        },
+        ContentType: 'image/jpeg',
+      })
+
+      const result = await fileService.getFileMetadata('test-key')
+
+      expect(result?.environment).toBe(Environment.PROD)
+
+      Object.assign(Env, { R2_BUCKET_NAME: 'test-bucket' })
+      fileService = new FileService()
     })
 
     it('should return null on error', async () => {

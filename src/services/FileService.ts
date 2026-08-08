@@ -48,8 +48,12 @@ export class FileService {
 
   // The R2 bucket itself is environment-scoped (R2_BUCKET_NAME), so this
   // reflects which bucket we're actually talking to rather than APP_ENV.
+  // Contract: the production bucket must be named "prod" (case-insensitive)
+  // for uploads to resolve to Environment.PROD; any other bucket name is DEV.
   private resolveEnvironment(): Environment {
-    return this.bucketName === 'prod' ? Environment.PROD : Environment.DEV
+    return this.bucketName.toLowerCase() === 'prod'
+      ? Environment.PROD
+      : Environment.DEV
   }
 
   /**
@@ -180,6 +184,10 @@ export class FileService {
     }
   }> {
     const key = this.generateKey(options)
+    // Derive from the bucket rather than trusting the caller-supplied
+    // options.environment, so stored metadata can't disagree with the bucket
+    // it's actually stored in.
+    const environment = this.resolveEnvironment()
     const metadata = {
       key,
       fileName: options.fileName,
@@ -188,7 +196,7 @@ export class FileService {
       contentType: options.contentType,
       uploadedBy: options.userId,
       projectId: options.projectId || undefined,
-      environment: options.environment || Environment.DEV,
+      environment,
       uploadedAt: new Date(),
     }
 
@@ -203,7 +211,7 @@ export class FileService {
         filesize: options.fileSize.toString(),
         uploadedby: options.userId,
         projectid: options.projectId || '',
-        environment: options.environment || Environment.DEV,
+        environment,
         uploadedat: new Date().toISOString(),
       },
     })
@@ -327,7 +335,9 @@ export class FileService {
         contentType: response.ContentType || '',
         uploadedBy: meta.uploadedby || '',
         projectId: meta.projectid || undefined,
-        environment: (meta.environment as Environment) || Environment.DEV,
+        // Logo PUTs never write S3 Metadata (see generateProjectLogoPresignedUpload),
+        // so fall back to the bucket's environment rather than hardcoding DEV.
+        environment: (meta.environment as Environment) || this.resolveEnvironment(),
         uploadedAt: new Date(meta.uploadedat || Date.now()),
       }
     } catch (error) {
