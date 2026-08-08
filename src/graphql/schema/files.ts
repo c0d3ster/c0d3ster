@@ -19,6 +19,17 @@ registerEnumType(Environment, {
   description: 'Environment for file storage',
 })
 
+export enum FilePlacement {
+  Gallery = 'gallery',
+  Document = 'document',
+  Other = 'other',
+}
+
+registerEnumType(FilePlacement, {
+  name: 'FilePlacement',
+  description: 'Where an uploaded project file should be displayed',
+})
+
 @ObjectType('File')
 export class File {
   @Field(() => ID)
@@ -60,6 +71,12 @@ export class File {
 
   @Field(() => String, { nullable: true })
   downloadUrl?: string
+
+  @Field(() => String, { nullable: true })
+  caption?: string
+
+  @Field(() => FilePlacement, { nullable: true })
+  placement?: FilePlacement
 }
 
 @InputType('FileUploadInput')
@@ -81,6 +98,12 @@ export class FileUploadInput {
 
   @Field(() => Environment)
   environment!: Environment
+
+  @Field(() => String, { nullable: true })
+  caption?: string
+
+  @Field(() => FilePlacement, { nullable: true })
+  placement?: FilePlacement
 }
 
 @InputType('FileFilterInput')
@@ -124,6 +147,21 @@ export class FileUploadMetadata {
 
 @ObjectType('ProjectLogoUploadResult')
 export class ProjectLogoUploadResult {
+  @Field(() => String)
+  uploadUrl!: string
+
+  @Field(() => String)
+  key!: string
+
+  @Field(() => FileUploadMetadata)
+  metadata!: FileUploadMetadata
+
+  @Field(() => ID)
+  projectId!: string
+}
+
+@ObjectType('ProjectFileUploadResult')
+export class ProjectFileUploadResult {
   @Field(() => String)
   uploadUrl!: string
 

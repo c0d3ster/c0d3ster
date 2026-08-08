@@ -1,4 +1,4 @@
-import { ALLOWED_IMAGE_TYPES } from '@/constants/file'
+import { ALLOWED_IMAGE_TYPES, ALLOWED_PROJECT_FILE_TYPES } from '@/constants/file'
 
 export function normalizeImageContentType(ct: string): string {
   const base = ct.split(';')[0]?.trim().toLowerCase() ?? ''
@@ -16,4 +16,13 @@ export function isAllowedImageContentType(ct: string): boolean {
 // via the `file` query before it can be used as an <Image> src.
 export function isPublicUrl(url?: string | null): boolean {
   return !!url && (/^https?:\/\//.test(url) || url.startsWith('/assets/'))
+}
+
+export function normalizeProjectFileContentType(ct: string): string {
+  return normalizeImageContentType(ct)
+}
+
+export function isAllowedProjectFileContentType(ct: string): boolean {
+  const n = normalizeProjectFileContentType(ct)
+  return ALLOWED_PROJECT_FILE_TYPES.includes(n)
 }

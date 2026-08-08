@@ -5,15 +5,20 @@ import { apolloClient } from '@/libs/ApolloClient'
 import {
   DELETE_FILE,
   deleteFile,
+  FINALIZE_PROJECT_FILE_UPLOAD,
   FINALIZE_PROJECT_LOGO_UPLOAD,
   GET_FILE,
   GET_FILES,
+  GET_PROJECT_FILES,
+  REQUEST_PROJECT_FILE_UPLOAD,
   REQUEST_PROJECT_LOGO_UPLOAD,
+  uploadProjectFile,
   uploadProjectLogo,
   useDeleteFile,
   useFinalizeProjectLogoUpload,
   useGetFile,
   useGetFiles,
+  useGetProjectFiles,
   useRequestProjectLogoUpload,
 } from './fileApiClient'
 
@@ -38,12 +43,20 @@ describe('File API Client', () => {
     it('should define all GraphQL operations', () => {
       expect(REQUEST_PROJECT_LOGO_UPLOAD).toBeDefined()
       expect(FINALIZE_PROJECT_LOGO_UPLOAD).toBeDefined()
+      expect(REQUEST_PROJECT_FILE_UPLOAD).toBeDefined()
+      expect(FINALIZE_PROJECT_FILE_UPLOAD).toBeDefined()
+      expect(GET_PROJECT_FILES).toBeDefined()
       expect(GET_FILES).toBeDefined()
       expect(GET_FILE).toBeDefined()
       expect(DELETE_FILE).toBeDefined()
 
       expect(REQUEST_PROJECT_LOGO_UPLOAD.definitions.length).toBeGreaterThan(0)
       expect(FINALIZE_PROJECT_LOGO_UPLOAD.definitions.length).toBeGreaterThan(0)
+      expect(REQUEST_PROJECT_FILE_UPLOAD.definitions.length).toBeGreaterThan(0)
+      expect(FINALIZE_PROJECT_FILE_UPLOAD.definitions.length).toBeGreaterThan(
+        0
+      )
+      expect(GET_PROJECT_FILES.definitions.length).toBeGreaterThan(0)
       expect(GET_FILES.definitions.length).toBeGreaterThan(0)
       expect(GET_FILE.definitions.length).toBeGreaterThan(0)
       expect(DELETE_FILE.definitions.length).toBeGreaterThan(0)
@@ -57,12 +70,14 @@ describe('File API Client', () => {
       expect(useDeleteFile).toBeDefined()
       expect(useGetFiles).toBeDefined()
       expect(useGetFile).toBeDefined()
+      expect(useGetProjectFiles).toBeDefined()
 
       expect(typeof useRequestProjectLogoUpload).toBe('function')
       expect(typeof useFinalizeProjectLogoUpload).toBe('function')
       expect(typeof useDeleteFile).toBe('function')
       expect(typeof useGetFiles).toBe('function')
       expect(typeof useGetFile).toBe('function')
+      expect(typeof useGetProjectFiles).toBe('function')
     })
   })
 
@@ -234,6 +249,122 @@ describe('File API Client', () => {
         await expect(uploadProjectLogo('project-1', mockFile)).rejects.toThrow(
           'Finalize logo upload returned no download URL'
         )
+      })
+    })
+
+    describe('uploadProjectFile', () => {
+      it('should request presigned URL, PUT file, then finalize with caption/placement', async () => {
+        const mockProjectId = 'project-1'
+        const mockFile = new File(['x'], 'brief.pdf', {
+          type: 'application/pdf',
+        })
+
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+        })
+
+        vi.mocked(apolloClient.mutate)
+          .mockResolvedValueOnce({
+            data: {
+              requestProjectFileUpload: {
+                uploadUrl: 'https://r2.example/put',
+                key: 'dev/projects/project-1/k.pdf',
+                projectId: mockProjectId,
+                metadata: {
+                  key: 'dev/projects/project-1/k.pdf',
+                  fileName: 'brief.pdf',
+                  originalFileName: 'brief.pdf',
+                  fileSize: 1,
+                  contentType: 'application/pdf',
+                  environment: 'DEV',
+                  uploadedAt: '2024-01-01T00:00:00.000Z',
+                },
+              },
+            },
+          })
+          .mockResolvedValueOnce({
+            data: {
+              finalizeProjectFileUpload: {
+                id: 'file-1',
+                fileName: 'brief.pdf',
+                originalFileName: 'brief.pdf',
+                fileSize: 1,
+                contentType: 'application/pdf',
+                caption: 'Project brief',
+                placement: 'Document',
+                uploadedAt: '2024-01-01T00:00:00.000Z',
+                downloadUrl: 'https://download.example/brief',
+              },
+            },
+          })
+
+        const result = await uploadProjectFile(mockProjectId, mockFile, {
+          caption: 'Project brief',
+          placement: 'Document' as any,
+        })
+
+        expect(apolloClient.mutate).toHaveBeenNthCalledWith(1, {
+          mutation: REQUEST_PROJECT_FILE_UPLOAD,
+          variables: {
+            projectId: mockProjectId,
+            fileName: 'brief.pdf',
+            contentType: 'application/pdf',
+            fileSize: mockFile.size,
+          },
+        })
+        expect(apolloClient.mutate).toHaveBeenNthCalledWith(2, {
+          mutation: FINALIZE_PROJECT_FILE_UPLOAD,
+          variables: {
+            projectId: mockProjectId,
+            key: 'dev/projects/project-1/k.pdf',
+            caption: 'Project brief',
+            placement: 'Document',
+          },
+        })
+        expect(result.downloadUrl).toBe('https://download.example/brief')
+      })
+
+      it('should throw when presigned request returns no data', async () => {
+        const mockFile = new File(['x'], 'brief.pdf', {
+          type: 'application/pdf',
+        })
+
+        vi.mocked(apolloClient.mutate).mockResolvedValueOnce({ data: null })
+
+        await expect(
+          uploadProjectFile('project-1', mockFile)
+        ).rejects.toThrow('Failed to get upload URL')
+      })
+
+      it('should throw when finalize returns no result', async () => {
+        const mockFile = new File(['x'], 'brief.pdf', {
+          type: 'application/pdf',
+        })
+
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+        })
+
+        vi.mocked(apolloClient.mutate)
+          .mockResolvedValueOnce({
+            data: {
+              requestProjectFileUpload: {
+                uploadUrl: 'https://r2.example/put',
+                key: 'k',
+                projectId: 'project-1',
+                metadata: {},
+              },
+            },
+          })
+          .mockResolvedValueOnce({ data: null })
+
+        await expect(
+          uploadProjectFile('project-1', mockFile)
+        ).rejects.toThrow('Finalize file upload returned no result')
       })
     })
 

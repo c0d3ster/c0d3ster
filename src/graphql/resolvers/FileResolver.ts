@@ -10,20 +10,44 @@ import {
   Root,
 } from 'type-graphql'
 
+import type { Environment } from '@/graphql/schema'
+import type { ProjectFileRecord } from '@/models'
 import type { FileService, ProjectService, UserService } from '@/services'
 
 import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/constants/file'
 import {
   File,
   FileFilterInput,
+  FilePlacement,
+  ProjectFileUploadResult,
   ProjectLogoUploadResult,
   UserRole,
 } from '@/graphql/schema'
 import { logger } from '@/libs/Logger'
 import {
   isAllowedImageContentType,
+  isAllowedProjectFileContentType,
   normalizeImageContentType,
+  normalizeProjectFileContentType,
 } from '@/utils/File'
+
+// environment is passed in (derived from the bucket via FileService.resolveEnvironment())
+// rather than from the key, since keys no longer carry an env prefix.
+const toFileType = (record: ProjectFileRecord, environment: Environment): File => ({
+  id: record.id,
+  key: record.filePath,
+  fileName: record.fileName,
+  originalFileName: record.originalFileName,
+  fileSize: record.fileSize ?? 0,
+  contentType: record.contentType,
+  uploadedById: record.uploadedBy,
+  projectId: record.projectId,
+  uploadedBy: record.uploadedBy,
+  environment,
+  uploadedAt: record.createdAt.toISOString(),
+  caption: record.caption ?? undefined,
+  placement: (record.placement as FilePlacement) ?? undefined,
+})
 
 @Resolver(() => File)
 export class FileResolver {
@@ -112,7 +136,9 @@ export class FileResolver {
     }
 
     // Get project files from database instead of S3
-    return await this.fileService.getProjectFiles(projectId)
+    const projectFiles = await this.fileService.getProjectFiles(projectId)
+    const environment = this.fileService.resolveEnvironment()
+    return projectFiles.map((record) => toFileType(record, environment))
   }
 
   @Query(() => [File])
@@ -305,6 +331,154 @@ export class FileResolver {
     }
 
     return await this.fileService.generatePresignedDownloadUrl(key)
+  }
+
+  /**
+   * Step 1: Returns a presigned PUT URL for an arbitrary project file (gallery image,
+   * document, etc.) - same 2-step flow as the logo upload, but any allowed content type.
+   */
+  @Mutation(() => ProjectFileUploadResult)
+  async requestProjectFileUpload(
+    @Arg('projectId', () => ID) projectId: string,
+    @Arg('fileName', () => String) fileName: string,
+    @Arg('contentType', () => String) contentType: string,
+    @Arg('fileSize', () => Int) fileSize: number
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+
+    const project = await this.projectService.getProjectById(
+      projectId,
+      currentUser.id,
+      currentUser.role
+    )
+    if (!project) {
+      throw new Error('Project not found or access denied')
+    }
+
+    const trimmedName = fileName.trim()
+    if (!trimmedName) {
+      throw new Error('Invalid file upload parameters. File name is required.')
+    }
+
+    if (fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
+      throw new Error(
+        `Invalid file upload parameters. File size: ${fileSize}, Max size: ${MAX_FILE_SIZE}`
+      )
+    }
+
+    if (!isAllowedProjectFileContentType(contentType)) {
+      throw new Error(
+        `Invalid file upload parameters. Content type: ${contentType} is not allowed`
+      )
+    }
+
+    const normalizedType = normalizeProjectFileContentType(contentType)
+    const result = await this.fileService.generateProjectFilePresignedUpload({
+      projectId,
+      userId: currentUser.id,
+      fileName: trimmedName,
+      originalFileName: trimmedName,
+      fileSize,
+      contentType: normalizedType,
+    })
+
+    return {
+      uploadUrl: result.uploadUrl,
+      key: result.key,
+      metadata: {
+        key: result.metadata.key,
+        fileName: result.metadata.fileName,
+        originalFileName: result.metadata.originalFileName,
+        fileSize: result.metadata.fileSize,
+        contentType: result.metadata.contentType,
+        environment: result.metadata.environment,
+        uploadedAt: result.metadata.uploadedAt,
+      },
+      projectId,
+    }
+  }
+
+  /**
+   * Step 2: After the client PUTs the file to R2, call this to validate the object and
+   * persist the project file record (with optional caption/placement).
+   */
+  @Mutation(() => File)
+  async finalizeProjectFileUpload(
+    @Arg('projectId', () => ID) projectId: string,
+    @Arg('key', () => String) key: string,
+    @Arg('caption', () => String, { nullable: true }) caption?: string,
+    @Arg('placement', () => FilePlacement, { nullable: true })
+    placement?: FilePlacement
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+
+    const project = await this.projectService.getProjectById(
+      projectId,
+      currentUser.id,
+      currentUser.role
+    )
+    if (!project) {
+      throw new Error('Project not found or access denied')
+    }
+
+    const expectedPrefix = `projects/${projectId}/`
+    if (!key.startsWith(expectedPrefix)) {
+      throw new Error('Invalid file key')
+    }
+    if (key.split('/').includes('..')) {
+      throw new Error('Invalid file key')
+    }
+
+    const head = await this.fileService.getObjectHeadInfo(key)
+    if (!head || head.contentLength <= 0) {
+      throw new Error('Uploaded file not found or empty')
+    }
+
+    if (head.contentLength > MAX_FILE_SIZE) {
+      throw new Error(
+        `Invalid file upload parameters. File size: ${head.contentLength}, Max size: ${MAX_FILE_SIZE}`
+      )
+    }
+
+    const buffer = await this.fileService.getObjectBufferRange(key, 16_384)
+    if (!buffer?.length) {
+      throw new Error('Could not read uploaded file for validation')
+    }
+
+    const detected = await fileTypeFromBuffer(buffer)
+    const effectiveType = detected?.mime
+      ? normalizeProjectFileContentType(detected.mime)
+      : normalizeProjectFileContentType(head.contentType)
+
+    if (!isAllowedProjectFileContentType(effectiveType)) {
+      throw new Error(
+        `Invalid file upload parameters. Content type: ${effectiveType}, File size: ${head.contentLength}, Max size: ${MAX_FILE_SIZE}`
+      )
+    }
+
+    const meta = await this.fileService.getFileMetadata(key)
+    if (!meta) {
+      throw new Error('Could not read uploaded file metadata')
+    }
+
+    const projectFile = await this.fileService.createProjectFileRecord({
+      projectId,
+      fileName: meta.fileName,
+      originalFileName: meta.originalFileName,
+      contentType: effectiveType,
+      fileSize: head.contentLength,
+      filePath: key,
+      uploadedBy: currentUser.id,
+      isClientVisible: true,
+      caption,
+      placement,
+    })
+
+    if (!projectFile) {
+      throw new Error('Failed to save uploaded file record')
+    }
+
+    return toFileType(projectFile, this.fileService.resolveEnvironment())
   }
 
   @Mutation(() => Boolean)

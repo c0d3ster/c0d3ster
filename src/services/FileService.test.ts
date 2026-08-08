@@ -4,7 +4,7 @@ import { Buffer } from 'node:buffer'
 import { Readable } from 'node:stream'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Environment } from '@/graphql/schema'
+import { Environment, FilePlacement } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
@@ -212,6 +212,46 @@ describe('FileService', () => {
 
       Object.assign(Env, { R2_BUCKET_NAME: 'test-bucket' })
       fileService = new FileService()
+    })
+  })
+
+  describe('generateProjectFilePresignedUpload', () => {
+    it('should return presigned URL, key, and metadata without S3 Metadata on command', async () => {
+      mockGetSignedUrl.mockResolvedValue('https://presigned-put.example')
+
+      const result = await fileService.generateProjectFilePresignedUpload({
+        projectId: 'project-1',
+        userId: 'user-1',
+        fileName: 'brief..pdf',
+        originalFileName: 'brief..pdf',
+        fileSize: 4096,
+        contentType: 'application/pdf',
+      })
+
+      expect(result.uploadUrl).toBe('https://presigned-put.example')
+      expect(result.key).toMatch(/^projects\/project-1\/\d+_brief\.\.pdf$/)
+      expect(result.metadata.fileName).toBe('brief..pdf')
+      expect(result.metadata.contentType).toBe('application/pdf')
+      expect(result.metadata.fileSize).toBe(4096)
+      expect(result.metadata.environment).toBe(Environment.DEV)
+
+      const firstPut = vi.mocked(PutObjectCommand).mock.calls[0]
+
+      expect(firstPut).toBeDefined()
+
+      const putInput = firstPut![0] as {
+        Bucket?: string
+        ContentType?: string
+        ContentLength?: number
+        Metadata?: unknown
+      }
+
+      expect(putInput).toMatchObject({
+        Bucket: 'test-bucket',
+        ContentType: 'application/pdf',
+        ContentLength: 4096,
+      })
+      expect(putInput.Metadata).toBeUndefined()
     })
   })
 
@@ -497,6 +537,33 @@ describe('FileService', () => {
       expect(mockDbInsert).toHaveBeenCalled()
       expect(result).toEqual(mockRecord)
     })
+
+    it('should persist caption and placement when provided', async () => {
+      const mockRecord = { id: 'file-123', fileName: 'test.jpg' }
+      const mockValues = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockRecord]),
+      })
+      mockDbInsert.mockReturnValue({ values: mockValues } as any)
+
+      await fileService.createProjectFileRecord({
+        fileName: 'test.jpg',
+        originalFileName: 'original.jpg',
+        filePath: 'path/to/file.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        projectId: 'project-123',
+        uploadedBy: 'user-123',
+        caption: 'Homepage screenshot',
+        placement: FilePlacement.Gallery,
+      })
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          caption: 'Homepage screenshot',
+          placement: FilePlacement.Gallery,
+        })
+      )
+    })
   })
 
   describe('deleteProjectFileRecordByPath', () => {
@@ -523,6 +590,8 @@ describe('FileService', () => {
           fileName: 'file1.jpg',
           createdAt: new Date(),
           description: null,
+          caption: null,
+          placement: null,
           isClientVisible: true,
           projectId: 'project-123',
           originalFileName: 'file1.jpg',
@@ -536,6 +605,8 @@ describe('FileService', () => {
           fileName: 'file2.png',
           createdAt: new Date(),
           description: null,
+          caption: null,
+          placement: null,
           isClientVisible: true,
           projectId: 'project-123',
           originalFileName: 'file2.png',

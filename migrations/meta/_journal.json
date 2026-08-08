@@ -127,6 +127,13 @@
       "when": 1774239224162,
       "tag": "0017_set_project_requests_title_not_null",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785996081141,
+      "tag": "0018_add_project_file_caption_placement",
+      "breakpoints": true
     }
   ]
 }

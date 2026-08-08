@@ -182,6 +182,14 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
         >
           {item.__typename === 'Project' ? 'VIEW DETAILS' : 'VIEW REQUEST'}
         </Link>
+        {itemIsProject && (
+          <Link
+            href={`/dashboard/projects/${item.id}`}
+            className='min-w-0 flex-1 cursor-pointer rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60 transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/20 hover:text-green-400'
+          >
+            MANAGE FILES
+          </Link>
+        )}
       </div>
 
       {/* Footer - pinned to bottom */}

@@ -72,6 +72,7 @@ export enum Environment {
 
 export type File = {
   readonly __typename?: 'File';
+  readonly caption?: Maybe<Scalars['String']['output']>;
   readonly contentType: Scalars['String']['output'];
   readonly downloadUrl?: Maybe<Scalars['String']['output']>;
   readonly environment: Environment;
@@ -80,6 +81,7 @@ export type File = {
   readonly id: Scalars['ID']['output'];
   readonly key: Scalars['String']['output'];
   readonly originalFileName: Scalars['String']['output'];
+  readonly placement?: Maybe<FilePlacement>;
   readonly project?: Maybe<Scalars['String']['output']>;
   readonly projectId?: Maybe<Scalars['ID']['output']>;
   readonly uploadedAt: Scalars['String']['output'];
@@ -93,6 +95,13 @@ export type FileFilterInput = {
   readonly projectId?: InputMaybe<Scalars['ID']['input']>;
   readonly userId?: InputMaybe<Scalars['ID']['input']>;
 };
+
+/** Where an uploaded project file should be displayed */
+export enum FilePlacement {
+  Document = 'Document',
+  Gallery = 'Gallery',
+  Other = 'Other'
+}
 
 export type FileUploadMetadata = {
   readonly __typename?: 'FileUploadMetadata';
@@ -112,9 +121,11 @@ export type Mutation = {
   readonly createProject: Project;
   readonly createProjectRequest: ProjectRequest;
   readonly deleteFile: Scalars['Boolean']['output'];
+  readonly finalizeProjectFileUpload: File;
   readonly finalizeProjectLogoUpload: Scalars['String']['output'];
   readonly provisionProjectRepo: Project;
   readonly rejectProjectRequest: Scalars['String']['output'];
+  readonly requestProjectFileUpload: ProjectFileUploadResult;
   readonly requestProjectLogoUpload: ProjectLogoUploadResult;
   readonly submitContactForm: ContactFormSubmission;
   readonly updateProject: Project;
@@ -151,6 +162,14 @@ export type MutationDeleteFileArgs = {
 };
 
 
+export type MutationFinalizeProjectFileUploadArgs = {
+  caption?: InputMaybe<Scalars['String']['input']>;
+  key: Scalars['String']['input'];
+  placement?: InputMaybe<FilePlacement>;
+  projectId: Scalars['ID']['input'];
+};
+
+
 export type MutationFinalizeProjectLogoUploadArgs = {
   key: Scalars['String']['input'];
   projectId: Scalars['ID']['input'];
@@ -164,6 +183,14 @@ export type MutationProvisionProjectRepoArgs = {
 
 export type MutationRejectProjectRequestArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationRequestProjectFileUploadArgs = {
+  contentType: Scalars['String']['input'];
+  fileName: Scalars['String']['input'];
+  fileSize: Scalars['Int']['input'];
+  projectId: Scalars['ID']['input'];
 };
 
 
@@ -262,6 +289,14 @@ export enum ProjectFeature {
   Database = 'Database',
   Email = 'Email'
 }
+
+export type ProjectFileUploadResult = {
+  readonly __typename?: 'ProjectFileUploadResult';
+  readonly key: Scalars['String']['output'];
+  readonly metadata: FileUploadMetadata;
+  readonly projectId: Scalars['ID']['output'];
+  readonly uploadUrl: Scalars['String']['output'];
+};
 
 export type ProjectFilter = {
   readonly clientId?: InputMaybe<Scalars['String']['input']>;
@@ -565,6 +600,33 @@ export type FinalizeProjectLogoUploadMutationVariables = Exact<{
 
 
 export type FinalizeProjectLogoUploadMutation = { readonly __typename?: 'Mutation', readonly finalizeProjectLogoUpload: string };
+
+export type RequestProjectFileUploadMutationVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+  fileName: Scalars['String']['input'];
+  contentType: Scalars['String']['input'];
+  fileSize: Scalars['Int']['input'];
+}>;
+
+
+export type RequestProjectFileUploadMutation = { readonly __typename?: 'Mutation', readonly requestProjectFileUpload: { readonly __typename?: 'ProjectFileUploadResult', readonly uploadUrl: string, readonly key: string, readonly projectId: string, readonly metadata: { readonly __typename?: 'FileUploadMetadata', readonly key: string, readonly fileName: string, readonly originalFileName: string, readonly fileSize: number, readonly contentType: string, readonly environment: Environment, readonly uploadedAt: any } } };
+
+export type FinalizeProjectFileUploadMutationVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+  key: Scalars['String']['input'];
+  caption?: InputMaybe<Scalars['String']['input']>;
+  placement?: InputMaybe<FilePlacement>;
+}>;
+
+
+export type FinalizeProjectFileUploadMutation = { readonly __typename?: 'Mutation', readonly finalizeProjectFileUpload: { readonly __typename?: 'File', readonly id: string, readonly fileName: string, readonly originalFileName: string, readonly fileSize: number, readonly contentType: string, readonly caption?: string | null, readonly placement?: FilePlacement | null, readonly uploadedAt: string, readonly downloadUrl?: string | null } };
+
+export type GetProjectFilesQueryVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+}>;
+
+
+export type GetProjectFilesQuery = { readonly __typename?: 'Query', readonly projectFiles: ReadonlyArray<{ readonly __typename?: 'File', readonly id: string, readonly fileName: string, readonly originalFileName: string, readonly fileSize: number, readonly contentType: string, readonly caption?: string | null, readonly placement?: FilePlacement | null, readonly uploadedAt: string, readonly downloadUrl?: string | null }> };
 
 export type GetFilesQueryVariables = Exact<{
   filter?: InputMaybe<FileFilterInput>;
@@ -962,6 +1024,143 @@ export function useFinalizeProjectLogoUploadMutation(baseOptions?: ApolloReactHo
         return ApolloReactHooks.useMutation<FinalizeProjectLogoUploadMutation, FinalizeProjectLogoUploadMutationVariables>(FinalizeProjectLogoUploadDocument, options);
       }
 export type FinalizeProjectLogoUploadMutationHookResult = ReturnType<typeof useFinalizeProjectLogoUploadMutation>;
+export const RequestProjectFileUploadDocument = gql`
+    mutation RequestProjectFileUpload($projectId: ID!, $fileName: String!, $contentType: String!, $fileSize: Int!) {
+  requestProjectFileUpload(
+    projectId: $projectId
+    fileName: $fileName
+    contentType: $contentType
+    fileSize: $fileSize
+  ) {
+    uploadUrl
+    key
+    projectId
+    metadata {
+      key
+      fileName
+      originalFileName
+      fileSize
+      contentType
+      environment
+      uploadedAt
+    }
+  }
+}
+    `;
+
+/**
+ * __useRequestProjectFileUploadMutation__
+ *
+ * To run a mutation, you first call `useRequestProjectFileUploadMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRequestProjectFileUploadMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [requestProjectFileUploadMutation, { data, loading, error }] = useRequestProjectFileUploadMutation({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *      fileName: // value for 'fileName'
+ *      contentType: // value for 'contentType'
+ *      fileSize: // value for 'fileSize'
+ *   },
+ * });
+ */
+export function useRequestProjectFileUploadMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RequestProjectFileUploadMutation, RequestProjectFileUploadMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RequestProjectFileUploadMutation, RequestProjectFileUploadMutationVariables>(RequestProjectFileUploadDocument, options);
+      }
+export type RequestProjectFileUploadMutationHookResult = ReturnType<typeof useRequestProjectFileUploadMutation>;
+export const FinalizeProjectFileUploadDocument = gql`
+    mutation FinalizeProjectFileUpload($projectId: ID!, $key: String!, $caption: String, $placement: FilePlacement) {
+  finalizeProjectFileUpload(
+    projectId: $projectId
+    key: $key
+    caption: $caption
+    placement: $placement
+  ) {
+    id
+    fileName
+    originalFileName
+    fileSize
+    contentType
+    caption
+    placement
+    uploadedAt
+    downloadUrl
+  }
+}
+    `;
+
+/**
+ * __useFinalizeProjectFileUploadMutation__
+ *
+ * To run a mutation, you first call `useFinalizeProjectFileUploadMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useFinalizeProjectFileUploadMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [finalizeProjectFileUploadMutation, { data, loading, error }] = useFinalizeProjectFileUploadMutation({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *      key: // value for 'key'
+ *      caption: // value for 'caption'
+ *      placement: // value for 'placement'
+ *   },
+ * });
+ */
+export function useFinalizeProjectFileUploadMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<FinalizeProjectFileUploadMutation, FinalizeProjectFileUploadMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<FinalizeProjectFileUploadMutation, FinalizeProjectFileUploadMutationVariables>(FinalizeProjectFileUploadDocument, options);
+      }
+export type FinalizeProjectFileUploadMutationHookResult = ReturnType<typeof useFinalizeProjectFileUploadMutation>;
+export const GetProjectFilesDocument = gql`
+    query GetProjectFiles($projectId: ID!) {
+  projectFiles(projectId: $projectId) {
+    id
+    fileName
+    originalFileName
+    fileSize
+    contentType
+    caption
+    placement
+    uploadedAt
+    downloadUrl
+  }
+}
+    `;
+
+/**
+ * __useGetProjectFilesQuery__
+ *
+ * To run a query within a React component, call `useGetProjectFilesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetProjectFilesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetProjectFilesQuery({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *   },
+ * });
+ */
+export function useGetProjectFilesQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetProjectFilesQuery, GetProjectFilesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetProjectFilesQuery, GetProjectFilesQueryVariables>(GetProjectFilesDocument, options);
+      }
+export function useGetProjectFilesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetProjectFilesQuery, GetProjectFilesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetProjectFilesQuery, GetProjectFilesQueryVariables>(GetProjectFilesDocument, options);
+        }
+export type GetProjectFilesQueryHookResult = ReturnType<typeof useGetProjectFilesQuery>;
+export type GetProjectFilesLazyQueryHookResult = ReturnType<typeof useGetProjectFilesLazyQuery>;
 export const GetFilesDocument = gql`
     query GetFiles($filter: FileFilterInput) {
   files(filter: $filter) {

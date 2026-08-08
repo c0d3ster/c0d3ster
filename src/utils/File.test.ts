@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import {
   isAllowedImageContentType,
+  isAllowedProjectFileContentType,
   isPublicUrl,
   normalizeImageContentType,
+  normalizeProjectFileContentType,
 } from '@/utils/File'
 
 describe('File utils', () => {
@@ -47,6 +49,31 @@ describe('File utils', () => {
       expect(isPublicUrl(null)).toBe(false)
       expect(isPublicUrl(undefined)).toBe(false)
       expect(isPublicUrl('')).toBe(false)
+    })
+  })
+
+  describe('normalizeProjectFileContentType', () => {
+    it('strips MIME parameters and maps jpg to jpeg', () => {
+      expect(normalizeProjectFileContentType('image/jpg; charset=binary')).toBe(
+        'image/jpeg'
+      )
+    })
+  })
+
+  describe('isAllowedProjectFileContentType', () => {
+    it('accepts images', () => {
+      expect(isAllowedProjectFileContentType('image/png')).toBe(true)
+    })
+
+    it('accepts documents', () => {
+      expect(isAllowedProjectFileContentType('application/pdf')).toBe(true)
+      expect(isAllowedProjectFileContentType('text/plain')).toBe(true)
+    })
+
+    it('rejects disallowed types', () => {
+      expect(isAllowedProjectFileContentType('application/x-msdownload')).toBe(
+        false
+      )
     })
   })
 })
