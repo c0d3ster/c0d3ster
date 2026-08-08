@@ -72,6 +72,7 @@ Data-only migrations (backfilling or renaming stored values, no column/type chan
 - `db:generate` diffs `src/models/**` against the last snapshot. With no schema change there's nothing to diff, so it silently generates nothing. Don't try to force one through drizzle-kit for a pure data fix.
 - If the fix is pure SQL, hand-write a numbered `.sql` file in `migrations/` and add its own `_journal.json` entry (reuse the prior snapshot unchanged, since the schema didn't move).
 - If the fix needs to touch anything outside the DB in lockstep with a column update (e.g. renaming R2 object keys while updating the row that points at them), it can't be a migration file at all. Write a standalone script instead (see `scripts/`), reading credentials from env, not through Drizzle's migration system.
+- Cross-system scripts like that must be idempotent, resumable, and support a dry run: for each row, copy/create the new external resource and verify it before touching anything, update the DB row only after the new resource is confirmed to exist, and only then delete the old external resource. That ordering means a crash or partial failure always leaves the DB pointing at something real, never at something already deleted. Re-running the script should just skip whatever's already migrated, not error or double-apply.
 
 ## Conventions enforced by tooling
 

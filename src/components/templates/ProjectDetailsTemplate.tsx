@@ -55,7 +55,9 @@ export const ProjectDetailsTemplate = ({
   const [editingLiveUrl, setEditingLiveUrl] = useState(false)
   const [liveUrlDraft, setLiveUrlDraft] = useState<string>(project.liveUrl || '')
 
-  const { url: resolvedLogoUrl } = useResolvedFileUrl(project.logo)
+  const { url: resolvedLogoUrl, loading: logoResolving } = useResolvedFileUrl(
+    project.logo
+  )
   const displayLogo = currentLogoUrl || resolvedLogoUrl
 
   // Check if current user can edit this project (is client or developer)
@@ -235,12 +237,12 @@ export const ProjectDetailsTemplate = ({
                       </button>
                     )}
                   </div>
-                ) : meLoading ? (
+                ) : meLoading || logoResolving ? (
                   <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <div className='text-center'>
                       <div className='mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
                       <p className='mt-2 font-mono text-xs text-green-400/70'>
-                        Checking permissions...
+                        {meLoading ? 'Checking permissions...' : 'Loading logo...'}
                       </p>
                     </div>
                   </div>
