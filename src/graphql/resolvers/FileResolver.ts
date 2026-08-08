@@ -10,12 +10,12 @@ import {
   Root,
 } from 'type-graphql'
 
+import type { Environment } from '@/graphql/schema'
 import type { ProjectFileRecord } from '@/models'
 import type { FileService, ProjectService, UserService } from '@/services'
 
 import { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE } from '@/constants/file'
 import {
-  Environment,
   File,
   FileFilterInput,
   FilePlacement,
