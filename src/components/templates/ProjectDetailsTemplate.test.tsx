@@ -8,7 +8,7 @@ import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
 // Mock only the API clients that ProjectDetailsTemplate actually uses
 const mockGetMe = vi.fn()
-const mockGetFile = vi.fn()
+const mockUseResolvedFileUrl = vi.fn()
 
 // Mock the specific functions we need, let the rest use real implementations
 const mockProvisionProjectRepo = vi.fn()
@@ -18,7 +18,7 @@ vi.mock('@/apiClients', async () => {
   return {
     ...actual,
     useGetMe: () => mockGetMe(),
-    useGetFile: () => mockGetFile(),
+    useResolvedFileUrl: (key?: string | null) => mockUseResolvedFileUrl(key),
     useProvisionProjectRepo: () => [mockProvisionProjectRepo, { loading: false }],
     useUpdateProject: () => [vi.fn(), { loading: false }],
   }
@@ -68,10 +68,10 @@ describe('ProjectDetailsTemplate', () => {
       data: { me: null },
       loading: false,
     })
-    mockGetFile.mockReturnValue({
-      data: null,
+    mockUseResolvedFileUrl.mockImplementation((key?: string | null) => ({
+      url: key ?? undefined,
       loading: false,
-    })
+    }))
   })
 
   it('renders project header with correct information', () => {
@@ -189,6 +189,15 @@ describe('ProjectDetailsTemplate', () => {
     const projectWithoutLogo = { ...mockProject, logo: undefined }
     render(<ProjectDetailsTemplate project={projectWithoutLogo} />)
 
+    expect(screen.queryByAltText('Test Project logo')).not.toBeInTheDocument()
+  })
+
+  it('shows a loading state instead of the no-logo fallback while the logo URL resolves', () => {
+    mockUseResolvedFileUrl.mockReturnValue({ url: undefined, loading: true })
+
+    render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(screen.getByText('Loading logo...')).toBeInTheDocument()
     expect(screen.queryByAltText('Test Project logo')).not.toBeInTheDocument()
   })
 

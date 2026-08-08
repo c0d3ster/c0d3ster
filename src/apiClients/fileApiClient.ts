@@ -14,6 +14,7 @@ import type {
 } from '@/graphql/generated/graphql'
 
 import { apolloClient } from '@/libs/ApolloClient'
+import { isPublicUrl } from '@/utils'
 
 export const REQUEST_PROJECT_LOGO_UPLOAD = gql`
   mutation RequestProjectLogoUpload(
@@ -116,6 +117,21 @@ export const useGetFile = (key: string) => {
     variables: { key },
     skip: !key,
   })
+}
+
+/**
+ * Resolves a project/file field that may be either a browser-loadable URL
+ * (public asset, or a presigned URL) or a bare R2 object key into a usable URL.
+ */
+export const useResolvedFileUrl = (
+  key?: string | null
+): { url: string | undefined; loading: boolean } => {
+  const shouldFetch = !!key && !isPublicUrl(key)
+  const { data, loading } = useGetFile(shouldFetch ? key : '')
+
+  if (!key) return { url: undefined, loading: false }
+  if (isPublicUrl(key)) return { url: key, loading: false }
+  return { url: data?.file?.downloadUrl ?? undefined, loading }
 }
 
 /**

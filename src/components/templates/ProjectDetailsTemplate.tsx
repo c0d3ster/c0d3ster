@@ -2,12 +2,12 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
+import { startTransition, useOptimistic, useState } from 'react'
 import { FaPencilAlt, FaRegStar, FaStar } from 'react-icons/fa'
 
 import type { Project } from '@/graphql/generated/graphql'
 
-import { useGetFile, useGetMe, useProvisionProjectRepo, useUpdateProject } from '@/apiClients'
+import { useGetMe, useProvisionProjectRepo, useResolvedFileUrl, useUpdateProject } from '@/apiClients'
 import {
   BackButton,
   Button,
@@ -48,32 +48,17 @@ export const ProjectDetailsTemplate = ({
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(project.status)
   const [optimisticProgress, setOptimisticProgress] = useOptimistic(project.progressPercentage)
   const [showLogoUpload, setShowLogoUpload] = useState(false)
-  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
-    project.logo || null
-  )
+  // Only set once a fresh upload finalizes; the stored project.logo (public
+  // asset path or R2 key) is otherwise resolved to a URL below.
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null)
   const [liveUrl, setLiveUrl] = useState<string>(project.liveUrl || '')
   const [editingLiveUrl, setEditingLiveUrl] = useState(false)
   const [liveUrlDraft, setLiveUrlDraft] = useState<string>(project.liveUrl || '')
-  const setCurrentLogoUrlRef = useRef(setCurrentLogoUrl)
 
-  // Check if the project logo is a public URL or a storage key
-  const isPublicUrl = (url?: string | null) =>
-    !!url && (/^https?:\/\//.test(url) || url.startsWith('/assets/'))
-
-  // Use the current logo URL if set, otherwise fall back to the project logo
-  const displayLogo =
-    currentLogoUrl || (isPublicUrl(project.logo) ? project.logo : undefined)
-
-  // Get download URL for non-public storage keys
-  const shouldFetchFile = project.logo && !isPublicUrl(project.logo)
-  const { data: fileData } = useGetFile(shouldFetchFile ? project.logo : '')
-
-  // Update current logo URL when file data is loaded
-  useEffect(() => {
-    if (shouldFetchFile && fileData?.file?.downloadUrl && !currentLogoUrl) {
-      setCurrentLogoUrlRef.current(fileData.file.downloadUrl)
-    }
-  }, [shouldFetchFile, fileData?.file?.downloadUrl, currentLogoUrl])
+  const { url: resolvedLogoUrl, loading: logoResolving } = useResolvedFileUrl(
+    project.logo
+  )
+  const displayLogo = currentLogoUrl || resolvedLogoUrl
 
   // Check if current user can edit this project (is client or developer)
   // Only check after user data is loaded to avoid showing upload component briefly
@@ -181,14 +166,14 @@ export const ProjectDetailsTemplate = ({
     <CleanPageTemplate>
       <BackButton useBack text='BACK' />
       {canManageFeatured && (
-        <div className='fixed top-24 right-0 left-0 z-40'>
+        <div className='pointer-events-none fixed top-24 right-0 left-0 z-40'>
           <div className='container mx-auto px-4'>
             <div className='flex justify-end'>
               <button
                 type='button'
                 onClick={handleToggleFeatured}
                 disabled={updatingFeatured}
-                className='cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
+                className='pointer-events-auto cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
                 title={featured ? 'Remove from featured' : 'Add to featured'}
                 aria-label={featured ? 'Remove from featured' : 'Add to featured'}
                 aria-pressed={featured}
@@ -252,12 +237,12 @@ export const ProjectDetailsTemplate = ({
                       </button>
                     )}
                   </div>
-                ) : meLoading ? (
+                ) : meLoading || logoResolving ? (
                   <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <div className='text-center'>
                       <div className='mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
                       <p className='mt-2 font-mono text-xs text-green-400/70'>
-                        Checking permissions...
+                        {meLoading ? 'Checking permissions...' : 'Loading logo...'}
                       </p>
                     </div>
                   </div>

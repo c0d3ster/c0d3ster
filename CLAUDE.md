@@ -47,6 +47,22 @@ Vitest runs two projects (vitest.config.mts):
 
 E2E specs (`*.spec.ts`/`*.e2e.ts`) are excluded from `tsc` and from the vitest globs, and get relaxed lint rules (quotes) via `eslint.config.mjs`.
 
+## Database migrations (Drizzle)
+
+Schema changes (add/remove/alter a column, table, or enum):
+1. Edit the schema in `src/models/**` first.
+2. Run `npm run db:generate`. drizzle-kit diffs your change against `migrations/meta/*_snapshot.json` and writes a new `migrations/00XX_<random-words>.sql`, a matching snapshot, and a journal entry in `migrations/meta/_journal.json`.
+3. Review the generated SQL.
+4. Rename the file from drizzle-kit's random-word name to a short descriptive slug, keeping the numeric prefix (e.g. `0018_hazy_falcon.sql` -> `0018_add_invoice_status.sql`).
+5. Update the matching entry's `"tag"` in `migrations/meta/_journal.json` to the new filename minus `.sql`. This is the step that gets skipped and breaks `db:migrate` (it looks up files by tag, not by number).
+6. Run `npm run db:migrate`.
+
+Data-only migrations (backfilling or renaming stored values, no column/type change):
+- `db:generate` diffs `src/models/**` against the last snapshot. With no schema change there's nothing to diff, so it silently generates nothing. Don't try to force one through drizzle-kit for a pure data fix.
+- If the fix is pure SQL, hand-write a numbered `.sql` file in `migrations/` and add its own `_journal.json` entry (reuse the prior snapshot unchanged, since the schema didn't move).
+- If the fix needs to touch anything outside the DB in lockstep with a column update (e.g. renaming R2 object keys while updating the row that points at them), it can't be a migration file at all. Write a standalone script instead (see `scripts/`), reading credentials from env, not through Drizzle's migration system.
+- Cross-system scripts like that must be idempotent, resumable, and support a dry run: for each row, copy/create the new external resource and verify it before touching anything, update the DB row only after the new resource is confirmed to exist, and only then delete the old external resource. That ordering means a crash or partial failure always leaves the DB pointing at something real, never at something already deleted. Re-running the script should just skip whatever's already migrated, not error or double-apply.
+
 ## Conventions enforced by tooling
 
 - Commit messages must be Conventional Commits (commitlint + lefthook `commit-msg` hook); `semantic-release` on `main` drives GitHub releases from that history. Use `npm run commit` for an interactive prompt.
