@@ -117,6 +117,7 @@ export class ProjectRequestService {
         budget: input.budget,
         timeline: input.timeline,
         requirements: input.requirements,
+        features: input.features,
         contactPreference: input.contactPreference,
         additionalInfo: input.additionalInfo,
       })
@@ -296,7 +297,10 @@ export class ProjectRequestService {
           projectType: request.projectType,
           budget: request.budget,
           requirements: request.requirements,
-          features: getDefaultFeatures(request.projectType),
+          features:
+            request.features && request.features.length > 0
+              ? request.features
+              : getDefaultFeatures(request.projectType),
           status: ProjectStatus.Approved,
           featured: false,
         })

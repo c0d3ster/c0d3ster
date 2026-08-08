@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 
+import type { ProjectFeature} from '@/graphql/generated/graphql';
 import type { ProjectRequestData } from '@/validations'
 
 import { useCreateProjectRequest } from '@/apiClients'
@@ -11,6 +12,7 @@ import { ProjectType } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 import {
   contactPreferenceOptions,
+  projectFeatureOptions,
   projectRequestSchema,
   projectTypeOptions,
 } from '@/validations'
@@ -25,6 +27,7 @@ const ErrorMessage = ({ error }: { error?: string }) => (
 export const ProjectRequestForm = () => {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const [errors, setErrors] = useState<
     Partial<Record<keyof ProjectRequestData, string>>
   >({})
@@ -73,6 +76,7 @@ export const ProjectRequestForm = () => {
       needsContentCreation: false,
       needsSEO: false,
     },
+    features: [],
   })
 
   const handleInputChange = (
@@ -103,6 +107,18 @@ export const ProjectRequestForm = () => {
         [requirement]: checked,
       },
     }))
+  }
+
+  const handleFeatureChange = (feature: ProjectFeature, checked: boolean) => {
+    setFormData((prev) => {
+      const current = prev.features ?? []
+      return {
+        ...prev,
+        features: checked
+          ? [...current, feature]
+          : current.filter((f) => f !== feature),
+      }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -324,6 +340,40 @@ export const ProjectRequestForm = () => {
             </label>
           ))}
         </div>
+      </div>
+
+      {/* Advanced Options Section - collapsed by default */}
+      <div className='space-y-4'>
+        <button
+          type='button'
+          onClick={() => setShowAdvancedOptions((prev) => !prev)}
+          className='font-mono text-lg font-bold text-green-400'
+        >
+          {showAdvancedOptions ? '▾' : '▸'} ADVANCED OPTIONS
+        </button>
+
+        {showAdvancedOptions && (
+          <div className='grid gap-4 md:grid-cols-2'>
+            {projectFeatureOptions.map((feature) => (
+              <label
+                key={feature.value}
+                className='flex items-center space-x-3 font-mono text-sm text-green-300'
+              >
+                <input
+                  type='checkbox'
+                  checked={
+                    formData.features?.includes(feature.value) ?? false
+                  }
+                  onChange={(e) =>
+                    handleFeatureChange(feature.value, e.target.checked)
+                  }
+                  className='h-4 w-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
+                />
+                <span>{feature.label}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Contact & Additional Info */}

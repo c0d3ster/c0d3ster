@@ -1275,6 +1275,7 @@ describe('ProjectService', () => {
         budget: 5000,
         timeline: '3 months',
         requirements: null,
+        features: null,
         contactPreference: 'EMAIL',
         additionalInfo: 'Additional info',
         status: ProjectStatus.Requested,

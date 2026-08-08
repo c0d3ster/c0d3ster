@@ -6,6 +6,7 @@ const config: KnipConfig = {
     'tests/**/*.ts',
     'src/apiClients/**/*.ts', // Ignore API clients - used by GraphQL codegen
     'src/graphql/**/*.ts', // Ignore GraphQL files - used by codegen
+    'src/libs/featurePricing.ts', // Admin-only reference data, consumed by InvoiceService (not yet built)
   ],
   // Dependencies to ignore during analysis
   ignoreDependencies: [

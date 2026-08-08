@@ -58,6 +58,7 @@ export const CREATE_PROJECT_REQUEST = gql`
         needsContentCreation
         needsSEO
       }
+      features
       contactPreference
       additionalInfo
       status
