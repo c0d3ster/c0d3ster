@@ -8,7 +8,6 @@ import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 
 // Mock only the API clients that ProjectDetailsTemplate actually uses
 const mockGetMe = vi.fn()
-const mockGetFile = vi.fn()
 
 // Mock the specific functions we need, let the rest use real implementations
 const mockProvisionProjectRepo = vi.fn()
@@ -18,7 +17,10 @@ vi.mock('@/apiClients', async () => {
   return {
     ...actual,
     useGetMe: () => mockGetMe(),
-    useGetFile: () => mockGetFile(),
+    useResolvedFileUrl: (key?: string | null) => ({
+      url: key ?? undefined,
+      loading: false,
+    }),
     useProvisionProjectRepo: () => [mockProvisionProjectRepo, { loading: false }],
     useUpdateProject: () => [vi.fn(), { loading: false }],
   }
@@ -66,10 +68,6 @@ describe('ProjectDetailsTemplate', () => {
     // Set up default mock behavior
     mockGetMe.mockReturnValue({
       data: { me: null },
-      loading: false,
-    })
-    mockGetFile.mockReturnValue({
-      data: null,
       loading: false,
     })
   })
