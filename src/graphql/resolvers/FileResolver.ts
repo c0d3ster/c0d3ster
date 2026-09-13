@@ -138,7 +138,13 @@ export class FileResolver {
     // Get project files from database instead of S3
     const projectFiles = await this.fileService.getProjectFiles(projectId)
     const environment = this.fileService.resolveEnvironment()
-    return projectFiles.map((record) => toFileType(record, environment))
+    // Logo uploads also create a project file record (for asset management /
+    // cleanup bookkeeping), but the logo is displayed separately and shouldn't
+    // show up as an "additional file" - including a stale one left behind if
+    // old-logo cleanup on replace ever failed (see finalizeProjectLogoUpload).
+    return projectFiles
+      .filter((record) => record.description !== 'Project logo')
+      .map((record) => toFileType(record, environment))
   }
 
   @Query(() => [File])
@@ -301,6 +307,15 @@ export class FileResolver {
       currentUser.role
     )
 
+    // Enforce "exactly one logo record per project" by construction: clear out
+    // every prior logo record (not just the immediately-previous key) before
+    // inserting the new one. This must not be swallowed - if it fails, the
+    // caller needs to know the project can have duplicate logo records.
+    await this.fileService.deleteProjectFileRecordsByDescription(
+      projectId,
+      'Project logo'
+    )
+
     await this.fileService.createProjectFileRecord({
       projectId,
       fileName: meta.fileName,
@@ -313,6 +328,11 @@ export class FileResolver {
       description: 'Project logo',
     })
 
+    // The database side is now guaranteed consistent above. Deleting the old
+    // object from R2 is a separate external system that can fail
+    // independently (network, permissions) - that failure shouldn't fail an
+    // otherwise-successful upload, but it must be logged loudly (not
+    // swallowed as a warning) since it leaves a real orphaned object behind.
     if (
       oldLogoKey &&
       oldLogoKey !== key &&
@@ -321,10 +341,8 @@ export class FileResolver {
       try {
         await this.fileService.deleteFile(oldLogoKey)
         logger.info(`Deleted old logo file: ${oldLogoKey}`)
-        await this.fileService.deleteProjectFileRecordByPath(oldLogoKey)
-        logger.info(`Deleted old logo database entry: ${oldLogoKey}`)
       } catch (error) {
-        logger.warn(`Failed to clean up old logo: ${oldLogoKey}`, {
+        logger.error(`Failed to delete old logo object from storage: ${oldLogoKey}`, {
           error: String(error),
         })
       }

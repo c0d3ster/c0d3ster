@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { useGetProjectFiles } from '@/apiClients'
@@ -63,6 +63,23 @@ describe('ProjectFilesPanel', () => {
 
     render(<ProjectFilesPanel projectId='project-1' />)
 
-    expect(screen.getByText('brief.pdf')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'brief.pdf' })
+    ).toBeInTheDocument()
+  })
+
+  it('opens the upload modal with a single header when the add tile is clicked', () => {
+    mockUseGetProjectFiles.mockReturnValue({
+      data: { projectFiles: [] },
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+    } as any)
+
+    render(<ProjectFilesPanel projectId='project-1' />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Upload file' }))
+
+    expect(screen.getAllByText('UPLOAD FILE')).toHaveLength(1)
   })
 })

@@ -20,6 +20,7 @@ registerEnumType(Environment, {
 })
 
 export enum FilePlacement {
+  Hero = 'hero',
   Gallery = 'gallery',
   Document = 'document',
   Other = 'other',

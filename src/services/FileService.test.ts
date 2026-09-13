@@ -566,17 +566,19 @@ describe('FileService', () => {
     })
   })
 
-  describe('deleteProjectFileRecordByPath', () => {
-    it('should delete project file record by path', async () => {
-      const mockDeletedRecords = [{ id: 'file-123', fileName: 'test.jpg' }]
+  describe('deleteProjectFileRecordsByDescription', () => {
+    it('should delete project file records matching project and description', async () => {
+      const mockDeletedRecords = [{ id: 'file-123', fileName: 'logo.jpg' }]
       mockDbDelete.mockReturnValue({
         where: vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue(mockDeletedRecords),
         }),
       } as any)
 
-      const result =
-        await fileService.deleteProjectFileRecordByPath('path/to/file.jpg')
+      const result = await fileService.deleteProjectFileRecordsByDescription(
+        'project-1',
+        'Project logo'
+      )
 
       expect(result).toEqual(mockDeletedRecords)
     })

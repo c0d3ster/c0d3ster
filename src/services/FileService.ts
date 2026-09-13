@@ -7,7 +7,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { Buffer } from 'node:buffer'
 
 import type { FilePlacement, FileUploadInput } from '@/graphql/schema'
@@ -410,15 +410,24 @@ export class FileService {
     return projectFile
   }
 
-  async deleteProjectFileRecordByPath(filePath: string) {
+  async deleteProjectFileRecordsByDescription(
+    projectId: string,
+    description: string
+  ) {
     const result = await db
       .delete(schemas.projectFiles)
-      .where(eq(schemas.projectFiles.filePath, filePath))
+      .where(
+        and(
+          eq(schemas.projectFiles.projectId, projectId),
+          eq(schemas.projectFiles.description, description)
+        )
+      )
       .returning()
 
-    logger.info(`Deleted project file record for path: ${filePath}`, {
-      deletedCount: result.length,
-    })
+    logger.info(
+      `Deleted project file records for project ${projectId} with description "${description}"`,
+      { deletedCount: result.length }
+    )
     return result
   }
 

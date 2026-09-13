@@ -32,6 +32,7 @@ export const domainStatusEnum = pgEnum('domain_status', [
 
 // Project file placement enum
 export const filePlacementEnum = pgEnum('file_placement', [
+  'hero',
   'gallery',
   'document',
   'other',

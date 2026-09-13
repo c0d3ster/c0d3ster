@@ -1,0 +1,1 @@
+ALTER TYPE "public"."file_placement" ADD VALUE 'hero' BEFORE 'gallery';

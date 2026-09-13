@@ -12,6 +12,7 @@ type ProjectFileUploadProps = {
 
 const PLACEMENT_OPTIONS: { value: FilePlacement; label: string }[] = [
   { value: FilePlacement.Gallery, label: 'Gallery' },
+  { value: FilePlacement.Hero, label: 'Hero' },
   { value: FilePlacement.Document, label: 'Document' },
   { value: FilePlacement.Other, label: 'Other' },
 ]
@@ -57,11 +58,7 @@ export const ProjectFileUpload = ({
   }
 
   return (
-    <div className='space-y-4 rounded-lg border border-green-400/20 bg-black/60 p-4'>
-      <h4 className='font-mono text-sm font-bold text-green-400'>
-        UPLOAD FILE
-      </h4>
-
+    <div className='space-y-4'>
       <div className='flex flex-col gap-2 sm:flex-row'>
         <input
           type='text'
@@ -77,7 +74,7 @@ export const ProjectFileUpload = ({
             setPlacement(event.target.value as FilePlacement)
           }
           disabled={isUploading}
-          className='rounded border border-green-400/30 bg-black/40 px-3 py-2 font-mono text-sm text-green-300'
+          className='min-w-[140px] shrink-0 rounded border border-green-400/30 bg-black/40 py-2 pr-8 pl-3 font-mono text-sm text-green-300'
         >
           {PLACEMENT_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>

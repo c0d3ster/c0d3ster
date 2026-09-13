@@ -100,6 +100,7 @@ export type FileFilterInput = {
 export enum FilePlacement {
   Document = 'Document',
   Gallery = 'Gallery',
+  Hero = 'Hero',
   Other = 'Other'
 }
 

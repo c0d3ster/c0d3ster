@@ -23,10 +23,10 @@ describe('ProjectFileUpload', () => {
   it('renders correctly', () => {
     render(<ProjectFileUpload {...defaultProps} />)
 
-    expect(screen.getByText('UPLOAD FILE')).toBeInTheDocument()
     expect(
       screen.getByPlaceholderText('Caption (optional)')
     ).toBeInTheDocument()
+    expect(document.querySelector('input[type="file"]')).toBeInTheDocument()
   })
 
   it('uploads the selected file with caption and placement', async () => {

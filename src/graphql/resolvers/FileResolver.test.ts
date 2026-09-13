@@ -227,6 +227,42 @@ describe('FileResolver', () => {
         'Project not found or access denied'
       )
     })
+
+    it('should exclude logo file records from the results, including orphaned ones', async () => {
+      const currentLogoRecord = createMockProjectFileRecord({
+        id: 'file-logo-current',
+        filePath: 'dev/projects/project-1/logo.png',
+        description: 'Project logo',
+      })
+      const orphanedLogoRecord = createMockProjectFileRecord({
+        id: 'file-logo-orphaned',
+        filePath: 'dev/projects/project-1/old-logo.png',
+        description: 'Project logo',
+      })
+      const galleryRecord = createMockProjectFileRecord({
+        id: 'file-2',
+        filePath: 'dev/projects/project-1/gallery.png',
+        placement: 'gallery',
+      })
+      const currentUser = createMockUser()
+      const mockProject = createMockProject({
+        logo: 'dev/projects/project-1/logo.png',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getProjectFiles.mockResolvedValue([
+        currentLogoRecord,
+        orphanedLogoRecord,
+        galleryRecord,
+      ])
+
+      const result = await fileResolver.projectFiles('project-1')
+
+      expect(result).toEqual([
+        expect.objectContaining({ id: galleryRecord.id }),
+      ])
+    })
   })
 
   describe('userFiles', () => {
@@ -450,7 +486,9 @@ describe('FileResolver', () => {
       )
       mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
       mockFileService.deleteFile.mockResolvedValue(undefined)
-      mockFileService.deleteProjectFileRecordByPath.mockResolvedValue([])
+      mockFileService.deleteProjectFileRecordsByDescription.mockResolvedValue(
+        []
+      )
 
       const { fileTypeFromBuffer } = await import('file-type')
       vi.mocked(fileTypeFromBuffer).mockResolvedValue({
@@ -465,8 +503,108 @@ describe('FileResolver', () => {
 
       expect(result).toBe('https://presigned-url.com')
       expect(mockProjectService.updateProject).toHaveBeenCalled()
+      expect(
+        mockFileService.deleteProjectFileRecordsByDescription
+      ).toHaveBeenCalledWith('project-1', 'Project logo')
       expect(mockFileService.createProjectFileRecord).toHaveBeenCalled()
       expect(mockFileService.deleteFile).toHaveBeenCalledWith(oldLogoKey)
+    })
+
+    it('should propagate an error if clearing prior logo records fails', async () => {
+      const currentUser = createMockUser()
+      const logoKey = 'projects/project-1/1_logo.jpg'
+      const mockProject = createMockProject({
+        id: 'project-1',
+        logo: 'projects/project-1/old.png',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 1024,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xff, 0xd8])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: logoKey,
+        fileName: 'logo.jpg',
+        originalFileName: 'logo.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.deleteProjectFileRecordsByDescription.mockRejectedValue(
+        new Error('db unavailable')
+      )
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'image/jpeg',
+        ext: 'jpg',
+      })
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('db unavailable')
+
+      expect(mockFileService.createProjectFileRecord).not.toHaveBeenCalled()
+    })
+
+    it('should not fail the upload when deleting the old logo object fails', async () => {
+      const currentUser = createMockUser()
+      const logoKey = 'projects/project-1/1_logo.jpg'
+      const oldLogoKey = 'projects/project-1/old.png'
+      const mockProject = createMockProject({
+        id: 'project-1',
+        logo: oldLogoKey,
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 1024,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xff, 0xd8])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: logoKey,
+        fileName: 'logo.jpg',
+        originalFileName: 'logo.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.generatePresignedDownloadUrl.mockResolvedValue(
+        'https://presigned-url.com'
+      )
+      mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
+      mockFileService.deleteProjectFileRecordsByDescription.mockResolvedValue(
+        []
+      )
+      mockFileService.deleteFile.mockRejectedValue(new Error('R2 down'))
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'image/jpeg',
+        ext: 'jpg',
+      })
+
+      const result = await fileResolver.finalizeProjectLogoUpload(
+        'project-1',
+        logoKey
+      )
+
+      expect(result).toBe('https://presigned-url.com')
     })
 
     it('should reject key with wrong project prefix', async () => {
@@ -616,6 +754,9 @@ describe('FileResolver', () => {
         'https://presigned-url.com'
       )
       mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
+      mockFileService.deleteProjectFileRecordsByDescription.mockResolvedValue(
+        []
+      )
 
       const { fileTypeFromBuffer } = await import('file-type')
       vi.mocked(fileTypeFromBuffer).mockResolvedValue({

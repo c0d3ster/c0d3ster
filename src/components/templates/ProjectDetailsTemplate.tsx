@@ -18,6 +18,7 @@ import {
   AnimatedHeading,
   LogoUpload,
   PostUpdatePanel,
+  ProjectFilesPanel,
   StatusHistory,
 } from '@/components/molecules'
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
@@ -281,6 +282,11 @@ export const ProjectDetailsTemplate = ({
                 )}
               </div>
 
+              {canEditProject && (
+                <div className='w-[300px]'>
+                  <ProjectFilesPanel projectId={project.id} />
+                </div>
+              )}
 
               {/* Repo / Staging / Live links */}
               {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
