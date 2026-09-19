@@ -27,6 +27,7 @@ import { logger } from '@/libs/Logger'
 import {
   isAllowedImageContentType,
   isAllowedProjectFileContentType,
+  looksLikePlainText,
   normalizeImageContentType,
   normalizeProjectFileContentType,
 } from '@/utils/File'
@@ -276,9 +277,16 @@ export class FileResolver {
     }
 
     const detected = await fileTypeFromBuffer(buffer)
-    const effectiveType = detected?.mime
-      ? normalizeImageContentType(detected.mime)
-      : normalizeImageContentType(head.contentType)
+    if (!detected?.mime) {
+      // Every allowed image type (jpeg/png/webp/gif) has a reliable magic-byte
+      // signature, so a genuine image always sniffs successfully. Unlike the
+      // generic file upload path, there's no legitimate case here to fall
+      // back to trusting the client-supplied Content-Type header.
+      throw new Error(
+        'Invalid file upload parameters. Could not verify uploaded file content type.'
+      )
+    }
+    const effectiveType = normalizeImageContentType(detected.mime)
 
     logger.info('Logo finalize validation:', {
       effectiveType,
@@ -475,9 +483,50 @@ export class FileResolver {
     }
 
     const detected = await fileTypeFromBuffer(buffer)
-    const effectiveType = detected?.mime
-      ? normalizeProjectFileContentType(detected.mime)
-      : normalizeProjectFileContentType(head.contentType)
+
+    // OOXML files (.docx/.xlsx) are zip containers; the entry that proves it's
+    // specifically an Office document (e.g. word/document.xml) can fall past
+    // the first 16KB for larger files, so a truncated scan reports the
+    // generic zip signature. Re-scan the full object to resolve the specific
+    // Office type instead of persisting the wrong contentType.
+    const rescanned =
+      detected?.mime === 'application/zip' && head.contentLength > buffer.length
+        ? ((await fileTypeFromBuffer(
+            (await this.fileService.getObjectBufferRange(
+              key,
+              head.contentLength
+            )) ?? buffer
+          )) ?? detected)
+        : detected
+
+    // Legacy Word/Excel/PowerPoint files (.doc/.xls/.ppt) all share the same
+    // generic Microsoft Compound File Binary container signature - file-type
+    // can't distinguish between them from magic bytes alone. Map to the one
+    // CFB-based type this app allowlists rather than rejecting every legacy
+    // Word doc.
+    const sniffedMime =
+      rescanned?.mime === 'application/x-cfb'
+        ? 'application/msword'
+        : rescanned?.mime
+
+    let effectiveType: string
+    if (sniffedMime) {
+      effectiveType = normalizeProjectFileContentType(sniffedMime)
+    } else {
+      // No recognizable signature at all. file-type has no magic bytes for
+      // plain text, so that's the one case worth a heuristic; anything else
+      // falls through to rejection rather than trusting the client-supplied
+      // Content-Type header, which is exactly the spoofing risk sniffing
+      // exists to catch.
+      const declaredType = normalizeProjectFileContentType(head.contentType)
+      if (declaredType === 'text/plain' && looksLikePlainText(buffer)) {
+        effectiveType = declaredType
+      } else {
+        throw new Error(
+          'Invalid file upload parameters. Could not verify uploaded file content type.'
+        )
+      }
+    }
 
     if (!isAllowedProjectFileContentType(effectiveType)) {
       throw new Error(

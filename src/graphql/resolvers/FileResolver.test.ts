@@ -697,6 +697,25 @@ describe('FileResolver', () => {
       ).rejects.toThrow('Invalid file upload parameters')
     })
 
+    it('should throw when the content type cannot be sniffed at all', async () => {
+      const currentUser = createMockUser()
+      const logoKey = 'projects/project-1/k.jpg'
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 100,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(Buffer.from([1]))
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue(undefined)
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('Could not verify uploaded file content type')
+    })
+
     it('should throw when getFileMetadata returns null', async () => {
       const currentUser = createMockUser()
       const logoKey = 'projects/project-1/k.jpg'
@@ -1014,6 +1033,163 @@ describe('FileResolver', () => {
       await expect(
         fileResolver.finalizeProjectFileUpload('project-1', fileKey)
       ).rejects.toThrow('Invalid file upload parameters')
+    })
+
+    it('should normalize a legacy .doc (CFB) detection to application/msword', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/k.doc`
+      const mockRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        contentType: 'application/msword',
+      })
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 4096,
+        contentType: 'application/msword',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xd0, 0xcf, 0x11, 0xe0])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: fileKey,
+        fileName: 'k.doc',
+        originalFileName: 'k.doc',
+        fileSize: 4096,
+        contentType: 'application/msword',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.createProjectFileRecord.mockResolvedValue(mockRecord)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'application/x-cfb',
+        ext: 'cfb',
+      })
+
+      await fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'application/msword' })
+      )
+    })
+
+    it('should re-scan the full object to resolve an OOXML type when the truncated scan reports generic zip', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/k.docx`
+      const mockRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 50_000,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+      mockFileService.getObjectBufferRange
+        .mockResolvedValueOnce(Buffer.alloc(16_384))
+        .mockResolvedValueOnce(Buffer.alloc(50_000))
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: fileKey,
+        fileName: 'k.docx',
+        originalFileName: 'k.docx',
+        fileSize: 50_000,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.createProjectFileRecord.mockResolvedValue(mockRecord)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer)
+        .mockResolvedValueOnce({ mime: 'application/zip', ext: 'zip' })
+        .mockResolvedValueOnce({
+          mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          ext: 'docx',
+        })
+
+      await fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+
+      expect(mockFileService.getObjectBufferRange).toHaveBeenCalledWith(
+        fileKey,
+        50_000
+      )
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType:
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        })
+      )
+    })
+
+    it('should accept a plain text upload when sniffing finds no signature but the content looks like text', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/notes.txt`
+      const mockRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        contentType: 'text/plain',
+      })
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 20,
+        contentType: 'text/plain',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from('just some plain text')
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: fileKey,
+        fileName: 'notes.txt',
+        originalFileName: 'notes.txt',
+        fileSize: 20,
+        contentType: 'text/plain',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.createProjectFileRecord.mockResolvedValue(mockRecord)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue(undefined)
+
+      await fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'text/plain' })
+      )
+    })
+
+    it('should reject the upload when sniffing finds no signature and the client-declared type cannot be trusted', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/mystery.bin`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 4,
+        contentType: 'application/pdf',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0x00, 0x01, 0x02, 0x03])
+      )
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue(undefined)
+
+      await expect(
+        fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+      ).rejects.toThrow('Could not verify uploaded file content type')
+      expect(mockFileService.createProjectFileRecord).not.toHaveBeenCalled()
     })
   })
 
