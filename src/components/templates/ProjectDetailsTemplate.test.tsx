@@ -22,6 +22,7 @@ vi.mock('@/apiClients', async () => {
     useResolvedFileUrl: (key?: string | null) => mockUseResolvedFileUrl(key),
     useProvisionProjectRepo: () => [mockProvisionProjectRepo, { loading: false }],
     useUpdateProject: () => [vi.fn(), { loading: false }],
+    useUpdateProjectStatus: () => [vi.fn(), { loading: false }],
     useGetProjectFiles: () => mockGetProjectFiles(),
   }
 })
@@ -204,6 +205,19 @@ describe('ProjectDetailsTemplate', () => {
   it('renders the additional files panel for the project client', () => {
     mockGetMe.mockReturnValue({
       data: { me: { id: mockProject.clientId, role: UserRole.Client } },
+      loading: false,
+    })
+
+    render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(
+      screen.getByRole('button', { name: 'Upload file' })
+    ).toBeInTheDocument()
+  })
+
+  it('renders the additional files panel for an admin who is not the client or developer', () => {
+    mockGetMe.mockReturnValue({
+      data: { me: { id: 'some-other-admin-id', role: UserRole.Admin } },
       loading: false,
     })
 

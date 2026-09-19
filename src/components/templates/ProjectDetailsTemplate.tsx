@@ -61,13 +61,16 @@ export const ProjectDetailsTemplate = ({
   )
   const displayLogo = currentLogoUrl || resolvedLogoUrl
 
-  // Check if current user can edit this project (is client or developer)
+  // Check if current user can edit this project (is client, assigned developer, or admin)
   // Only check after user data is loaded to avoid showing upload component briefly
   // Compare database user IDs properly
   const canEditProject =
     !meLoading &&
     meData?.me &&
-    (meData.me.id === project.clientId || meData.me.id === project.developerId)
+    (meData.me.id === project.clientId ||
+      meData.me.id === project.developerId ||
+      meData.me.role === UserRole.Admin ||
+      meData.me.role === UserRole.SuperAdmin)
 
   // Check if user is the client (for personalized messages)
   const isClient = meData?.me?.id === project.clientId
