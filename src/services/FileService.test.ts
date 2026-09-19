@@ -566,6 +566,46 @@ describe('FileService', () => {
     })
   })
 
+  describe('getProjectFileRecordByPath', () => {
+    it('should return the matching record when one exists', async () => {
+      const mockRecord = {
+        id: 'file-1',
+        fileName: 'a.pdf',
+        createdAt: new Date(),
+        description: null,
+        caption: null,
+        placement: null,
+        isClientVisible: true,
+        projectId: 'project-1',
+        originalFileName: 'a.pdf',
+        contentType: 'application/pdf',
+        fileSize: 1024,
+        filePath: 'projects/project-1/1_a.pdf',
+        uploadedBy: 'user-123',
+      }
+      mockDbQuery.findFirst.mockResolvedValue(mockRecord)
+
+      const result = await fileService.getProjectFileRecordByPath(
+        'project-1',
+        'projects/project-1/1_a.pdf'
+      )
+
+      expect(mockDbQuery.findFirst).toHaveBeenCalled()
+      expect(result).toEqual(mockRecord)
+    })
+
+    it('should return undefined when no record matches', async () => {
+      mockDbQuery.findFirst.mockResolvedValue(undefined)
+
+      const result = await fileService.getProjectFileRecordByPath(
+        'project-1',
+        'projects/project-1/missing.pdf'
+      )
+
+      expect(result).toBeUndefined()
+    })
+  })
+
   describe('deleteProjectFileRecordsByDescription', () => {
     it('should delete project file records matching project and description', async () => {
       const mockDeletedRecords = [{ id: 'file-123', fileName: 'logo.jpg' }]

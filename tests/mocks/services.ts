@@ -59,6 +59,7 @@ export const createMockFileService = () => ({
   deleteFile: vi.fn(),
   generatePresignedDownloadUrl: vi.fn(),
   createProjectFileRecord: vi.fn(),
+  getProjectFileRecordByPath: vi.fn(),
   deleteProjectFileRecordsByDescription: vi.fn(),
   generateProjectLogoPresignedUpload: vi.fn(),
   generateProjectFilePresignedUpload: vi.fn(),

@@ -447,6 +447,17 @@ export class FileResolver {
       throw new Error('Invalid file key')
     }
 
+    // Idempotency: a retried finalize call for the same object key (double-click,
+    // network retry) must not create a duplicate row, and can skip re-validating
+    // an object we've already validated - return the existing record.
+    const existingRecord = await this.fileService.getProjectFileRecordByPath(
+      projectId,
+      key
+    )
+    if (existingRecord) {
+      return toFileType(existingRecord, this.fileService.resolveEnvironment())
+    }
+
     const head = await this.fileService.getObjectHeadInfo(key)
     if (!head || head.contentLength <= 0) {
       throw new Error('Uploaded file not found or empty')

@@ -410,6 +410,15 @@ export class FileService {
     return projectFile
   }
 
+  async getProjectFileRecordByPath(projectId: string, filePath: string) {
+    return await db.query.projectFiles.findFirst({
+      where: and(
+        eq(schemas.projectFiles.projectId, projectId),
+        eq(schemas.projectFiles.filePath, filePath)
+      ),
+    })
+  }
+
   async deleteProjectFileRecordsByDescription(
     projectId: string,
     description: string

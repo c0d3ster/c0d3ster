@@ -174,6 +174,7 @@ vi.mock('@/libs/DB', () => ({
         findMany: vi.fn(),
       },
       projectFiles: {
+        findFirst: vi.fn(),
         findMany: vi.fn(),
       },
     },

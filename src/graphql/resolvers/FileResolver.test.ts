@@ -939,6 +939,36 @@ describe('FileResolver', () => {
       )
     })
 
+    it('should return the existing record instead of inserting a duplicate on a repeated finalize call', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/1_brief.pdf`
+      const mockProject = createMockProject({ id: 'project-1' })
+      const existingRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        caption: 'Project brief',
+        placement: 'document',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getProjectFileRecordByPath.mockResolvedValue(
+        existingRecord
+      )
+
+      const result = await fileResolver.finalizeProjectFileUpload(
+        'project-1',
+        fileKey,
+        'Project brief',
+        'document' as any
+      )
+
+      expect(result).toEqual(
+        expect.objectContaining({ id: existingRecord.id, key: fileKey })
+      )
+      expect(mockFileService.getObjectHeadInfo).not.toHaveBeenCalled()
+      expect(mockFileService.createProjectFileRecord).not.toHaveBeenCalled()
+    })
+
     it('should reject key with wrong project prefix', async () => {
       const currentUser = createMockUser()
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
