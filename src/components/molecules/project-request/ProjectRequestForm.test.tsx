@@ -17,8 +17,10 @@ vi.mock('next/navigation', () => ({
 
 // Mock the API client
 const mockCreateProjectRequest = vi.fn()
+const mockInferProjectDetails = vi.fn()
 vi.mock('@/apiClients', () => ({
   useCreateProjectRequest: () => [mockCreateProjectRequest],
+  useInferProjectDetails: () => [mockInferProjectDetails, { loading: false }],
 }))
 
 // Mock Toast
@@ -318,6 +320,93 @@ describe('ProjectRequestForm', () => {
       expect(
         screen.getByRole('button', { name: 'SUBMIT REQUEST' })
       ).toBeInTheDocument()
+    })
+  })
+
+  describe('suggest project details', () => {
+    it('requires a project name and description before suggesting', async () => {
+      render(<ProjectRequestForm />)
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'SUGGEST PROJECT TYPE & TITLE' })
+      )
+
+      const { Toast } = await import('@/libs/Toast')
+      await waitFor(() => {
+        expect(Toast.error).toHaveBeenCalledWith(
+          'Add a project name and description first'
+        )
+      })
+
+      expect(mockInferProjectDetails).not.toHaveBeenCalled()
+    })
+
+    it('prefills project type and title on a successful suggestion', async () => {
+      mockInferProjectDetails.mockResolvedValue({
+        data: {
+          inferProjectDetails: {
+            projectType: ProjectType.WebApp,
+            features: ['auth'],
+            title: 'Handmade Goods Store',
+          },
+        },
+      })
+
+      render(<ProjectRequestForm />)
+
+      fireEvent.change(screen.getByLabelText('PROJECT NAME *'), {
+        target: { value: 'My Store' },
+      })
+      fireEvent.change(screen.getByLabelText('DESCRIPTION *'), {
+        target: { value: 'An online store selling handmade goods' },
+      })
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'SUGGEST PROJECT TYPE & TITLE' })
+      )
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('PROJECT TYPE *')).toHaveValue(
+          ProjectType.WebApp
+        )
+      })
+
+      expect(screen.getByLabelText('TITLE')).toHaveValue(
+        'Handmade Goods Store'
+      )
+      expect(screen.getByText(/Suggested features: auth/)).toBeInTheDocument()
+    })
+
+    it('degrades gracefully and leaves the form usable on a malformed response', async () => {
+      mockInferProjectDetails.mockRejectedValue(
+        new Error('Received an invalid suggestion from the inference model')
+      )
+
+      render(<ProjectRequestForm />)
+
+      fireEvent.change(screen.getByLabelText('PROJECT NAME *'), {
+        target: { value: 'My Store' },
+      })
+      fireEvent.change(screen.getByLabelText('DESCRIPTION *'), {
+        target: { value: 'An online store selling handmade goods' },
+      })
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'SUGGEST PROJECT TYPE & TITLE' })
+      )
+
+      const { Toast } = await import('@/libs/Toast')
+      await waitFor(() => {
+        expect(Toast.error).toHaveBeenCalledWith(
+          'Received an invalid suggestion from the inference model'
+        )
+      })
+
+      // Form remains usable: project name is still there, user can still submit.
+      expect(screen.getByLabelText('PROJECT NAME *')).toHaveValue('My Store')
+      expect(
+        screen.getByRole('button', { name: 'SUBMIT REQUEST' })
+      ).not.toBeDisabled()
     })
   })
 

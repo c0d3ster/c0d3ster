@@ -124,6 +124,7 @@ export type Mutation = {
   readonly deleteFile: Scalars['Boolean']['output'];
   readonly finalizeProjectFileUpload: File;
   readonly finalizeProjectLogoUpload: Scalars['String']['output'];
+  readonly inferProjectDetails: ProjectInferenceSuggestion;
   readonly provisionProjectRepo: Project;
   readonly rejectProjectRequest: Scalars['String']['output'];
   readonly requestProjectFileUpload: ProjectFileUploadResult;
@@ -174,6 +175,11 @@ export type MutationFinalizeProjectFileUploadArgs = {
 export type MutationFinalizeProjectLogoUploadArgs = {
   key: Scalars['String']['input'];
   projectId: Scalars['ID']['input'];
+};
+
+
+export type MutationInferProjectDetailsArgs = {
+  input: ProjectInferenceInput;
 };
 
 
@@ -305,6 +311,18 @@ export type ProjectFilter = {
   readonly priority?: InputMaybe<ProjectPriority>;
   readonly projectType?: InputMaybe<ProjectType>;
   readonly status?: InputMaybe<ProjectStatus>;
+};
+
+export type ProjectInferenceInput = {
+  readonly description: Scalars['String']['input'];
+  readonly projectName: Scalars['String']['input'];
+};
+
+export type ProjectInferenceSuggestion = {
+  readonly __typename?: 'ProjectInferenceSuggestion';
+  readonly features: ReadonlyArray<ProjectFeature>;
+  readonly projectType: ProjectType;
+  readonly title: Scalars['String']['output'];
 };
 
 export type ProjectLogoUploadResult = {
@@ -733,6 +751,13 @@ export type CreateProjectRequestMutationVariables = Exact<{
 
 
 export type CreateProjectRequestMutation = { readonly __typename?: 'Mutation', readonly createProjectRequest: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly contactPreference?: string | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly requirements?: { readonly __typename?: 'ProjectRequirements', readonly hasDesign?: boolean | null, readonly needsHosting?: boolean | null, readonly hasDomain?: boolean | null, readonly needsMaintenance?: boolean | null, readonly needsContentCreation?: boolean | null, readonly needsSEO?: boolean | null } | null } };
+
+export type InferProjectDetailsMutationVariables = Exact<{
+  input: ProjectInferenceInput;
+}>;
+
+
+export type InferProjectDetailsMutation = { readonly __typename?: 'Mutation', readonly inferProjectDetails: { readonly __typename?: 'ProjectInferenceSuggestion', readonly projectType: ProjectType, readonly features: ReadonlyArray<ProjectFeature>, readonly title: string } };
 
 export type ApproveProjectRequestMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1702,6 +1727,38 @@ export function useCreateProjectRequestMutation(baseOptions?: ApolloReactHooks.M
         return ApolloReactHooks.useMutation<CreateProjectRequestMutation, CreateProjectRequestMutationVariables>(CreateProjectRequestDocument, options);
       }
 export type CreateProjectRequestMutationHookResult = ReturnType<typeof useCreateProjectRequestMutation>;
+export const InferProjectDetailsDocument = gql`
+    mutation InferProjectDetails($input: ProjectInferenceInput!) {
+  inferProjectDetails(input: $input) {
+    projectType
+    features
+    title
+  }
+}
+    `;
+
+/**
+ * __useInferProjectDetailsMutation__
+ *
+ * To run a mutation, you first call `useInferProjectDetailsMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useInferProjectDetailsMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [inferProjectDetailsMutation, { data, loading, error }] = useInferProjectDetailsMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useInferProjectDetailsMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<InferProjectDetailsMutation, InferProjectDetailsMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<InferProjectDetailsMutation, InferProjectDetailsMutationVariables>(InferProjectDetailsDocument, options);
+      }
+export type InferProjectDetailsMutationHookResult = ReturnType<typeof useInferProjectDetailsMutation>;
 export const ApproveProjectRequestDocument = gql`
     mutation ApproveProjectRequest($id: ID!) {
   approveProjectRequest(id: $id)

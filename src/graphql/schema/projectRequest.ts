@@ -1,6 +1,6 @@
 import { Field, ID, InputType, ObjectType } from 'type-graphql'
 
-import { ProjectStatus, ProjectType } from './project'
+import { ProjectFeature, ProjectStatus, ProjectType } from './project'
 import { User } from './user'
 
 @ObjectType('ProjectRequirements')
@@ -128,6 +128,27 @@ export class CreateProjectRequestInput {
 
   @Field(() => String, { nullable: true })
   additionalInfo?: string
+}
+
+@InputType('ProjectInferenceInput')
+export class ProjectInferenceInput {
+  @Field(() => String)
+  projectName!: string
+
+  @Field(() => String)
+  description!: string
+}
+
+@ObjectType('ProjectInferenceSuggestion')
+export class ProjectInferenceSuggestion {
+  @Field(() => ProjectType)
+  projectType!: ProjectType
+
+  @Field(() => [ProjectFeature])
+  features!: ProjectFeature[]
+
+  @Field(() => String)
+  title!: string
 }
 
 @InputType('ProjectRequestFilter')
