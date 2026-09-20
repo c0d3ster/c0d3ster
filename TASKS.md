@@ -9,6 +9,7 @@ Invoice implementation rule (from doc): never hand-write migration SQL — edit 
 ## Agent-Ready
 
 - [ ] #2 [stack: invoicing] Add "features" as advanced request options (enum), collapsed by default in the request form. Per docs/INVOICE_BILLING_EPIC.md Phase 1: also expand the ProjectFeature enum with the new values listed there and create featurePricing.ts mapping each feature to { label, defaultPrice, description }.
+  - BLOCKED (2026-09-20): duplicates already-open PR #77 (`overnight/2026-08-06/02-project-feature-advanced-options`, unmerged, identical scope) and this run's working dir was concurrently mutated by another process mid-session. Needs human reconciliation (close/merge #77 or retarget this task) before any new work.
   - Expand `ProjectFeature` enum in `src/graphql/schema/project.ts:45-49` with: AdminDashboard, PaymentProcessing, FileUploads, CustomApi, Deployment, DomainConfig, Seo, CmsIntegration, ResponsiveDesign, ThirdPartyIntegrations, Analytics, Testing, Consultation, ProjectManagement.
   - Path correction: doc says `src/lib/featurePricing.ts`; repo convention is `src/libs/` (see `src/libs/projectTypeFeatures.ts`, `DB.ts`, `Env.ts`) — use `src/libs/featurePricing.ts`.
   - `featurePricing.ts` needs one `defaultPrice` number per feature; doc only gives ranges (see Market Research table in the epic doc) — use the midpoint, rounded to nearest $25.
@@ -20,6 +21,8 @@ Invoice implementation rule (from doc): never hand-write migration SQL — edit 
   - NEEDS HUMAN: approve `db:migrate` for the new `project_requests.features` column.
 
 - [ ] #3 [stack: invoicing] Add LLM pass for intelligent project type, features, and title, inferred from project description and name.
+  - STATUS (2026-09-20): implemented on PR #85 (`overnight/2026-09-20/03-project-inference-service`), targets main; ProjectInferenceService + form wiring done, tests pass.
+  - NEEDS HUMAN: add `ANTHROPIC_API_KEY` to `.env` to run end-to-end.
   - Note: may eventually merge with the Modernizer categorization package — confirmed that work doesn't exist yet in Modernizer (nothing found there), so this is a standalone task with just a forward-compatibility note, not a real dependency.
   - NEEDS HUMAN: no LLM SDK dependency exists in `package.json` yet — pick a provider, add the dependency and API key env var before this can run end-to-end. Code can still be written against it.
   - Keep isolated in a new `src/services/ProjectInferenceService.ts` with a narrow `{ description, projectName } → { projectType, features, title }` contract specifically so it's swappable/mergeable later.
