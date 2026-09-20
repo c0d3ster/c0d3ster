@@ -50,7 +50,13 @@ describe('ProjectFilesList', () => {
       createMockFile({ id: 'file-2', originalFileName: 'b.pdf' }),
     ]
 
-    render(<ProjectFilesList files={files as any} onAddClick={vi.fn()} onDeletedAction={vi.fn()} />)
+    render(
+      <ProjectFilesList
+        files={files as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
 
     expect(screen.getByRole('button', { name: 'a.pdf' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'b.pdf' })).toBeInTheDocument()
@@ -67,7 +73,13 @@ describe('ProjectFilesList', () => {
       createMockFile({ id: 'file-4', originalFileName: 'd.pdf' }),
     ]
 
-    render(<ProjectFilesList files={files as any} onAddClick={vi.fn()} onDeletedAction={vi.fn()} />)
+    render(
+      <ProjectFilesList
+        files={files as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
 
     expect(screen.getByRole('button', { name: 'a.pdf' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'b.pdf' })).toBeInTheDocument()
@@ -85,7 +97,13 @@ describe('ProjectFilesList', () => {
         originalFileName: `${index}.pdf`,
       })    )
 
-    render(<ProjectFilesList files={files as any} onAddClick={vi.fn()} onDeletedAction={vi.fn()} />)
+    render(
+      <ProjectFilesList
+        files={files as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
 
     expect(screen.getByRole('button', { name: '0.pdf' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '8.pdf' })).toBeInTheDocument()
@@ -100,7 +118,13 @@ describe('ProjectFilesList', () => {
       downloadUrl: 'https://download.example/photo.png',
     })
 
-    render(<ProjectFilesList files={[file] as any} onAddClick={vi.fn()} onDeletedAction={vi.fn()} />)
+    render(
+      <ProjectFilesList
+        files={[file] as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
 
     expect(screen.getByTestId('next-image')).toHaveAttribute(
       'data-src',
@@ -115,11 +139,15 @@ describe('ProjectFilesList', () => {
       downloadUrl: 'https://download.example/photo.png',
     })
 
-    render(<ProjectFilesList files={[file] as any} onAddClick={vi.fn()} onDeletedAction={vi.fn()} />)
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Homepage screenshot' })
+    render(
+      <ProjectFilesList
+        files={[file] as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
     )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Homepage screenshot' }))
 
     expect(screen.getByText('Homepage screenshot')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
@@ -130,7 +158,13 @@ describe('ProjectFilesList', () => {
       downloadUrl: 'https://download.example/brief.pdf',
     })
 
-    render(<ProjectFilesList files={[file] as any} onAddClick={vi.fn()} onDeletedAction={vi.fn()} />)
+    render(
+      <ProjectFilesList
+        files={[file] as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'brief.pdf' }))
 
@@ -143,7 +177,13 @@ describe('ProjectFilesList', () => {
   it('closes the modal when the close button is clicked', () => {
     const file = createMockFile()
 
-    render(<ProjectFilesList files={[file] as any} onAddClick={vi.fn()} onDeletedAction={vi.fn()} />)
+    render(
+      <ProjectFilesList
+        files={[file] as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
 
     fireEvent.click(screen.getByRole('button', { name: 'brief.pdf' }))
 
@@ -237,5 +277,54 @@ describe('ProjectFilesList', () => {
 
     expect(screen.queryByText('DELETE FILE')).not.toBeInTheDocument()
     expect(deleteFile).not.toHaveBeenCalled()
+  })
+
+  it('keeps the file detail open when Escape closes the delete confirmation', () => {
+    const file = createMockFile()
+
+    render(
+      <ProjectFilesList
+        files={[file] as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'brief.pdf' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete file' }))
+
+    expect(screen.getByText('DELETE FILE')).toBeInTheDocument()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(screen.queryByText('DELETE FILE')).not.toBeInTheDocument()
+    expect(screen.getByText('brief.pdf')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Delete file' })
+    ).toBeInTheDocument()
+  })
+
+  it('clears a failed delete error when the confirmation is dismissed', async () => {
+    deleteFile.mockRejectedValue(new Error('Access denied'))
+    const file = createMockFile()
+
+    render(
+      <ProjectFilesList
+        files={[file] as any}
+        onAddClick={vi.fn()}
+        onDeletedAction={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'brief.pdf' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete file' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(await screen.findByText('Access denied')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete file' }))
+
+    expect(screen.queryByText('Access denied')).not.toBeInTheDocument()
   })
 })

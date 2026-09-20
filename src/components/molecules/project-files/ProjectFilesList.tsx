@@ -29,17 +29,23 @@ export const ProjectFilesList = ({
   onAddClick,
   onDeletedAction,
 }: ProjectFilesListProps) => {
-  const [selectedFile, setSelectedFile] = useState<ProjectFileItem | null>(
-    null
-  )
-  const [fileToDelete, setFileToDelete] = useState<ProjectFileItem | null>(
-    null
-  )
+  const [selectedFile, setSelectedFile] = useState<ProjectFileItem | null>(null)
+  const [fileToDelete, setFileToDelete] = useState<ProjectFileItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
   const visibleFiles = files.slice(0, MAX_VISIBLE_FILES)
   const canAddMore = files.length < MAX_VISIBLE_FILES
+
+  const closeFileDetail = () => {
+    if (fileToDelete) return
+    setSelectedFile(null)
+  }
+
+  const closeDeleteConfirmation = () => {
+    setFileToDelete(null)
+    setDeleteError('')
+  }
 
   const handleConfirmDelete = async () => {
     if (!fileToDelete) return
@@ -101,7 +107,7 @@ export const ProjectFilesList = ({
       {selectedFile && (
         <Modal
           title={selectedFile.originalFileName}
-          onClose={() => setSelectedFile(null)}
+          onClose={closeFileDetail}
           maxWidthClassName='max-w-2xl'
         >
           {isImageFile(selectedFile) && selectedFile.downloadUrl ? (
@@ -152,11 +158,11 @@ export const ProjectFilesList = ({
       )}
 
       {fileToDelete && (
-        <Modal title='DELETE FILE' onClose={() => setFileToDelete(null)}>
+        <Modal title='DELETE FILE' onClose={closeDeleteConfirmation}>
           <p className='text-center font-mono text-sm text-green-300'>
             Delete{' '}
-            <span className='font-bold'>{fileToDelete.originalFileName}</span>
-            ? This can&apos;t be undone.
+            <span className='font-bold'>{fileToDelete.originalFileName}</span>?
+            This can&apos;t be undone.
           </p>
 
           <div className='h-6 text-center'>
@@ -168,7 +174,7 @@ export const ProjectFilesList = ({
           <div className='flex justify-center gap-3'>
             <button
               type='button'
-              onClick={() => setFileToDelete(null)}
+              onClick={closeDeleteConfirmation}
               disabled={isDeleting}
               className='rounded border border-green-400/30 bg-black/40 px-4 py-2 font-mono text-sm text-green-300 hover:bg-green-400/10 disabled:opacity-50'
             >
