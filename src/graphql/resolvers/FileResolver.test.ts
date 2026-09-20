@@ -30,6 +30,24 @@ const createMockFile = (overrides = {}) => ({
   ...overrides,
 })
 
+// Mock data factory for project_files DB rows
+const createMockProjectFileRecord = (overrides = {}) => ({
+  id: 'file-1',
+  projectId: 'project-1',
+  fileName: 'test-file.jpg',
+  originalFileName: 'test-file.jpg',
+  contentType: 'image/jpeg',
+  fileSize: 1024,
+  filePath: 'dev/projects/project-1/1_test-file.jpg',
+  uploadedBy: 'user-1',
+  isClientVisible: true,
+  description: null,
+  caption: null,
+  placement: null,
+  createdAt: new Date('2024-01-01'),
+  ...overrides,
+})
+
 describe('FileResolver', () => {
   let fileResolver: FileResolver
   let mockFileService: ReturnType<typeof createMockFileService>
@@ -169,17 +187,28 @@ describe('FileResolver', () => {
 
   describe('projectFiles', () => {
     it('should return project files when user has access', async () => {
-      const mockFiles = [createMockFile()]
+      const mockRecord = createMockProjectFileRecord({
+        caption: 'Homepage',
+        placement: 'gallery',
+      })
       const currentUser = createMockUser()
       const mockProject = createMockProject()
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
       mockProjectService.getProjectById.mockResolvedValue(mockProject)
-      mockFileService.getProjectFiles.mockResolvedValue(mockFiles)
+      mockFileService.getProjectFiles.mockResolvedValue([mockRecord])
 
       const result = await fileResolver.projectFiles('project-1')
 
-      expect(result).toEqual(mockFiles)
+      expect(result).toEqual([
+        expect.objectContaining({
+          id: mockRecord.id,
+          key: mockRecord.filePath,
+          fileName: mockRecord.fileName,
+          caption: 'Homepage',
+          placement: 'gallery',
+        }),
+      ])
       expect(mockProjectService.getProjectById).toHaveBeenCalledWith(
         'project-1',
         currentUser.id,
@@ -197,6 +226,42 @@ describe('FileResolver', () => {
       await expect(fileResolver.projectFiles('project-1')).rejects.toThrow(
         'Project not found or access denied'
       )
+    })
+
+    it('should exclude logo file records from the results, including orphaned ones', async () => {
+      const currentLogoRecord = createMockProjectFileRecord({
+        id: 'file-logo-current',
+        filePath: 'dev/projects/project-1/logo.png',
+        description: 'Project logo',
+      })
+      const orphanedLogoRecord = createMockProjectFileRecord({
+        id: 'file-logo-orphaned',
+        filePath: 'dev/projects/project-1/old-logo.png',
+        description: 'Project logo',
+      })
+      const galleryRecord = createMockProjectFileRecord({
+        id: 'file-2',
+        filePath: 'dev/projects/project-1/gallery.png',
+        placement: 'gallery',
+      })
+      const currentUser = createMockUser()
+      const mockProject = createMockProject({
+        logo: 'dev/projects/project-1/logo.png',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getProjectFiles.mockResolvedValue([
+        currentLogoRecord,
+        orphanedLogoRecord,
+        galleryRecord,
+      ])
+
+      const result = await fileResolver.projectFiles('project-1')
+
+      expect(result).toEqual([
+        expect.objectContaining({ id: galleryRecord.id }),
+      ])
     })
   })
 
@@ -421,7 +486,9 @@ describe('FileResolver', () => {
       )
       mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
       mockFileService.deleteFile.mockResolvedValue(undefined)
-      mockFileService.deleteProjectFileRecordByPath.mockResolvedValue([])
+      mockFileService.deleteProjectFileRecordsByDescription.mockResolvedValue(
+        []
+      )
 
       const { fileTypeFromBuffer } = await import('file-type')
       vi.mocked(fileTypeFromBuffer).mockResolvedValue({
@@ -436,8 +503,108 @@ describe('FileResolver', () => {
 
       expect(result).toBe('https://presigned-url.com')
       expect(mockProjectService.updateProject).toHaveBeenCalled()
+      expect(
+        mockFileService.deleteProjectFileRecordsByDescription
+      ).toHaveBeenCalledWith('project-1', 'Project logo')
       expect(mockFileService.createProjectFileRecord).toHaveBeenCalled()
       expect(mockFileService.deleteFile).toHaveBeenCalledWith(oldLogoKey)
+    })
+
+    it('should propagate an error if clearing prior logo records fails', async () => {
+      const currentUser = createMockUser()
+      const logoKey = 'projects/project-1/1_logo.jpg'
+      const mockProject = createMockProject({
+        id: 'project-1',
+        logo: 'projects/project-1/old.png',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 1024,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xff, 0xd8])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: logoKey,
+        fileName: 'logo.jpg',
+        originalFileName: 'logo.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.deleteProjectFileRecordsByDescription.mockRejectedValue(
+        new Error('db unavailable')
+      )
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'image/jpeg',
+        ext: 'jpg',
+      })
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('db unavailable')
+
+      expect(mockFileService.createProjectFileRecord).not.toHaveBeenCalled()
+    })
+
+    it('should not fail the upload when deleting the old logo object fails', async () => {
+      const currentUser = createMockUser()
+      const logoKey = 'projects/project-1/1_logo.jpg'
+      const oldLogoKey = 'projects/project-1/old.png'
+      const mockProject = createMockProject({
+        id: 'project-1',
+        logo: oldLogoKey,
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 1024,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xff, 0xd8])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: logoKey,
+        fileName: 'logo.jpg',
+        originalFileName: 'logo.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.generatePresignedDownloadUrl.mockResolvedValue(
+        'https://presigned-url.com'
+      )
+      mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
+      mockFileService.deleteProjectFileRecordsByDescription.mockResolvedValue(
+        []
+      )
+      mockFileService.deleteFile.mockRejectedValue(new Error('R2 down'))
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'image/jpeg',
+        ext: 'jpg',
+      })
+
+      const result = await fileResolver.finalizeProjectLogoUpload(
+        'project-1',
+        logoKey
+      )
+
+      expect(result).toBe('https://presigned-url.com')
     })
 
     it('should reject key with wrong project prefix', async () => {
@@ -530,6 +697,25 @@ describe('FileResolver', () => {
       ).rejects.toThrow('Invalid file upload parameters')
     })
 
+    it('should throw when the content type cannot be sniffed at all', async () => {
+      const currentUser = createMockUser()
+      const logoKey = 'projects/project-1/k.jpg'
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 100,
+        contentType: 'image/jpeg',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(Buffer.from([1]))
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue(undefined)
+
+      await expect(
+        fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
+      ).rejects.toThrow('Could not verify uploaded file content type')
+    })
+
     it('should throw when getFileMetadata returns null', async () => {
       const currentUser = createMockUser()
       const logoKey = 'projects/project-1/k.jpg'
@@ -587,6 +773,9 @@ describe('FileResolver', () => {
         'https://presigned-url.com'
       )
       mockFileService.createProjectFileRecord.mockResolvedValue(undefined)
+      mockFileService.deleteProjectFileRecordsByDescription.mockResolvedValue(
+        []
+      )
 
       const { fileTypeFromBuffer } = await import('file-type')
       vi.mocked(fileTypeFromBuffer).mockResolvedValue({
@@ -597,6 +786,410 @@ describe('FileResolver', () => {
       await fileResolver.finalizeProjectLogoUpload('project-1', logoKey)
 
       expect(mockFileService.deleteFile).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('requestProjectFileUpload', () => {
+    it('should return presigned upload payload', async () => {
+      const currentUser = createMockUser()
+      const mockProject = createMockProject()
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.generateProjectFilePresignedUpload.mockResolvedValue({
+        uploadUrl: 'https://r2.example.com/put',
+        key: 'dev/projects/project-1/1_brief.pdf',
+        metadata: {
+          key: 'dev/projects/project-1/1_brief.pdf',
+          fileName: 'brief.pdf',
+          originalFileName: 'brief.pdf',
+          fileSize: 4096,
+          contentType: 'application/pdf',
+          environment: Environment.DEV,
+          uploadedAt: new Date('2024-01-01'),
+        },
+      })
+
+      const result = await fileResolver.requestProjectFileUpload(
+        'project-1',
+        'brief.pdf',
+        'application/pdf',
+        4096
+      )
+
+      expect(result.uploadUrl).toBe('https://r2.example.com/put')
+      expect(result.key).toBe('dev/projects/project-1/1_brief.pdf')
+      expect(result.projectId).toBe('project-1')
+      expect(
+        mockFileService.generateProjectFilePresignedUpload
+      ).toHaveBeenCalled()
+    })
+
+    it('should throw when project not found', async () => {
+      const currentUser = createMockUser()
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(null)
+
+      await expect(
+        fileResolver.requestProjectFileUpload(
+          'project-1',
+          'brief.pdf',
+          'application/pdf',
+          4096
+        )
+      ).rejects.toThrow('Project not found or access denied')
+    })
+
+    it('should throw when file name is empty after trim', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.requestProjectFileUpload(
+          'project-1',
+          '   ',
+          'application/pdf',
+          4096
+        )
+      ).rejects.toThrow('File name is required')
+    })
+
+    it('should throw when file size is invalid', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.requestProjectFileUpload(
+          'project-1',
+          'brief.pdf',
+          'application/pdf',
+          0
+        )
+      ).rejects.toThrow('Invalid file upload parameters')
+
+      await expect(
+        fileResolver.requestProjectFileUpload(
+          'project-1',
+          'brief.pdf',
+          'application/pdf',
+          MAX_FILE_SIZE + 1
+        )
+      ).rejects.toThrow('Invalid file upload parameters')
+    })
+
+    it('should throw when content type is not allowed', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.requestProjectFileUpload(
+          'project-1',
+          'malware.exe',
+          'application/x-msdownload',
+          1024
+        )
+      ).rejects.toThrow('not allowed')
+    })
+  })
+
+  describe('finalizeProjectFileUpload', () => {
+    it('should finalize file and return the persisted record', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/1_brief.pdf`
+      const mockProject = createMockProject({ id: 'project-1' })
+      const mockRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        caption: 'Project brief',
+        placement: 'document',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 4096,
+        contentType: 'application/pdf',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0x25, 0x50, 0x44, 0x46])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: fileKey,
+        fileName: 'brief.pdf',
+        originalFileName: 'brief.pdf',
+        fileSize: 4096,
+        contentType: 'application/pdf',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.createProjectFileRecord.mockResolvedValue(mockRecord)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'application/pdf',
+        ext: 'pdf',
+      })
+
+      const result = await fileResolver.finalizeProjectFileUpload(
+        'project-1',
+        fileKey,
+        'Project brief',
+        'document' as any
+      )
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: mockRecord.id,
+          key: fileKey,
+          caption: 'Project brief',
+          placement: 'document',
+        })
+      )
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          caption: 'Project brief',
+          placement: 'document',
+        })
+      )
+    })
+
+    it('should return the existing record instead of inserting a duplicate on a repeated finalize call', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/1_brief.pdf`
+      const mockProject = createMockProject({ id: 'project-1' })
+      const existingRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        caption: 'Project brief',
+        placement: 'document',
+      })
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(mockProject)
+      mockFileService.getProjectFileRecordByPath.mockResolvedValue(
+        existingRecord
+      )
+
+      const result = await fileResolver.finalizeProjectFileUpload(
+        'project-1',
+        fileKey,
+        'Project brief',
+        'document' as any
+      )
+
+      expect(result).toEqual(
+        expect.objectContaining({ id: existingRecord.id, key: fileKey })
+      )
+      expect(mockFileService.getObjectHeadInfo).not.toHaveBeenCalled()
+      expect(mockFileService.createProjectFileRecord).not.toHaveBeenCalled()
+    })
+
+    it('should reject key with wrong project prefix', async () => {
+      const currentUser = createMockUser()
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+
+      await expect(
+        fileResolver.finalizeProjectFileUpload(
+          'project-1',
+          `projects/other-project/x.pdf`
+        )
+      ).rejects.toThrow('Invalid file key')
+    })
+
+    it('should throw when object head is missing', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/k.pdf`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue(null)
+
+      await expect(
+        fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+      ).rejects.toThrow('Uploaded file not found or empty')
+    })
+
+    it('should throw when detected type is not allowed', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/k.pdf`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 100,
+        contentType: 'application/octet-stream',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(Buffer.from([1]))
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'application/x-msdownload',
+        ext: 'exe',
+      })
+
+      await expect(
+        fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+      ).rejects.toThrow('Invalid file upload parameters')
+    })
+
+    it('should normalize a legacy .doc (CFB) detection to application/msword', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/k.doc`
+      const mockRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        contentType: 'application/msword',
+      })
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 4096,
+        contentType: 'application/msword',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0xd0, 0xcf, 0x11, 0xe0])
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: fileKey,
+        fileName: 'k.doc',
+        originalFileName: 'k.doc',
+        fileSize: 4096,
+        contentType: 'application/msword',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.createProjectFileRecord.mockResolvedValue(mockRecord)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue({
+        mime: 'application/x-cfb',
+        ext: 'cfb',
+      })
+
+      await fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'application/msword' })
+      )
+    })
+
+    it('should re-scan the full object to resolve an OOXML type when the truncated scan reports generic zip', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/k.docx`
+      const mockRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 50_000,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      })
+      mockFileService.getObjectBufferRange
+        .mockResolvedValueOnce(Buffer.alloc(16_384))
+        .mockResolvedValueOnce(Buffer.alloc(50_000))
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: fileKey,
+        fileName: 'k.docx',
+        originalFileName: 'k.docx',
+        fileSize: 50_000,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.createProjectFileRecord.mockResolvedValue(mockRecord)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer)
+        .mockResolvedValueOnce({ mime: 'application/zip', ext: 'zip' })
+        .mockResolvedValueOnce({
+          mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          ext: 'docx',
+        })
+
+      await fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+
+      expect(mockFileService.getObjectBufferRange).toHaveBeenCalledWith(
+        fileKey,
+        50_000
+      )
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          contentType:
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        })
+      )
+    })
+
+    it('should accept a plain text upload when sniffing finds no signature but the content looks like text', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/notes.txt`
+      const mockRecord = createMockProjectFileRecord({
+        filePath: fileKey,
+        contentType: 'text/plain',
+      })
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 20,
+        contentType: 'text/plain',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from('just some plain text')
+      )
+      mockFileService.getFileMetadata.mockResolvedValue({
+        key: fileKey,
+        fileName: 'notes.txt',
+        originalFileName: 'notes.txt',
+        fileSize: 20,
+        contentType: 'text/plain',
+        uploadedBy: currentUser.id,
+        projectId: 'project-1',
+        environment: Environment.DEV,
+        uploadedAt: new Date('2024-01-01'),
+      })
+      mockFileService.createProjectFileRecord.mockResolvedValue(mockRecord)
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue(undefined)
+
+      await fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+
+      expect(mockFileService.createProjectFileRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ contentType: 'text/plain' })
+      )
+    })
+
+    it('should reject the upload when sniffing finds no signature and the client-declared type cannot be trusted', async () => {
+      const currentUser = createMockUser()
+      const fileKey = `projects/project-1/mystery.bin`
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.getObjectHeadInfo.mockResolvedValue({
+        contentLength: 4,
+        contentType: 'application/pdf',
+      })
+      mockFileService.getObjectBufferRange.mockResolvedValue(
+        Buffer.from([0x00, 0x01, 0x02, 0x03])
+      )
+
+      const { fileTypeFromBuffer } = await import('file-type')
+      vi.mocked(fileTypeFromBuffer).mockResolvedValue(undefined)
+
+      await expect(
+        fileResolver.finalizeProjectFileUpload('project-1', fileKey)
+      ).rejects.toThrow('Could not verify uploaded file content type')
+      expect(mockFileService.createProjectFileRecord).not.toHaveBeenCalled()
     })
   })
 

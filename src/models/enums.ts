@@ -30,6 +30,14 @@ export const domainStatusEnum = pgEnum('domain_status', [
   'cancelled',
 ])
 
+// Project file placement enum
+export const filePlacementEnum = pgEnum('file_placement', [
+  'hero',
+  'gallery',
+  'document',
+  'other',
+])
+
 // User role enums - derived from GraphQL schema
 export const userRoleEnum = pgEnum(
   'user_role',

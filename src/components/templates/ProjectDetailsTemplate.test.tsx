@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ProjectStatus } from '@/graphql/generated/graphql'
+import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { createMockFullProject } from '@/tests/mocks'
 
 import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
@@ -9,6 +9,7 @@ import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 // Mock only the API clients that ProjectDetailsTemplate actually uses
 const mockGetMe = vi.fn()
 const mockUseResolvedFileUrl = vi.fn()
+const mockGetProjectFiles = vi.fn()
 
 // Mock the specific functions we need, let the rest use real implementations
 const mockProvisionProjectRepo = vi.fn()
@@ -21,6 +22,8 @@ vi.mock('@/apiClients', async () => {
     useResolvedFileUrl: (key?: string | null) => mockUseResolvedFileUrl(key),
     useProvisionProjectRepo: () => [mockProvisionProjectRepo, { loading: false }],
     useUpdateProject: () => [vi.fn(), { loading: false }],
+    useUpdateProjectStatus: () => [vi.fn(), { loading: false }],
+    useGetProjectFiles: () => mockGetProjectFiles(),
   }
 })
 
@@ -72,6 +75,12 @@ describe('ProjectDetailsTemplate', () => {
       url: key ?? undefined,
       loading: false,
     }))
+    mockGetProjectFiles.mockReturnValue({
+      data: { projectFiles: [] },
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+    })
   })
 
   it('renders project header with correct information', () => {
@@ -183,6 +192,40 @@ describe('ProjectDetailsTemplate', () => {
 
     expect(backButton).toBeInTheDocument()
     expect(backButton).toHaveAttribute('href', '#')
+  })
+
+  it('does not render the additional files panel for unauthenticated visitors', () => {
+    render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(
+      screen.queryByRole('button', { name: 'Upload file' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders the additional files panel for the project client', () => {
+    mockGetMe.mockReturnValue({
+      data: { me: { id: mockProject.clientId, role: UserRole.Client } },
+      loading: false,
+    })
+
+    render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(
+      screen.getByRole('button', { name: 'Upload file' })
+    ).toBeInTheDocument()
+  })
+
+  it('renders the additional files panel for an admin who is not the client or developer', () => {
+    mockGetMe.mockReturnValue({
+      data: { me: { id: 'some-other-admin-id', role: UserRole.Admin } },
+      loading: false,
+    })
+
+    render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(
+      screen.getByRole('button', { name: 'Upload file' })
+    ).toBeInTheDocument()
   })
 
   it('renders project without logo gracefully', () => {

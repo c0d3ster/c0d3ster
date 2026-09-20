@@ -5,10 +5,17 @@ import type {
   DeleteFileMutation,
   DeleteFileMutationVariables,
   FileFilterInput,
+  FilePlacement,
+  FinalizeProjectFileUploadMutation,
+  FinalizeProjectFileUploadMutationVariables,
   FinalizeProjectLogoUploadMutation,
   FinalizeProjectLogoUploadMutationVariables,
   GetFileQuery,
   GetFileQueryVariables,
+  GetProjectFilesQuery,
+  GetProjectFilesQueryVariables,
+  RequestProjectFileUploadMutation,
+  RequestProjectFileUploadMutationVariables,
   RequestProjectLogoUploadMutation,
   RequestProjectLogoUploadMutationVariables,
 } from '@/graphql/generated/graphql'
@@ -48,6 +55,77 @@ export const REQUEST_PROJECT_LOGO_UPLOAD = gql`
 export const FINALIZE_PROJECT_LOGO_UPLOAD = gql`
   mutation FinalizeProjectLogoUpload($projectId: ID!, $key: String!) {
     finalizeProjectLogoUpload(projectId: $projectId, key: $key)
+  }
+`
+
+export const REQUEST_PROJECT_FILE_UPLOAD = gql`
+  mutation RequestProjectFileUpload(
+    $projectId: ID!
+    $fileName: String!
+    $contentType: String!
+    $fileSize: Int!
+  ) {
+    requestProjectFileUpload(
+      projectId: $projectId
+      fileName: $fileName
+      contentType: $contentType
+      fileSize: $fileSize
+    ) {
+      uploadUrl
+      key
+      projectId
+      metadata {
+        key
+        fileName
+        originalFileName
+        fileSize
+        contentType
+        environment
+        uploadedAt
+      }
+    }
+  }
+`
+
+export const FINALIZE_PROJECT_FILE_UPLOAD = gql`
+  mutation FinalizeProjectFileUpload(
+    $projectId: ID!
+    $key: String!
+    $caption: String
+    $placement: FilePlacement
+  ) {
+    finalizeProjectFileUpload(
+      projectId: $projectId
+      key: $key
+      caption: $caption
+      placement: $placement
+    ) {
+      id
+      fileName
+      originalFileName
+      fileSize
+      contentType
+      caption
+      placement
+      uploadedAt
+      downloadUrl
+    }
+  }
+`
+
+export const GET_PROJECT_FILES = gql`
+  query GetProjectFiles($projectId: ID!) {
+    projectFiles(projectId: $projectId) {
+      id
+      fileName
+      originalFileName
+      fileSize
+      contentType
+      caption
+      placement
+      uploadedAt
+      downloadUrl
+    }
   }
 `
 
@@ -117,6 +195,16 @@ export const useGetFile = (key: string) => {
     variables: { key },
     skip: !key,
   })
+}
+
+export const useGetProjectFiles = (projectId: string) => {
+  return useQuery<GetProjectFilesQuery, GetProjectFilesQueryVariables>(
+    GET_PROJECT_FILES,
+    {
+      variables: { projectId },
+      skip: !projectId,
+    }
+  )
 }
 
 /**
@@ -193,6 +281,73 @@ export const uploadProjectLogo = async (projectId: string, file: File) => {
     throw new Error('Finalize logo upload returned no download URL')
   }
   return downloadUrl
+}
+
+/**
+ * Uploads an arbitrary project file (gallery image, document) directly to R2 via presigned
+ * URL, then finalizes it with an optional caption/placement.
+ */
+export const uploadProjectFile = async (
+  projectId: string,
+  file: File,
+  options?: { caption?: string; placement?: FilePlacement }
+) => {
+  const contentType = file.type?.trim() || 'application/octet-stream'
+
+  const requestResult = await apolloClient.mutate<
+    RequestProjectFileUploadMutation,
+    RequestProjectFileUploadMutationVariables
+  >({
+    mutation: REQUEST_PROJECT_FILE_UPLOAD,
+    variables: {
+      projectId,
+      fileName: file.name,
+      contentType,
+      fileSize: file.size,
+    },
+  })
+
+  if (requestResult.error) throw new Error(requestResult.error.message)
+
+  const uploadPayload = requestResult.data?.requestProjectFileUpload
+  if (!uploadPayload) {
+    throw new Error('Failed to get upload URL')
+  }
+
+  const putResponse = await fetch(uploadPayload.uploadUrl, {
+    method: 'PUT',
+    body: file,
+    headers: {
+      'Content-Type': contentType,
+    },
+  })
+
+  if (!putResponse.ok) {
+    throw new Error(
+      `Direct upload failed: ${putResponse.status} ${putResponse.statusText}`
+    )
+  }
+
+  const finalizeResult = await apolloClient.mutate<
+    FinalizeProjectFileUploadMutation,
+    FinalizeProjectFileUploadMutationVariables
+  >({
+    mutation: FINALIZE_PROJECT_FILE_UPLOAD,
+    variables: {
+      projectId,
+      key: uploadPayload.key,
+      caption: options?.caption,
+      placement: options?.placement,
+    },
+  })
+
+  if (finalizeResult.error) throw new Error(finalizeResult.error.message)
+
+  const uploadedFile = finalizeResult.data?.finalizeProjectFileUpload
+  if (!uploadedFile) {
+    throw new Error('Finalize file upload returned no result')
+  }
+  return uploadedFile
 }
 
 export const deleteFile = async (key: string) => {
