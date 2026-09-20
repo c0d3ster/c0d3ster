@@ -41,6 +41,32 @@ describe('Modal', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  it('calls onClose when the backdrop is clicked', () => {
+    const onClose = vi.fn()
+    render(
+      <Modal title='UPLOAD FILE' onClose={onClose}>
+        <p>content</p>
+      </Modal>
+    )
+
+    fireEvent.click(screen.getByTestId('modal-backdrop'))
+
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('does not call onClose when clicking inside the modal content', () => {
+    const onClose = vi.fn()
+    render(
+      <Modal title='UPLOAD FILE' onClose={onClose}>
+        <p>content</p>
+      </Modal>
+    )
+
+    fireEvent.click(screen.getByText('content'))
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
   it('renders into document.body via a portal', () => {
     const { container } = render(
       <Modal title='UPLOAD FILE' onClose={vi.fn()}>

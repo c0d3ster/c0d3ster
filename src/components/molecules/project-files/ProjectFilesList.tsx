@@ -92,7 +92,7 @@ export const ProjectFilesList = ({
               }}
               title='Delete file'
               aria-label={`Delete ${file.originalFileName}`}
-              className='absolute top-1 right-1 z-10 rounded border border-transparent bg-black/70 p-1.5 text-red-400 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-red-400 focus-visible:border-red-400 focus-visible:opacity-100'
+              className='absolute top-1 right-1 z-10 rounded-full bg-black/70 p-1.5 text-red-400 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-110 focus-visible:scale-110 focus-visible:opacity-100'
             >
               <FaTrash className='h-3 w-3' />
             </button>
@@ -135,7 +135,7 @@ export const ProjectFilesList = ({
                   onClick={() => setFileToDelete(selectedFile)}
                   title='Delete file'
                   aria-label='Delete file'
-                  className='absolute right-3 bottom-3 flex items-center justify-center rounded-full border border-red-400/40 bg-black/70 p-3 text-red-400 transition-all duration-200 hover:border-red-400'
+                  className='absolute right-3 bottom-3 flex items-center justify-center rounded-full bg-black/70 p-3 text-red-400 transition-all duration-200 hover:scale-110'
                 >
                   <FaTrash className='h-4 w-4' />
                 </button>
@@ -160,7 +160,7 @@ export const ProjectFilesList = ({
                 onClick={() => setFileToDelete(selectedFile)}
                 title='Delete file'
                 aria-label='Delete file'
-                className='flex items-center justify-center rounded-full border border-red-400/40 bg-black/40 p-3 text-red-400 transition-all duration-200 hover:border-red-400'
+                className='flex items-center justify-center rounded-full bg-black/40 p-3 text-red-400 transition-all duration-200 hover:scale-110'
               >
                 <FaTrash className='h-4 w-4' />
               </button>
