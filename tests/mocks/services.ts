@@ -45,6 +45,11 @@ export const createMockProjectRequestService = () => ({
   getProjectRequestStatusUpdates: vi.fn(),
 })
 
+// Mock ProjectInferenceService
+export const createMockProjectInferenceService = () => ({
+  inferProjectDetails: vi.fn(),
+})
+
 // Mock ContactService
 export const createMockContactService = () => ({
   submitContactForm: vi.fn(),

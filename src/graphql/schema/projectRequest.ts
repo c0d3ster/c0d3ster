@@ -88,6 +88,27 @@ export class CreateProjectRequestInput {
   additionalInfo?: string
 }
 
+@InputType('ProjectInferenceInput')
+export class ProjectInferenceInput {
+  @Field(() => String)
+  projectName!: string
+
+  @Field(() => String)
+  description!: string
+}
+
+@ObjectType('ProjectInferenceSuggestion')
+export class ProjectInferenceSuggestion {
+  @Field(() => ProjectType)
+  projectType!: ProjectType
+
+  @Field(() => [ProjectFeature])
+  features!: ProjectFeature[]
+
+  @Field(() => String)
+  title!: string
+}
+
 @InputType('ProjectRequestFilter')
 export class ProjectRequestFilter {
   @Field(() => String, { nullable: true })

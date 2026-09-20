@@ -8,10 +8,16 @@ import {
   Root,
 } from 'type-graphql'
 
-import type { ProjectRequestService, UserService } from '@/services'
+import type {
+  ProjectInferenceService,
+  ProjectRequestService,
+  UserService,
+} from '@/services'
 
 import {
   CreateProjectRequestInput,
+  ProjectInferenceInput,
+  ProjectInferenceSuggestion,
   ProjectRequest,
   ProjectRequestFilter,
   StatusUpdate,
@@ -24,7 +30,8 @@ import { logger } from '@/libs/Logger'
 export class ProjectRequestResolver {
   constructor(
     private projectRequestService: ProjectRequestService,
-    private userService: UserService
+    private userService: UserService,
+    private projectInferenceService: ProjectInferenceService
   ) {}
 
   @Query(() => [ProjectRequest])
@@ -104,6 +111,17 @@ export class ProjectRequestResolver {
       currentUser.role
     )
     return project.id
+  }
+
+  @Mutation(() => ProjectInferenceSuggestion)
+  async inferProjectDetails(
+    @Arg('input', () => ProjectInferenceInput)
+    input: ProjectInferenceInput
+  ) {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Client)
+
+    return await this.projectInferenceService.inferProjectDetails(input)
   }
 
   @Mutation(() => String)
