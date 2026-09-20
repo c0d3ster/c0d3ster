@@ -8,16 +8,6 @@ Invoice implementation rule (from doc): never hand-write migration SQL — edit 
 
 ## Agent-Ready
 
-- [ ] #1 [stack: solo] Add file upload for existing projects.
-  - Most plumbing already exists: `projectFiles` table (`src/models/files.ts`), `FileService.generateProjectFileUploadUrl`/`createProjectFileRecord`/`getProjectFiles` (`src/services/FileService.ts`), and a working two-step presigned-upload pattern in `FileResolver.ts:137-304` (`requestProjectLogoUpload`/`finalizeProjectLogoUpload`) — but that pair is logo-only today.
-  - Add `caption` (text, nullable) and `placement` (new pgEnum, nullable) columns to `projectFiles` in `src/models/files.ts`; register the enum in `src/models/enums.ts`. Task doesn't specify placement values — use `gallery | document | other` as a reasonable default, confirm in PR.
-  - Add `caption`/`placement` to `File`/`FileUploadInput` in `src/graphql/schema/files.ts`.
-  - Add generic `requestProjectFileUpload`/`finalizeProjectFileUpload` mutations to `FileResolver.ts`, mirroring the logo pair but for arbitrary allowed content types, threading caption/placement through.
-  - No authed "existing project detail" page exists yet (`app/(auth)/` only has `dashboard`, `dashboard/request-project`, `dashboard/project-requests/[id]`, `dashboard/user-profile`). Recommend adding `app/(auth)/dashboard/projects/[id]/page.tsx` as the upload UI's home — implementation judgment call, not a blocker.
-  - Storage: keep the existing R2 key-prefix convention (`{env}/projects/{projectId}/...` in the shared bucket) rather than provisioning per-project buckets or writing into a client's deployed repo (different system entirely). Document the choice in the PR per the task's own instruction.
-  - Acceptance: an authorized user can upload a file to an existing project, unauthorized users cannot (mirror the access-check pattern in `FileResolver.ts:74-91`), caption/placement persist.
-  - NEEDS HUMAN: run `db:migrate` after `db:generate`.
-
 - [ ] #2 [stack: invoicing] Add "features" as advanced request options (enum), collapsed by default in the request form. Per docs/INVOICE_BILLING_EPIC.md Phase 1: also expand the ProjectFeature enum with the new values listed there and create featurePricing.ts mapping each feature to { label, defaultPrice, description }.
   - Expand `ProjectFeature` enum in `src/graphql/schema/project.ts:45-49` with: AdminDashboard, PaymentProcessing, FileUploads, CustomApi, Deployment, DomainConfig, Seo, CmsIntegration, ResponsiveDesign, ThirdPartyIntegrations, Analytics, Testing, Consultation, ProjectManagement.
   - Path correction: doc says `src/lib/featurePricing.ts`; repo convention is `src/libs/` (see `src/libs/projectTypeFeatures.ts`, `DB.ts`, `Env.ts`) — use `src/libs/featurePricing.ts`.
