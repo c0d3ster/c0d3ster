@@ -560,33 +560,37 @@ export class FileResolver {
   }
 
   @Mutation(() => Boolean)
-  async deleteFile(@Arg('key', () => String) key: string) {
+  async deleteFile(@Arg('id', () => ID) id: string) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
 
-    const metadata = await this.fileService.getFileMetadata(key)
+    const fileRecord = await this.fileService.getProjectFileRecordById(id)
+    if (!fileRecord) throw new Error('Not found')
 
-    if (!metadata) throw new Error('Not found')
+    // Throws if the current user has no access to the project (admins and
+    // the project's client/developer are allowed; see ProjectService.getProjectById).
+    await this.projectService.getProjectById(
+      fileRecord.projectId,
+      currentUser.id,
+      currentUser.role
+    )
 
-    const canDelete =
-      metadata.uploadedBy === currentUser.id ||
-      (metadata.projectId &&
-        (await this.projectService.getProjectById(
-          metadata.projectId,
-          currentUser.id,
-          currentUser.role
-        ))) ||
-      (() => {
-        try {
-          this.userService.checkPermission(currentUser, UserRole.Admin)
-          return true
-        } catch {
-          return false
-        }
-      })()
+    // The DB row is the source of truth for what files exist, so it must be
+    // deleted first and any failure must propagate. The R2 object delete is
+    // best-effort cleanup afterward - it must not roll back the DB delete or
+    // block the caller, but a failure must be logged loudly (not swallowed)
+    // so an orphaned object is at least discoverable.
+    await this.fileService.deleteProjectFileRecord(id)
 
-    if (!canDelete) throw new Error('Access denied')
+    try {
+      await this.fileService.deleteFile(fileRecord.filePath)
+    } catch (error) {
+      logger.error('Failed to delete R2 object for a deleted project file', {
+        error,
+        fileId: id,
+        key: fileRecord.filePath,
+      })
+    }
 
-    await this.fileService.deleteFile(key)
     return true
   }
 

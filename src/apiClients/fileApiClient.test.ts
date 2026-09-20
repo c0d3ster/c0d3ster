@@ -370,7 +370,7 @@ describe('File API Client', () => {
 
     describe('deleteFile', () => {
       it('should successfully delete file', async () => {
-        const mockKey = 'file-key-123'
+        const mockId = 'file-id-123'
         const mockResponse = {
           data: {
             deleteFile: true,
@@ -379,26 +379,26 @@ describe('File API Client', () => {
 
         vi.mocked(apolloClient.mutate).mockResolvedValue(mockResponse)
 
-        const result = await deleteFile(mockKey)
+        const result = await deleteFile(mockId)
 
         expect(apolloClient.mutate).toHaveBeenCalledWith({
           mutation: DELETE_FILE,
-          variables: { key: mockKey },
+          variables: { id: mockId },
         })
         expect(result).toBe(true)
       })
 
       it('should throw error when apollo client returns error', async () => {
-        const mockKey = 'file-key-123'
+        const mockId = 'file-id-123'
         const error = new Error('Delete failed')
 
         vi.mocked(apolloClient.mutate).mockResolvedValue({ error } as any)
 
-        await expect(deleteFile(mockKey)).rejects.toThrow('Delete failed')
+        await expect(deleteFile(mockId)).rejects.toThrow('Delete failed')
       })
 
       it('should throw error when no response is returned', async () => {
-        const mockKey = 'file-key-123'
+        const mockId = 'file-id-123'
         const mockResponse = {
           data: {
             deleteFile: null,
@@ -407,7 +407,7 @@ describe('File API Client', () => {
 
         vi.mocked(apolloClient.mutate).mockResolvedValue(mockResponse)
 
-        await expect(deleteFile(mockKey)).rejects.toThrow(
+        await expect(deleteFile(mockId)).rejects.toThrow(
           'No response from DeleteFile mutation'
         )
       })
