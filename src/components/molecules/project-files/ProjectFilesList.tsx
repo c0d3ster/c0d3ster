@@ -64,25 +64,39 @@ export const ProjectFilesList = ({
     <>
       <div className='grid grid-cols-3 gap-2'>
         {visibleFiles.map((file) => (
-          <button
-            key={file.id}
-            type='button'
-            onClick={() => setSelectedFile(file)}
-            title={file.caption || file.originalFileName}
-            className='relative flex aspect-square items-center justify-center overflow-hidden rounded border border-green-400/20 bg-black/40 transition-all duration-300 hover:border-green-400/50'
-          >
-            {isImageFile(file) && file.downloadUrl ? (
-              <Image
-                src={file.downloadUrl}
-                alt={file.caption || file.originalFileName}
-                fill
-                sizes='120px'
-                className='object-cover'
-              />
-            ) : (
-              <FaFileAlt className='h-6 w-6 text-green-400/50' />
-            )}
-          </button>
+          <div key={file.id} className='group relative aspect-square'>
+            <button
+              type='button'
+              onClick={() => setSelectedFile(file)}
+              title={file.caption || file.originalFileName}
+              className='flex h-full w-full items-center justify-center overflow-hidden rounded border border-green-400/20 bg-black/40 transition-all duration-300 hover:border-green-400/50'
+            >
+              {isImageFile(file) && file.downloadUrl ? (
+                <Image
+                  src={file.downloadUrl}
+                  alt={file.caption || file.originalFileName}
+                  fill
+                  sizes='120px'
+                  className='object-cover'
+                />
+              ) : (
+                <FaFileAlt className='h-6 w-6 text-green-400/50' />
+              )}
+            </button>
+
+            <button
+              type='button'
+              onClick={(event) => {
+                event.stopPropagation()
+                setFileToDelete(file)
+              }}
+              title='Delete file'
+              aria-label={`Delete ${file.originalFileName}`}
+              className='absolute top-1 right-1 z-10 rounded border border-transparent bg-black/70 p-1.5 text-red-400 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-red-400 focus-visible:border-red-400 focus-visible:opacity-100'
+            >
+              <FaTrash className='h-3 w-3' />
+            </button>
+          </div>
         ))}
 
         {canAddMore && (
@@ -105,14 +119,27 @@ export const ProjectFilesList = ({
           maxWidthClassName='max-w-2xl'
         >
           {isImageFile(selectedFile) && selectedFile.downloadUrl ? (
-            <div className='relative h-[60vh] w-full'>
-              <Image
-                src={selectedFile.downloadUrl}
-                alt={selectedFile.caption || selectedFile.originalFileName}
-                fill
-                sizes='90vw'
-                className='object-contain'
-              />
+            <div className='flex justify-center p-3'>
+              <div className='relative'>
+                <Image
+                  key={selectedFile.id}
+                  src={selectedFile.downloadUrl}
+                  alt={selectedFile.caption || selectedFile.originalFileName}
+                  width={1600}
+                  height={1600}
+                  sizes='90vw'
+                  className='h-auto max-h-[60vh] w-auto max-w-full object-contain'
+                />
+                <button
+                  type='button'
+                  onClick={() => setFileToDelete(selectedFile)}
+                  title='Delete file'
+                  aria-label='Delete file'
+                  className='absolute right-3 bottom-3 flex items-center justify-center rounded-full border border-red-400/40 bg-black/70 p-3 text-red-400 transition-all duration-200 hover:border-red-400'
+                >
+                  <FaTrash className='h-4 w-4' />
+                </button>
+              </div>
             </div>
           ) : (
             <div className='flex flex-col items-center gap-4 py-12'>
@@ -127,6 +154,16 @@ export const ProjectFilesList = ({
                   Open file
                 </a>
               )}
+
+              <button
+                type='button'
+                onClick={() => setFileToDelete(selectedFile)}
+                title='Delete file'
+                aria-label='Delete file'
+                className='flex items-center justify-center rounded-full border border-red-400/40 bg-black/40 p-3 text-red-400 transition-all duration-200 hover:border-red-400'
+              >
+                <FaTrash className='h-4 w-4' />
+              </button>
             </div>
           )}
 
@@ -135,19 +172,6 @@ export const ProjectFilesList = ({
               {selectedFile.caption}
             </p>
           )}
-
-          <div className='mt-4 flex justify-center'>
-            <button
-              type='button'
-              onClick={() => setFileToDelete(selectedFile)}
-              title='Delete file'
-              aria-label='Delete file'
-              className='flex items-center gap-2 rounded border border-red-400/30 bg-red-400/10 px-4 py-2 font-mono text-sm text-red-400 hover:bg-red-400 hover:text-black'
-            >
-              <FaTrash className='h-3 w-3' />
-              Delete
-            </button>
-          </div>
         </Modal>
       )}
 
