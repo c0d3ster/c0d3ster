@@ -1194,49 +1194,72 @@ describe('FileResolver', () => {
   })
 
   describe('deleteFile', () => {
-    it('should delete file when user has access', async () => {
+    it('should delete the DB record and the R2 object when user has access', async () => {
       const currentUser = createMockUser()
-      const mockFile = createMockFile()
+      const mockRecord = createMockProjectFileRecord()
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockFileService.getFileMetadata.mockResolvedValue(mockFile)
+      mockFileService.getProjectFileRecordById.mockResolvedValue(mockRecord)
       mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.deleteProjectFileRecord.mockResolvedValue(undefined)
       mockFileService.deleteFile.mockResolvedValue(undefined)
 
-      const result = await fileResolver.deleteFile('test-file.jpg')
+      const result = await fileResolver.deleteFile('file-1')
 
       expect(result).toBe(true)
-      expect(mockFileService.deleteFile).toHaveBeenCalledWith('test-file.jpg')
+      expect(mockFileService.deleteProjectFileRecord).toHaveBeenCalledWith(
+        'file-1'
+      )
+      expect(mockFileService.deleteFile).toHaveBeenCalledWith(
+        mockRecord.filePath
+      )
     })
 
     it('should throw error when file not found', async () => {
       const currentUser = createMockUser()
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockFileService.getFileMetadata.mockResolvedValue(null)
+      mockFileService.getProjectFileRecordById.mockResolvedValue(undefined)
 
-      await expect(
-        fileResolver.deleteFile('nonexistent-file.jpg')
-      ).rejects.toThrow('Not found')
+      await expect(fileResolver.deleteFile('nonexistent-file')).rejects.toThrow(
+        'Not found'
+      )
+      expect(mockFileService.deleteProjectFileRecord).not.toHaveBeenCalled()
     })
 
     it('should throw error when access denied', async () => {
       const currentUser = createMockUser({ id: 'user-1' })
-      const mockFile = createMockFile({
+      const mockRecord = createMockProjectFileRecord({
         uploadedBy: 'other-user',
-        projectId: null,
       })
 
       mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockFileService.getFileMetadata.mockResolvedValue(mockFile)
-      mockProjectService.getProjectById.mockResolvedValue(null)
-      // Mock checkPermission to throw (as it does in the actual implementation)
-      mockUserService.checkPermission.mockImplementation(() => {
-        throw new Error('Access denied')
-      })
+      mockFileService.getProjectFileRecordById.mockResolvedValue(mockRecord)
+      mockProjectService.getProjectById.mockRejectedValue(
+        new Error('Access denied')
+      )
 
-      await expect(fileResolver.deleteFile('test-file.jpg')).rejects.toThrow(
+      await expect(fileResolver.deleteFile('file-1')).rejects.toThrow(
         'Access denied'
+      )
+      expect(mockFileService.deleteProjectFileRecord).not.toHaveBeenCalled()
+    })
+
+    it('should still delete the DB record and return true when the R2 object delete fails', async () => {
+      const currentUser = createMockUser()
+      const mockRecord = createMockProjectFileRecord()
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockFileService.getProjectFileRecordById.mockResolvedValue(mockRecord)
+      mockProjectService.getProjectById.mockResolvedValue(createMockProject())
+      mockFileService.deleteProjectFileRecord.mockResolvedValue(undefined)
+      mockFileService.deleteFile.mockRejectedValue(new Error('R2 error'))
+
+      const result = await fileResolver.deleteFile('file-1')
+
+      expect(result).toBe(true)
+      expect(mockFileService.deleteProjectFileRecord).toHaveBeenCalledWith(
+        'file-1'
       )
     })
   })

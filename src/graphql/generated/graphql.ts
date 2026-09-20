@@ -159,7 +159,7 @@ export type MutationCreateProjectRequestArgs = {
 
 
 export type MutationDeleteFileArgs = {
-  key: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
 };
 
 
@@ -644,7 +644,7 @@ export type GetFileQueryVariables = Exact<{
 export type GetFileQuery = { readonly __typename?: 'Query', readonly file?: { readonly __typename?: 'File', readonly id: string, readonly fileName: string, readonly originalFileName: string, readonly fileSize: number, readonly contentType: string, readonly uploadedAt: string, readonly downloadUrl?: string | null, readonly environment: Environment } | null };
 
 export type DeleteFileMutationVariables = Exact<{
-  key: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
 }>;
 
 
@@ -1245,8 +1245,8 @@ export function useGetFileLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHook
 export type GetFileQueryHookResult = ReturnType<typeof useGetFileQuery>;
 export type GetFileLazyQueryHookResult = ReturnType<typeof useGetFileLazyQuery>;
 export const DeleteFileDocument = gql`
-    mutation DeleteFile($key: String!) {
-  deleteFile(key: $key)
+    mutation DeleteFile($id: ID!) {
+  deleteFile(id: $id)
 }
     `;
 
@@ -1263,7 +1263,7 @@ export const DeleteFileDocument = gql`
  * @example
  * const [deleteFileMutation, { data, loading, error }] = useDeleteFileMutation({
  *   variables: {
- *      key: // value for 'key'
+ *      id: // value for 'id'
  *   },
  * });
  */

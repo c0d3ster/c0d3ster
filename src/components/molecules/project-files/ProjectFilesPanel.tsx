@@ -34,6 +34,7 @@ export const ProjectFilesPanel = ({ projectId }: ProjectFilesPanelProps) => {
         <ProjectFilesList
           files={data?.projectFiles ?? []}
           onAddClick={() => setShowUpload(true)}
+          onDeletedAction={() => refetch()}
         />
       )}
 
