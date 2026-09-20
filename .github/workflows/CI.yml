@@ -40,7 +40,7 @@ jobs:
           # only validates shape). Fall back to placeholders when secrets aren't
           # exposed to the run, e.g. Dependabot/fork PRs, so the zod schema still passes.
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy_secret_key_for_ci' }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy_publishable_key_for_ci' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           # Database
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgres://user:pass@localhost:5432/dummy' }}
           # R2 Storage
@@ -89,7 +89,7 @@ jobs:
         env:
           # Required Clerk variables
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy_secret_key_for_ci' }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy_publishable_key_for_ci' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           # Database
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgres://user:pass@localhost:5432/dummy' }}
           # R2 Storage
@@ -129,7 +129,7 @@ jobs:
           # tests/setup.ts mocks @/libs/Env, pg, drizzle-orm, and @/libs/DB outright,
           # so the unit project never opens a real connection with these values.
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy_secret_key_for_ci' }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy_publishable_key_for_ci' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           # Database
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgres://user:pass@localhost:5432/dummy' }}
           # Test environment
