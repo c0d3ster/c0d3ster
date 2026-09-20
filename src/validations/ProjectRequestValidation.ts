@@ -29,16 +29,6 @@ export const projectRequestSchema = z.object({
     })
     .optional(),
   additionalInfo: z.string().max(1000, 'Additional info too long').optional(),
-  requirements: z
-    .object({
-      hasDesign: z.boolean().optional(),
-      needsHosting: z.boolean().optional(),
-      hasDomain: z.boolean().optional(),
-      needsMaintenance: z.boolean().optional(),
-      needsContentCreation: z.boolean().optional(),
-      needsSEO: z.boolean().optional(),
-    })
-    .optional(),
   features: z.array(z.nativeEnum(ProjectFeature)).optional(),
 })
 
@@ -87,3 +77,40 @@ export const contactPreferenceOptions = [
   { value: 'video_call', label: 'Video Call' },
   { value: 'in_person', label: 'In Person' },
 ] as const
+
+/**
+ * Client-side mirror of src/libs/projectTypeFeatures.ts, kept separate because the
+ * generated client ProjectFeature/ProjectType enums are a distinct type from the
+ * server-side schema enums (same members, incompatible TS types) - this drives the
+ * request form's feature prefill, the server-side map drives approval fallback logic.
+ */
+const DEFAULT_FEATURES_BY_PROJECT_TYPE: Record<ProjectType, ProjectFeature[]> = {
+  [ProjectType.Website]: [ProjectFeature.Email],
+  [ProjectType.WebApp]: [
+    ProjectFeature.Database,
+    ProjectFeature.Auth,
+    ProjectFeature.Email,
+    ProjectFeature.ResponsiveDesign,
+  ],
+  [ProjectType.ECommerce]: [
+    ProjectFeature.Database,
+    ProjectFeature.Auth,
+    ProjectFeature.Email,
+    ProjectFeature.PaymentProcessing,
+    ProjectFeature.EcommercePlatformIntegration,
+    ProjectFeature.ResponsiveDesign,
+  ],
+  [ProjectType.MobileApp]: [
+    ProjectFeature.Database,
+    ProjectFeature.Auth,
+    ProjectFeature.Email,
+  ],
+  [ProjectType.Api]: [ProjectFeature.Database],
+  [ProjectType.Maintenance]: [ProjectFeature.MaintenanceRetainer],
+  [ProjectType.Consultation]: [ProjectFeature.TechnicalAdvisory],
+  [ProjectType.Other]: [],
+}
+
+export const getDefaultFeaturesForProjectType = (
+  projectType: ProjectType
+): ProjectFeature[] => DEFAULT_FEATURES_BY_PROJECT_TYPE[projectType]

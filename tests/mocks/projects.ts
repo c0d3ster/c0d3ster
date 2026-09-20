@@ -7,6 +7,7 @@ import type {
 } from '@/graphql/generated/graphql'
 
 import {
+  ProjectFeature,
   ProjectStatus,
   ProjectType,
   UserRole,
@@ -42,7 +43,7 @@ export const createMockFullProject = (
   startDate: '2024-01-01',
   estimatedCompletionDate: '2024-03-01',
   actualCompletionDate: null,
-  requirements: { __typename: 'ProjectRequirements' as const, hasDesign: false },
+  features: [ProjectFeature.Database, ProjectFeature.Auth],
   stagingUrl: 'https://staging.testproject.com',
   client: {
     __typename: 'User',
@@ -113,7 +114,7 @@ export const createMockProjectRequest = (
   projectType: ProjectType.WebApp,
   budget: 5000,
   timeline: '3 months',
-  requirements: { __typename: 'ProjectRequirements' as const },
+  features: [ProjectFeature.Database, ProjectFeature.Auth],
   additionalInfo: 'Additional test information',
   status: ProjectStatus.Requested,
   createdAt: '2024-01-01T00:00:00Z',
@@ -144,7 +145,7 @@ export const createMockFullProjectRequest = (
   projectType: ProjectType.WebApp,
   budget: 5000,
   timeline: '3 months',
-  requirements: { __typename: 'ProjectRequirements' as const },
+  features: [ProjectFeature.Database, ProjectFeature.Auth],
   additionalInfo: 'Additional test information',
   contactPreference: 'EMAIL',
   status: ProjectStatus.Requested,

@@ -70,12 +70,6 @@ const mockProjectRequests = createMockProjectRequests(3).map(
         : index === 1
           ? 'More additional info'
           : 'Even more info',
-    requirements:
-      index === 0
-        ? 'Requirements here'
-        : index === 1
-          ? 'More requirements'
-          : 'Even more requirements',
     user: {
       id: `user${index + 1}`,
       firstName: index === 0 ? 'John' : index === 1 ? 'Jane' : 'Bob',

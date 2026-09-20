@@ -6,16 +6,24 @@ const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeature[]> = {
     ProjectFeature.Database,
     ProjectFeature.Auth,
     ProjectFeature.Email,
+    ProjectFeature.ResponsiveDesign,
   ],
   [ProjectType.ECommerce]: [
     ProjectFeature.Database,
     ProjectFeature.Auth,
     ProjectFeature.Email,
+    ProjectFeature.PaymentProcessing,
+    ProjectFeature.EcommercePlatformIntegration,
+    ProjectFeature.ResponsiveDesign,
   ],
-  [ProjectType.MobileApp]: [ProjectFeature.Database, ProjectFeature.Email],
+  [ProjectType.MobileApp]: [
+    ProjectFeature.Database,
+    ProjectFeature.Auth,
+    ProjectFeature.Email,
+  ],
   [ProjectType.Api]: [ProjectFeature.Database],
-  [ProjectType.Maintenance]: [],
-  [ProjectType.Consultation]: [],
+  [ProjectType.Maintenance]: [ProjectFeature.MaintenanceRetainer],
+  [ProjectType.Consultation]: [ProjectFeature.TechnicalAdvisory],
   [ProjectType.Other]: [],
 }
 

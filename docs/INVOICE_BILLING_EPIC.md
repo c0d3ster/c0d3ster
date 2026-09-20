@@ -129,6 +129,8 @@ ProjectManagement
 - `featurePricing.ts` is not imported in any client-facing component or resolver — only in `InvoiceService`
 - Existing `ProjectFeature` values (`Database`, `Auth`, `Email`) remain valid and unchanged
 
+**Post-implementation update:** the enum list above and this task's original scope were revised after real invoicing scenarios exposed gaps (no feature covered e-commerce platform/inventory integration; `ProjectType.ECommerce`/`MobileApp` defaults were missing `PaymentProcessing`/`Auth`) and overlap with the separate `ProjectRequirements` object on the request form. `ProjectRequirements` was retired entirely in favor of `ProjectFeature`, which is now derived as a per-`ProjectType` default and stays fully editable. `ThirdPartyIntegrations` and `ProjectManagement` were dropped, `Testing`→`QaLaunchTesting` and `Consultation`→`TechnicalAdvisory` were renamed/rescoped, and `CustomDesign`, `EcommercePlatformIntegration`, `ContentCreation`, `MaintenanceRetainer` were added. See `src/graphql/schema/project.ts` and `src/libs/featurePricing.ts` for the current, authoritative list.
+
 ---
 
 ### Phase 2 — Invoice Data Model

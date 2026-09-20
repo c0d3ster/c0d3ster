@@ -5,7 +5,7 @@ import { useState } from 'react'
 
 import type { ProjectRequest } from '@/graphql/generated/graphql'
 
-import { RequirementsList } from '@/components/molecules'
+import { FeatureList } from '@/components/molecules'
 import { ProjectStatus } from '@/graphql/generated/graphql'
 import { formatCardDate } from '@/utils'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
@@ -127,12 +127,12 @@ export const ProjectRequestCard = ({
         <p className='text-sm text-green-300/80'>{request.description}</p>
       </div>
 
-      {/* Requirements */}
+      {/* Features */}
       <div className='mb-4'>
         <h4 className='mb-2 font-mono text-sm font-bold text-green-300'>
-          Requirements:
+          Features:
         </h4>
-        <RequirementsList requirements={request.requirements} />
+        <FeatureList features={request.features} />
       </div>
 
       {/* Additional Info */}

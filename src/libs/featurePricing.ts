@@ -28,25 +28,48 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
     defaultPrice: 225,
     description: 'Transactional email delivery setup',
   },
-  [ProjectFeature.AdminDashboard]: {
-    label: 'Admin Dashboard',
-    defaultPrice: 1000,
-    description: 'Internal dashboard for managing content and users',
+  [ProjectFeature.ResponsiveDesign]: {
+    label: 'Mobile-Responsive Design',
+    defaultPrice: 350,
+    description: 'Layouts optimized for mobile and tablet devices',
+  },
+  [ProjectFeature.CustomDesign]: {
+    label: 'Custom UI/UX Design & Branding',
+    defaultPrice: 650,
+    description:
+      'Custom visual design and brand identity for clients without existing design assets',
   },
   [ProjectFeature.PaymentProcessing]: {
     label: 'Payment Processing',
     defaultPrice: 550,
     description: 'Stripe checkout and payment handling',
   },
-  [ProjectFeature.FileUploads]: {
-    label: 'File Upload System',
-    defaultPrice: 350,
-    description: 'File storage, upload, and retrieval',
+  [ProjectFeature.EcommercePlatformIntegration]: {
+    label: 'E-Commerce Platform Integration',
+    defaultPrice: 650,
+    description:
+      'Shopify/WooCommerce setup, inventory sync, and product catalog management',
   },
-  [ProjectFeature.CustomApi]: {
-    label: 'Custom API Endpoints',
+  [ProjectFeature.CmsIntegration]: {
+    label: 'CMS Integration',
+    defaultPrice: 550,
+    description: 'Content management system setup and integration',
+  },
+  [ProjectFeature.ContentCreation]: {
+    label: 'Content Writing & Population',
     defaultPrice: 400,
-    description: 'Bespoke API endpoints beyond standard CRUD',
+    description:
+      'Copywriting and content population for site pages, distinct from CMS setup itself',
+  },
+  [ProjectFeature.Seo]: {
+    label: 'SEO Setup',
+    defaultPrice: 350,
+    description: 'Metadata, sitemap, and search engine optimization',
+  },
+  [ProjectFeature.Analytics]: {
+    label: 'Analytics Setup',
+    defaultPrice: 225,
+    description: 'Usage tracking and analytics dashboards',
   },
   [ProjectFeature.Deployment]: {
     label: 'Deployment & CI/CD Setup',
@@ -58,44 +81,35 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
     defaultPrice: 150,
     description: 'DNS setup and custom domain configuration',
   },
-  [ProjectFeature.Seo]: {
-    label: 'SEO Setup',
-    defaultPrice: 350,
-    description: 'Metadata, sitemap, and search engine optimization',
+  [ProjectFeature.AdminDashboard]: {
+    label: 'Admin Dashboard',
+    defaultPrice: 1000,
+    description: 'Internal dashboard for managing content and users',
   },
-  [ProjectFeature.CmsIntegration]: {
-    label: 'CMS Integration',
-    defaultPrice: 550,
-    description: 'Content management system setup and integration',
-  },
-  [ProjectFeature.ResponsiveDesign]: {
-    label: 'Mobile-Responsive Design',
-    defaultPrice: 350,
-    description: 'Layouts optimized for mobile and tablet devices',
-  },
-  [ProjectFeature.ThirdPartyIntegrations]: {
-    label: 'Third-Party Integrations',
+  [ProjectFeature.CustomApi]: {
+    label: 'Custom API Endpoints',
     defaultPrice: 400,
-    description: 'Integration with external services and APIs',
+    description: 'Bespoke API endpoints beyond standard CRUD',
   },
-  [ProjectFeature.Analytics]: {
-    label: 'Analytics Setup',
-    defaultPrice: 225,
-    description: 'Usage tracking and analytics dashboards',
-  },
-  [ProjectFeature.Testing]: {
-    label: 'Testing & QA',
+  [ProjectFeature.FileUploads]: {
+    label: 'File Upload System',
     defaultPrice: 350,
-    description: 'Automated test coverage and quality assurance',
+    description: 'File storage, upload, and retrieval',
   },
-  [ProjectFeature.Consultation]: {
-    label: 'Consultation',
-    defaultPrice: 275,
-    description: 'Technical consultation and planning',
+  [ProjectFeature.QaLaunchTesting]: {
+    label: 'QA & Launch Testing',
+    defaultPrice: 300,
+    description:
+      'Manual cross-browser/device testing and user acceptance testing before launch (automated test coverage is included in base development, not billed separately)',
   },
-  [ProjectFeature.ProjectManagement]: {
-    label: 'Project Management',
+  [ProjectFeature.MaintenanceRetainer]: {
+    label: 'Ongoing Maintenance & Support',
+    defaultPrice: 300,
+    description: 'Monthly retainer covering updates, bug fixes, and support after launch',
+  },
+  [ProjectFeature.TechnicalAdvisory]: {
+    label: 'Technical Advisory',
     defaultPrice: 275,
-    description: 'Ongoing project coordination and management',
+    description: 'Technical consultation and planning session',
   },
 }

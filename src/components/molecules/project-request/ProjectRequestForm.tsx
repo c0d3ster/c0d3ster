@@ -12,6 +12,7 @@ import { ProjectType } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 import {
   contactPreferenceOptions,
+  getDefaultFeaturesForProjectType,
   projectFeatureOptions,
   projectRequestSchema,
   projectTypeOptions,
@@ -60,7 +61,7 @@ export const ProjectRequestForm = () => {
     }
   }
 
-  const [formData, setFormData] = useState<ProjectRequestData>({
+  const [formData, setFormData] = useState<ProjectRequestData>(() => ({
     projectName: '',
     description: '',
     projectType: ProjectType.Website,
@@ -68,16 +69,8 @@ export const ProjectRequestForm = () => {
     timeline: '',
     contactPreference: 'email',
     additionalInfo: '',
-    requirements: {
-      hasDesign: false,
-      hasDomain: false,
-      needsHosting: false,
-      needsMaintenance: false,
-      needsContentCreation: false,
-      needsSEO: false,
-    },
-    features: [],
-  })
+    features: getDefaultFeaturesForProjectType(ProjectType.Website),
+  }))
 
   const handleInputChange = (
     field: keyof ProjectRequestData,
@@ -96,17 +89,18 @@ export const ProjectRequestForm = () => {
     }
   }
 
-  const handleRequirementChange = (
-    requirement: keyof NonNullable<ProjectRequestData['requirements']>,
-    checked: boolean
-  ) => {
+  const handleProjectTypeChange = (projectType: ProjectType) => {
     setFormData((prev) => ({
       ...prev,
-      requirements: {
-        ...prev.requirements,
-        [requirement]: checked,
-      },
+      projectType,
+      features: getDefaultFeaturesForProjectType(projectType),
     }))
+    if (errors.projectType) {
+      setErrors((prev) => ({
+        ...prev,
+        projectType: '',
+      }))
+    }
   }
 
   const handleFeatureChange = (feature: ProjectFeature, checked: boolean) => {
@@ -155,7 +149,6 @@ export const ProjectRequestForm = () => {
             budget: validatedData.budget
               ? Number.parseFloat(validatedData.budget)
               : undefined,
-            requirements: validatedData.requirements,
           },
         },
       })
@@ -217,7 +210,9 @@ export const ProjectRequestForm = () => {
               fieldRefs.current.projectType = el
             }}
             value={formData.projectType}
-            onChange={(e) => handleInputChange('projectType', e.target.value)}
+            onChange={(e) =>
+              handleProjectTypeChange(e.target.value as ProjectType)
+            }
             className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
           >
             {projectTypeOptions.map((option) => (
@@ -295,50 +290,6 @@ export const ProjectRequestForm = () => {
             />
             <ErrorMessage error={errors.timeline} />
           </div>
-        </div>
-      </div>
-
-      {/* Requirements Section */}
-      <div className='space-y-6'>
-        <h3 className='font-mono text-lg font-bold text-green-400'>
-          REQUIREMENTS
-        </h3>
-
-        <div className='grid gap-4 md:grid-cols-2'>
-          {[
-            { key: 'hasDesign', label: 'I already have a design' },
-            { key: 'needsHosting', label: 'I need hosting setup' },
-            { key: 'hasDomain', label: 'I already have a domain' },
-            { key: 'needsMaintenance', label: 'I need ongoing maintenance' },
-            { key: 'needsContentCreation', label: 'I need content creation' },
-            { key: 'needsSEO', label: 'I need SEO optimization' },
-          ].map((requirement) => (
-            <label
-              key={requirement.key}
-              className='flex items-center space-x-3 font-mono text-sm text-green-300'
-            >
-              <input
-                type='checkbox'
-                checked={
-                  (formData.requirements?.[
-                    requirement.key as keyof NonNullable<
-                      ProjectRequestData['requirements']
-                    >
-                  ] as boolean) || false
-                }
-                onChange={(e) =>
-                  handleRequirementChange(
-                    requirement.key as keyof NonNullable<
-                      ProjectRequestData['requirements']
-                    >,
-                    e.target.checked
-                  )
-                }
-                className='h-4 w-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
-              />
-              <span>{requirement.label}</span>
-            </label>
-          ))}
         </div>
       </div>
 

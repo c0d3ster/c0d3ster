@@ -39,14 +39,7 @@ export const PROJECT_REQUEST_DISPLAY_FRAGMENT = gql`
     projectType
     budget
     timeline
-    requirements {
-      hasDesign
-      needsHosting
-      hasDomain
-      needsMaintenance
-      needsContentCreation
-      needsSEO
-    }
+    features
     additionalInfo
     status
     statusUpdates {

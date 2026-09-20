@@ -49,7 +49,6 @@ const mockAvailableProjects = createMockProjects(2).map((project, index) => ({
   status: ProjectStatus.Requested,
   budget: 5000 + index * 3000,
   timeline: '3 months',
-  requirements: `Requirements for project ${index + 1}`,
   updatedAt: '2024-01-15T10:00:00Z',
 }))
 
@@ -61,7 +60,6 @@ const mockAssignedProjects = createMockProjects(1).map((project, index) => ({
   status: ProjectStatus.InProgress,
   budget: 6000,
   timeline: '3 months',
-  requirements: `Requirements for assigned project ${index + 1}`,
   updatedAt: '2024-01-17T10:00:00Z',
 }))
 

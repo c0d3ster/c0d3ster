@@ -30,7 +30,6 @@ describe('ProjectRequestService', () => {
     projectType: ProjectType.WebApp,
     budget: 5000,
     timeline: '3 months',
-    requirements: { hasDesign: false },
     features: null,
     contactPreference: 'EMAIL',
     additionalInfo: 'Additional info',
@@ -48,7 +47,6 @@ describe('ProjectRequestService', () => {
     projectType: ProjectType.WebApp,
     budget: 3000,
     timeline: '2 months',
-    requirements: { hasDesign: false },
     contactPreference: 'EMAIL',
     additionalInfo: 'Info',
   }
@@ -483,6 +481,7 @@ describe('ProjectRequestService', () => {
             ProjectFeature.Database,
             ProjectFeature.Auth,
             ProjectFeature.Email,
+            ProjectFeature.ResponsiveDesign,
           ],
         })
       )

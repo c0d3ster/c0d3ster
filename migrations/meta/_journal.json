@@ -132,7 +132,14 @@
       "idx": 18,
       "version": "7",
       "when": 1785997453570,
-      "tag": "0018_gifted_venom",
+      "tag": "0018_add_project_request_features",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789939839576,
+      "tag": "0019_drop_project_requirements",
       "breakpoints": true
     }
   ]

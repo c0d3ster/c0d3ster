@@ -116,7 +116,6 @@ export class ProjectRequestService {
         projectType: input.projectType,
         budget: input.budget,
         timeline: input.timeline,
-        requirements: input.requirements,
         features: input.features,
         contactPreference: input.contactPreference,
         additionalInfo: input.additionalInfo,
@@ -186,7 +185,6 @@ export class ProjectRequestService {
       'projectType',
       'budget',
       'timeline',
-      'requirements',
       'contactPreference',
       'additionalInfo',
       'status',
@@ -296,7 +294,6 @@ export class ProjectRequestService {
           description: request.description,
           projectType: request.projectType,
           budget: request.budget,
-          requirements: request.requirements,
           features:
             request.features && request.features.length > 0
               ? request.features

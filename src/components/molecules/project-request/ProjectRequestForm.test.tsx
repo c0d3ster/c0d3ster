@@ -51,6 +51,7 @@ vi.mock('@/validations', () => ({
     { value: ProjectFeature.Auth, label: 'Auth' },
     { value: ProjectFeature.PaymentProcessing, label: 'Payment processing' },
   ],
+  getDefaultFeaturesForProjectType: vi.fn(() => []),
 }))
 
 describe('ProjectRequestForm', () => {
