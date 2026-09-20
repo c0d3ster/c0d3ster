@@ -6,6 +6,7 @@ import { buildSchema } from 'type-graphql'
 import {
   contactService,
   fileService,
+  projectInferenceService,
   projectRequestService,
   projectService,
   userService,
@@ -68,7 +69,8 @@ async function createSchema(): Promise<GraphQLSchema> {
           if (someClass === ProjectRequestResolver)
             return new ProjectRequestResolver(
               projectRequestService,
-              userService
+              userService,
+              projectInferenceService
             )
           if (someClass === FileResolver)
             return new FileResolver(fileService, projectService, userService)

@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 
 import type { ProjectRequestData } from '@/validations'
 
-import { useCreateProjectRequest } from '@/apiClients'
+import { useCreateProjectRequest, useInferProjectDetails } from '@/apiClients'
 import { Button } from '@/components/atoms'
 import { ProjectType } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
@@ -29,6 +29,11 @@ export const ProjectRequestForm = () => {
     Partial<Record<keyof ProjectRequestData, string>>
   >({})
   const [createProjectRequest] = useCreateProjectRequest()
+  const [inferProjectDetails, { loading: isSuggesting }] =
+    useInferProjectDetails()
+  const [suggestedFeatures, setSuggestedFeatures] = useState<
+    readonly string[]
+  >([])
 
   // Refs for form fields to enable focusing
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
@@ -59,6 +64,7 @@ export const ProjectRequestForm = () => {
 
   const [formData, setFormData] = useState<ProjectRequestData>({
     projectName: '',
+    title: '',
     description: '',
     projectType: ProjectType.Website,
     budget: '',
@@ -103,6 +109,39 @@ export const ProjectRequestForm = () => {
         [requirement]: checked,
       },
     }))
+  }
+
+  const handleSuggest = async () => {
+    if (!formData.projectName.trim() || !formData.description.trim()) {
+      Toast.error('Add a project name and description first')
+      return
+    }
+
+    try {
+      const result = await inferProjectDetails({
+        variables: {
+          input: {
+            projectName: formData.projectName,
+            description: formData.description,
+          },
+        },
+      })
+
+      const suggestion = result.data?.inferProjectDetails
+      if (!suggestion) {
+        throw new Error('No suggestion returned')
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        projectType: suggestion.projectType,
+        title: suggestion.title,
+      }))
+      setSuggestedFeatures(suggestion.features)
+      Toast.success('Suggestions applied — feel free to adjust them')
+    } catch (error: any) {
+      Toast.error(error.message || 'Could not generate suggestions')
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,6 +272,44 @@ export const ProjectRequestForm = () => {
             placeholder='Describe your project in detail. What are your goals? What features do you need? Who is your target audience?'
           />
           <ErrorMessage error={errors.description} />
+        </div>
+
+        {/* Suggest project details from name + description */}
+        <div>
+          <Button
+            type='button'
+            onClick={handleSuggest}
+            disabled={isSuggesting}
+          >
+            {isSuggesting ? 'THINKING...' : 'SUGGEST PROJECT TYPE & TITLE'}
+          </Button>
+          {suggestedFeatures.length > 0 && (
+            <p className='mt-2 font-mono text-xs text-green-600'>
+              Suggested features: {suggestedFeatures.join(', ')}
+            </p>
+          )}
+        </div>
+
+        {/* Title */}
+        <div>
+          <label
+            htmlFor='title'
+            className='block font-mono text-sm font-medium text-green-300'
+          >
+            TITLE
+          </label>
+          <input
+            id='title'
+            ref={(el) => {
+              fieldRefs.current.title = el
+            }}
+            type='text'
+            value={formData.title ?? ''}
+            onChange={(e) => handleInputChange('title', e.target.value)}
+            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
+            placeholder='A short, descriptive title (optional — defaults to project name)'
+          />
+          <ErrorMessage error={errors.title} />
         </div>
 
         {/* Budget and Timeline */}

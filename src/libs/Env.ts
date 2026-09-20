@@ -19,6 +19,7 @@ export const Env = createEnv({
     VERCEL_TOKEN: z.string().min(1).optional(),
     NEON_API_KEY: z.string().min(1).optional(),
     NEON_ORG_ID: z.string().min(1).optional(),
+    ANTHROPIC_API_KEY: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().optional(),
@@ -47,6 +48,7 @@ export const Env = createEnv({
     VERCEL_TOKEN: process.env.VERCEL_TOKEN,
     NEON_API_KEY: process.env.NEON_API_KEY,
     NEON_ORG_ID: process.env.NEON_ORG_ID,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,

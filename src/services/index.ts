@@ -1,6 +1,7 @@
 // Service instances with dependency injection
 import { ContactService } from './ContactService'
 import { FileService } from './FileService'
+import { ProjectInferenceService } from './ProjectInferenceService'
 import { ProjectRequestService } from './ProjectRequestService'
 import { ProjectService } from './ProjectService'
 import { UserService } from './UserService'
@@ -13,11 +14,13 @@ export const projectService = new ProjectService(fileService)
 export const userService = new UserService()
 export const projectRequestService = new ProjectRequestService()
 export const contactService = new ContactService()
+export const projectInferenceService = new ProjectInferenceService()
 
 // Export types for dependency injection
 export type {
   ContactService,
   FileService,
+  ProjectInferenceService,
   ProjectRequestService,
   ProjectService,
   UserService,

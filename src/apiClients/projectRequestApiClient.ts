@@ -9,6 +9,8 @@ import type {
   GetProjectRequestByIdQuery,
   GetProjectRequestByIdQueryVariables,
   GetProjectRequestsQuery,
+  InferProjectDetailsMutation,
+  InferProjectDetailsMutationVariables,
 } from '@/graphql/generated/graphql'
 
 import {
@@ -67,6 +69,16 @@ export const CREATE_PROJECT_REQUEST = gql`
   }
 `
 
+export const INFER_PROJECT_DETAILS = gql`
+  mutation InferProjectDetails($input: ProjectInferenceInput!) {
+    inferProjectDetails(input: $input) {
+      projectType
+      features
+      title
+    }
+  }
+`
+
 export const APPROVE_PROJECT_REQUEST = gql`
   mutation ApproveProjectRequest($id: ID!) {
     approveProjectRequest(id: $id)
@@ -91,6 +103,10 @@ export const useGetProjectRequestById = (id: string) =>
     { variables: { id } }
   )
 export const useCreateProjectRequest = () => useCreateProjectRequestMutation()
+export const useInferProjectDetails = () =>
+  useMutation<InferProjectDetailsMutation, InferProjectDetailsMutationVariables>(
+    INFER_PROJECT_DETAILS
+  )
 export const useApproveProjectRequest = () =>
   useMutation(APPROVE_PROJECT_REQUEST)
 export const useUpdateProjectRequestStatus = () =>

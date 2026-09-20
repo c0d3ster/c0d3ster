@@ -5,6 +5,7 @@ import { ProjectType, UserRole } from '@/graphql/schema'
 import { createMockUser } from '@/tests/mocks/auth'
 import { createMockProjectRequest } from '@/tests/mocks/projects'
 import {
+  createMockProjectInferenceService,
   createMockProjectRequestService,
   createMockUserService,
 } from '@/tests/mocks/services'
@@ -15,13 +16,18 @@ describe('ProjectRequestResolver', () => {
   let mockProjectRequestService: ReturnType<
     typeof createMockProjectRequestService
   >
+  let mockProjectInferenceService: ReturnType<
+    typeof createMockProjectInferenceService
+  >
 
   beforeEach(() => {
     mockUserService = createMockUserService()
     mockProjectRequestService = createMockProjectRequestService()
+    mockProjectInferenceService = createMockProjectInferenceService()
     projectRequestResolver = new ProjectRequestResolver(
       mockProjectRequestService as any,
-      mockUserService as any
+      mockUserService as any,
+      mockProjectInferenceService as any
     )
   })
 
@@ -96,6 +102,58 @@ describe('ProjectRequestResolver', () => {
       expect(
         mockProjectRequestService.createProjectRequest
       ).toHaveBeenCalledWith(input, currentUser.id)
+    })
+  })
+
+  describe('inferProjectDetails', () => {
+    const input = {
+      projectName: 'My Store',
+      description: 'An online store selling handmade goods',
+    }
+
+    it('should return a suggestion for an authenticated client', async () => {
+      const currentUser = createMockUser({ role: UserRole.Client })
+      const suggestion = {
+        projectType: ProjectType.ECommerce,
+        features: [],
+        title: 'Handmade Goods Store',
+      }
+
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockUserService.checkPermission.mockImplementation(() => {})
+      mockProjectInferenceService.inferProjectDetails.mockResolvedValue(
+        suggestion
+      )
+
+      const result = await projectRequestResolver.inferProjectDetails(input)
+
+      expect(result).toEqual(suggestion)
+      expect(
+        mockProjectInferenceService.inferProjectDetails
+      ).toHaveBeenCalledWith(input)
+    })
+
+    it('should throw when not authenticated', async () => {
+      mockUserService.getCurrentUserWithAuth.mockRejectedValue(
+        new Error('Not authenticated')
+      )
+
+      await expect(
+        projectRequestResolver.inferProjectDetails(input)
+      ).rejects.toThrow('Not authenticated')
+    })
+
+    it('should propagate inference failures', async () => {
+      const currentUser = createMockUser({ role: UserRole.Client })
+      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
+      mockUserService.checkPermission.mockImplementation(() => {})
+      mockProjectInferenceService.inferProjectDetails.mockRejectedValue(
+        new Error('Failed to generate project suggestions')
+      )
+
+      await expect(
+        projectRequestResolver.inferProjectDetails(input)
+      ).rejects.toThrow('Failed to generate project suggestions')
     })
   })
 
