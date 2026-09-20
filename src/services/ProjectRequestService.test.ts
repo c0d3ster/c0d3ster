@@ -247,6 +247,47 @@ describe('ProjectRequestService', () => {
         projectRequestService.createProjectRequest(mockCreateInput, 'user-123')
       ).rejects.toThrow(GraphQLError)
     })
+
+    it('should default title to projectName when title is empty', async () => {
+      const valuesMock = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockProjectRequest]),
+      })
+      mockDbInsert.mockReturnValue({
+        values: valuesMock,
+      } as any)
+
+      await projectRequestService.createProjectRequest(
+        { ...mockCreateInput, title: '' },
+        'user-123'
+      )
+
+      expect(valuesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectName: 'New Project',
+          title: 'New Project',
+        })
+      )
+    })
+
+    it('should default title to projectName when title is omitted', async () => {
+      const valuesMock = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockProjectRequest]),
+      })
+      mockDbInsert.mockReturnValue({
+        values: valuesMock,
+      } as any)
+
+      await projectRequestService.createProjectRequest(
+        { ...mockCreateInput, title: undefined },
+        'user-123'
+      )
+
+      expect(valuesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'New Project',
+        })
+      )
+    })
   })
 
   describe('updateProjectRequest', () => {
