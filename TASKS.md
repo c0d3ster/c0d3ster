@@ -9,6 +9,7 @@ Invoice implementation rule (from doc): never hand-write migration SQL — edit 
 ## Agent-Ready
 
 - [ ] #2 [stack: invoicing] Add "features" as advanced request options (enum), collapsed by default in the request form. Per docs/INVOICE_BILLING_EPIC.md Phase 1: also expand the ProjectFeature enum with the new values listed there and create featurePricing.ts mapping each feature to { label, defaultPrice, description }.
+  - STATUS: implemented, see PR #77 (branch `overnight/2026-08-06/02-project-feature-advanced-options`). NEEDS HUMAN: approve and run `db:migrate` for the new `project_requests.features` column, then merge PR #77.
   - Expand `ProjectFeature` enum in `src/graphql/schema/project.ts:45-49` with: AdminDashboard, PaymentProcessing, FileUploads, CustomApi, Deployment, DomainConfig, Seo, CmsIntegration, ResponsiveDesign, ThirdPartyIntegrations, Analytics, Testing, Consultation, ProjectManagement.
   - Path correction: doc says `src/lib/featurePricing.ts`; repo convention is `src/libs/` (see `src/libs/projectTypeFeatures.ts`, `DB.ts`, `Env.ts`) — use `src/libs/featurePricing.ts`.
   - `featurePricing.ts` needs one `defaultPrice` number per feature; doc only gives ranges (see Market Research table in the epic doc) — use the midpoint, rounded to nearest $25.
