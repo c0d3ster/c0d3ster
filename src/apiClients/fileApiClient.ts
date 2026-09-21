@@ -160,8 +160,8 @@ export const GET_FILE = gql`
 `
 
 export const DELETE_FILE = gql`
-  mutation DeleteFile($key: String!) {
-    deleteFile(key: $key)
+  mutation DeleteFile($id: ID!) {
+    deleteFile(id: $id)
   }
 `
 
@@ -181,7 +181,9 @@ export const useFinalizeProjectLogoUpload = () => {
 }
 
 export const useDeleteFile = () => {
-  return useMutation(DELETE_FILE)
+  return useMutation<DeleteFileMutation, DeleteFileMutationVariables>(
+    DELETE_FILE
+  )
 }
 
 export const useGetFiles = (filter?: FileFilterInput) => {
@@ -350,13 +352,13 @@ export const uploadProjectFile = async (
   return uploadedFile
 }
 
-export const deleteFile = async (key: string) => {
+export const deleteFile = async (id: string) => {
   const result = await apolloClient.mutate<
     DeleteFileMutation,
     DeleteFileMutationVariables
   >({
     mutation: DELETE_FILE,
-    variables: { key },
+    variables: { id },
   })
 
   if (result.error) throw new Error(result.error.message)

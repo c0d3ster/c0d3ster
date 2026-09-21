@@ -26,13 +26,17 @@ export const Modal = ({
   }, [onClose])
 
   return createPortal(
-    <div
-      role='dialog'
-      aria-modal='true'
-      aria-label={title}
-      className='fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4'
-    >
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
       <div
+        aria-hidden='true'
+        data-testid='modal-backdrop'
+        onClick={onClose}
+        className='absolute inset-0 bg-black/80'
+      />
+      <div
+        role='dialog'
+        aria-modal='true'
+        aria-label={title}
         className={`relative w-full ${maxWidthClassName} rounded-lg border border-green-400/30 bg-black p-4`}
       >
         <div className='mb-3 flex items-center justify-between'>

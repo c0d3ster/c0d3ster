@@ -419,6 +419,12 @@ export class FileService {
     })
   }
 
+  async getProjectFileRecordById(projectFileId: string) {
+    return await db.query.projectFiles.findFirst({
+      where: eq(schemas.projectFiles.id, projectFileId),
+    })
+  }
+
   async deleteProjectFileRecordsByDescription(
     projectId: string,
     description: string
