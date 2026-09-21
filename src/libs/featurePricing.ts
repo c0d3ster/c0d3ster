@@ -35,7 +35,7 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
   },
   [ProjectFeature.CustomDesign]: {
     label: 'Custom UI/UX Design & Branding',
-    defaultPrice: 650,
+    defaultPrice: 1900,
     description:
       'Custom visual design and brand identity for clients without existing design assets',
   },
@@ -46,7 +46,7 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
   },
   [ProjectFeature.EcommercePlatformIntegration]: {
     label: 'E-Commerce Platform Integration',
-    defaultPrice: 650,
+    defaultPrice: 1900,
     description:
       'Shopify/WooCommerce setup, inventory sync, and product catalog management',
   },
@@ -57,7 +57,7 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
   },
   [ProjectFeature.ContentCreation]: {
     label: 'Content Writing & Population',
-    defaultPrice: 400,
+    defaultPrice: 950,
     description:
       'Copywriting and content population for site pages, distinct from CMS setup itself',
   },
@@ -89,7 +89,8 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
   [ProjectFeature.CustomApi]: {
     label: 'Custom API Endpoints',
     defaultPrice: 400,
-    description: 'Bespoke API endpoints beyond standard CRUD',
+    description:
+      'Public or partner-facing API endpoints for external consumption (a companion mobile app, third-party integrations, partner access) - not billed for a web app\'s own internal backend, which is part of the base build',
   },
   [ProjectFeature.FileUploads]: {
     label: 'File Upload System',
@@ -98,18 +99,18 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
   },
   [ProjectFeature.QaLaunchTesting]: {
     label: 'QA & Launch Testing',
-    defaultPrice: 300,
+    defaultPrice: 425,
     description:
       'Manual cross-browser/device testing and user acceptance testing before launch (automated test coverage is included in base development, not billed separately)',
   },
   [ProjectFeature.MaintenanceRetainer]: {
     label: 'Ongoing Maintenance & Support',
-    defaultPrice: 300,
+    defaultPrice: 275,
     description: 'Monthly retainer covering updates, bug fixes, and support after launch',
   },
   [ProjectFeature.TechnicalAdvisory]: {
     label: 'Technical Advisory',
-    defaultPrice: 275,
+    defaultPrice: 450,
     description: 'Technical consultation and planning session',
   },
 }

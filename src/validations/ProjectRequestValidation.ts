@@ -85,7 +85,7 @@ export const contactPreferenceOptions = [
  * request form's feature prefill, the server-side map drives approval fallback logic.
  */
 const DEFAULT_FEATURES_BY_PROJECT_TYPE: Record<ProjectType, ProjectFeature[]> = {
-  [ProjectType.Website]: [ProjectFeature.Email],
+  [ProjectType.Website]: [ProjectFeature.Email, ProjectFeature.ResponsiveDesign],
   [ProjectType.WebApp]: [
     ProjectFeature.Database,
     ProjectFeature.Auth,
@@ -104,8 +104,9 @@ const DEFAULT_FEATURES_BY_PROJECT_TYPE: Record<ProjectType, ProjectFeature[]> = 
     ProjectFeature.Database,
     ProjectFeature.Auth,
     ProjectFeature.Email,
+    ProjectFeature.CustomDesign,
   ],
-  [ProjectType.Api]: [ProjectFeature.Database],
+  [ProjectType.Api]: [ProjectFeature.Database, ProjectFeature.CustomApi],
   [ProjectType.Maintenance]: [ProjectFeature.MaintenanceRetainer],
   [ProjectType.Consultation]: [ProjectFeature.TechnicalAdvisory],
   [ProjectType.Other]: [],
@@ -114,3 +115,72 @@ const DEFAULT_FEATURES_BY_PROJECT_TYPE: Record<ProjectType, ProjectFeature[]> = 
 export const getDefaultFeaturesForProjectType = (
   projectType: ProjectType
 ): ProjectFeature[] => DEFAULT_FEATURES_BY_PROJECT_TYPE[projectType]
+
+// Client-facing description of what each project type means, shown in the request
+// form directly below the Project Type select.
+export const projectTypeDescriptions: Record<ProjectType, string> = {
+  [ProjectType.Website]:
+    'A landing page or informational site describing your business: a homepage, maybe an About or Services page, and a way for visitors to reach you. No logins or user accounts.',
+  [ProjectType.WebApp]:
+    'A fully functional application where users create accounts and interact with your data - dashboards, member portals, or booking tools.',
+  [ProjectType.ECommerce]:
+    'An online store where customers browse products, create accounts, and check out.',
+  [ProjectType.MobileApp]:
+    'A native or cross-platform iOS/Android app, typically with accounts and data that syncs across devices.',
+  [ProjectType.Api]:
+    'A backend-only service that your own app or someone else\'s calls into - no user-facing screens are part of this.',
+  [ProjectType.Maintenance]:
+    'Ongoing upkeep on something already built (by me or someone else) - bug fixes, updates, and support, not a new build.',
+  [ProjectType.Consultation]:
+    'A paid advisory engagement - architecture review, technical planning, or scoping help - with no build deliverable.',
+  [ProjectType.Other]:
+    'Doesn\'t fit the above - describe what you need and we\'ll pick the right features together.',
+}
+
+// Groups the advanced-options feature checklist into labeled sections for readability.
+export const projectFeatureGroups: { label: string; features: ProjectFeature[] }[] = [
+  {
+    label: 'Core Build',
+    features: [
+      ProjectFeature.Database,
+      ProjectFeature.Auth,
+      ProjectFeature.Email,
+      ProjectFeature.ResponsiveDesign,
+      ProjectFeature.CustomDesign,
+    ],
+  },
+  {
+    label: 'Commerce',
+    features: [
+      ProjectFeature.PaymentProcessing,
+      ProjectFeature.EcommercePlatformIntegration,
+    ],
+  },
+  {
+    label: 'Content & Discovery',
+    features: [
+      ProjectFeature.CmsIntegration,
+      ProjectFeature.ContentCreation,
+      ProjectFeature.Seo,
+      ProjectFeature.Analytics,
+    ],
+  },
+  {
+    label: 'Infrastructure',
+    features: [
+      ProjectFeature.Deployment,
+      ProjectFeature.DomainConfig,
+      ProjectFeature.AdminDashboard,
+      ProjectFeature.CustomApi,
+      ProjectFeature.FileUploads,
+    ],
+  },
+  {
+    label: 'Quality & Ongoing',
+    features: [
+      ProjectFeature.QaLaunchTesting,
+      ProjectFeature.MaintenanceRetainer,
+      ProjectFeature.TechnicalAdvisory,
+    ],
+  },
+]

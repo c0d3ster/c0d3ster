@@ -13,10 +13,20 @@ import { Toast } from '@/libs/Toast'
 import {
   contactPreferenceOptions,
   getDefaultFeaturesForProjectType,
+  projectFeatureGroups,
   projectFeatureOptions,
   projectRequestSchema,
+  projectTypeDescriptions,
   projectTypeOptions,
 } from '@/validations'
+
+const featureLabelByValue = projectFeatureOptions.reduce<Record<string, string>>(
+  (labels, option) => {
+    labels[option.value] = option.label
+    return labels
+  },
+  {}
+)
 
 // Helper component to reserve space for error messages
 const ErrorMessage = ({ error }: { error?: string }) => (
@@ -222,6 +232,21 @@ export const ProjectRequestForm = () => {
             ))}
           </select>
           <ErrorMessage error={errors.projectType} />
+          <div className='rounded border border-green-400/20 bg-black/30 px-4 py-3'>
+            <p className='font-mono text-sm text-green-300/80'>
+              {projectTypeDescriptions[formData.projectType]}
+            </p>
+            <p className='mt-2 font-mono text-xs text-green-300/60'>
+              Default features include:{' '}
+              {(getDefaultFeaturesForProjectType(formData.projectType).length >
+              0
+                ? getDefaultFeaturesForProjectType(formData.projectType).map(
+                    (feature) => featureLabelByValue[feature]
+                  )
+                : ['none - nothing preselected']
+              ).join(', ')}
+            </p>
+          </div>
         </div>
 
         {/* Description */}
@@ -304,24 +329,33 @@ export const ProjectRequestForm = () => {
         </button>
 
         {showAdvancedOptions && (
-          <div className='grid gap-4 md:grid-cols-2'>
-            {projectFeatureOptions.map((feature) => (
-              <label
-                key={feature.value}
-                className='flex items-center space-x-3 font-mono text-sm text-green-300'
-              >
-                <input
-                  type='checkbox'
-                  checked={
-                    formData.features?.includes(feature.value) ?? false
-                  }
-                  onChange={(e) =>
-                    handleFeatureChange(feature.value, e.target.checked)
-                  }
-                  className='h-4 w-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
-                />
-                <span>{feature.label}</span>
-              </label>
+          <div className='space-y-5'>
+            {projectFeatureGroups.map((group) => (
+              <div key={group.label} className='space-y-2'>
+                <h4 className='font-mono text-sm font-bold text-green-400/80'>
+                  {group.label}
+                </h4>
+                <div className='grid gap-4 md:grid-cols-2'>
+                  {group.features.map((featureValue) => (
+                    <label
+                      key={featureValue}
+                      className='flex items-center space-x-3 font-mono text-sm text-green-300'
+                    >
+                      <input
+                        type='checkbox'
+                        checked={
+                          formData.features?.includes(featureValue) ?? false
+                        }
+                        onChange={(e) =>
+                          handleFeatureChange(featureValue, e.target.checked)
+                        }
+                        className='h-4 w-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
+                      />
+                      <span>{featureLabelByValue[featureValue]}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

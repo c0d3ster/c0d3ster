@@ -1,7 +1,7 @@
 import { ProjectFeature, ProjectType } from '@/graphql/schema/project'
 
 const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeature[]> = {
-  [ProjectType.Website]: [ProjectFeature.Email],
+  [ProjectType.Website]: [ProjectFeature.Email, ProjectFeature.ResponsiveDesign],
   [ProjectType.WebApp]: [
     ProjectFeature.Database,
     ProjectFeature.Auth,
@@ -20,8 +20,9 @@ const PROJECT_TYPE_FEATURES: Record<ProjectType, ProjectFeature[]> = {
     ProjectFeature.Database,
     ProjectFeature.Auth,
     ProjectFeature.Email,
+    ProjectFeature.CustomDesign,
   ],
-  [ProjectType.Api]: [ProjectFeature.Database],
+  [ProjectType.Api]: [ProjectFeature.Database, ProjectFeature.CustomApi],
   [ProjectType.Maintenance]: [ProjectFeature.MaintenanceRetainer],
   [ProjectType.Consultation]: [ProjectFeature.TechnicalAdvisory],
   [ProjectType.Other]: [],

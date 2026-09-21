@@ -44,6 +44,8 @@ Invoice number, issue date, due date, client + contractor details, itemized line
 
 ### Feature-Based Pricing (at ~$125/hr blended rate)
 
+Rows below `Analytics setup` were added/revised after the taxonomy refinement that retired `ThirdPartyIntegrations` and `ProjectManagement`, split `Testing` into base-rate automated coverage plus a narrower billable QA feature, and renamed `Consultation` to `TechnicalAdvisory` — sourced from 2026 freelance/agency market rates rather than the original estimate pass.
+
 | Feature | Estimate |
 |---|---|
 | Database design & setup | $300–$800 |
@@ -58,10 +60,13 @@ Invoice number, issue date, due date, client + contractor details, itemized line
 | SEO setup | $200–$500 |
 | CMS integration | $300–$800 |
 | Mobile-responsive design | $200–$500 |
-| Third-party integrations | $200–$600 |
 | Analytics setup | $150–$300 |
-| Testing & QA | $200–$500 |
-| Project management / consultation | $150–$400 |
+| Custom UI/UX design & branding | $800–$3,000 |
+| E-commerce platform integration | $800–$3,000 |
+| Content writing & population | $400–$1,500 |
+| QA & launch testing (manual/cross-browser/UAT only) | $250–$600 |
+| Ongoing maintenance & support (monthly retainer) | $150–$400/mo |
+| Technical advisory (flat planning session) | $300–$600 |
 
 ---
 

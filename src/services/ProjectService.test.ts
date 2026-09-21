@@ -513,7 +513,10 @@ describe('ProjectService', () => {
 
       await projectService.createProject(createInput)
 
-      expect(capturedValues.features).toEqual([ProjectFeature.Email])
+      expect(capturedValues.features).toEqual([
+        ProjectFeature.Email,
+        ProjectFeature.ResponsiveDesign,
+      ])
     })
 
     it('should preserve explicit features over type defaults', async () => {

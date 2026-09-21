@@ -51,6 +51,21 @@ vi.mock('@/validations', () => ({
     { value: ProjectFeature.Auth, label: 'Auth' },
     { value: ProjectFeature.PaymentProcessing, label: 'Payment processing' },
   ],
+  projectFeatureGroups: [
+    {
+      label: 'Core Build',
+      features: [ProjectFeature.Database, ProjectFeature.Auth],
+    },
+    {
+      label: 'Commerce',
+      features: [ProjectFeature.PaymentProcessing],
+    },
+  ],
+  projectTypeDescriptions: {
+    [ProjectType.Website]: 'A simple informational site.',
+    [ProjectType.WebApp]: 'A fully functional application.',
+    [ProjectType.MobileApp]: 'A native or cross-platform app.',
+  },
   getDefaultFeaturesForProjectType: vi.fn(() => []),
 }))
 
@@ -353,6 +368,43 @@ describe('ProjectRequestForm', () => {
     fireEvent.click(databaseCheckbox)
 
     expect(databaseCheckbox).not.toBeChecked()
+  })
+
+  it('groups the advanced options checklist under category headings', () => {
+    render(<ProjectRequestForm />)
+
+    fireEvent.click(screen.getByText('▸ ADVANCED OPTIONS'))
+
+    expect(screen.getByText('Core Build')).toBeInTheDocument()
+    expect(screen.getByText('Commerce')).toBeInTheDocument()
+  })
+
+  it('shows the project type description and its default features, updating on type change', async () => {
+    const { getDefaultFeaturesForProjectType } = await import('@/validations')
+    vi.mocked(getDefaultFeaturesForProjectType).mockImplementation(
+      (projectType: ProjectType) =>
+        projectType === ProjectType.WebApp
+          ? [ProjectFeature.Database, ProjectFeature.Auth]
+          : []
+    )
+
+    render(<ProjectRequestForm />)
+
+    expect(
+      screen.getByText('A simple informational site.')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Default features include:/)
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('PROJECT TYPE *'), {
+      target: { value: ProjectType.WebApp },
+    })
+
+    expect(
+      screen.getByText('A fully functional application.')
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Database, Auth/)).toBeInTheDocument()
   })
 
   it('handles budget field correctly', () => {
