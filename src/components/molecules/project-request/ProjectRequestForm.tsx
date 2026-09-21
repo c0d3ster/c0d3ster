@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 
-import type { ProjectFeature} from '@/graphql/generated/graphql';
+import type { ProjectFeature } from '@/graphql/generated/graphql'
 import type { ProjectRequestData } from '@/validations'
 
 import { useCreateProjectRequest } from '@/apiClients'
@@ -20,13 +20,12 @@ import {
   projectTypeOptions,
 } from '@/validations'
 
-const featureLabelByValue = projectFeatureOptions.reduce<Record<string, string>>(
-  (labels, option) => {
-    labels[option.value] = option.label
-    return labels
-  },
-  {}
-)
+const featureLabelByValue = projectFeatureOptions.reduce<
+  Record<string, string>
+>((labels, option) => {
+  labels[option.value] = option.label
+  return labels
+}, {})
 
 // Helper component to reserve space for error messages
 const ErrorMessage = ({ error }: { error?: string }) => (
@@ -179,8 +178,8 @@ export const ProjectRequestForm = () => {
   return (
     <form onSubmit={handleSubmit} className='space-y-8'>
       {/* Project Details Section */}
-      <div className='space-y-6'>
-        <h3 className='font-mono text-lg font-bold text-green-400'>
+      <div className='mb-2 space-y-2'>
+        <h3 className='mb-4 font-mono text-lg font-bold text-green-400'>
           PROJECT DETAILS
         </h3>
 
@@ -229,7 +228,7 @@ export const ProjectRequestForm = () => {
         </div>
 
         {/* Budget and Timeline */}
-        <div className='grid gap-6 md:grid-cols-2'>
+        <div className='grid gap-2 md:grid-cols-2'>
           <div>
             <label
               htmlFor='budget'
@@ -276,7 +275,7 @@ export const ProjectRequestForm = () => {
       </div>
 
       {/* Project Type & Features Section - type drives the default feature set below it */}
-      <div className='space-y-6'>
+      <div className='mb-10 space-y-4'>
         <h3 className='font-mono text-lg font-bold text-green-400'>
           PROJECT TYPE & FEATURES
         </h3>
@@ -335,9 +334,9 @@ export const ProjectRequestForm = () => {
         </button>
 
         {showFeatureChecklist && (
-          <div className='space-y-5'>
+          <div className='space-y-4'>
             {projectFeatureGroups.map((group) => (
-              <div key={group.label} className='space-y-2'>
+              <div key={group.label} className='space-y-4'>
                 <h4 className='font-mono text-sm font-bold text-green-400/80'>
                   {group.label}
                 </h4>
@@ -368,7 +367,7 @@ export const ProjectRequestForm = () => {
       </div>
 
       {/* Contact & Additional Info */}
-      <div className='space-y-6'>
+      <div className='space-y-4'>
         <h3 className='font-mono text-lg font-bold text-green-400'>
           CONTACT & ADDITIONAL INFO
         </h3>
