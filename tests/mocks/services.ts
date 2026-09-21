@@ -1,5 +1,7 @@
 import { vi } from 'vitest'
 
+import { Environment } from '@/graphql/schema'
+
 /**
  * Service mocks for resolver tests
  * Provides comprehensive mocks for all services used by GraphQL resolvers
@@ -57,8 +59,13 @@ export const createMockFileService = () => ({
   deleteFile: vi.fn(),
   generatePresignedDownloadUrl: vi.fn(),
   createProjectFileRecord: vi.fn(),
-  deleteProjectFileRecordByPath: vi.fn(),
+  getProjectFileRecordByPath: vi.fn(),
+  getProjectFileRecordById: vi.fn(),
+  deleteProjectFileRecordsByDescription: vi.fn(),
+  deleteProjectFileRecord: vi.fn(),
   generateProjectLogoPresignedUpload: vi.fn(),
+  generateProjectFilePresignedUpload: vi.fn(),
   getObjectHeadInfo: vi.fn(),
   getObjectBufferRange: vi.fn(),
+  resolveEnvironment: vi.fn().mockReturnValue(Environment.DEV),
 })

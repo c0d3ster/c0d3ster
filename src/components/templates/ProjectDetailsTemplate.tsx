@@ -2,12 +2,12 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
+import { startTransition, useOptimistic, useState } from 'react'
 import { FaPencilAlt, FaRegStar, FaStar } from 'react-icons/fa'
 
 import type { Project } from '@/graphql/generated/graphql'
 
-import { useGetFile, useGetMe, useProvisionProjectRepo, useUpdateProject } from '@/apiClients'
+import { useGetMe, useProvisionProjectRepo, useResolvedFileUrl, useUpdateProject } from '@/apiClients'
 import {
   BackButton,
   Button,
@@ -18,11 +18,12 @@ import {
   AnimatedHeading,
   LogoUpload,
   PostUpdatePanel,
+  ProjectFilesPanel,
   StatusHistory,
 } from '@/components/molecules'
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
-import { formatStatus, getStatusCardStyling, normalizeHttpUrl } from '@/utils'
+import { formatCardDate, formatStatus, getStatusCardStyling, normalizeHttpUrl } from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
 
@@ -48,40 +49,28 @@ export const ProjectDetailsTemplate = ({
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(project.status)
   const [optimisticProgress, setOptimisticProgress] = useOptimistic(project.progressPercentage)
   const [showLogoUpload, setShowLogoUpload] = useState(false)
-  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
-    project.logo || null
-  )
+  // Only set once a fresh upload finalizes; the stored project.logo (public
+  // asset path or R2 key) is otherwise resolved to a URL below.
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null)
   const [liveUrl, setLiveUrl] = useState<string>(project.liveUrl || '')
   const [editingLiveUrl, setEditingLiveUrl] = useState(false)
   const [liveUrlDraft, setLiveUrlDraft] = useState<string>(project.liveUrl || '')
-  const setCurrentLogoUrlRef = useRef(setCurrentLogoUrl)
 
-  // Check if the project logo is a public URL or a storage key
-  const isPublicUrl = (url?: string | null) =>
-    !!url && (/^https?:\/\//.test(url) || url.startsWith('/assets/'))
+  const { url: resolvedLogoUrl, loading: logoResolving } = useResolvedFileUrl(
+    project.logo
+  )
+  const displayLogo = currentLogoUrl || resolvedLogoUrl
 
-  // Use the current logo URL if set, otherwise fall back to the project logo
-  const displayLogo =
-    currentLogoUrl || (isPublicUrl(project.logo) ? project.logo : undefined)
-
-  // Get download URL for non-public storage keys
-  const shouldFetchFile = project.logo && !isPublicUrl(project.logo)
-  const { data: fileData } = useGetFile(shouldFetchFile ? project.logo : '')
-
-  // Update current logo URL when file data is loaded
-  useEffect(() => {
-    if (shouldFetchFile && fileData?.file?.downloadUrl && !currentLogoUrl) {
-      setCurrentLogoUrlRef.current(fileData.file.downloadUrl)
-    }
-  }, [shouldFetchFile, fileData?.file?.downloadUrl, currentLogoUrl])
-
-  // Check if current user can edit this project (is client or developer)
+  // Check if current user can edit this project (is client, assigned developer, or admin)
   // Only check after user data is loaded to avoid showing upload component briefly
   // Compare database user IDs properly
   const canEditProject =
     !meLoading &&
     meData?.me &&
-    (meData.me.id === project.clientId || meData.me.id === project.developerId)
+    (meData.me.id === project.clientId ||
+      meData.me.id === project.developerId ||
+      meData.me.role === UserRole.Admin ||
+      meData.me.role === UserRole.SuperAdmin)
 
   // Check if user is the client (for personalized messages)
   const isClient = meData?.me?.id === project.clientId
@@ -180,6 +169,25 @@ export const ProjectDetailsTemplate = ({
   return (
     <CleanPageTemplate>
       <BackButton useBack text='BACK' />
+      {canManageFeatured && (
+        <div className='pointer-events-none fixed top-24 right-0 left-0 z-40'>
+          <div className='container mx-auto px-4'>
+            <div className='flex justify-end'>
+              <button
+                type='button'
+                onClick={handleToggleFeatured}
+                disabled={updatingFeatured}
+                className='pointer-events-auto cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
+                title={featured ? 'Remove from featured' : 'Add to featured'}
+                aria-label={featured ? 'Remove from featured' : 'Add to featured'}
+                aria-pressed={featured}
+              >
+                {featured ? <FaStar className='h-5 w-5' /> : <FaRegStar className='h-5 w-5' />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className='container mx-auto px-4 pb-8 md:pb-12'>
         {/* Project Header */}
         <ScrollFade>
@@ -233,12 +241,12 @@ export const ProjectDetailsTemplate = ({
                       </button>
                     )}
                   </div>
-                ) : meLoading ? (
+                ) : meLoading || logoResolving ? (
                   <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <div className='text-center'>
                       <div className='mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
                       <p className='mt-2 font-mono text-xs text-green-400/70'>
-                        Checking permissions...
+                        {meLoading ? 'Checking permissions...' : 'Loading logo...'}
                       </p>
                     </div>
                   </div>
@@ -277,45 +285,11 @@ export const ProjectDetailsTemplate = ({
                 )}
               </div>
 
-              {/* People */}
-              <div className='w-[300px] space-y-4'>
-                {([
-                  { label: 'CLIENT', user: project.client },
-                  { label: 'DEVELOPER', user: project.developer },
-                ] as const).map(({ label, user }) => {
-                  const initials = user
-                    ? (`${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`
-                        .toUpperCase() || '?')
-                    : null
-                  const fullName = user
-                    ? ([user.firstName, user.lastName].filter(Boolean).join(' ') || user.email)
-                    : null
-                  return (
-                    <div key={label} className='flex items-center gap-3'>
-                      <span className='w-20 font-mono text-xs text-green-400/50'>{label}</span>
-                      {user ? (
-                        <>
-                          <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-xs text-green-400'>
-                            {initials}
-                          </div>
-                          <span className='font-mono text-sm text-green-300'>{fullName}</span>
-                        </>
-                      ) : (
-                        <span className='font-mono text-sm text-green-400/40'>UNASSIGNED</span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Status Badge */}
-              <div className='text-center'>
-                <span
-                  className={`inline-block rounded-full border px-6 py-3 font-mono text-sm font-bold ${getStatusCardStyling(optimisticStatus)}`}
-                >
-                  {formatStatus(optimisticStatus)}
-                </span>
-              </div>
+              {canEditProject && (
+                <div className='w-[300px]'>
+                  <ProjectFilesPanel projectId={project.id} />
+                </div>
+              )}
 
               {/* Repo / Staging / Live links */}
               {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
@@ -409,25 +383,38 @@ export const ProjectDetailsTemplate = ({
           {/* Project Details */}
           <ScrollFade>
             <div className='space-y-8'>
-              {/* Featured toggle — admin only (controls public portfolio) */}
-              {canManageFeatured && (
-                <div className='flex justify-end'>
-                  <button
-                    type='button'
-                    onClick={handleToggleFeatured}
-                    disabled={updatingFeatured}
-                    className='cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
-                    title={featured ? 'Remove from featured' : 'Add to featured'}
-                    aria-label={featured ? 'Remove from featured' : 'Add to featured'}
-                    aria-pressed={featured}
-                  >
-                    {featured
-                      ? <FaStar className='h-5 w-5' />
-                      : <FaRegStar className='h-5 w-5' />}
-                  </button>
+              {/* People + Status */}
+              <div className='space-y-4'>
+                <div className='flex items-center gap-3'>
+                  <span className='w-24 font-mono text-xl font-bold text-green-400'>CLIENT</span>
+                  {project.client ? (
+                    <>
+                      <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                        {(`${project.client.firstName?.[0] ?? ''}${project.client.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
+                      </div>
+                      <span className='font-mono text-base text-green-300'>
+                        {[project.client.firstName, project.client.lastName].filter(Boolean).join(' ') || project.client.email}
+                      </span>
+                    </>
+                  ) : (
+                    <span className='font-mono text-base text-green-400/40'>UNASSIGNED</span>
+                  )}
+                  <span className={`ml-auto rounded-full border px-4 py-1.5 font-mono text-xs font-bold ${getStatusCardStyling(optimisticStatus)}`}>
+                    {formatStatus(optimisticStatus)}
+                  </span>
                 </div>
-              )}
-
+                {project.developer && (
+                  <div className='flex items-center gap-3'>
+                    <span className='w-24 font-mono text-xl font-bold text-green-400'>DEVELOPER</span>
+                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                      {(`${project.developer.firstName?.[0] ?? ''}${project.developer.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
+                    </div>
+                    <span className='font-mono text-base text-green-300'>
+                      {[project.developer.firstName, project.developer.lastName].filter(Boolean).join(' ') || project.developer.email}
+                    </span>
+                  </div>
+                )}
+              </div>
               {/* Post update — primary action for admins / assigned dev */}
               {canPostUpdate && (
                 <PostUpdatePanel
@@ -507,6 +494,11 @@ export const ProjectDetailsTemplate = ({
                 statusUpdates={project.statusUpdates || []}
                 hideInternal={!canPostUpdate}
               />
+
+              {/* Created date */}
+              <p className='border-t border-green-400/10 pt-4 font-mono text-xs text-green-400/30'>
+                Created {formatCardDate(project.createdAt)}
+              </p>
             </div>
           </ScrollFade>
         </div>

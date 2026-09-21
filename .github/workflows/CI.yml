@@ -36,15 +36,18 @@ jobs:
         run: npm run build:ci
         env:
           # Required Clerk variables
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          # `next build` never calls out to these services (see src/libs/Env.ts,
+          # only validates shape). Fall back to placeholders when secrets aren't
+          # exposed to the run, e.g. Dependabot/fork PRs, so the zod schema still passes.
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy_secret_key_for_ci' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           # Database
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgres://user:pass@localhost:5432/dummy' }}
           # R2 Storage
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || 'dummy-account-id' }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || 'dummy-access-key' }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || 'dummy-secret-key' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || 'dummy-bucket' }}
           # Build environment
           NODE_ENV: production
 
@@ -85,15 +88,15 @@ jobs:
         run: npm run check:types
         env:
           # Required Clerk variables
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy_secret_key_for_ci' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           # Database
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgres://user:pass@localhost:5432/dummy' }}
           # R2 Storage
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID || 'dummy-account-id' }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID || 'dummy-access-key' }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY || 'dummy-secret-key' }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME || 'dummy-bucket' }}
           # Build environment
           NODE_ENV: production
 
@@ -123,10 +126,12 @@ jobs:
           args: npm run test -- --run --project=unit --coverage
         env:
           # Required Clerk variables
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          # tests/setup.ts mocks @/libs/Env, pg, drizzle-orm, and @/libs/DB outright,
+          # so the unit project never opens a real connection with these values.
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_dummy_secret_key_for_ci' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA' }}
           # Database
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgres://user:pass@localhost:5432/dummy' }}
           # Test environment
           NODE_ENV: test
 
@@ -143,6 +148,10 @@ jobs:
     name: Run E2E tests
     runs-on: ubuntu-latest
     needs: [build]
+    # E2E runs the real production server against a real DB/Clerk over the network,
+    # unlike build/static/unit which never make outbound calls with these values.
+    # Dependabot PRs don't get repo secrets, so there's nothing real to connect to.
+    if: github.actor != 'dependabot[bot]'
 
     steps:
       - uses: actions/checkout@v6

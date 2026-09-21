@@ -15,6 +15,10 @@ vi.mock('@/apiClients', async () => {
       loading: true,
       error: undefined,
     })),
+    useResolvedFileUrl: (key?: string | null) => ({
+      url: key ?? undefined,
+      loading: false,
+    }),
   }
 })
 

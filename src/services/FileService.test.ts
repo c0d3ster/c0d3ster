@@ -4,7 +4,7 @@ import { Buffer } from 'node:buffer'
 import { Readable } from 'node:stream'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Environment } from '@/graphql/schema'
+import { Environment, FilePlacement } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
@@ -64,7 +64,6 @@ describe('FileService', () => {
       R2_ACCESS_KEY_ID: 'test-access-key',
       R2_SECRET_ACCESS_KEY: 'test-secret-key',
       R2_BUCKET_NAME: 'test-bucket',
-      APP_ENV: 'dev',
     })
     // Initialize mockS3Send before creating FileService
     mockS3Send = vi.fn()
@@ -98,9 +97,7 @@ describe('FileService', () => {
       const result = await fileService.generatePresignedUploadUrl(mockFileInput)
 
       expect(result.uploadUrl).toBe('https://signed-url.com')
-      expect(result.key).toMatch(
-        /dev\/projects\/project-123\/\d+_test-file\.jpg/
-      )
+      expect(result.key).toMatch(/^projects\/project-123\/\d+_test-file\.jpg$/)
       expect(result.metadata).toEqual({
         fileName: mockFileInput.fileName,
         originalFileName: mockFileInput.originalFileName,
@@ -111,7 +108,7 @@ describe('FileService', () => {
         environment: mockFileInput.environment,
         uploadedAt: expect.any(Date),
         key: expect.stringMatching(
-          /dev\/projects\/project-123\/\d+_test-file\.jpg/
+          /^projects\/project-123\/\d+_test-file\.jpg$/
         ),
       })
     })
@@ -123,8 +120,24 @@ describe('FileService', () => {
       const result = await fileService.generatePresignedUploadUrl(userFileInput)
 
       expect(result.uploadUrl).toBe('https://signed-url.com')
-      expect(result.key).toMatch(/dev\/users\/user-123\/\d+_test-file\.jpg/)
+      expect(result.key).toMatch(/^users\/user-123\/\d+_test-file\.jpg$/)
       expect(result.metadata.projectId).toBeUndefined()
+    })
+
+    it('derives environment from the bucket, not the caller-supplied input', async () => {
+      Object.assign(Env, { R2_BUCKET_NAME: 'prod' })
+      fileService = new FileService()
+      mockGetSignedUrl.mockResolvedValue('https://signed-url.com')
+
+      const result = await fileService.generatePresignedUploadUrl({
+        ...mockFileInput,
+        environment: Environment.DEV,
+      })
+
+      expect(result.metadata.environment).toBe(Environment.PROD)
+
+      Object.assign(Env, { R2_BUCKET_NAME: 'test-bucket' })
+      fileService = new FileService()
     })
 
     it('should sanitize file names', async () => {
@@ -155,7 +168,7 @@ describe('FileService', () => {
       })
 
       expect(result.uploadUrl).toBe('https://presigned-put.example')
-      expect(result.key).toMatch(/^dev\/projects\/project-1\/\d+_logo\.\.png$/)
+      expect(result.key).toMatch(/^projects\/project-1\/\d+_logo\.\.png$/)
       expect(result.metadata.fileName).toBe('logo..png')
       expect(result.metadata.contentType).toBe('image/png')
       expect(result.metadata.fileSize).toBe(2048)
@@ -180,8 +193,8 @@ describe('FileService', () => {
       expect(putInput.Metadata).toBeUndefined()
     })
 
-    it('should use PROD environment in metadata when APP_ENV is prod', async () => {
-      Object.assign(Env, { APP_ENV: 'prod' })
+    it('should use PROD environment in metadata when R2_BUCKET_NAME is prod', async () => {
+      Object.assign(Env, { R2_BUCKET_NAME: 'prod' })
       mockGetSignedUrl.mockResolvedValue('https://put')
       fileService = new FileService()
 
@@ -195,10 +208,50 @@ describe('FileService', () => {
       })
 
       expect(result.metadata.environment).toBe(Environment.PROD)
-      expect(result.key).toMatch(/^prod\/projects\/p1\//)
+      expect(result.key).toMatch(/^projects\/p1\//)
 
-      Object.assign(Env, { APP_ENV: 'dev' })
+      Object.assign(Env, { R2_BUCKET_NAME: 'test-bucket' })
       fileService = new FileService()
+    })
+  })
+
+  describe('generateProjectFilePresignedUpload', () => {
+    it('should return presigned URL, key, and metadata without S3 Metadata on command', async () => {
+      mockGetSignedUrl.mockResolvedValue('https://presigned-put.example')
+
+      const result = await fileService.generateProjectFilePresignedUpload({
+        projectId: 'project-1',
+        userId: 'user-1',
+        fileName: 'brief..pdf',
+        originalFileName: 'brief..pdf',
+        fileSize: 4096,
+        contentType: 'application/pdf',
+      })
+
+      expect(result.uploadUrl).toBe('https://presigned-put.example')
+      expect(result.key).toMatch(/^projects\/project-1\/\d+_brief\.\.pdf$/)
+      expect(result.metadata.fileName).toBe('brief..pdf')
+      expect(result.metadata.contentType).toBe('application/pdf')
+      expect(result.metadata.fileSize).toBe(4096)
+      expect(result.metadata.environment).toBe(Environment.DEV)
+
+      const firstPut = vi.mocked(PutObjectCommand).mock.calls[0]
+
+      expect(firstPut).toBeDefined()
+
+      const putInput = firstPut![0] as {
+        Bucket?: string
+        ContentType?: string
+        ContentLength?: number
+        Metadata?: unknown
+      }
+
+      expect(putInput).toMatchObject({
+        Bucket: 'test-bucket',
+        ContentType: 'application/pdf',
+        ContentLength: 4096,
+      })
+      expect(putInput.Metadata).toBeUndefined()
     })
   })
 
@@ -424,6 +477,29 @@ describe('FileService', () => {
       })
     })
 
+    it('defaults environment to the bucket, not DEV, when metadata omits it', async () => {
+      // Logo PUTs never write S3 Metadata, so this is the real-world case
+      // that fed this fallback for uploads to the prod bucket.
+      Object.assign(Env, { R2_BUCKET_NAME: 'prod' })
+      fileService = new FileService()
+      mockS3Send.mockResolvedValue({
+        Metadata: {
+          fileName: 'test.jpg',
+          fileSize: '1024',
+          contentType: 'image/jpeg',
+          uploadedBy: 'user-123',
+        },
+        ContentType: 'image/jpeg',
+      })
+
+      const result = await fileService.getFileMetadata('test-key')
+
+      expect(result?.environment).toBe(Environment.PROD)
+
+      Object.assign(Env, { R2_BUCKET_NAME: 'test-bucket' })
+      fileService = new FileService()
+    })
+
     it('should return null on error', async () => {
       mockS3Send.mockRejectedValue(new Error('S3 error'))
 
@@ -461,19 +537,122 @@ describe('FileService', () => {
       expect(mockDbInsert).toHaveBeenCalled()
       expect(result).toEqual(mockRecord)
     })
+
+    it('should persist caption and placement when provided', async () => {
+      const mockRecord = { id: 'file-123', fileName: 'test.jpg' }
+      const mockValues = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockRecord]),
+      })
+      mockDbInsert.mockReturnValue({ values: mockValues } as any)
+
+      await fileService.createProjectFileRecord({
+        fileName: 'test.jpg',
+        originalFileName: 'original.jpg',
+        filePath: 'path/to/file.jpg',
+        fileSize: 1024,
+        contentType: 'image/jpeg',
+        projectId: 'project-123',
+        uploadedBy: 'user-123',
+        caption: 'Homepage screenshot',
+        placement: FilePlacement.Gallery,
+      })
+
+      expect(mockValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          caption: 'Homepage screenshot',
+          placement: FilePlacement.Gallery,
+        })
+      )
+    })
   })
 
-  describe('deleteProjectFileRecordByPath', () => {
-    it('should delete project file record by path', async () => {
-      const mockDeletedRecords = [{ id: 'file-123', fileName: 'test.jpg' }]
+  describe('getProjectFileRecordByPath', () => {
+    it('should return the matching record when one exists', async () => {
+      const mockRecord = {
+        id: 'file-1',
+        fileName: 'a.pdf',
+        createdAt: new Date(),
+        description: null,
+        caption: null,
+        placement: null,
+        isClientVisible: true,
+        projectId: 'project-1',
+        originalFileName: 'a.pdf',
+        contentType: 'application/pdf',
+        fileSize: 1024,
+        filePath: 'projects/project-1/1_a.pdf',
+        uploadedBy: 'user-123',
+      }
+      mockDbQuery.findFirst.mockResolvedValue(mockRecord)
+
+      const result = await fileService.getProjectFileRecordByPath(
+        'project-1',
+        'projects/project-1/1_a.pdf'
+      )
+
+      expect(mockDbQuery.findFirst).toHaveBeenCalled()
+      expect(result).toEqual(mockRecord)
+    })
+
+    it('should return undefined when no record matches', async () => {
+      mockDbQuery.findFirst.mockResolvedValue(undefined)
+
+      const result = await fileService.getProjectFileRecordByPath(
+        'project-1',
+        'projects/project-1/missing.pdf'
+      )
+
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('getProjectFileRecordById', () => {
+    it('should return the matching record when one exists', async () => {
+      const mockRecord = {
+        id: 'file-1',
+        fileName: 'a.pdf',
+        createdAt: new Date(),
+        description: null,
+        caption: null,
+        placement: null,
+        isClientVisible: true,
+        projectId: 'project-1',
+        originalFileName: 'a.pdf',
+        contentType: 'application/pdf',
+        fileSize: 1024,
+        filePath: 'projects/project-1/1_a.pdf',
+        uploadedBy: 'user-123',
+      }
+      mockDbQuery.findFirst.mockResolvedValue(mockRecord)
+
+      const result = await fileService.getProjectFileRecordById('file-1')
+
+      expect(mockDbQuery.findFirst).toHaveBeenCalled()
+      expect(result).toEqual(mockRecord)
+    })
+
+    it('should return undefined when no record matches', async () => {
+      mockDbQuery.findFirst.mockResolvedValue(undefined)
+
+      const result = await fileService.getProjectFileRecordById('missing')
+
+      expect(result).toBeUndefined()
+    })
+  })
+
+  describe('deleteProjectFileRecordsByDescription', () => {
+    it('should delete project file records matching project and description', async () => {
+      const mockDeletedRecords = [{ id: 'file-123', fileName: 'logo.jpg' }]
       mockDbDelete.mockReturnValue({
         where: vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue(mockDeletedRecords),
         }),
       } as any)
 
-      const result =
-        await fileService.deleteProjectFileRecordByPath('path/to/file.jpg')
+      const result = await fileService.deleteProjectFileRecordsByDescription(
+        'project-1',
+        'Project logo'
+      )
 
       expect(result).toEqual(mockDeletedRecords)
     })
@@ -487,6 +666,8 @@ describe('FileService', () => {
           fileName: 'file1.jpg',
           createdAt: new Date(),
           description: null,
+          caption: null,
+          placement: null,
           isClientVisible: true,
           projectId: 'project-123',
           originalFileName: 'file1.jpg',
@@ -500,6 +681,8 @@ describe('FileService', () => {
           fileName: 'file2.png',
           createdAt: new Date(),
           description: null,
+          caption: null,
+          placement: null,
           isClientVisible: true,
           projectId: 'project-123',
           originalFileName: 'file2.png',

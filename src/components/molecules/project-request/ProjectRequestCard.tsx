@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 
 import type { ProjectRequest } from '@/graphql/generated/graphql'
@@ -78,7 +79,12 @@ export const ProjectRequestCard = ({
     'Unknown User'
 
   return (
-    <div className='rounded-lg border border-green-400/20 bg-black/60 p-6 backdrop-blur-sm'>
+    <div className='relative rounded-lg border border-green-400/20 bg-black/60 p-6 backdrop-blur-sm transition-colors duration-200 hover:border-green-400/40'>
+      <Link
+        href={`/dashboard/project-requests/${request.id}`}
+        className='absolute inset-0 rounded-lg'
+        aria-label={`View details for ${request.title}`}
+      />
       {/* Header */}
       <div className='mb-4'>
         <div className='mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
@@ -150,7 +156,7 @@ export const ProjectRequestCard = ({
       )}
 
       {/* Action Buttons */}
-      <div className='flex flex-wrap gap-2'>
+      <div className='relative z-10 flex flex-wrap gap-2'>
         {request.status === ProjectStatus.Requested && (
           <button
             type='button'
@@ -197,7 +203,7 @@ export const ProjectRequestCard = ({
 
       {/* Approval Form Modal */}
       {showApprovalForm && (
-        <div className='mt-6 rounded border border-green-400/30 bg-green-400/5 p-4'>
+        <div className='relative z-10 mt-6 rounded border border-green-400/30 bg-green-400/5 p-4'>
           <h4 className='mb-4 font-mono text-sm font-bold text-green-400'>
             Project Approval Details
           </h4>

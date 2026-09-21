@@ -105,10 +105,11 @@ describe('AdminDashboardSection', () => {
 
     render(<AdminDashboardSection />)
 
+    expect(screen.getByText('ACTIONABLE (2)')).toBeInTheDocument()
     expect(screen.getByText('ALL (3)')).toBeInTheDocument()
-    expect(screen.getByText('REQUESTED (0)')).toBeInTheDocument()
-    expect(screen.getByText('IN REVIEW (0)')).toBeInTheDocument()
-    expect(screen.getByText('APPROVED (0)')).toBeInTheDocument()
+    expect(screen.getByText('REQUESTED (1)')).toBeInTheDocument()
+    expect(screen.getByText('IN REVIEW (1)')).toBeInTheDocument()
+    expect(screen.getByText('APPROVED (1)')).toBeInTheDocument()
     expect(screen.getByText('CANCELLED (0)')).toBeInTheDocument()
   })
 
@@ -122,7 +123,7 @@ describe('AdminDashboardSection', () => {
 
     render(<AdminDashboardSection />)
 
-    // Initially shows all requests
+    // Initially shows actionable requests only (Requested + InReview, not Approved)
     expect(
       screen.getByTestId('project-request-card-request1')
     ).toBeInTheDocument()
@@ -130,17 +131,15 @@ describe('AdminDashboardSection', () => {
       screen.getByTestId('project-request-card-request2')
     ).toBeInTheDocument()
     expect(
-      screen.getByTestId('project-request-card-request3')
-    ).toBeInTheDocument()
-
-    // Click on "REQUESTED" filter
-    fireEvent.click(screen.getByText('REQUESTED (0)'))
-
-    // Should show empty state since there are no requested items
-    expect(screen.getByText('No requested requests')).toBeInTheDocument()
-    expect(
-      screen.queryByTestId('project-request-card-request1')
+      screen.queryByTestId('project-request-card-request3')
     ).not.toBeInTheDocument()
+
+    // Click on "REQUESTED" filter — shows only the 1 requested item
+    fireEvent.click(screen.getByText('REQUESTED (1)'))
+
+    expect(
+      screen.getByTestId('project-request-card-request1')
+    ).toBeInTheDocument()
     expect(
       screen.queryByTestId('project-request-card-request2')
     ).not.toBeInTheDocument()
@@ -353,12 +352,11 @@ describe('AdminDashboardSection', () => {
 
     render(<AdminDashboardSection />)
 
-    const requestedButton = screen.getByText('REQUESTED (0)')
+    const actionableButton = screen.getByText('ACTIONABLE (2)')
+    const requestedButton = screen.getByText('REQUESTED (1)')
 
-    // Initially "ALL" should be selected
-    const allButton = screen.getByText('ALL (3)')
-
-    expect(allButton).toHaveClass(
+    // Initially "ACTIONABLE" should be selected
+    expect(actionableButton).toHaveClass(
       'border-green-400',
       'bg-green-400',
       'text-black'
@@ -373,6 +371,6 @@ describe('AdminDashboardSection', () => {
       'bg-green-400',
       'text-black'
     )
-    expect(allButton).not.toHaveClass('bg-green-400', 'text-black')
+    expect(actionableButton).not.toHaveClass('bg-green-400', 'text-black')
   })
 })
