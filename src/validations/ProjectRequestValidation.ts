@@ -1,6 +1,7 @@
 import z from 'zod'
 
 import { ProjectFeature, ProjectType } from '@/graphql/generated/graphql'
+import { getFeatureLabel } from '@/libs/featureLabels'
 
 // Project request form validation schema
 export const projectRequestSchema = z.object({
@@ -56,19 +57,14 @@ export const projectTypeOptions = Object.values(ProjectType).map((value) => ({
 // consultation -> "Consultation"
 // other -> "Other"
 
-// Feature options for the advanced request options section - labels only, no pricing
-// (pricing is admin-only reference data in src/libs/featurePricing.ts)
-export const projectFeatureOptions = Object.values(ProjectFeature).map(
-  (value) => ({
-    value,
-    label: value
-      .replace(/_/g, ' ') // Replace underscores with spaces
-      .replace(/([A-Z])/g, ' $1') // Add space before capital letters (for camelCase)
-      .replace(/^./, (str) => str.toUpperCase()) // Capitalize first letter
-      .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
-      .trim(), // Remove leading/trailing spaces
-  })
-)
+// Feature options for the feature checklist - labels only, no pricing (pricing is
+// admin-only reference data in src/libs/featurePricing.ts). Labels come from the same
+// featureLabels.ts map featurePricing.ts uses, so the client-facing checklist and the
+// admin invoice line items always describe a feature the same way.
+export const projectFeatureOptions = Object.values(ProjectFeature).map((value) => ({
+  value,
+  label: getFeatureLabel(value).label,
+}))
 
 // Contact preference options
 export const contactPreferenceOptions = [

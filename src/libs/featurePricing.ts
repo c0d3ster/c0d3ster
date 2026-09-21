@@ -1,5 +1,7 @@
 import { ProjectFeature } from '@/graphql/schema'
 
+import { getFeatureLabel } from './featureLabels'
+
 export type FeaturePricing = {
   label: string
   defaultPrice: number
@@ -10,107 +12,84 @@ export type FeaturePricing = {
  * Internal reference data for auto-populating invoice line items (InvoiceService, Phase 3).
  * Default prices are midpoints of the market-research ranges in docs/INVOICE_BILLING_EPIC.md,
  * rounded to the nearest $25. Never expose these to clients - only the admin-set per-invoice
- * price is client-facing.
+ * price is client-facing. Label/description text lives in featureLabels.ts, which is safe to
+ * share with client-facing code; only defaultPrice is admin-only.
  */
 export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
   [ProjectFeature.Database]: {
-    label: 'Database Design & Setup',
+    ...getFeatureLabel(ProjectFeature.Database),
     defaultPrice: 550,
-    description: 'Schema design, migrations, and database provisioning',
   },
   [ProjectFeature.Auth]: {
-    label: 'Authentication System',
+    ...getFeatureLabel(ProjectFeature.Auth),
     defaultPrice: 350,
-    description: 'User sign-up, sign-in, and session management',
   },
   [ProjectFeature.Email]: {
-    label: 'Email Integration',
+    ...getFeatureLabel(ProjectFeature.Email),
     defaultPrice: 225,
-    description: 'Transactional email delivery setup',
   },
   [ProjectFeature.ResponsiveDesign]: {
-    label: 'Mobile-Responsive Design',
+    ...getFeatureLabel(ProjectFeature.ResponsiveDesign),
     defaultPrice: 350,
-    description: 'Layouts optimized for mobile and tablet devices',
   },
   [ProjectFeature.CustomDesign]: {
-    label: 'Custom UI/UX Design & Branding',
+    ...getFeatureLabel(ProjectFeature.CustomDesign),
     defaultPrice: 1900,
-    description:
-      'Custom visual design and brand identity for clients without existing design assets',
   },
   [ProjectFeature.PaymentProcessing]: {
-    label: 'Payment Processing',
+    ...getFeatureLabel(ProjectFeature.PaymentProcessing),
     defaultPrice: 550,
-    description: 'Stripe checkout and payment handling',
   },
   [ProjectFeature.EcommercePlatformIntegration]: {
-    label: 'E-Commerce Platform Integration',
+    ...getFeatureLabel(ProjectFeature.EcommercePlatformIntegration),
     defaultPrice: 1900,
-    description:
-      'Shopify/WooCommerce setup, inventory sync, and product catalog management',
   },
   [ProjectFeature.CmsIntegration]: {
-    label: 'CMS Integration',
+    ...getFeatureLabel(ProjectFeature.CmsIntegration),
     defaultPrice: 550,
-    description: 'Content management system setup and integration',
   },
   [ProjectFeature.ContentCreation]: {
-    label: 'Content Writing & Population',
+    ...getFeatureLabel(ProjectFeature.ContentCreation),
     defaultPrice: 950,
-    description:
-      'Copywriting and content population for site pages, distinct from CMS setup itself',
   },
   [ProjectFeature.Seo]: {
-    label: 'SEO Setup',
+    ...getFeatureLabel(ProjectFeature.Seo),
     defaultPrice: 350,
-    description: 'Metadata, sitemap, and search engine optimization',
   },
   [ProjectFeature.Analytics]: {
-    label: 'Analytics Setup',
+    ...getFeatureLabel(ProjectFeature.Analytics),
     defaultPrice: 225,
-    description: 'Usage tracking and analytics dashboards',
   },
   [ProjectFeature.Deployment]: {
-    label: 'Deployment & CI/CD Setup',
+    ...getFeatureLabel(ProjectFeature.Deployment),
     defaultPrice: 250,
-    description: 'Automated build and deployment pipeline',
   },
   [ProjectFeature.DomainConfig]: {
-    label: 'Domain Configuration',
+    ...getFeatureLabel(ProjectFeature.DomainConfig),
     defaultPrice: 150,
-    description: 'DNS setup and custom domain configuration',
   },
   [ProjectFeature.AdminDashboard]: {
-    label: 'Admin Dashboard',
+    ...getFeatureLabel(ProjectFeature.AdminDashboard),
     defaultPrice: 1000,
-    description: 'Internal dashboard for managing content and users',
   },
   [ProjectFeature.CustomApi]: {
-    label: 'Custom API Endpoints',
+    ...getFeatureLabel(ProjectFeature.CustomApi),
     defaultPrice: 400,
-    description:
-      'Public or partner-facing API endpoints for external consumption (a companion mobile app, third-party integrations, partner access) - not billed for a web app\'s own internal backend, which is part of the base build',
   },
   [ProjectFeature.FileUploads]: {
-    label: 'File Upload System',
+    ...getFeatureLabel(ProjectFeature.FileUploads),
     defaultPrice: 350,
-    description: 'File storage, upload, and retrieval',
   },
   [ProjectFeature.QaLaunchTesting]: {
-    label: 'QA & Launch Testing',
+    ...getFeatureLabel(ProjectFeature.QaLaunchTesting),
     defaultPrice: 425,
-    description:
-      'Manual cross-browser/device testing and user acceptance testing before launch (automated test coverage is included in base development, not billed separately)',
   },
   [ProjectFeature.MaintenanceRetainer]: {
-    label: 'Ongoing Maintenance & Support',
+    ...getFeatureLabel(ProjectFeature.MaintenanceRetainer),
     defaultPrice: 275,
-    description: 'Monthly retainer covering updates, bug fixes, and support after launch',
   },
   [ProjectFeature.TechnicalAdvisory]: {
-    label: 'Technical Advisory',
+    ...getFeatureLabel(ProjectFeature.TechnicalAdvisory),
     defaultPrice: 450,
-    description: 'Technical consultation and planning session',
   },
 }

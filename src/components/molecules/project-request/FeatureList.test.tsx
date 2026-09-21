@@ -32,9 +32,9 @@ describe('FeatureList', () => {
     )
 
     expect(screen.getAllByText('✅')).toHaveLength(2)
-    expect(screen.getByText('Database')).toBeInTheDocument()
-    expect(screen.getByText('Auth')).toBeInTheDocument()
-    expect(screen.queryByText('Email')).not.toBeInTheDocument()
+    expect(screen.getByText('Database Design & Setup')).toBeInTheDocument()
+    expect(screen.getByText('Authentication System')).toBeInTheDocument()
+    expect(screen.queryByText('Email Integration')).not.toBeInTheDocument()
   })
 
   it('applies the checkmark styling', () => {
