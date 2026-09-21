@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { GITHUB_USERNAME, LINKEDIN_USERNAME, SUPPORT_EMAIL } from '@/constants'
@@ -9,6 +9,14 @@ import { ContactSection } from './ContactSection'
 vi.mock('@/components/molecules/contact/ContactForm', () => ({
   ContactForm: () => <div data-testid='contact-form'>Contact Form Mock</div>,
 }))
+
+vi.mock('@/components/atoms', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/components/atoms')>()
+  return {
+    ...actual,
+    TypewriterEffect: ({ text }: { text: string }) => <span>{text}</span>,
+  }
+})
 
 describe('ContactSection', () => {
   it('renders section header', () => {
@@ -44,35 +52,15 @@ describe('ContactSection', () => {
     expect(screen.getByTestId('contact-form')).toBeInTheDocument()
   })
 
-  it('renders status information with typewriter effects', async () => {
+  it('renders status information with typewriter effects', () => {
     render(<ContactSection />)
 
-    // Wait for TypewriterEffect texts to appear
-    await waitFor(
-      () => {
-        expect(
-          screen.getByText('RESPONSE TIME: < 24 HOURS')
-        ).toBeInTheDocument()
-      },
-      { timeout: 4000 }
-    )
-
-    await waitFor(
-      () => {
-        expect(
-          screen.getByText('AVAILABILITY: OPEN FOR PROJECTS')
-        ).toBeInTheDocument()
-      },
-      { timeout: 4000 }
-    )
-
-    await waitFor(
-      () => {
-        expect(
-          screen.getByText('COMMUNICATION: SECURE & CONFIDENTIAL')
-        ).toBeInTheDocument()
-      },
-      { timeout: 4000 }
-    )
+    expect(screen.getByText('RESPONSE TIME: < 24 HOURS')).toBeInTheDocument()
+    expect(
+      screen.getByText('AVAILABILITY: OPEN FOR PROJECTS')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('COMMUNICATION: SECURE & CONFIDENTIAL')
+    ).toBeInTheDocument()
   })
 })
