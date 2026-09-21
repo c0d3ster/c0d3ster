@@ -2,12 +2,12 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { startTransition, useEffect, useOptimistic, useRef, useState } from 'react'
+import { startTransition, useOptimistic, useState } from 'react'
 import { FaPencilAlt, FaRegStar, FaStar } from 'react-icons/fa'
 
 import type { Project } from '@/graphql/generated/graphql'
 
-import { useGetFile, useGetMe, useProvisionProjectRepo, useUpdateProject } from '@/apiClients'
+import { useGetMe, useProvisionProjectRepo, useResolvedFileUrl, useUpdateProject } from '@/apiClients'
 import {
   BackButton,
   Button,
@@ -18,6 +18,7 @@ import {
   AnimatedHeading,
   LogoUpload,
   PostUpdatePanel,
+  ProjectFilesPanel,
   StatusHistory,
 } from '@/components/molecules'
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
@@ -48,40 +49,28 @@ export const ProjectDetailsTemplate = ({
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(project.status)
   const [optimisticProgress, setOptimisticProgress] = useOptimistic(project.progressPercentage)
   const [showLogoUpload, setShowLogoUpload] = useState(false)
-  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(
-    project.logo || null
-  )
+  // Only set once a fresh upload finalizes; the stored project.logo (public
+  // asset path or R2 key) is otherwise resolved to a URL below.
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null)
   const [liveUrl, setLiveUrl] = useState<string>(project.liveUrl || '')
   const [editingLiveUrl, setEditingLiveUrl] = useState(false)
   const [liveUrlDraft, setLiveUrlDraft] = useState<string>(project.liveUrl || '')
-  const setCurrentLogoUrlRef = useRef(setCurrentLogoUrl)
 
-  // Check if the project logo is a public URL or a storage key
-  const isPublicUrl = (url?: string | null) =>
-    !!url && (/^https?:\/\//.test(url) || url.startsWith('/assets/'))
+  const { url: resolvedLogoUrl, loading: logoResolving } = useResolvedFileUrl(
+    project.logo
+  )
+  const displayLogo = currentLogoUrl || resolvedLogoUrl
 
-  // Use the current logo URL if set, otherwise fall back to the project logo
-  const displayLogo =
-    currentLogoUrl || (isPublicUrl(project.logo) ? project.logo : undefined)
-
-  // Get download URL for non-public storage keys
-  const shouldFetchFile = project.logo && !isPublicUrl(project.logo)
-  const { data: fileData } = useGetFile(shouldFetchFile ? project.logo : '')
-
-  // Update current logo URL when file data is loaded
-  useEffect(() => {
-    if (shouldFetchFile && fileData?.file?.downloadUrl && !currentLogoUrl) {
-      setCurrentLogoUrlRef.current(fileData.file.downloadUrl)
-    }
-  }, [shouldFetchFile, fileData?.file?.downloadUrl, currentLogoUrl])
-
-  // Check if current user can edit this project (is client or developer)
+  // Check if current user can edit this project (is client, assigned developer, or admin)
   // Only check after user data is loaded to avoid showing upload component briefly
   // Compare database user IDs properly
   const canEditProject =
     !meLoading &&
     meData?.me &&
-    (meData.me.id === project.clientId || meData.me.id === project.developerId)
+    (meData.me.id === project.clientId ||
+      meData.me.id === project.developerId ||
+      meData.me.role === UserRole.Admin ||
+      meData.me.role === UserRole.SuperAdmin)
 
   // Check if user is the client (for personalized messages)
   const isClient = meData?.me?.id === project.clientId
@@ -181,19 +170,19 @@ export const ProjectDetailsTemplate = ({
     <CleanPageTemplate>
       <BackButton useBack text='BACK' />
       {canManageFeatured && (
-        <div className='fixed top-24 right-0 left-0 z-40'>
+        <div className='pointer-events-none fixed inset-x-0 top-24 z-40'>
           <div className='container mx-auto px-4'>
             <div className='flex justify-end'>
               <button
                 type='button'
                 onClick={handleToggleFeatured}
                 disabled={updatingFeatured}
-                className='cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
+                className='pointer-events-auto cursor-pointer text-green-600 transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40'
                 title={featured ? 'Remove from featured' : 'Add to featured'}
                 aria-label={featured ? 'Remove from featured' : 'Add to featured'}
                 aria-pressed={featured}
               >
-                {featured ? <FaStar className='h-5 w-5' /> : <FaRegStar className='h-5 w-5' />}
+                {featured ? <FaStar className='size-5' /> : <FaRegStar className='size-5' />}
               </button>
             </div>
           </div>
@@ -245,24 +234,24 @@ export const ProjectDetailsTemplate = ({
                       <button
                         type='button'
                         onClick={() => setShowLogoUpload(true)}
-                        className='absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-green-500/40 hover:text-green-300'
+                        className='absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-green-500/20 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-green-500/40 hover:text-green-300'
                         title='Edit logo'
                       >
-                        <FaPencilAlt className='h-3 w-3' />
+                        <FaPencilAlt className='size-3' />
                       </button>
                     )}
                   </div>
-                ) : meLoading ? (
-                  <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                ) : meLoading || logoResolving ? (
+                  <div className='flex size-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <div className='text-center'>
-                      <div className='mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+                      <div className='mx-auto size-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
                       <p className='mt-2 font-mono text-xs text-green-400/70'>
-                        Checking permissions...
+                        {meLoading ? 'Checking permissions...' : 'Loading logo...'}
                       </p>
                     </div>
                   </div>
                 ) : canEditProject ? (
-                  <div className='flex h-[300px] w-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                  <div className='flex size-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <LogoUpload
                       projectId={project.id}
                       onLogoUploadedAction={handleLogoUploaded}
@@ -277,7 +266,7 @@ export const ProjectDetailsTemplate = ({
                     )}
                   </div>
                 ) : (
-                  <div className='flex h-[300px] w-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                  <div className='flex size-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <Image
                       src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
                       alt='c0d3ster logo placeholder'
@@ -296,10 +285,15 @@ export const ProjectDetailsTemplate = ({
                 )}
               </div>
 
+              {canEditProject && (
+                <div className='w-75'>
+                  <ProjectFilesPanel projectId={project.id} />
+                </div>
+              )}
 
               {/* Repo / Staging / Live links */}
               {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
-                <div className='flex w-[300px] flex-col gap-3'>
+                <div className='flex w-75 flex-col gap-3'>
                   {repoUrl ? (
                     <Button href={repoUrl} external size='md'>
                       VIEW REPOSITORY
@@ -332,11 +326,11 @@ export const ProjectDetailsTemplate = ({
                         <button
                           type='button'
                           onClick={() => { setLiveUrlDraft(liveUrl); setEditingLiveUrl(true) }}
-                          className='absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400'
+                          className='absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400'
                           title='Edit live URL'
                           aria-label='Edit live URL'
                         >
-                          <FaPencilAlt className='h-3 w-3' aria-hidden />
+                          <FaPencilAlt className='size-3' aria-hidden />
                         </button>
                       )}
                     </div>
@@ -395,7 +389,7 @@ export const ProjectDetailsTemplate = ({
                   <span className='w-24 font-mono text-xl font-bold text-green-400'>CLIENT</span>
                   {project.client ? (
                     <>
-                      <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                      <div className='flex size-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
                         {(`${project.client.firstName?.[0] ?? ''}${project.client.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
                       </div>
                       <span className='font-mono text-base text-green-300'>
@@ -412,7 +406,7 @@ export const ProjectDetailsTemplate = ({
                 {project.developer && (
                   <div className='flex items-center gap-3'>
                     <span className='w-24 font-mono text-xl font-bold text-green-400'>DEVELOPER</span>
-                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                    <div className='flex size-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
                       {(`${project.developer.firstName?.[0] ?? ''}${project.developer.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
                     </div>
                     <span className='font-mono text-base text-green-300'>

@@ -6,6 +6,7 @@ import { FaStar } from 'react-icons/fa'
 
 import type { ProjectDisplayFragment } from '@/graphql/generated/graphql'
 
+import { useResolvedFileUrl } from '@/apiClients'
 import { formatStatus, generateSlug, getStatusStyling } from '@/utils'
 
 type ProjectCardProps = {
@@ -13,6 +14,8 @@ type ProjectCardProps = {
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {
+  const { url: logoUrl } = useResolvedFileUrl(project.logo)
+
   // Generate internal project detail URL
   const getProjectUrl = (projectName?: string) => {
     if (!projectName) return '/projects'
@@ -27,10 +30,10 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
     <Link href={projectUrl} className='block'>
       <div className='group relative cursor-pointer rounded-lg border border-green-400/20 bg-black/80 p-6 transition-all duration-300 hover:border-green-400/40 hover:bg-green-400/5'>
         {/* Logo in top right */}
-        {project.logo && (
+        {logoUrl && (
           <div className='absolute top-4 right-4'>
             <Image
-              src={project.logo}
+              src={logoUrl}
               alt={`${project.title ?? project.projectName} logo`}
               width={60}
               height={60}

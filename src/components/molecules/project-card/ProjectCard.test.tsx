@@ -12,6 +12,14 @@ vi.mock('@/utils', () => ({
   getStatusStyling: (_status: string) => 'text-green-400',
 }))
 
+// Mock apiClients
+vi.mock('@/apiClients', () => ({
+  useResolvedFileUrl: (key?: string | null) => ({
+    url: key ?? undefined,
+    loading: false,
+  }),
+}))
+
 const mockProject = createMockProject({
   featured: true,
 })

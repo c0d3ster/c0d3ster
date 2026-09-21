@@ -25,12 +25,12 @@ export const BackButton = ({
   }
 
   return (
-    <div className='fixed top-24 right-0 left-0 z-40'>
+    <div className='pointer-events-none fixed inset-x-0 top-24 z-40'>
       <div className='container mx-auto px-4'>
         <Link
           href={useBack ? '#' : href || '/'}
           onClick={handleClick}
-          className='group inline-flex items-center space-x-2 text-green-400 transition-all duration-300 hover:text-green-300'
+          className='group pointer-events-auto inline-flex items-center space-x-2 text-green-400 transition-all duration-300 hover:text-green-300'
         >
           <div className='transform transition-transform duration-300 group-hover:-translate-x-1'>
             <FaArrowLeft className='text-xl' />

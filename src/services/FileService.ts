@@ -7,10 +7,10 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { Buffer } from 'node:buffer'
 
-import type { FileUploadInput } from '@/graphql/schema'
+import type { FilePlacement, FileUploadInput } from '@/graphql/schema'
 
 import { Environment } from '@/graphql/schema'
 import { db } from '@/libs/DB'
@@ -46,17 +46,25 @@ export class FileService {
     this.bucketName = Env.R2_BUCKET_NAME
   }
 
-  private appEnvToEnvironment(): Environment {
-    return Env.APP_ENV === 'prod' ? Environment.PROD : Environment.DEV
+  // The R2 bucket itself is environment-scoped (R2_BUCKET_NAME), so this
+  // reflects which bucket we're actually talking to rather than APP_ENV.
+  // Contract: the production bucket must be named "prod" (case-insensitive)
+  // for uploads to resolve to Environment.PROD; any other bucket name is DEV.
+  // Public so callers (e.g. FileResolver mapping DB rows to the File type)
+  // can derive environment consistently without re-deriving it from a key.
+  resolveEnvironment(): Environment {
+    return this.bucketName.toLowerCase() === 'prod'
+      ? Environment.PROD
+      : Environment.DEV
   }
 
   /**
-   * Presigned PUT for project logos. File bytes go directly to R2 from the browser
-   * (avoids Vercel’s ~4.5MB request body limit on GraphQL).
+   * Shared by the project logo and generic project file 2-step upload flows: presigned PUT,
+   * no Metadata on the PUT (SigV4 would require matching x-amz-meta-* on the browser request;
+   * client only sends Content-Type). Metadata is recorded in DB on finalize.
    */
-  async generateProjectLogoPresignedUpload(options: {
+  private async presignProjectUpload(options: {
     projectId: string
-    userId: string
     fileName: string
     originalFileName: string
     fileSize: number
@@ -78,8 +86,7 @@ export class FileService {
       options
     const timestamp = Date.now()
     const sanitizedFileName = fileName.replace(/[^a-z0-9.-]/gi, '_')
-    const env = Env.APP_ENV
-    const key = `${env}/projects/${projectId}/${timestamp}_${sanitizedFileName}`
+    const key = `projects/${projectId}/${timestamp}_${sanitizedFileName}`
 
     const metadata = {
       key,
@@ -87,12 +94,10 @@ export class FileService {
       originalFileName,
       fileSize,
       contentType,
-      environment: this.appEnvToEnvironment(),
+      environment: this.resolveEnvironment(),
       uploadedAt: new Date(),
     }
 
-    // No Metadata on presigned PUT: SigV4 would require matching x-amz-meta-* on the
-    // browser request; client only sends Content-Type. Metadata is recorded in DB on finalize.
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
@@ -105,6 +110,36 @@ export class FileService {
     })
 
     return { uploadUrl, key, metadata }
+  }
+
+  /**
+   * Presigned PUT for project logos. File bytes go directly to R2 from the browser
+   * (avoids Vercel’s ~4.5MB request body limit on GraphQL).
+   */
+  async generateProjectLogoPresignedUpload(options: {
+    projectId: string
+    userId: string
+    fileName: string
+    originalFileName: string
+    fileSize: number
+    contentType: string
+  }) {
+    return this.presignProjectUpload(options)
+  }
+
+  /**
+   * Presigned PUT for arbitrary project files (gallery images, documents). Same 2-step
+   * flow as the logo upload, but for any allowed content type rather than images only.
+   */
+  async generateProjectFilePresignedUpload(options: {
+    projectId: string
+    userId: string
+    fileName: string
+    originalFileName: string
+    fileSize: number
+    contentType: string
+  }) {
+    return this.presignProjectUpload(options)
   }
 
   async getObjectHeadInfo(
@@ -153,13 +188,12 @@ export class FileService {
   private generateKey(options: FileUploadInput & { userId: string }): string {
     const timestamp = Date.now()
     const sanitizedFileName = options.fileName.replace(/[^a-z0-9.-]/gi, '_')
-    const env = options.environment || Environment.DEV
 
     if (options.projectId) {
-      return `${env.toLowerCase()}/projects/${options.projectId}/${timestamp}_${sanitizedFileName}`
+      return `projects/${options.projectId}/${timestamp}_${sanitizedFileName}`
     }
 
-    return `${env.toLowerCase()}/users/${options.userId}/${timestamp}_${sanitizedFileName}`
+    return `users/${options.userId}/${timestamp}_${sanitizedFileName}`
   }
 
   async generatePresignedUploadUrl(
@@ -180,6 +214,10 @@ export class FileService {
     }
   }> {
     const key = this.generateKey(options)
+    // Derive from the bucket rather than trusting the caller-supplied
+    // options.environment, so stored metadata can't disagree with the bucket
+    // it's actually stored in.
+    const environment = this.resolveEnvironment()
     const metadata = {
       key,
       fileName: options.fileName,
@@ -188,7 +226,7 @@ export class FileService {
       contentType: options.contentType,
       uploadedBy: options.userId,
       projectId: options.projectId || undefined,
-      environment: options.environment || Environment.DEV,
+      environment,
       uploadedAt: new Date(),
     }
 
@@ -203,7 +241,7 @@ export class FileService {
         filesize: options.fileSize.toString(),
         uploadedby: options.userId,
         projectid: options.projectId || '',
-        environment: options.environment || Environment.DEV,
+        environment,
         uploadedat: new Date().toISOString(),
       },
     })
@@ -327,7 +365,9 @@ export class FileService {
         contentType: response.ContentType || '',
         uploadedBy: meta.uploadedby || '',
         projectId: meta.projectid || undefined,
-        environment: (meta.environment as Environment) || Environment.DEV,
+        // Logo PUTs never write S3 Metadata (see generateProjectLogoPresignedUpload),
+        // so fall back to the bucket's environment rather than hardcoding DEV.
+        environment: (meta.environment as Environment) || this.resolveEnvironment(),
         uploadedAt: new Date(meta.uploadedat || Date.now()),
       }
     } catch (error) {
@@ -347,6 +387,8 @@ export class FileService {
     uploadedBy: string
     isClientVisible?: boolean
     description?: string
+    caption?: string
+    placement?: FilePlacement
   }) {
     const [projectFile] = await db
       .insert(schemas.projectFiles)
@@ -360,21 +402,47 @@ export class FileService {
         uploadedBy: options.uploadedBy,
         isClientVisible: options.isClientVisible ?? true,
         description: options.description,
+        caption: options.caption,
+        placement: options.placement,
       })
       .returning()
 
     return projectFile
   }
 
-  async deleteProjectFileRecordByPath(filePath: string) {
+  async getProjectFileRecordByPath(projectId: string, filePath: string) {
+    return await db.query.projectFiles.findFirst({
+      where: and(
+        eq(schemas.projectFiles.projectId, projectId),
+        eq(schemas.projectFiles.filePath, filePath)
+      ),
+    })
+  }
+
+  async getProjectFileRecordById(projectFileId: string) {
+    return await db.query.projectFiles.findFirst({
+      where: eq(schemas.projectFiles.id, projectFileId),
+    })
+  }
+
+  async deleteProjectFileRecordsByDescription(
+    projectId: string,
+    description: string
+  ) {
     const result = await db
       .delete(schemas.projectFiles)
-      .where(eq(schemas.projectFiles.filePath, filePath))
+      .where(
+        and(
+          eq(schemas.projectFiles.projectId, projectId),
+          eq(schemas.projectFiles.description, description)
+        )
+      )
       .returning()
 
-    logger.info(`Deleted project file record for path: ${filePath}`, {
-      deletedCount: result.length,
-    })
+    logger.info(
+      `Deleted project file records for project ${projectId} with description "${description}"`,
+      { deletedCount: result.length }
+    )
     return result
   }
 

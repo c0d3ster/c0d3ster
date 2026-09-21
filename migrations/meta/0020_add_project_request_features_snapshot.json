@@ -1,6 +1,6 @@
 {
-  "id": "d8333e94-1b41-4000-83d6-d0f39b304a29",
-  "prevId": "3cdb3ca5-c515-461b-911f-6341992a97c3",
+  "id": "291fffee-ca03-4f0e-8d46-a3b1d580e4e3",
+  "prevId": "d8333e94-1b41-4000-83d6-d0f39b304a29",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -568,6 +568,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "features": {
+          "name": "features",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
         "contact_preference": {
           "name": "contact_preference",
           "type": "varchar(50)",
@@ -791,12 +797,6 @@
         "actual_completion_date": {
           "name": "actual_completion_date",
           "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "requirements": {
-          "name": "requirements",
-          "type": "json",
           "primaryKey": false,
           "notNull": false
         },

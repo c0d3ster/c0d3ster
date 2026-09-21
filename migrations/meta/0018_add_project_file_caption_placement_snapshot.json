@@ -1,5 +1,5 @@
 {
-  "id": "dd8a4b22-ce4d-4d00-918b-6ba8de229882",
+  "id": "3cdb3ca5-c515-461b-911f-6341992a97c3",
   "prevId": "20907411-c8f7-4fab-b780-9af1caa4633b",
   "version": "7",
   "dialect": "postgresql",
@@ -250,6 +250,19 @@
         "description": {
           "name": "description",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "caption": {
+          "name": "caption",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "placement": {
+          "name": "placement",
+          "type": "file_placement",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -551,12 +564,6 @@
         },
         "requirements": {
           "name": "requirements",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "features": {
-          "name": "features",
           "type": "json",
           "primaryKey": false,
           "notNull": false
@@ -1191,6 +1198,15 @@
         "expired",
         "transferred",
         "cancelled"
+      ]
+    },
+    "public.file_placement": {
+      "name": "file_placement",
+      "schema": "public",
+      "values": [
+        "gallery",
+        "document",
+        "other"
       ]
     },
     "public.project_priority": {

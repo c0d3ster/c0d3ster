@@ -185,6 +185,7 @@ export class ProjectRequestService {
       'projectType',
       'budget',
       'timeline',
+      'features',
       'contactPreference',
       'additionalInfo',
       'status',
@@ -294,10 +295,9 @@ export class ProjectRequestService {
           description: request.description,
           projectType: request.projectType,
           budget: request.budget,
-          features:
-            request.features && request.features.length > 0
-              ? request.features
-              : getDefaultFeatures(request.projectType),
+          // An explicit empty array means the client cleared all features; only
+          // missing/null (no selection made) falls back to the type defaults.
+          features: request.features ?? getDefaultFeatures(request.projectType),
           status: ProjectStatus.Approved,
           featured: false,
         })
