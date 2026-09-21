@@ -38,7 +38,7 @@ const ErrorMessage = ({ error }: { error?: string }) => (
 export const ProjectRequestForm = () => {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+  const [showFeatureChecklist, setShowFeatureChecklist] = useState(false)
   const [errors, setErrors] = useState<
     Partial<Record<keyof ProjectRequestData, string>>
   >({})
@@ -206,49 +206,6 @@ export const ProjectRequestForm = () => {
           <ErrorMessage error={errors.projectName} />
         </div>
 
-        {/* Project Type */}
-        <div>
-          <label
-            htmlFor='projectType'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            PROJECT TYPE *
-          </label>
-          <select
-            id='projectType'
-            ref={(el) => {
-              fieldRefs.current.projectType = el
-            }}
-            value={formData.projectType}
-            onChange={(e) =>
-              handleProjectTypeChange(e.target.value as ProjectType)
-            }
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-          >
-            {projectTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ErrorMessage error={errors.projectType} />
-          <div className='rounded border border-green-400/20 bg-black/30 px-4 py-3'>
-            <p className='font-mono text-sm text-green-300/80'>
-              {projectTypeDescriptions[formData.projectType]}
-            </p>
-            <p className='mt-2 font-mono text-xs text-green-300/60'>
-              Default features include:{' '}
-              {(getDefaultFeaturesForProjectType(formData.projectType).length >
-              0
-                ? getDefaultFeaturesForProjectType(formData.projectType).map(
-                    (feature) => featureLabelByValue[feature]
-                  )
-                : ['none - nothing preselected']
-              ).join(', ')}
-            </p>
-          </div>
-        </div>
-
         {/* Description */}
         <div>
           <label
@@ -318,17 +275,66 @@ export const ProjectRequestForm = () => {
         </div>
       </div>
 
-      {/* Advanced Options Section - collapsed by default */}
-      <div className='space-y-4'>
+      {/* Project Type & Features Section - type drives the default feature set below it */}
+      <div className='space-y-6'>
+        <h3 className='font-mono text-lg font-bold text-green-400'>
+          PROJECT TYPE & FEATURES
+        </h3>
+
+        {/* Project Type */}
+        <div>
+          <label
+            htmlFor='projectType'
+            className='block font-mono text-sm font-medium text-green-300'
+          >
+            PROJECT TYPE *
+          </label>
+          <select
+            id='projectType'
+            ref={(el) => {
+              fieldRefs.current.projectType = el
+            }}
+            value={formData.projectType}
+            onChange={(e) =>
+              handleProjectTypeChange(e.target.value as ProjectType)
+            }
+            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
+          >
+            {projectTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ErrorMessage error={errors.projectType} />
+          <div className='rounded border border-green-400/20 bg-black/30 px-4 py-3'>
+            <p className='font-mono text-sm text-green-300/80'>
+              {projectTypeDescriptions[formData.projectType]}
+            </p>
+            <p className='mt-2 font-mono text-xs text-green-300/60'>
+              Default features include:{' '}
+              {(getDefaultFeaturesForProjectType(formData.projectType).length >
+              0
+                ? getDefaultFeaturesForProjectType(formData.projectType).map(
+                    (feature) => featureLabelByValue[feature]
+                  )
+                : ['none - nothing preselected']
+              ).join(', ')}
+            </p>
+          </div>
+        </div>
+
+        {/* Feature checklist toggle - collapsed by default, label reflects current selection */}
         <button
           type='button'
-          onClick={() => setShowAdvancedOptions((prev) => !prev)}
+          onClick={() => setShowFeatureChecklist((prev) => !prev)}
           className='font-mono text-lg font-bold text-green-400'
         >
-          {showAdvancedOptions ? '▾' : '▸'} ADVANCED OPTIONS
+          {showFeatureChecklist ? '▾' : '▸'} FEATURES SELECTED (
+          {formData.features?.length ?? 0})
         </button>
 
-        {showAdvancedOptions && (
+        {showFeatureChecklist && (
           <div className='space-y-5'>
             {projectFeatureGroups.map((group) => (
               <div key={group.label} className='space-y-2'>

@@ -342,20 +342,22 @@ describe('ProjectRequestForm', () => {
     })
   })
 
-  it('renders advanced options collapsed by default', () => {
+  it('renders the feature checklist collapsed by default, labeled with the current selection count', () => {
     render(<ProjectRequestForm />)
 
-    expect(screen.getByText('▸ ADVANCED OPTIONS')).toBeInTheDocument()
+    expect(
+      screen.getByText(/▸ FEATURES SELECTED \(\d+\)/)
+    ).toBeInTheDocument()
     expect(screen.queryByText('Database')).not.toBeInTheDocument()
     expect(screen.queryByText('Auth')).not.toBeInTheDocument()
   })
 
-  it('expands advanced options and toggles feature selection', () => {
+  it('expands the feature checklist and toggles feature selection', () => {
     render(<ProjectRequestForm />)
 
-    fireEvent.click(screen.getByText('▸ ADVANCED OPTIONS'))
+    fireEvent.click(screen.getByText(/▸ FEATURES SELECTED/))
 
-    expect(screen.getByText('▾ ADVANCED OPTIONS')).toBeInTheDocument()
+    expect(screen.getByText(/▾ FEATURES SELECTED/)).toBeInTheDocument()
 
     const databaseCheckbox = screen.getByLabelText('Database')
 
@@ -370,10 +372,10 @@ describe('ProjectRequestForm', () => {
     expect(databaseCheckbox).not.toBeChecked()
   })
 
-  it('groups the advanced options checklist under category headings', () => {
+  it('groups the feature checklist under category headings', () => {
     render(<ProjectRequestForm />)
 
-    fireEvent.click(screen.getByText('▸ ADVANCED OPTIONS'))
+    fireEvent.click(screen.getByText(/▸ FEATURES SELECTED/))
 
     expect(screen.getByText('Core Build')).toBeInTheDocument()
     expect(screen.getByText('Commerce')).toBeInTheDocument()
