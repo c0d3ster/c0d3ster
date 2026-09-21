@@ -1,7 +1,11 @@
 import react from '@vitejs/plugin-react'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 import { defineConfig } from 'vitest/config'
+
+const rootDir = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
@@ -9,9 +13,14 @@ export default defineConfig({
     global: 'globalThis',
   },
   resolve: {
-    alias: {
-      buffer: 'buffer', // ensure the package is resolvable
-    },
+    alias: [
+      // Vite 7's per-environment resolver skips vite-tsconfig-paths@5, so
+      // vitest projects need these aliases spelled out (mirrors tsconfig paths).
+      { find: '@/public', replacement: path.resolve(rootDir, 'public') },
+      { find: '@/tests', replacement: path.resolve(rootDir, 'tests') },
+      { find: '@', replacement: path.resolve(rootDir, 'src') },
+      { find: 'buffer', replacement: 'buffer' },
+    ],
   },
   test: {
     setupFiles: ['tests/setup.ts'],
