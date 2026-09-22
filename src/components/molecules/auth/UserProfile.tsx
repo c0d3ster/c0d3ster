@@ -85,7 +85,7 @@ export const UserProfile = () => {
             alt='Profile'
             width={80}
             height={80}
-            className='h-20 w-20 rounded-full border-2 border-green-400/50 shadow-lg'
+            className='size-20 rounded-full border-2 border-green-400/50 shadow-lg'
           />
         )}
         <div>

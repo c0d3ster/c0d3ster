@@ -51,7 +51,7 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
   const isAssignedProject = itemIsProject && item.developer
 
   return (
-    <div className='flex h-full min-h-[280px] flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
+    <div className='flex h-full min-h-70 flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
       {/* Header */}
       <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
         <div className='min-w-0'>

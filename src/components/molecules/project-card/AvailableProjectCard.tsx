@@ -33,7 +33,7 @@ export const AvailableProjectCard = ({
     : 'Unknown Client'
 
   return (
-    <div className='flex h-full min-h-[300px] flex-col rounded-lg border border-blue-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-blue-400/40 hover:bg-black/80'>
+    <div className='flex h-full min-h-75 flex-col rounded-lg border border-blue-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-blue-400/40 hover:bg-black/80'>
       {/* Header */}
       <div className='mb-3 flex items-start justify-between'>
         <h3 className='font-mono text-lg font-bold text-blue-400'>

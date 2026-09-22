@@ -13,7 +13,7 @@ export const ContactMethodCard = ({ method }: ContactMethodCardProps) => {
         href={method.link}
         target='_blank'
         rel='noopener noreferrer'
-        className='h-full w-full'
+        className='size-full'
       >
         <div className='mb-4 text-4xl'>{method.icon}</div>
         <h3 className='mb-2 font-mono text-lg font-bold text-green-400'>

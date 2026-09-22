@@ -184,7 +184,7 @@ export const PostUpdatePanel = ({
               type='checkbox'
               checked={isClientVisible}
               onChange={(e) => setIsClientVisible(e.target.checked)}
-              className='h-4 w-4 accent-green-400'
+              className='size-4 accent-green-400'
             />
             VISIBLE TO CLIENT
           </label>

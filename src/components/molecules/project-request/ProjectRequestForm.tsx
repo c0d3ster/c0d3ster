@@ -354,7 +354,7 @@ export const ProjectRequestForm = () => {
                         onChange={(e) =>
                           handleFeatureChange(featureValue, e.target.checked)
                         }
-                        className='h-4 w-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
+                        className='size-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
                       />
                       <span>{featureLabelByValue[featureValue]}</span>
                     </label>

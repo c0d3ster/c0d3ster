@@ -188,7 +188,7 @@ export const SiteHeader = ({
       return (
         <div className='group relative'>
           <div className='flex cursor-pointer items-center space-x-2 transition-opacity hover:opacity-80'>
-            <div className='h-2 w-2 animate-pulse rounded-full bg-green-400' />
+            <div className='size-2 animate-pulse rounded-full bg-green-400' />
             <span className='header-status font-mono text-green-400'>
               ONLINE
             </span>
@@ -215,7 +215,7 @@ export const SiteHeader = ({
         <div className='group relative'>
           <div className='flex cursor-pointer items-center space-x-2 transition-opacity hover:opacity-80'>
             <div
-              className={`h-2 w-2 rounded-full ${
+              className={`size-2 rounded-full ${
                 isLoaded && user
                   ? 'animate-pulse bg-green-400'
                   : 'bg-yellow-300'
@@ -269,10 +269,10 @@ export const SiteHeader = ({
 
   return (
     <header
-      className='fixed top-0 right-0 left-0 z-50 border-b border-green-400/20 bg-black/80 backdrop-blur-sm transition-opacity duration-300'
+      className='fixed inset-x-0 top-0 z-50 border-b border-green-400/20 bg-black/80 backdrop-blur-sm transition-opacity duration-300'
       style={{ opacity }}
     >
-      <div className='container mx-auto flex items-center justify-between px-4 py-4'>
+      <div className='container mx-auto flex items-center justify-between p-4'>
         {/* Logo */}
         <div className='flex items-center space-x-4'>
           <Link href='/'>

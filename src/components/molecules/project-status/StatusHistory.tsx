@@ -64,8 +64,8 @@ export const StatusHistory = ({ statusUpdates, hideInternal = false }: StatusHis
               )}
 
               {/* Timeline dot */}
-              <div className='relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-green-400/40 bg-green-400/20'>
-                <div className='h-2 w-2 rounded-full bg-green-400' />
+              <div className='relative z-10 flex size-8 items-center justify-center rounded-full border-2 border-green-400/40 bg-green-400/20'>
+                <div className='size-2 rounded-full bg-green-400' />
               </div>
 
               {/* Content */}

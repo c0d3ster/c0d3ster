@@ -92,13 +92,13 @@ export const ProjectRequestCard = ({
             {request.title}
           </h3>
           <span
-            className={`self-start rounded border px-3 py-1 font-mono text-xs font-bold uppercase sm:flex-shrink-0 ${getStatusCardStyling(request.status || 'unknown')}`}
+            className={`self-start rounded border px-3 py-1 font-mono text-xs font-bold uppercase sm:shrink-0 ${getStatusCardStyling(request.status || 'unknown')}`}
           >
             {formatStatus(request.status || 'unknown')}
           </span>
         </div>
         <div className='space-y-1 text-sm'>
-          <p className='break-words text-green-300'>
+          <p className='wrap-break-word text-green-300'>
             <span className='text-green-300/60'>Client:</span> {userName} (
             {request.user?.email})
           </p>
