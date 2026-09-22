@@ -170,7 +170,7 @@ export const ProjectDetailsTemplate = ({
     <CleanPageTemplate>
       <BackButton useBack text='BACK' />
       {canManageFeatured && (
-        <div className='pointer-events-none fixed top-24 right-0 left-0 z-40'>
+        <div className='pointer-events-none fixed inset-x-0 top-24 z-40'>
           <div className='container mx-auto px-4'>
             <div className='flex justify-end'>
               <button
@@ -182,7 +182,7 @@ export const ProjectDetailsTemplate = ({
                 aria-label={featured ? 'Remove from featured' : 'Add to featured'}
                 aria-pressed={featured}
               >
-                {featured ? <FaStar className='h-5 w-5' /> : <FaRegStar className='h-5 w-5' />}
+                {featured ? <FaStar className='size-5' /> : <FaRegStar className='size-5' />}
               </button>
             </div>
           </div>
@@ -234,24 +234,24 @@ export const ProjectDetailsTemplate = ({
                       <button
                         type='button'
                         onClick={() => setShowLogoUpload(true)}
-                        className='absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-green-500/40 hover:text-green-300'
+                        className='absolute top-2 right-2 flex size-8 items-center justify-center rounded-full bg-green-500/20 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-green-500/40 hover:text-green-300'
                         title='Edit logo'
                       >
-                        <FaPencilAlt className='h-3 w-3' />
+                        <FaPencilAlt className='size-3' />
                       </button>
                     )}
                   </div>
                 ) : meLoading || logoResolving ? (
-                  <div className='flex h-[300px] w-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                  <div className='flex size-[300px] items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <div className='text-center'>
-                      <div className='mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+                      <div className='mx-auto size-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
                       <p className='mt-2 font-mono text-xs text-green-400/70'>
                         {meLoading ? 'Checking permissions...' : 'Loading logo...'}
                       </p>
                     </div>
                   </div>
                 ) : canEditProject ? (
-                  <div className='flex h-[300px] w-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                  <div className='flex size-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <LogoUpload
                       projectId={project.id}
                       onLogoUploadedAction={handleLogoUploaded}
@@ -266,7 +266,7 @@ export const ProjectDetailsTemplate = ({
                     )}
                   </div>
                 ) : (
-                  <div className='flex h-[300px] w-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
+                  <div className='flex size-[300px] flex-col items-center justify-center rounded-lg border border-green-400/20 bg-black/80 p-8'>
                     <Image
                       src='/assets/images/c0d3sterLogoPowerNoBackgroundCropped.png'
                       alt='c0d3ster logo placeholder'
@@ -286,14 +286,14 @@ export const ProjectDetailsTemplate = ({
               </div>
 
               {canEditProject && (
-                <div className='w-[300px]'>
+                <div className='w-75'>
                   <ProjectFilesPanel projectId={project.id} />
                 </div>
               )}
 
               {/* Repo / Staging / Live links */}
               {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
-                <div className='flex w-[300px] flex-col gap-3'>
+                <div className='flex w-75 flex-col gap-3'>
                   {repoUrl ? (
                     <Button href={repoUrl} external size='md'>
                       VIEW REPOSITORY
@@ -326,11 +326,11 @@ export const ProjectDetailsTemplate = ({
                         <button
                           type='button'
                           onClick={() => { setLiveUrlDraft(liveUrl); setEditingLiveUrl(true) }}
-                          className='absolute top-1/2 right-2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400'
+                          className='absolute top-1/2 right-2 flex size-6 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-green-400 opacity-0 transition-all duration-300 group-hover:opacity-100 hover:bg-black/70 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-400'
                           title='Edit live URL'
                           aria-label='Edit live URL'
                         >
-                          <FaPencilAlt className='h-3 w-3' aria-hidden />
+                          <FaPencilAlt className='size-3' aria-hidden />
                         </button>
                       )}
                     </div>
@@ -389,7 +389,7 @@ export const ProjectDetailsTemplate = ({
                   <span className='w-24 font-mono text-xl font-bold text-green-400'>CLIENT</span>
                   {project.client ? (
                     <>
-                      <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                      <div className='flex size-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
                         {(`${project.client.firstName?.[0] ?? ''}${project.client.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
                       </div>
                       <span className='font-mono text-base text-green-300'>
@@ -406,7 +406,7 @@ export const ProjectDetailsTemplate = ({
                 {project.developer && (
                   <div className='flex items-center gap-3'>
                     <span className='w-24 font-mono text-xl font-bold text-green-400'>DEVELOPER</span>
-                    <div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
+                    <div className='flex size-8 shrink-0 items-center justify-center rounded-full border border-green-400/20 bg-green-400/10 font-mono text-sm text-green-400'>
                       {(`${project.developer.firstName?.[0] ?? ''}${project.developer.lastName?.[0] ?? ''}`.toUpperCase() || '?')}
                     </div>
                     <span className='font-mono text-base text-green-300'>

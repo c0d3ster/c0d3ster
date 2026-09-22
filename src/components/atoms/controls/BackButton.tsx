@@ -25,7 +25,7 @@ export const BackButton = ({
   }
 
   return (
-    <div className='pointer-events-none fixed top-24 right-0 left-0 z-40'>
+    <div className='pointer-events-none fixed inset-x-0 top-24 z-40'>
       <div className='container mx-auto px-4'>
         <Link
           href={useBack ? '#' : href || '/'}

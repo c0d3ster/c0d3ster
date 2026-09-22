@@ -19,7 +19,6 @@ import {
   ProjectCollaborator,
   ProjectFilter,
   ProjectRequest,
-  ProjectRequirements,
   StatusUpdate,
   UpdateProjectInput,
   User,
@@ -333,26 +332,6 @@ export class ProjectResolver {
       })
       return null
     }
-  }
-
-  @FieldResolver(() => ProjectRequirements, { nullable: true })
-  requirements(@Root() parent: ProjectRecord): ProjectRequirements | null {
-    const raw = parent.requirements as unknown
-    if (raw == null) return null
-
-    if (typeof raw === 'string') {
-      try {
-        return JSON.parse(raw) as ProjectRequirements
-      } catch (error) {
-        logger.error('Error parsing requirements JSON', {
-          error: String(error),
-          requirements: raw,
-        })
-        return null
-      }
-    }
-
-    return raw as ProjectRequirements
   }
 
   @FieldResolver(() => String, { nullable: true })

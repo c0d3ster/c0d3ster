@@ -100,7 +100,7 @@ export const ProjectFileUpload = ({
                 setPlacement(event.target.value as FilePlacement)
               }
               disabled={isUploading}
-              className='min-w-[140px] shrink-0 rounded border border-green-400/30 bg-black/40 py-2 pr-8 pl-3 font-mono text-sm text-green-300'
+              className='min-w-35 shrink-0 rounded border border-green-400/30 bg-black/40 py-2 pr-8 pl-3 font-mono text-sm text-green-300'
             >
               {PLACEMENT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>

@@ -2,7 +2,11 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { useGetProjectRequestById } from '@/apiClients/projectRequestApiClient'
-import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
+import {
+  ProjectFeature,
+  ProjectStatus,
+  ProjectType,
+} from '@/graphql/generated/graphql'
 import { createMockProjectRequest } from '@/tests/mocks'
 
 import { ProjectRequestDetail } from './ProjectRequestDetail'
@@ -11,8 +15,8 @@ vi.mock('@/apiClients/projectRequestApiClient', () => ({
   useGetProjectRequestById: vi.fn(),
 }))
 
-vi.mock('./RequirementsList', () => ({
-  RequirementsList: () => <div data-testid='requirements-list' />,
+vi.mock('./FeatureList', () => ({
+  FeatureList: () => <div data-testid='feature-list' />,
 }))
 
 const mockUseGetProjectRequestById = vi.mocked(useGetProjectRequestById)
@@ -27,7 +31,7 @@ const mockRequest = createMockProjectRequest({
   timeline: '6 weeks',
   additionalInfo: 'Prefer dark theme',
   status: ProjectStatus.InReview,
-  requirements: { __typename: 'ProjectRequirements', hasDesign: true },
+  features: [ProjectFeature.Database, ProjectFeature.Auth],
   statusUpdates: [
     {
       __typename: 'StatusUpdate',
@@ -118,7 +122,7 @@ describe('ProjectRequestDetail', () => {
     expect(screen.getByText('A personal portfolio site')).toBeInTheDocument()
   })
 
-  it('renders requirements section when requirements exist', () => {
+  it('renders features section when features exist', () => {
     mockUseGetProjectRequestById.mockReturnValue({
       data: { projectRequest: mockRequest },
       loading: false,
@@ -127,7 +131,7 @@ describe('ProjectRequestDetail', () => {
 
     render(<ProjectRequestDetail id='1' />)
 
-    expect(screen.getByTestId('requirements-list')).toBeInTheDocument()
+    expect(screen.getByTestId('feature-list')).toBeInTheDocument()
   })
 
   it('renders additional info when present', () => {

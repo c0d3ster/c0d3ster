@@ -41,7 +41,7 @@ export const HeroSection = ({
   return (
     <SectionWrapper
       id='home'
-      className='relative flex min-h-screen items-center justify-center px-4 py-4 pt-16'
+      className='relative flex min-h-screen items-center justify-center p-4 pt-16'
     >
       {/* Main content */}
       <div className='relative z-10 text-center'>

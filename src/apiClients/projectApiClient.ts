@@ -57,14 +57,6 @@ export const GET_PROJECT_BY_SLUG = gql`
       overview
       projectType
       budget
-      requirements {
-        hasDesign
-        needsHosting
-        hasDomain
-        needsMaintenance
-        needsContentCreation
-        needsSEO
-      }
       features
       techStack
       status

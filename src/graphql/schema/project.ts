@@ -6,11 +6,7 @@ import {
   registerEnumType,
 } from 'type-graphql'
 
-import {
-  ProjectRequest,
-  ProjectRequirements,
-  ProjectRequirementsInput,
-} from './projectRequest'
+import { ProjectRequest } from './projectRequest'
 import { User } from './user'
 
 export enum ProjectStatus {
@@ -46,6 +42,22 @@ export enum ProjectFeature {
   Database = 'database',
   Auth = 'auth',
   Email = 'email',
+  ResponsiveDesign = 'responsive_design',
+  CustomDesign = 'custom_design',
+  PaymentProcessing = 'payment_processing',
+  EcommercePlatformIntegration = 'ecommerce_platform_integration',
+  CmsIntegration = 'cms_integration',
+  ContentCreation = 'content_creation',
+  Seo = 'seo',
+  Analytics = 'analytics',
+  Deployment = 'deployment',
+  DomainConfig = 'domain_config',
+  AdminDashboard = 'admin_dashboard',
+  CustomApi = 'custom_api',
+  FileUploads = 'file_uploads',
+  QaLaunchTesting = 'qa_launch_testing',
+  MaintenanceRetainer = 'maintenance_retainer',
+  TechnicalAdvisory = 'technical_advisory',
 }
 
 registerEnumType(ProjectStatus, {
@@ -90,9 +102,6 @@ export class Project {
 
   @Field(() => Number, { nullable: true })
   budget?: number
-
-  @Field(() => ProjectRequirements, { nullable: true })
-  requirements?: ProjectRequirements
 
   @Field(() => [ProjectFeature], { nullable: true })
   features?: ProjectFeature[]
@@ -274,9 +283,6 @@ export class CreateProjectInput {
   @Field(() => Number, { nullable: true })
   budget?: number
 
-  @Field(() => ProjectRequirementsInput, { nullable: true })
-  requirements?: ProjectRequirementsInput
-
   @Field(() => [String], { nullable: true })
   techStack?: string[]
 
@@ -312,9 +318,6 @@ export class UpdateProjectInput {
 
   @Field(() => Number, { nullable: true })
   budget?: number
-
-  @Field(() => ProjectRequirementsInput, { nullable: true })
-  requirements?: ProjectRequirementsInput
 
   @Field(() => [String], { nullable: true })
   techStack?: string[]

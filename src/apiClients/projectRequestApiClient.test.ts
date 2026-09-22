@@ -121,7 +121,6 @@ describe('Project Request API Client', () => {
           description: 'Test description',
           budget: 10000,
           timeline: '3 months',
-          requirements: { hasDesign: false },
           additionalInfo: 'Additional info',
         })
 
@@ -135,7 +134,6 @@ describe('Project Request API Client', () => {
               projectType: ProjectType.WebApp,
               budget: 10000,
               timeline: '3 months',
-              requirements: { hasDesign: false },
               contactPreference: 'EMAIL',
               additionalInfo: 'Additional info',
               status: 'PENDING',
@@ -163,7 +161,6 @@ describe('Project Request API Client', () => {
           description: 'Test description',
           budget: 10000,
           timeline: '3 months',
-          requirements: { hasDesign: false },
         })
 
         vi.mocked(apolloClient.mutate).mockResolvedValue({ data: null })
@@ -180,7 +177,6 @@ describe('Project Request API Client', () => {
           description: 'Test description',
           budget: 10000,
           timeline: '3 months',
-          requirements: { hasDesign: false },
         })
 
         const error = new Error('Network error')

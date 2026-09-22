@@ -14,7 +14,6 @@ import {
   CreateProjectRequestInput,
   ProjectRequest,
   ProjectRequestFilter,
-  ProjectRequirements,
   StatusUpdate,
   User,
   UserRole,
@@ -135,27 +134,6 @@ export class ProjectRequestResolver {
     if (!user) return null
 
     return user
-  }
-
-  /** Return structured JSON so nested fields (hasDesign, needsHosting, …) resolve correctly. */
-  @FieldResolver(() => ProjectRequirements, { nullable: true })
-  requirements(@Root() parent: ProjectRequest): ProjectRequirements | null {
-    const raw = parent.requirements as unknown
-    if (raw == null) return null
-
-    if (typeof raw === 'string') {
-      try {
-        return JSON.parse(raw) as ProjectRequirements
-      } catch (error) {
-        logger.error('Error parsing requirements JSON', {
-          error: String(error),
-          requirements: raw,
-        })
-        return null
-      }
-    }
-
-    return raw as ProjectRequirements
   }
 
   @FieldResolver(() => String, { nullable: true })

@@ -114,7 +114,7 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
       {/* Loading State */}
       {adminLoading && (
         <div className='flex items-center justify-center py-12'>
-          <div className='h-8 w-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+          <div className='size-8 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
           <span className='ml-3 font-mono text-green-400'>
             Loading requests...
           </span>

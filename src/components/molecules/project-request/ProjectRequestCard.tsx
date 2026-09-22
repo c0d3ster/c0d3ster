@@ -5,7 +5,7 @@ import { useState } from 'react'
 
 import type { ProjectRequest } from '@/graphql/generated/graphql'
 
-import { RequirementsList } from '@/components/molecules'
+import { FeatureList } from '@/components/molecules'
 import { ProjectStatus } from '@/graphql/generated/graphql'
 import { formatCardDate } from '@/utils'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
@@ -92,13 +92,13 @@ export const ProjectRequestCard = ({
             {request.title}
           </h3>
           <span
-            className={`self-start rounded border px-3 py-1 font-mono text-xs font-bold uppercase sm:flex-shrink-0 ${getStatusCardStyling(request.status || 'unknown')}`}
+            className={`self-start rounded border px-3 py-1 font-mono text-xs font-bold uppercase sm:shrink-0 ${getStatusCardStyling(request.status || 'unknown')}`}
           >
             {formatStatus(request.status || 'unknown')}
           </span>
         </div>
         <div className='space-y-1 text-sm'>
-          <p className='break-words text-green-300'>
+          <p className='wrap-break-word text-green-300'>
             <span className='text-green-300/60'>Client:</span> {userName} (
             {request.user?.email})
           </p>
@@ -127,12 +127,12 @@ export const ProjectRequestCard = ({
         <p className='text-sm text-green-300/80'>{request.description}</p>
       </div>
 
-      {/* Requirements */}
+      {/* Features */}
       <div className='mb-4'>
         <h4 className='mb-2 font-mono text-sm font-bold text-green-300'>
-          Requirements:
+          Features:
         </h4>
-        <RequirementsList requirements={request.requirements} />
+        <FeatureList features={request.features} />
       </div>
 
       {/* Additional Info */}

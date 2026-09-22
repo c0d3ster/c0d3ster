@@ -110,7 +110,6 @@ describe('ProjectService', () => {
     description: 'Test Description',
     projectType: ProjectType.WebApp,
     budget: 5000,
-    requirements: null,
     features: [ProjectFeature.Database, ProjectFeature.Auth, ProjectFeature.Email],
     techStack: ['React', 'Node.js'],
     status: ProjectStatus.Approved,
@@ -514,7 +513,10 @@ describe('ProjectService', () => {
 
       await projectService.createProject(createInput)
 
-      expect(capturedValues.features).toEqual([ProjectFeature.Email])
+      expect(capturedValues.features).toEqual([
+        ProjectFeature.Email,
+        ProjectFeature.ResponsiveDesign,
+      ])
     })
 
     it('should preserve explicit features over type defaults', async () => {
@@ -1274,7 +1276,7 @@ describe('ProjectService', () => {
         projectType: ProjectType.WebApp,
         budget: 5000,
         timeline: '3 months',
-        requirements: null,
+        features: null,
         contactPreference: 'EMAIL',
         additionalInfo: 'Additional info',
         status: ProjectStatus.Requested,

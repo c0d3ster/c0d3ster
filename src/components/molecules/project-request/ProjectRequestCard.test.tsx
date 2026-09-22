@@ -1,20 +1,24 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ProjectStatus, ProjectType } from '@/graphql/generated/graphql'
+import {
+  ProjectFeature,
+  ProjectStatus,
+  ProjectType,
+} from '@/graphql/generated/graphql'
 import { createMockFullProjectRequest } from '@/tests/mocks'
 
 import { ProjectRequestCard } from './ProjectRequestCard'
 
-// Mock RequirementsList component
+// Mock FeatureList component
 vi.mock('@/components/molecules', () => ({
-  RequirementsList: ({
-    requirements,
+  FeatureList: ({
+    features,
   }: {
-    requirements: string | null | undefined
+    features: string[] | null | undefined
   }) => (
-    <div data-testid='requirements-list'>
-      {requirements ? 'Requirements loaded' : 'No requirements'}
+    <div data-testid='feature-list'>
+      {features && features.length > 0 ? 'Features loaded' : 'No features'}
     </div>
   ),
 }))
@@ -24,7 +28,7 @@ const mockProjectRequest = createMockFullProjectRequest({
   title: 'Test Project Request',
   description: 'A test project request for testing purposes',
   additionalInfo: 'This is additional information',
-  requirements: { hasDesign: true, needsHosting: true },
+  features: [ProjectFeature.Database, ProjectFeature.Auth],
   user: {
     id: 'user1',
     firstName: 'John',
@@ -101,7 +105,7 @@ describe('ProjectRequestCard', () => {
     )
   })
 
-  it('renders requirements list', () => {
+  it('renders feature list', () => {
     render(
       <ProjectRequestCard
         request={mockProjectRequest}
@@ -110,8 +114,8 @@ describe('ProjectRequestCard', () => {
       />
     )
 
-    expect(screen.getByTestId('requirements-list')).toBeInTheDocument()
-    expect(screen.getByText('Requirements loaded')).toBeInTheDocument()
+    expect(screen.getByTestId('feature-list')).toBeInTheDocument()
+    expect(screen.getByText('Features loaded')).toBeInTheDocument()
   })
 
   it('shows correct action buttons for REQUESTED status', () => {

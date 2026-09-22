@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 
+import type { ProjectFeature } from '@/graphql/generated/graphql'
 import type { ProjectRequestData } from '@/validations'
 
 import { useCreateProjectRequest } from '@/apiClients'
@@ -11,9 +12,20 @@ import { ProjectType } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 import {
   contactPreferenceOptions,
+  getDefaultFeaturesForProjectType,
+  projectFeatureGroups,
+  projectFeatureOptions,
   projectRequestSchema,
+  projectTypeDescriptions,
   projectTypeOptions,
 } from '@/validations'
+
+const featureLabelByValue = projectFeatureOptions.reduce<
+  Record<string, string>
+>((labels, option) => {
+  labels[option.value] = option.label
+  return labels
+}, {})
 
 // Helper component to reserve space for error messages
 const ErrorMessage = ({ error }: { error?: string }) => (
@@ -25,6 +37,7 @@ const ErrorMessage = ({ error }: { error?: string }) => (
 export const ProjectRequestForm = () => {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showFeatureChecklist, setShowFeatureChecklist] = useState(false)
   const [errors, setErrors] = useState<
     Partial<Record<keyof ProjectRequestData, string>>
   >({})
@@ -57,7 +70,7 @@ export const ProjectRequestForm = () => {
     }
   }
 
-  const [formData, setFormData] = useState<ProjectRequestData>({
+  const [formData, setFormData] = useState<ProjectRequestData>(() => ({
     projectName: '',
     description: '',
     projectType: ProjectType.Website,
@@ -65,15 +78,8 @@ export const ProjectRequestForm = () => {
     timeline: '',
     contactPreference: 'email',
     additionalInfo: '',
-    requirements: {
-      hasDesign: false,
-      hasDomain: false,
-      needsHosting: false,
-      needsMaintenance: false,
-      needsContentCreation: false,
-      needsSEO: false,
-    },
-  })
+    features: getDefaultFeaturesForProjectType(ProjectType.Website),
+  }))
 
   const handleInputChange = (
     field: keyof ProjectRequestData,
@@ -92,17 +98,30 @@ export const ProjectRequestForm = () => {
     }
   }
 
-  const handleRequirementChange = (
-    requirement: keyof NonNullable<ProjectRequestData['requirements']>,
-    checked: boolean
-  ) => {
+  const handleProjectTypeChange = (projectType: ProjectType) => {
     setFormData((prev) => ({
       ...prev,
-      requirements: {
-        ...prev.requirements,
-        [requirement]: checked,
-      },
+      projectType,
+      features: getDefaultFeaturesForProjectType(projectType),
     }))
+    if (errors.projectType) {
+      setErrors((prev) => ({
+        ...prev,
+        projectType: '',
+      }))
+    }
+  }
+
+  const handleFeatureChange = (feature: ProjectFeature, checked: boolean) => {
+    setFormData((prev) => {
+      const current = prev.features ?? []
+      return {
+        ...prev,
+        features: checked
+          ? [...current, feature]
+          : current.filter((f) => f !== feature),
+      }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,7 +158,6 @@ export const ProjectRequestForm = () => {
             budget: validatedData.budget
               ? Number.parseFloat(validatedData.budget)
               : undefined,
-            requirements: validatedData.requirements,
           },
         },
       })
@@ -160,8 +178,8 @@ export const ProjectRequestForm = () => {
   return (
     <form onSubmit={handleSubmit} className='space-y-8'>
       {/* Project Details Section */}
-      <div className='space-y-6'>
-        <h3 className='font-mono text-lg font-bold text-green-400'>
+      <div className='mb-2 space-y-2'>
+        <h3 className='mb-4 font-mono text-lg font-bold text-green-400'>
           PROJECT DETAILS
         </h3>
 
@@ -187,32 +205,6 @@ export const ProjectRequestForm = () => {
           <ErrorMessage error={errors.projectName} />
         </div>
 
-        {/* Project Type */}
-        <div>
-          <label
-            htmlFor='projectType'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            PROJECT TYPE *
-          </label>
-          <select
-            id='projectType'
-            ref={(el) => {
-              fieldRefs.current.projectType = el
-            }}
-            value={formData.projectType}
-            onChange={(e) => handleInputChange('projectType', e.target.value)}
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-          >
-            {projectTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ErrorMessage error={errors.projectType} />
-        </div>
-
         {/* Description */}
         <div>
           <label
@@ -236,7 +228,7 @@ export const ProjectRequestForm = () => {
         </div>
 
         {/* Budget and Timeline */}
-        <div className='grid gap-6 md:grid-cols-2'>
+        <div className='grid gap-2 md:grid-cols-2'>
           <div>
             <label
               htmlFor='budget'
@@ -282,52 +274,100 @@ export const ProjectRequestForm = () => {
         </div>
       </div>
 
-      {/* Requirements Section */}
-      <div className='space-y-6'>
+      {/* Project Type & Features Section - type drives the default feature set below it */}
+      <div className='mb-10 space-y-4'>
         <h3 className='font-mono text-lg font-bold text-green-400'>
-          REQUIREMENTS
+          PROJECT TYPE & FEATURES
         </h3>
 
-        <div className='grid gap-4 md:grid-cols-2'>
-          {[
-            { key: 'hasDesign', label: 'I already have a design' },
-            { key: 'needsHosting', label: 'I need hosting setup' },
-            { key: 'hasDomain', label: 'I already have a domain' },
-            { key: 'needsMaintenance', label: 'I need ongoing maintenance' },
-            { key: 'needsContentCreation', label: 'I need content creation' },
-            { key: 'needsSEO', label: 'I need SEO optimization' },
-          ].map((requirement) => (
-            <label
-              key={requirement.key}
-              className='flex items-center space-x-3 font-mono text-sm text-green-300'
-            >
-              <input
-                type='checkbox'
-                checked={
-                  (formData.requirements?.[
-                    requirement.key as keyof NonNullable<
-                      ProjectRequestData['requirements']
-                    >
-                  ] as boolean) || false
-                }
-                onChange={(e) =>
-                  handleRequirementChange(
-                    requirement.key as keyof NonNullable<
-                      ProjectRequestData['requirements']
-                    >,
-                    e.target.checked
+        {/* Project Type */}
+        <div>
+          <label
+            htmlFor='projectType'
+            className='block font-mono text-sm font-medium text-green-300'
+          >
+            PROJECT TYPE *
+          </label>
+          <select
+            id='projectType'
+            ref={(el) => {
+              fieldRefs.current.projectType = el
+            }}
+            value={formData.projectType}
+            onChange={(e) =>
+              handleProjectTypeChange(e.target.value as ProjectType)
+            }
+            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
+          >
+            {projectTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ErrorMessage error={errors.projectType} />
+          <div className='rounded border border-green-400/20 bg-black/30 px-4 py-3'>
+            <p className='font-mono text-sm text-green-300/80'>
+              {projectTypeDescriptions[formData.projectType]}
+            </p>
+            <p className='mt-2 font-mono text-xs text-green-300/60'>
+              Default features include:{' '}
+              {(getDefaultFeaturesForProjectType(formData.projectType).length >
+              0
+                ? getDefaultFeaturesForProjectType(formData.projectType).map(
+                    (feature) => featureLabelByValue[feature]
                   )
-                }
-                className='h-4 w-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
-              />
-              <span>{requirement.label}</span>
-            </label>
-          ))}
+                : ['none - nothing preselected']
+              ).join(', ')}
+            </p>
+          </div>
         </div>
+
+        {/* Feature checklist toggle - collapsed by default, label reflects current selection */}
+        <button
+          type='button'
+          onClick={() => setShowFeatureChecklist((prev) => !prev)}
+          className='font-mono text-lg font-bold text-green-400'
+        >
+          {showFeatureChecklist ? '▾' : '▸'} FEATURES SELECTED (
+          {formData.features?.length ?? 0})
+        </button>
+
+        {showFeatureChecklist && (
+          <div className='space-y-4'>
+            {projectFeatureGroups.map((group) => (
+              <div key={group.label} className='space-y-4'>
+                <h4 className='font-mono text-sm font-bold text-green-400/80'>
+                  {group.label}
+                </h4>
+                <div className='grid gap-4 md:grid-cols-2'>
+                  {group.features.map((featureValue) => (
+                    <label
+                      key={featureValue}
+                      className='flex items-center space-x-3 font-mono text-sm text-green-300'
+                    >
+                      <input
+                        type='checkbox'
+                        checked={
+                          formData.features?.includes(featureValue) ?? false
+                        }
+                        onChange={(e) =>
+                          handleFeatureChange(featureValue, e.target.checked)
+                        }
+                        className='size-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
+                      />
+                      <span>{featureLabelByValue[featureValue]}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Contact & Additional Info */}
-      <div className='space-y-6'>
+      <div className='space-y-4'>
         <h3 className='font-mono text-lg font-bold text-green-400'>
           CONTACT & ADDITIONAL INFO
         </h3>

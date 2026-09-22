@@ -1,0 +1,1 @@
+ALTER TABLE "project_requests" ADD COLUMN "features" json;

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectType } from '@/graphql/generated/graphql'
+import { ProjectFeature, ProjectType } from '@/graphql/generated/graphql'
 
 import { ProjectRequestForm } from './ProjectRequestForm'
 
@@ -46,6 +46,27 @@ vi.mock('@/validations', () => ({
     { value: 'phone', label: 'Phone Call' },
     { value: 'text', label: 'Text Message' },
   ],
+  projectFeatureOptions: [
+    { value: ProjectFeature.Database, label: 'Database' },
+    { value: ProjectFeature.Auth, label: 'Auth' },
+    { value: ProjectFeature.PaymentProcessing, label: 'Payment processing' },
+  ],
+  projectFeatureGroups: [
+    {
+      label: 'Core Build',
+      features: [ProjectFeature.Database, ProjectFeature.Auth],
+    },
+    {
+      label: 'Commerce',
+      features: [ProjectFeature.PaymentProcessing],
+    },
+  ],
+  projectTypeDescriptions: {
+    [ProjectType.Website]: 'A simple informational site.',
+    [ProjectType.WebApp]: 'A fully functional application.',
+    [ProjectType.MobileApp]: 'A native or cross-platform app.',
+  },
+  getDefaultFeaturesForProjectType: vi.fn(() => []),
 }))
 
 describe('ProjectRequestForm', () => {
@@ -319,6 +340,73 @@ describe('ProjectRequestForm', () => {
         screen.getByRole('button', { name: 'SUBMIT REQUEST' })
       ).toBeInTheDocument()
     })
+  })
+
+  it('renders the feature checklist collapsed by default, labeled with the current selection count', () => {
+    render(<ProjectRequestForm />)
+
+    expect(
+      screen.getByText(/▸ FEATURES SELECTED \(\d+\)/)
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Database')).not.toBeInTheDocument()
+    expect(screen.queryByText('Auth')).not.toBeInTheDocument()
+  })
+
+  it('expands the feature checklist and toggles feature selection', () => {
+    render(<ProjectRequestForm />)
+
+    fireEvent.click(screen.getByText(/▸ FEATURES SELECTED/))
+
+    expect(screen.getByText(/▾ FEATURES SELECTED/)).toBeInTheDocument()
+
+    const databaseCheckbox = screen.getByLabelText('Database')
+
+    expect(databaseCheckbox).not.toBeChecked()
+
+    fireEvent.click(databaseCheckbox)
+
+    expect(databaseCheckbox).toBeChecked()
+
+    fireEvent.click(databaseCheckbox)
+
+    expect(databaseCheckbox).not.toBeChecked()
+  })
+
+  it('groups the feature checklist under category headings', () => {
+    render(<ProjectRequestForm />)
+
+    fireEvent.click(screen.getByText(/▸ FEATURES SELECTED/))
+
+    expect(screen.getByText('Core Build')).toBeInTheDocument()
+    expect(screen.getByText('Commerce')).toBeInTheDocument()
+  })
+
+  it('shows the project type description and its default features, updating on type change', async () => {
+    const { getDefaultFeaturesForProjectType } = await import('@/validations')
+    vi.mocked(getDefaultFeaturesForProjectType).mockImplementation(
+      (projectType: ProjectType) =>
+        projectType === ProjectType.WebApp
+          ? [ProjectFeature.Database, ProjectFeature.Auth]
+          : []
+    )
+
+    render(<ProjectRequestForm />)
+
+    expect(
+      screen.getByText('A simple informational site.')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(/Default features include:/)
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('PROJECT TYPE *'), {
+      target: { value: ProjectType.WebApp },
+    })
+
+    expect(
+      screen.getByText('A fully functional application.')
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Database, Auth/)).toBeInTheDocument()
   })
 
   it('handles budget field correctly', () => {

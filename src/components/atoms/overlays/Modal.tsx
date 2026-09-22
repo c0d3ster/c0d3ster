@@ -50,7 +50,7 @@ export const Modal = ({
             title='Close'
             aria-label='Close'
           >
-            <FaTimes className='h-4 w-4' />
+            <FaTimes className='size-4' />
           </button>
         </div>
         {children}

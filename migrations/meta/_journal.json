@@ -141,6 +141,20 @@
       "when": 1789331037749,
       "tag": "0019_add_file_placement_hero",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790043180122,
+      "tag": "0020_add_project_request_features",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790043200906,
+      "tag": "0021_drop_project_requirements",
+      "breakpoints": true
     }
   ]
 }

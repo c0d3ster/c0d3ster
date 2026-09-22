@@ -167,10 +167,10 @@ describe('BackButton', () => {
     const container = screen.getByRole('link').closest('.fixed')
 
     expect(container).toHaveClass(
+      'pointer-events-none',
       'fixed',
+      'inset-x-0',
       'top-24',
-      'right-0',
-      'left-0',
       'z-40'
     )
 

@@ -41,7 +41,7 @@ export const DashboardContent = () => {
           <div className='grid gap-4 text-center lg:text-right'>
             {isContentLoading ? (
               <div className='flex items-center justify-center'>
-                <div className='h-4 w-4 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+                <div className='size-4 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
                 <span className='ml-2 font-mono text-sm text-green-400'>
                   Loading...
                 </span>
@@ -189,7 +189,7 @@ export const DashboardContent = () => {
         {/* Role-specific Content */}
         {isContentLoading ? (
           <div className='flex items-center justify-center'>
-            <div className='h-6 w-6 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
+            <div className='size-6 animate-spin rounded-full border-2 border-green-400 border-t-transparent'></div>
             <span className='ml-3 font-mono text-green-400'>
               Loading projects...
             </span>

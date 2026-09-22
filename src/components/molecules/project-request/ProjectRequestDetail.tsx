@@ -6,7 +6,7 @@ import { useGetProjectRequestById } from '@/apiClients/projectRequestApiClient'
 import { formatCardDate } from '@/utils'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
 
-import { RequirementsList } from './RequirementsList'
+import { FeatureList } from './FeatureList'
 
 type ProjectRequestDetailProps = {
   id: string
@@ -102,13 +102,13 @@ export const ProjectRequestDetail = ({ id }: ProjectRequestDetailProps) => {
           </p>
         </div>
 
-        {/* Requirements */}
-        {request.requirements && (
+        {/* Features */}
+        {request.features && request.features.length > 0 && (
           <div className='rounded-lg border border-green-400/20 bg-black/60 p-4'>
             <h2 className='mb-2 font-mono text-sm font-bold text-green-300'>
-              Requirements
+              Features
             </h2>
-            <RequirementsList requirements={request.requirements} />
+            <FeatureList features={request.features} />
           </div>
         )}
 
