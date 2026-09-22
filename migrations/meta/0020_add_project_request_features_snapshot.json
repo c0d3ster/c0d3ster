@@ -1,5 +1,5 @@
 {
-  "id": "291fffee-ca03-4f0e-8d46-a3b1d580e4e3",
+  "id": "50267588-1240-42c8-be50-92edac5ae5cc",
   "prevId": "d8333e94-1b41-4000-83d6-d0f39b304a29",
   "version": "7",
   "dialect": "postgresql",
@@ -821,6 +821,12 @@
         "neon_project_id": {
           "name": "neon_project_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requirements": {
+          "name": "requirements",
+          "type": "json",
           "primaryKey": false,
           "notNull": false
         },
