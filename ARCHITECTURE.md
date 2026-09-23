@@ -246,14 +246,14 @@ export const schema = buildSchema({
 
 When you modify any schema file in `src/graphql/schema/`:
 
-1. **Manual**: Run `npm run codegen` to regenerate client types
-2. **Watch Mode**: Run `npm run codegen:watch` to auto-regenerate on changes
+1. **Manual**: Run `pnpm codegen` to regenerate client types
+2. **Watch Mode**: Run `pnpm codegen:watch` to auto-regenerate on changes
 3. **CI**: Codegen runs automatically before tests (`pretest` script)
 
 ### 2. Adding New Operations
 
 1. Add GraphQL operations to `src/apiClients/` using `gql` template literals
-2. Run `npm run codegen` to generate new types
+2. Run `pnpm codegen` to generate new types
 3. Use the generated types in your components
 
 ### 3. Adding New Resolvers
@@ -286,13 +286,13 @@ The Codegen config (`codegen.ts`) automatically:
 
 ### Unit Tests
 
-- Run with `npm run test` (includes pretest codegen)
+- Run with `pnpm test` (includes pretest codegen)
 - Uses jsdom environment for React component testing
 - Mocks GraphQL operations via API client mocks
 
 ### E2E Tests
 
-- Run with `npm run test:e2e`
+- Run with `pnpm test:e2e`
 - Uses Playwright browser environment
 - Tests full application flow
 

@@ -8,7 +8,7 @@ const shouldRunMigrations = process.env.VERCEL_ENV !== 'preview'
 if (shouldRunMigrations) {
   console.log('Running database migrations...')
   try {
-    execSync('npm run db:migrate', { stdio: 'inherit' })
+    execSync('pnpm db:migrate', { stdio: 'inherit' })
   } catch (error) {
     console.error('Migration failed:', error.message)
     process.exit(1)
@@ -19,7 +19,7 @@ if (shouldRunMigrations) {
 
 console.log('Building Next.js...')
 try {
-  execSync('npm run build:next', { stdio: 'inherit' })
+  execSync('pnpm build:next', { stdio: 'inherit' })
 } catch (error) {
   console.error('Build failed:', error.message)
   process.exit(1)

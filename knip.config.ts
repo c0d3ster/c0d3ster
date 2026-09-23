@@ -10,10 +10,8 @@ const config: KnipConfig = {
   ],
   // Dependencies to ignore during analysis
   ignoreDependencies: [
-    '@commitlint/types',
     '@types/testing-library__jest-dom', // Used in test setup for custom matchers
     'conventional-changelog-conventionalcommits',
-    'vite',
   ],
   // Binaries to ignore during analysis
   ignoreBinaries: [],
