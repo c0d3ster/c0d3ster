@@ -9,13 +9,13 @@ A dev-agency/client platform: it showcases the author's work and lets prospectiv
 ## Commands
 
 ```bash
-npm run build:ci            # next build only (what CI runs)
-npm run build:prod          # production build (scripts/build.js)
+pnpm build:ci            # next build only (what CI runs)
+pnpm build:prod          # production build (scripts/build.js)
 
-npm run test                # vitest run (all projects)
-npm run check:deps          # knip — unused deps/exports
+pnpm test                # vitest run (all projects)
+pnpm check:deps          # knip — unused deps/exports
 
-npm run codegen / codegen:watch                # regenerate GraphQL client types — run after any change to src/graphql/schema/* or a gql operation in src/apiClients/*
+pnpm codegen / codegen:watch                # regenerate GraphQL client types — run after any change to src/graphql/schema/* or a gql operation in src/apiClients/*
 ```
 
 See DEVELOPMENT.md for env var setup and ARCHITECTURE.md for full diagrams.
@@ -32,7 +32,7 @@ components (atoms/molecules/organisms/templates)
         → services/*           (business logic + auth, Drizzle ORM, external APIs)
 ```
 
-Adding a feature end-to-end touches: `graphql/schema` (type-graphql decorator class) → `graphql/resolvers` → `services` → `apiClients` (gql op) → `npm run codegen` to get the typed hook.
+Adding a feature end-to-end touches: `graphql/schema` (type-graphql decorator class) → `graphql/resolvers` → `services` → `apiClients` (gql op) → `pnpm codegen` to get the typed hook.
 
 - **Auth/permissions are centralized in services**, not resolvers — `UserService.getCurrentUserWithAuth()` and `checkPermission()`. Resolvers call services directly; there is no separate repository/DAO layer.
 - `src/graphql/generated` is gitignored and codegen-produced — never hand-edit.
@@ -51,11 +51,11 @@ E2E specs (`*.spec.ts`/`*.e2e.ts`) are excluded from `tsc` and from the vitest g
 
 Schema changes (add/remove/alter a column, table, or enum):
 1. Edit the schema in `src/models/**` first.
-2. Run `npm run db:generate`. drizzle-kit diffs your change against `migrations/meta/*_snapshot.json` and writes a new `migrations/00XX_<random-words>.sql`, a matching snapshot, and a journal entry in `migrations/meta/_journal.json`.
+2. Run `pnpm db:generate`. drizzle-kit diffs your change against `migrations/meta/*_snapshot.json` and writes a new `migrations/00XX_<random-words>.sql`, a matching snapshot, and a journal entry in `migrations/meta/_journal.json`.
 3. Review the generated SQL.
 4. Rename the file from drizzle-kit's random-word name to a short descriptive slug, keeping the numeric prefix (e.g. `0018_hazy_falcon.sql` -> `0018_add_invoice_status.sql`).
 5. Update the matching entry's `"tag"` in `migrations/meta/_journal.json` to the new filename minus `.sql`. This is the step that gets skipped and breaks `db:migrate` (it looks up files by tag, not by number).
-6. Run `npm run db:migrate`.
+6. Run `pnpm db:migrate`.
 
 Data-only migrations (backfilling or renaming stored values, no column/type change):
 - `db:generate` diffs `src/models/**` against the last snapshot. With no schema change there's nothing to diff, so it silently generates nothing. Don't try to force one through drizzle-kit for a pure data fix.
@@ -65,5 +65,5 @@ Data-only migrations (backfilling or renaming stored values, no column/type chan
 
 ## Conventions enforced by tooling
 
-- Commit messages must be Conventional Commits (commitlint + lefthook `commit-msg` hook); `semantic-release` on `main` drives GitHub releases from that history. Use `npm run commit` for an interactive prompt.
+- Commit messages must be Conventional Commits (commitlint + lefthook `commit-msg` hook); `semantic-release` on `main` drives GitHub releases from that history. Use `pnpm commit` for an interactive prompt.
 - lefthook `pre-commit` runs `eslint --fix` and `check:types` on staged files — don't bypass with `--no-verify`.

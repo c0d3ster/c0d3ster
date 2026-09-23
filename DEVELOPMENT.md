@@ -22,7 +22,7 @@ cd c0d3ster
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Environment Setup
@@ -75,13 +75,13 @@ VERCEL_TOKEN=your_vercel_personal_access_token
 Set your `DATABASE_URL` to a Neon Postgres connection string, then run migrations:
 
 ```bash
-npm run db:migrate
+pnpm db:migrate
 ```
 
 ### 5. Start Development Server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Your application will be available at [http://localhost:3000](http://localhost:3000)
@@ -91,43 +91,43 @@ Your application will be available at [http://localhost:3000](http://localhost:3
 ### Development
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
+pnpm dev          # Start development server
+pnpm build        # Build for production
+pnpm start        # Start production server
 ```
 
 ### Database
 
 ```bash
-npm run db:generate  # Generate new migration
-npm run db:migrate   # Run pending migrations
-npm run db:studio    # Open Drizzle Studio
+pnpm db:generate  # Generate new migration
+pnpm db:migrate   # Run pending migrations
+pnpm db:studio    # Open Drizzle Studio
 ```
 
 ### Testing
 
 ```bash
-npm run test         # Run unit tests
-npm run test:watch   # Run tests in watch mode
-npm run test:e2e     # Run end-to-end tests
-npm run test:coverage # Generate coverage report
+pnpm test         # Run unit tests
+pnpm test:watch   # Run tests in watch mode
+pnpm test:e2e     # Run end-to-end tests
+pnpm test:coverage # Generate coverage report
 ```
 
 ### Code Quality
 
 ```bash
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint issues
-npm run format       # Format code with Prettier
-npm run check:types  # Run TypeScript type checking
-npm run check:deps   # Check for unused dependencies and exports (Knip)
+pnpm lint         # Run ESLint
+pnpm lint:fix     # Fix ESLint issues
+pnpm format       # Format code with Prettier
+pnpm check:types  # Run TypeScript type checking
+pnpm check:deps   # Check for unused dependencies and exports (Knip)
 ```
 
 ### GraphQL Code Generation
 
 ```bash
-npm run codegen      # Generate GraphQL types
-npm run codegen:watch # Watch for schema changes
+pnpm codegen      # Generate GraphQL types
+pnpm codegen:watch # Watch for schema changes
 ```
 
 ## Project Structure
@@ -171,8 +171,8 @@ c0d3ster/
 
 1. Create a feature branch: `git checkout -b feature/your-feature-name`
 2. Make your changes following the project's coding standards
-3. Run tests: `npm run test`
-4. Check code quality: `npm run lint && npm run type-check`
+3. Run tests: `pnpm test`
+4. Check code quality: `pnpm lint && pnpm type-check`
 5. Commit your changes with a descriptive message
 
 ### 2. GraphQL Development
@@ -217,7 +217,7 @@ When working with GraphQL:
    `
    ```
 
-4. **Generate Types**: Run `npm run codegen` to generate client types
+4. **Generate Types**: Run `pnpm codegen` to generate client types
 5. **Use Generated Types**: Import and use types in your components
 
 ### 3. Database Changes
@@ -225,9 +225,9 @@ When working with GraphQL:
 When modifying the database:
 
 1. Update your schema in `src/models/`
-2. Generate a migration: `npm run db:generate`
+2. Generate a migration: `pnpm db:generate`
 3. Review the generated migration file
-4. Run the migration: `npm run db:migrate`
+4. Run the migration: `pnpm db:migrate`
 5. Update your GraphQL schema if needed
 
 ## Troubleshooting
@@ -242,15 +242,15 @@ When modifying the database:
 
 #### GraphQL Type Generation Issues
 
-- Run `npm run codegen` manually
+- Run `pnpm codegen` manually
 - Check for syntax errors in your type-graphql schema
 - Ensure all operations are properly defined with `gql` template literals
 
 #### Build Issues
 
 - Clear Next.js cache: `rm -rf .next`
-- Delete node_modules: `rm -rf node_modules && npm install`
-- Check for TypeScript errors: `npm run type-check`
+- Delete node_modules: `rm -rf node_modules && pnpm install`
+- Check for TypeScript errors: `pnpm type-check`
 
 #### type-graphql Issues
 
