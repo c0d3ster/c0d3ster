@@ -22,7 +22,10 @@ export default antfu(
     },
 
     // Ignored paths
-    ignores: ['migrations/**/*'],
+    // .pnpm-store: Vercel's build places pnpm's content-addressable store here
+    // (outside node_modules), full of huge auto-generated integrity-index JSON
+    // files that aren't meant to be linted.
+    ignores: ['migrations/**/*', '.pnpm-store/**'],
   },
   // --- Accessibility Rules ---
   jsxA11y.flatConfigs.recommended,
