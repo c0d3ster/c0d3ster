@@ -1,9 +1,11 @@
-#!/usr/bin/env node
+import { spawn } from 'node:child_process'
+import { setTimeout } from 'node:timers/promises'
 
-const { spawn } = require('node:child_process')
-const { setTimeout } = require('node:timers/promises')
-
-async function waitForServer(url, maxAttempts = 30, delay = 1000) {
+const waitForServer = async (
+  url: string,
+  maxAttempts = 30,
+  delay = 1000
+): Promise<boolean> => {
   console.log(`🔄 Waiting for server at ${url}...`)
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -36,10 +38,9 @@ async function waitForServer(url, maxAttempts = 30, delay = 1000) {
   return false
 }
 
-async function runCodegen() {
+const runCodegen = async (): Promise<void> => {
   console.log('🚀 Starting codegen with server check...')
 
-  // Wait for server to be ready
   const serverReady = await waitForServer('http://localhost:3000/api/graphql')
 
   if (!serverReady) {
@@ -47,7 +48,6 @@ async function runCodegen() {
     process.exit(1)
   }
 
-  // Run GraphQL codegen
   console.log('🔧 Running GraphQL codegen...')
   const codegen = spawn('npx', ['graphql-codegen'], {
     stdio: 'inherit',
@@ -60,14 +60,13 @@ async function runCodegen() {
     } else {
       console.error(`❌ Codegen failed with exit code ${code}`)
     }
-    process.exit(code)
+    process.exit(code ?? 1)
   })
 }
 
-async function runCodegenWatch() {
+const runCodegenWatch = async (): Promise<void> => {
   console.log('🚀 Starting codegen watch with server check...')
 
-  // Wait for server to be ready
   const serverReady = await waitForServer('http://localhost:3000/api/graphql')
 
   if (!serverReady) {
@@ -75,7 +74,6 @@ async function runCodegenWatch() {
     process.exit(1)
   }
 
-  // Run GraphQL codegen in watch mode
   console.log('👀 Running GraphQL codegen in watch mode...')
   const codegen = spawn('npx', ['graphql-codegen', '--watch'], {
     stdio: 'inherit',
@@ -84,11 +82,10 @@ async function runCodegenWatch() {
 
   codegen.on('close', (code) => {
     console.log(`Codegen watch exited with code ${code}`)
-    process.exit(code)
+    process.exit(code ?? 1)
   })
 }
 
-// Check command line argument
 const isWatch = process.argv.includes('--watch')
 
 if (isWatch) {
