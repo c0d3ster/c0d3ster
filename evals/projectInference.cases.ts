@@ -321,8 +321,15 @@ export const inferenceCases: InferenceCase[] = [
     description:
       'We need a REST API that other developers can call to create shipments and fetch tracking events. API key auth, data stored in Postgres.',
     acceptableTypes: [Api],
-    requiredFeatures: [CustomApi, Database, Auth],
-    acceptableFeatures: [Deployment, DomainConfig, Analytics, QaLaunchTesting],
+    // Auth means user sign-in/sessions; API-key auth alone does not call for it
+    requiredFeatures: [CustomApi, Database],
+    acceptableFeatures: [
+      Auth,
+      Deployment,
+      DomainConfig,
+      Analytics,
+      QaLaunchTesting,
+    ],
     forbiddenFeatures: [
       ResponsiveDesign,
       CustomDesign,
