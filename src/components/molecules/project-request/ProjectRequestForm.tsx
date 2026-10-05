@@ -1,78 +1,78 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { ProjectFeature } from '@/graphql/generated/graphql'
 import type { ProjectRequestData } from '@/validations'
 
 import { useCreateProjectRequest, useInferProjectDetails } from '@/apiClients'
-import { Button } from '@/components/atoms'
 import { ProjectType } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 import {
-  contactPreferenceOptions,
   getDefaultFeaturesForProjectType,
-  projectFeatureGroups,
-  projectFeatureOptions,
+  projectDescriptionSchema,
   projectRequestSchema,
-  projectTypeDescriptions,
-  projectTypeOptions,
 } from '@/validations'
 
-const featureLabelByValue = projectFeatureOptions.reduce<
-  Record<string, string>
->((labels, option) => {
-  labels[option.value] = option.label
-  return labels
-}, {})
+import type { FieldErrors } from './projectRequestFormShared'
 
-// Helper component to reserve space for error messages
-const ErrorMessage = ({ error }: { error?: string }) => (
-  <div className='mt-1 h-5 font-mono text-sm text-red-400'>
-    {error && <p>{error}</p>}
-  </div>
-)
+import { ProjectRequestDescribeStep } from './ProjectRequestDescribeStep'
+import { ProjectRequestReviewStep } from './ProjectRequestReviewStep'
+
+type Step = 'describe' | 'review'
+
+const STEP_LABELS: Record<Step, string> = {
+  describe: 'STEP 1 OF 2: DESCRIBE',
+  review: 'STEP 2 OF 2: REVIEW',
+}
+
+// Fields in on-screen order, so the first invalid one gets focus
+const FIELD_ORDER: readonly (keyof ProjectRequestData)[] = [
+  'projectName',
+  'description',
+  'title',
+  'projectType',
+  'budget',
+  'timeline',
+  'contactPreference',
+  'additionalInfo',
+]
+
+const collectErrors = (
+  issues: readonly { path: PropertyKey[]; message: string }[]
+): FieldErrors => {
+  const errors: FieldErrors = {}
+  for (const issue of issues) {
+    const key = FIELD_ORDER.find((name) => name === issue.path[0])
+    // Only keep the first error per field
+    if (key && !errors[key]) errors[key] = issue.message
+  }
+  return errors
+}
+
+const errorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error && error.message ? error.message : fallback
 
 export const ProjectRequestForm = () => {
   const router = useRouter()
+  const [step, setStep] = useState<Step>('describe')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showFeatureChecklist, setShowFeatureChecklist] = useState(false)
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof ProjectRequestData, string>>
-  >({})
+  const [errors, setErrors] = useState<FieldErrors>({})
   const [createProjectRequest] = useCreateProjectRequest()
-  const [inferProjectDetails, { loading: isSuggesting }] =
+  const [inferProjectDetails, { loading: isAnalyzing }] =
     useInferProjectDetails()
-  const [suggestedFeatures, setSuggestedFeatures] = useState<
-    readonly string[]
-  >([])
+  const [suggestionStatus, setSuggestionStatus] = useState<
+    'applied' | 'unavailable'
+  >('applied')
+  // The name + description the current suggestions were generated from, so going back and
+  // forward without editing them does not call the model again or overwrite the user's edits
+  const [analyzedKey, setAnalyzedKey] = useState<string | null>(null)
 
   // Refs for form fields to enable focusing
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
-
-  // Function to focus on first field with error
-  const focusFirstError = (validationErrors: Record<string, string>) => {
-    const fieldOrder = [
-      'projectName',
-      'projectType',
-      'description',
-      'budget',
-      'timeline',
-      'contactPreference',
-      'additionalInfo',
-    ]
-
-    for (const field of fieldOrder) {
-      if (validationErrors[field] && fieldRefs.current[field]) {
-        fieldRefs.current[field]?.focus()
-        fieldRefs.current[field]?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        })
-        break
-      }
-    }
+  const registerField = (field: string) => (el: HTMLElement | null) => {
+    fieldRefs.current[field] = el
   }
 
   const [formData, setFormData] = useState<ProjectRequestData>(() => ({
@@ -87,9 +87,27 @@ export const ProjectRequestForm = () => {
     features: getDefaultFeaturesForProjectType(ProjectType.Website),
   }))
 
+  // Start each step on its first field
+  useEffect(() => {
+    fieldRefs.current[step === 'describe' ? 'projectName' : 'title']?.focus()
+  }, [step])
+
+  const focusFirstError = (validationErrors: FieldErrors) => {
+    const field = FIELD_ORDER.find(
+      (name) => validationErrors[name] && fieldRefs.current[name]
+    )
+    if (!field) return
+
+    fieldRefs.current[field]?.focus()
+    fieldRefs.current[field]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    })
+  }
+
   const handleInputChange = (
     field: keyof ProjectRequestData,
-    value: string | boolean | ProjectType
+    value: string
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -130,23 +148,35 @@ export const ProjectRequestForm = () => {
     })
   }
 
-  const handleSuggest = async () => {
-    if (!formData.projectName.trim() || !formData.description.trim()) {
-      Toast.error('Add a project name and description first')
+  // Step 1 -> 2: validate name + description, then ask the model for type, title, and features
+  const handleNext = async () => {
+    setErrors({})
+
+    const result = projectDescriptionSchema.safeParse(formData)
+    if (!result.success) {
+      const validationErrors = collectErrors(result.error.issues)
+      setErrors(validationErrors)
+      focusFirstError(validationErrors)
+      return
+    }
+
+    const key = `${result.data.projectName.trim()}\n${result.data.description.trim()}`
+    if (key === analyzedKey) {
+      setStep('review')
       return
     }
 
     try {
-      const result = await inferProjectDetails({
+      const response = await inferProjectDetails({
         variables: {
           input: {
-            projectName: formData.projectName,
-            description: formData.description,
+            projectName: result.data.projectName,
+            description: result.data.description,
           },
         },
       })
 
-      const suggestion = result.data?.inferProjectDetails
+      const suggestion = response.data?.inferProjectDetails
       if (!suggestion) {
         throw new Error('No suggestion returned')
       }
@@ -155,16 +185,24 @@ export const ProjectRequestForm = () => {
         ...prev,
         projectType: suggestion.projectType,
         title: suggestion.title,
+        features: [...suggestion.features],
       }))
-      setSuggestedFeatures(suggestion.features)
-      Toast.success('Suggestions applied — feel free to adjust them')
-    } catch (error: any) {
-      Toast.error(error.message || 'Could not generate suggestions')
+      setSuggestionStatus('applied')
+    } catch {
+      // Never block the request on the suggestion: fall back to the type defaults
+      setFormData((prev) => ({
+        ...prev,
+        features: getDefaultFeaturesForProjectType(prev.projectType),
+      }))
+      setSuggestionStatus('unavailable')
+      Toast.warning('Could not generate suggestions. Choose your options below.')
     }
+
+    setAnalyzedKey(key)
+    setStep('review')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     setIsSubmitting(true)
     setErrors({})
 
@@ -172,17 +210,7 @@ export const ProjectRequestForm = () => {
       // Validate form data
       const result = projectRequestSchema.safeParse(formData)
       if (!result.success) {
-        const validationErrors: Partial<
-          Record<keyof ProjectRequestData, string>
-        > = {}
-        // Set all validation errors for field highlighting
-        for (const issue of result.error.issues) {
-          const pathKey = issue.path[0] as keyof ProjectRequestData
-          // Only keep the first error per field
-          if (pathKey && !validationErrors[pathKey]) {
-            validationErrors[pathKey] = issue.message
-          }
-        }
+        const validationErrors = collectErrors(result.error.issues)
         setErrors(validationErrors)
         focusFirstError(validationErrors)
         return
@@ -207,314 +235,47 @@ export const ProjectRequestForm = () => {
       } else {
         throw new Error('Failed to submit request')
       }
-    } catch (error: any) {
-      Toast.error(error.message || 'Failed to submit request')
+    } catch (error: unknown) {
+      Toast.error(errorMessage(error, 'Failed to submit request'))
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Enter in a field submits the form, which should advance step 1, not submit the request
+    return step === 'describe' ? handleNext() : handleSubmit()
+  }
+
   return (
-    <form onSubmit={handleSubmit} className='space-y-8'>
-      {/* Project Details Section */}
-      <div className='mb-2 space-y-2'>
-        <h3 className='mb-4 font-mono text-lg font-bold text-green-400'>
-          PROJECT DETAILS
-        </h3>
+    <form onSubmit={handleFormSubmit} className='space-y-8'>
+      <p className='font-mono text-xs tracking-widest text-green-300/60'>
+        {STEP_LABELS[step]}
+      </p>
 
-        {/* Project Name */}
-        <div>
-          <label
-            htmlFor='projectName'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            PROJECT NAME *
-          </label>
-          <input
-            id='projectName'
-            ref={(el) => {
-              fieldRefs.current.projectName = el
-            }}
-            type='text'
-            value={formData.projectName}
-            onChange={(e) => handleInputChange('projectName', e.target.value)}
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-            placeholder='e.g. My E-commerce Store'
-          />
-          <ErrorMessage error={errors.projectName} />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label
-            htmlFor='description'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            DESCRIPTION *
-          </label>
-          <textarea
-            id='description'
-            ref={(el) => {
-              fieldRefs.current.description = el
-            }}
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            rows={5}
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-            placeholder='Describe your project in detail. What are your goals? What features do you need? Who is your target audience?'
-          />
-          <ErrorMessage error={errors.description} />
-        </div>
-
-        {/* Suggest project details from name + description */}
-        <div>
-          <Button
-            type='button'
-            onClick={handleSuggest}
-            disabled={isSuggesting}
-          >
-            {isSuggesting ? 'THINKING...' : 'SUGGEST PROJECT TYPE & TITLE'}
-          </Button>
-          {suggestedFeatures.length > 0 && (
-            <p className='mt-2 font-mono text-xs text-green-600'>
-              Suggested features: {suggestedFeatures.join(', ')}
-            </p>
-          )}
-        </div>
-
-        {/* Title */}
-        <div>
-          <label
-            htmlFor='title'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            TITLE
-          </label>
-          <input
-            id='title'
-            ref={(el) => {
-              fieldRefs.current.title = el
-            }}
-            type='text'
-            value={formData.title ?? ''}
-            onChange={(e) => handleInputChange('title', e.target.value)}
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-            placeholder='A short, descriptive title (optional — defaults to project name)'
-          />
-          <ErrorMessage error={errors.title} />
-        </div>
-
-        {/* Budget and Timeline */}
-        <div className='grid gap-2 md:grid-cols-2'>
-          <div>
-            <label
-              htmlFor='budget'
-              className='block font-mono text-sm font-medium text-green-300'
-            >
-              BUDGET (USD)
-            </label>
-            <input
-              id='budget'
-              ref={(el) => {
-                fieldRefs.current.budget = el
-              }}
-              type='number'
-              value={formData.budget}
-              onChange={(e) => handleInputChange('budget', e.target.value)}
-              className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-              placeholder='e.g. 5000'
-              min='0'
-            />
-            <ErrorMessage error={errors.budget} />
-          </div>
-
-          <div>
-            <label
-              htmlFor='timeline'
-              className='block font-mono text-sm font-medium text-green-300'
-            >
-              TIMELINE
-            </label>
-            <input
-              id='timeline'
-              ref={(el) => {
-                fieldRefs.current.timeline = el
-              }}
-              type='text'
-              value={formData.timeline}
-              onChange={(e) => handleInputChange('timeline', e.target.value)}
-              className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-              placeholder='e.g. 2-3 months, ASAP, by end of year'
-            />
-            <ErrorMessage error={errors.timeline} />
-          </div>
-        </div>
-      </div>
-
-      {/* Project Type & Features Section - type drives the default feature set below it */}
-      <div className='mb-10 space-y-4'>
-        <h3 className='font-mono text-lg font-bold text-green-400'>
-          PROJECT TYPE & FEATURES
-        </h3>
-
-        {/* Project Type */}
-        <div>
-          <label
-            htmlFor='projectType'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            PROJECT TYPE *
-          </label>
-          <select
-            id='projectType'
-            ref={(el) => {
-              fieldRefs.current.projectType = el
-            }}
-            value={formData.projectType}
-            onChange={(e) =>
-              handleProjectTypeChange(e.target.value as ProjectType)
-            }
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-          >
-            {projectTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ErrorMessage error={errors.projectType} />
-          <div className='rounded border border-green-400/20 bg-black/30 px-4 py-3'>
-            <p className='font-mono text-sm text-green-300/80'>
-              {projectTypeDescriptions[formData.projectType]}
-            </p>
-            <p className='mt-2 font-mono text-xs text-green-300/60'>
-              Default features include:{' '}
-              {(getDefaultFeaturesForProjectType(formData.projectType).length >
-              0
-                ? getDefaultFeaturesForProjectType(formData.projectType).map(
-                    (feature) => featureLabelByValue[feature]
-                  )
-                : ['none - nothing preselected']
-              ).join(', ')}
-            </p>
-          </div>
-        </div>
-
-        {/* Feature checklist toggle - collapsed by default, label reflects current selection */}
-        <button
-          type='button'
-          onClick={() => setShowFeatureChecklist((prev) => !prev)}
-          className='font-mono text-lg font-bold text-green-400'
-        >
-          {showFeatureChecklist ? '▾' : '▸'} FEATURES SELECTED (
-          {formData.features?.length ?? 0})
-        </button>
-
-        {showFeatureChecklist && (
-          <div className='space-y-4'>
-            {projectFeatureGroups.map((group) => (
-              <div key={group.label} className='space-y-4'>
-                <h4 className='font-mono text-sm font-bold text-green-400/80'>
-                  {group.label}
-                </h4>
-                <div className='grid gap-4 md:grid-cols-2'>
-                  {group.features.map((featureValue) => (
-                    <label
-                      key={featureValue}
-                      className='flex items-center space-x-3 font-mono text-sm text-green-300'
-                    >
-                      <input
-                        type='checkbox'
-                        checked={
-                          formData.features?.includes(featureValue) ?? false
-                        }
-                        onChange={(e) =>
-                          handleFeatureChange(featureValue, e.target.checked)
-                        }
-                        className='size-4 rounded border-green-400/30 bg-black/50 text-green-400 focus:ring-green-400/30'
-                      />
-                      <span>{featureLabelByValue[featureValue]}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Contact & Additional Info */}
-      <div className='space-y-4'>
-        <h3 className='font-mono text-lg font-bold text-green-400'>
-          CONTACT & ADDITIONAL INFO
-        </h3>
-
-        {/* Contact Preference */}
-        <div>
-          <label
-            htmlFor='contactPreference'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            PREFERRED CONTACT METHOD
-          </label>
-          <select
-            id='contactPreference'
-            ref={(el) => {
-              fieldRefs.current.contactPreference = el
-            }}
-            value={formData.contactPreference}
-            onChange={(e) =>
-              handleInputChange('contactPreference', e.target.value)
-            }
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-          >
-            {contactPreferenceOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ErrorMessage error={errors.contactPreference} />
-        </div>
-
-        {/* Additional Info */}
-        <div>
-          <label
-            htmlFor='additionalInfo'
-            className='block font-mono text-sm font-medium text-green-300'
-          >
-            ADDITIONAL INFORMATION
-          </label>
-          <textarea
-            id='additionalInfo'
-            ref={(el) => {
-              fieldRefs.current.additionalInfo = el
-            }}
-            value={formData.additionalInfo}
-            onChange={(e) =>
-              handleInputChange('additionalInfo', e.target.value)
-            }
-            rows={4}
-            className='mt-2 block w-full rounded border border-green-400/30 bg-black/50 px-4 py-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:ring-2 focus:ring-green-400/30 focus:outline-none'
-            placeholder='Any additional details, inspiration websites, specific requirements, or questions you have...'
-          />
-          <ErrorMessage error={errors.additionalInfo} />
-        </div>
-      </div>
-
-      {/* Submit Button */}
-      <div className='flex justify-end space-x-4'>
-        <Button
-          type='button'
-          onClick={() => router.back()}
-          disabled={isSubmitting}
-        >
-          CANCEL
-        </Button>
-        <Button type='submit' disabled={isSubmitting}>
-          {isSubmitting ? 'SUBMITTING...' : 'SUBMIT REQUEST'}
-        </Button>
-      </div>
+      {step === 'describe' ? (
+        <ProjectRequestDescribeStep
+          formData={formData}
+          errors={errors}
+          isAnalyzing={isAnalyzing}
+          registerField={registerField}
+          onChange={handleInputChange}
+          onCancel={() => router.back()}
+        />
+      ) : (
+        <ProjectRequestReviewStep
+          formData={formData}
+          errors={errors}
+          isSubmitting={isSubmitting}
+          suggestionStatus={suggestionStatus}
+          registerField={registerField}
+          onChange={handleInputChange}
+          onProjectTypeChange={handleProjectTypeChange}
+          onFeatureChange={handleFeatureChange}
+          onBack={() => setStep('describe')}
+        />
+      )}
     </form>
   )
 }
