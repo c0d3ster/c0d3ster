@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { ProjectFeature, ProjectType } from '@/graphql/schema'
 import { Env } from '@/libs/Env'
+import { getFeatureLabel } from '@/libs/featureLabels'
 import { logger } from '@/libs/Logger'
 
 const ANTHROPIC_MESSAGES_API = 'https://api.anthropic.com/v1/messages'
@@ -23,22 +24,65 @@ type ProjectInferenceResult = {
   title: string
 }
 
+// Features are read as plain strings and filtered afterwards, so one invented
+// feature name doesn't throw away an otherwise good suggestion
 const inferenceResponseSchema = z.object({
   projectType: z.nativeEnum(ProjectType),
-  features: z.array(z.nativeEnum(ProjectFeature)).default([]),
+  features: z.array(z.string()).default([]),
   title: z.string().trim().min(1).max(255),
 })
+
+const validFeatures = new Set<string>(Object.values(ProjectFeature))
+
+const isProjectFeature = (value: string): value is ProjectFeature =>
+  validFeatures.has(value)
+
+const PROJECT_TYPE_DESCRIPTIONS: Record<ProjectType, string> = {
+  [ProjectType.Website]:
+    'A landing page or informational site describing a business. No logins or user accounts.',
+  [ProjectType.WebApp]:
+    'A fully functional application where users create accounts and interact with data: dashboards, member portals, booking tools.',
+  [ProjectType.ECommerce]:
+    'An online store where customers browse products, create accounts, and check out.',
+  [ProjectType.MobileApp]:
+    'A native or cross-platform iOS/Android app, typically with accounts and data that syncs across devices.',
+  [ProjectType.Api]:
+    'A backend-only service that other apps call into. No user-facing screens.',
+  [ProjectType.Maintenance]:
+    'Ongoing upkeep on something already built (by anyone): bug fixes, updates, and support, not a new build.',
+  [ProjectType.Consultation]:
+    'A paid advisory engagement (architecture review, audit, planning, scoping) with no build deliverable.',
+  [ProjectType.Other]:
+    'Does not fit the other types, for example hardware or firmware work.',
+}
 
 const buildPrompt = (input: ProjectInferenceInput): string => {
   const projectTypes = Object.values(ProjectType)
   const features = Object.values(ProjectFeature)
+  const typeLines = projectTypes
+    .map((type) => `- "${type}": ${PROJECT_TYPE_DESCRIPTIONS[type]}`)
+    .join('\n')
+  const featureLines = features
+    .map((feature) => {
+      const { label, description } = getFeatureLabel(feature)
+      return `- "${feature}" (${label}): ${description}`
+    })
+    .join('\n')
 
   return `A prospective client submitted this project request:
 
 Project name: ${input.projectName}
 Description: ${input.description}
 
-Classify this request. Respond with ONLY a JSON object (no prose, no markdown fences, no code blocks) matching exactly this shape:
+Project types:
+${typeLines}
+
+Features:
+${featureLines}
+
+Classify this request. Pick the single best project type. Select a feature only if the description asks for it or clearly implies it; do not pad the list, and return an empty array when nothing is clearly called for. Use only the exact feature values listed above.
+
+Respond with ONLY a JSON object (no prose, no markdown fences, no code blocks) matching exactly this shape:
 {"projectType": one of [${projectTypes.map((type) => `"${type}"`).join(', ')}], "features": an array of zero or more of [${features.map((feature) => `"${feature}"`).join(', ')}], "title": a short, human-readable project title (max 60 characters)}`
 }
 
@@ -140,6 +184,16 @@ export class ProjectInferenceService {
       )
     }
 
-    return result.data
+    const features = [...new Set(result.data.features)].filter(isProjectFeature)
+    const dropped = result.data.features.filter(
+      (feature) => !isProjectFeature(feature)
+    )
+    if (dropped.length > 0) {
+      logger.warn('Project inference suggested unknown features, dropping', {
+        dropped,
+      })
+    }
+
+    return { ...result.data, features }
   }
 }

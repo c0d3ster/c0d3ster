@@ -177,6 +177,62 @@ describe('ProjectInferenceService', () => {
       })
     })
 
+    it('drops unknown and duplicate features but keeps the valid ones', async () => {
+      mockFetch.mockResolvedValue(
+        anthropicResponse(
+          JSON.stringify({
+            projectType: ProjectType.Website,
+            features: [
+              ProjectFeature.Email,
+              'contact_form',
+              ProjectFeature.Email,
+              ProjectFeature.CmsIntegration,
+            ],
+            title: 'My Site',
+          })
+        )
+      )
+
+      const result =
+        await projectInferenceService.inferProjectDetails(validInput)
+
+      expect(result.features).toEqual([
+        ProjectFeature.Email,
+        ProjectFeature.CmsIntegration,
+      ])
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('unknown features'),
+        { dropped: ['contact_form'] }
+      )
+    })
+
+    it('describes every project type and feature in the prompt', async () => {
+      let sentBody = ''
+      mockFetch.mockImplementation(
+        async (_url: string, init: { body: string }) => {
+          sentBody = init.body
+          return anthropicResponse(
+            JSON.stringify({
+              projectType: ProjectType.Other,
+              features: [],
+              title: 'X',
+            })
+          )
+        }
+      )
+
+      await projectInferenceService.inferProjectDetails(validInput)
+
+      // The body is JSON, so quotes inside the prompt appear escaped
+      const escaped = (text: string): string => JSON.stringify(text).slice(1, -1)
+      for (const type of Object.values(ProjectType)) {
+        expect(sentBody).toContain(escaped(`- "${type}":`))
+      }
+      for (const feature of Object.values(ProjectFeature)) {
+        expect(sentBody).toContain(escaped(`- "${feature}" (`))
+      }
+    })
+
     it('degrades gracefully on malformed (non-JSON) output instead of crashing', async () => {
       mockFetch.mockResolvedValue(
         anthropicResponse('Sure! Here is a suggestion: not json')
