@@ -37,6 +37,12 @@ export const projectRequestSchema = z.object({
 // Infer the TypeScript type from the schema
 export type ProjectRequestData = z.infer<typeof projectRequestSchema>
 
+// Step 1 of the request form: only what the project inference needs, reusing the full schema's rules
+export const projectDescriptionSchema = projectRequestSchema.pick({
+  projectName: true,
+  description: true,
+})
+
 // Project type options for the form - automatically generated from enum
 export const projectTypeOptions = Object.values(ProjectType).map((value) => ({
   value,
