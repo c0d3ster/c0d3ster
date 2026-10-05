@@ -358,6 +358,59 @@ export const inferenceCases: InferenceCase[] = [
     ],
   },
 
+  // custom_api recognition without the word "API"
+  {
+    id: 'api-crm-sync',
+    projectName: 'CRM Bridge',
+    description:
+      'Whenever a deal closes in our CRM we need the customer and order details pushed into our accounting system automatically. Nobody should have to touch it.',
+    acceptableTypes: [Api, Other],
+    requiredFeatures: [CustomApi],
+    acceptableFeatures: [Database, Deployment, Email, Analytics],
+    forbiddenFeatures: [
+      ResponsiveDesign,
+      CustomDesign,
+      Seo,
+      AdminDashboard,
+      CmsIntegration,
+      ContentCreation,
+    ],
+  },
+  {
+    id: 'api-event-router',
+    projectName: 'Order Events',
+    description:
+      'Our storefront emits order events and we need a small service that routes them to the warehouse, the email tool, and our analytics. It runs in the background, no screens.',
+    acceptableTypes: [Api],
+    requiredFeatures: [CustomApi],
+    acceptableFeatures: [Database, Deployment, Email, Analytics],
+    forbiddenFeatures: [
+      ResponsiveDesign,
+      CustomDesign,
+      Seo,
+      AdminDashboard,
+      CmsIntegration,
+      ContentCreation,
+    ],
+  },
+  {
+    id: 'webapp-uses-stripe',
+    projectName: 'Tutor Finder',
+    description:
+      'A web app where parents sign up, browse tutors, book sessions and pay with Stripe. Tutors manage their own availability.',
+    acceptableTypes: [WebApp, ECommerce],
+    requiredFeatures: [Auth, Database, PaymentProcessing],
+    acceptableFeatures: [
+      Email,
+      ResponsiveDesign,
+      AdminDashboard,
+      Analytics,
+      Deployment,
+    ],
+    // Its own backend and Stripe webhooks are part of the base build, not a partner-facing API
+    forbiddenFeatures: [CustomApi, MaintenanceRetainer, TechnicalAdvisory],
+  },
+
   // Maintenance
   {
     id: 'maintenance-bugfix',

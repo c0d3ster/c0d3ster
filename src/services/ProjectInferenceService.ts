@@ -56,6 +56,17 @@ const PROJECT_TYPE_DESCRIPTIONS: Record<ProjectType, string> = {
     'Does not fit the other types, for example hardware or firmware work.',
 }
 
+// Extra selection guidance where a feature's client-facing description is not enough
+// for the model to recognize it. Kept here so the client-facing copy stays untouched.
+const FEATURE_GUIDANCE: Partial<Record<ProjectFeature, string>> = {
+  [ProjectFeature.CustomApi]:
+    'Pick this whenever the deliverable is endpoints that other developers or systems call (always the case for project type "api"), and also when the project receives, exposes, or forwards data to other systems or services even if the request never says "API" (webhook receivers, integrations, data syncing, routing events between services). Do not pick it for the internal backend of a web app.',
+  [ProjectFeature.ResponsiveDesign]:
+    'Applies to websites and web apps only. Never pick it for a native mobile app or a backend-only service.',
+  [ProjectFeature.PaymentProcessing]:
+    'Pick this only when the project actually charges or collects money (checkout, subscriptions, invoices, deposits). Do not pick it when the project merely calculates, splits, or displays amounts.',
+}
+
 const buildPrompt = (input: ProjectInferenceInput): string => {
   const projectTypes = Object.values(ProjectType)
   const features = Object.values(ProjectFeature)
@@ -69,6 +80,10 @@ const buildPrompt = (input: ProjectInferenceInput): string => {
     })
     .join('\n')
 
+  const guidanceLines = Object.entries(FEATURE_GUIDANCE)
+    .map(([feature, note]) => `- "${feature}": ${note}`)
+    .join('\n')
+
   return `A prospective client submitted this project request:
 
 Project name: ${input.projectName}
@@ -80,7 +95,10 @@ ${typeLines}
 Features:
 ${featureLines}
 
-Classify this request. Pick the single best project type. Select a feature only if the description asks for it or clearly implies it; do not pad the list, and return an empty array when nothing is clearly called for. Use only the exact feature values listed above.
+Selection notes:
+${guidanceLines}
+
+Classify this request. Pick the single best project type. Select a feature only if the description asks for it or clearly implies it; do not pad the list, and return an empty array when nothing is clearly called for (an empty array is a perfectly good answer for a simple project). Respect explicit exclusions: if the client says they do not want something, such as accounts or saved data, do not pick the features that provide it. Use only the exact feature values listed above.
 
 Respond with ONLY a JSON object (no prose, no markdown fences, no code blocks) matching exactly this shape:
 {"projectType": one of [${projectTypes.map((type) => `"${type}"`).join(', ')}], "features": an array of zero or more of [${features.map((feature) => `"${feature}"`).join(', ')}], "title": a short, human-readable project title (max 60 characters)}`
@@ -125,6 +143,7 @@ export class ProjectInferenceService {
         body: JSON.stringify({
           model: MODEL,
           max_tokens: 400,
+          temperature: 0,
           messages: [{ role: 'user', content: buildPrompt(input) }],
         }),
       })
