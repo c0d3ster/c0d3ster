@@ -160,6 +160,23 @@ describe('ProjectInferenceService', () => {
       }
     })
 
+    it('parses JSON wrapped in a markdown code fence', async () => {
+      mockFetch.mockResolvedValue(
+        anthropicResponse(
+          '```json\n{"projectType":"e_commerce","features":["database"],"title":"My Store"}\n```'
+        )
+      )
+
+      const result =
+        await projectInferenceService.inferProjectDetails(validInput)
+
+      expect(result).toEqual({
+        projectType: ProjectType.ECommerce,
+        features: [ProjectFeature.Database],
+        title: 'My Store',
+      })
+    })
+
     it('degrades gracefully on malformed (non-JSON) output instead of crashing', async () => {
       mockFetch.mockResolvedValue(
         anthropicResponse('Sure! Here is a suggestion: not json')
