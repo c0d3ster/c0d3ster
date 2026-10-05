@@ -231,6 +231,9 @@ describe('ProjectInferenceService', () => {
       for (const feature of Object.values(ProjectFeature)) {
         expect(sentBody).toContain(escaped(`- "${feature}" (`))
       }
+
+      expect(sentBody).toContain('Selection notes')
+      expect(sentBody).toContain(escaped('- "custom_api": Pick this when'))
     })
 
     it('degrades gracefully on malformed (non-JSON) output instead of crashing', async () => {
