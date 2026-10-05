@@ -42,6 +42,14 @@ Classify this request. Respond with ONLY a JSON object (no prose, no markdown fe
 {"projectType": one of [${projectTypes.map((type) => `"${type}"`).join(', ')}], "features": an array of zero or more of [${features.map((feature) => `"${feature}"`).join(', ')}], "title": a short, human-readable project title (max 60 characters)}`
 }
 
+// Haiku occasionally wraps JSON in a markdown fence despite the prompt saying not to
+const stripCodeFences = (raw: string): string =>
+  raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim()
+
 export class ProjectInferenceService {
   async inferProjectDetails(
     input: ProjectInferenceInput
@@ -108,7 +116,7 @@ export class ProjectInferenceService {
   private parseSuggestion(raw: string): ProjectInferenceResult {
     let parsed: unknown
     try {
-      parsed = JSON.parse(raw)
+      parsed = JSON.parse(stripCodeFences(raw))
     } catch (error) {
       logger.error('Project inference returned malformed JSON', {
         raw,
