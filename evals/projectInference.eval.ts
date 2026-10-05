@@ -1,6 +1,7 @@
 /* eslint-disable no-console -- the eval reports its results to the terminal */
 import 'reflect-metadata'
 import { GraphQLError } from 'graphql'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import type { ProjectType } from '@/graphql/schema';
@@ -9,11 +10,14 @@ import { ProjectFeature } from '@/graphql/schema'
 import { ProjectInferenceService } from '@/services/ProjectInferenceService'
 
 import type { InferenceCase } from './projectInference.cases'
+import type { CaseResult } from './projectInference.report'
 
 import { inferenceCases } from './projectInference.cases'
+import { writeResults } from './projectInference.report'
 
 // Live eval against the real Anthropic API. Run with: pnpm eval:inference
-// Knobs: EVAL_RUNS (repeats per case, default 3), EVAL_ONLY (comma separated case ids),
+// Writes evals/results/<EVAL_LABEL or timestamp>.html and .json (gitignored)
+// Knobs: EVAL_LABEL, EVAL_RUNS (repeats per case, default 3), EVAL_ONLY (comma separated case ids),
 //        EVAL_MIN_TYPE_ACCURACY (default 0.8), EVAL_MIN_REQUIRED_RECALL (default 0.7),
 //        EVAL_MAX_FORBIDDEN_RATE (share of runs that pick a forbidden feature, default 0.1)
 
@@ -203,6 +207,43 @@ const featureStats = (reports: CaseReport[]): Map<ProjectFeature, FeatureStat> =
   return stats
 }
 
+const toCaseResult = (report: CaseReport): CaseResult => {
+  const { testCase } = report
+  return {
+    id: testCase.id,
+    tag: testCase.tag ?? 'clear',
+    projectName: testCase.projectName,
+    description: testCase.description,
+    acceptableTypes: testCase.acceptableTypes,
+    requiredFeatures: testCase.requiredFeatures,
+    acceptableFeatures: testCase.acceptableFeatures ?? [],
+    forbiddenFeatures: testCase.forbiddenFeatures ?? [],
+    runs: [
+      ...report.successes.map((run, index) => ({
+        ok: true,
+        projectType: run.projectType,
+        features: run.features,
+        title: run.title,
+        typeHit: report.scores[index]?.typeHit ?? false,
+        missed: testCase.requiredFeatures.filter(
+          (feature) => !run.features.includes(feature)
+        ),
+        forbiddenHits: report.scores[index]?.forbiddenHits ?? [],
+        noise: report.scores[index]?.noise ?? [],
+      })),
+      ...report.errors.map((errorCode) => ({
+        ok: false,
+        errorCode,
+        features: [],
+        typeHit: false,
+        missed: [],
+        forbiddenHits: [],
+        noise: [],
+      })),
+    ],
+  }
+}
+
 describe.skipIf(!process.env.ANTHROPIC_API_KEY)(
   'project inference eval',
   () => {
@@ -280,6 +321,40 @@ describe.skipIf(!process.env.ANTHROPIC_API_KEY)(
           `titles over ${MAX_TITLE_LENGTH} chars: ${allScores.filter((s) => s.longTitle).length}`,
         ].join('\n')
       )
+
+      const label =
+        process.env.EVAL_LABEL ??
+        new Date().toISOString().replace(/[:.]/g, '-')
+      const { html, json } = writeResults(
+        {
+          label,
+          startedAt: new Date().toISOString(),
+          runsPerCase: RUNS,
+          summary: {
+            typeAccuracy,
+            requiredRecall,
+            forbiddenRate,
+            avgPicked: mean(
+              reports.flatMap((r) => r.successes.map((s) => s.features.length))
+            ),
+            avgNoise: mean(allScores.map((s) => s.noise.length)),
+            errors: reports.reduce((sum, r) => sum + r.errors.length, 0),
+          },
+          cases: reports.map(toCaseResult),
+          features: [...featureStats(reports).entries()].map(
+            ([feature, stat]) => ({
+              feature,
+              expected: stat.expected,
+              hit: stat.hit,
+              picked: stat.picked,
+              outsideOkSet: stat.bad,
+            })
+          ),
+        },
+        join(process.cwd(), 'evals', 'results')
+      )
+      console.log(`report: ${html}
+data:   ${json}`)
 
       expect(typeAccuracy).toBeGreaterThanOrEqual(MIN_TYPE_ACCURACY)
       expect(requiredRecall).toBeGreaterThanOrEqual(MIN_REQUIRED_RECALL)

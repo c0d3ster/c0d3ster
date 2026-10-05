@@ -56,3 +56,6 @@ build-archive.log
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# live LLM eval output
+/evals/results/
