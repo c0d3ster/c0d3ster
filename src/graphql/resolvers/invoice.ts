@@ -9,6 +9,7 @@ import {
   Root,
 } from 'type-graphql'
 
+import type { UserRecord } from '@/models'
 import type { InvoiceDetail, InvoiceService, UserService } from '@/services'
 
 import {
@@ -26,6 +27,9 @@ import { isAdminRole } from '@/utils'
 
 const toIso = (date: Date | null): string | null =>
   date?.toISOString() ?? null
+
+const notFound = (): GraphQLError =>
+  new GraphQLError('Invoice not found', { extensions: { code: 'NOT_FOUND' } })
 
 @Resolver(() => Invoice)
 export class InvoiceResolver {
@@ -60,26 +64,24 @@ export class InvoiceResolver {
     return this.invoiceService.sendInvoice(id)
   }
 
+  // Only the owning client's open counts as a view; an admin previewing is a no-op
+  @Mutation(() => Invoice)
+  async markInvoiceViewed(
+    @Arg('id', () => ID) id: string
+  ): Promise<InvoiceDetail> {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    const invoice = await this.getVisibleInvoice(id, currentUser)
+    if (!invoice) throw notFound()
+    if (isAdminRole(currentUser.role)) return invoice
+    return this.invoiceService.markViewed(id)
+  }
+
   @Query(() => Invoice, { nullable: true })
   async getInvoice(
     @Arg('id', () => ID) id: string
   ): Promise<InvoiceDetail | undefined> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
-    const invoice = await this.invoiceService.getInvoiceById(id)
-    if (!invoice) return undefined
-
-    if (isAdminRole(currentUser.role)) return invoice
-
-    // Clients only see their own invoices, and never drafts. Report both as
-    // missing so invoice ids can't be probed.
-    if (
-      invoice.clientId !== currentUser.id ||
-      invoice.status === InvoiceStatus.Draft
-    ) {
-      throw new GraphQLError('Invoice not found', {
-        extensions: { code: 'NOT_FOUND' },
-      })
-    }
+    const invoice = await this.getVisibleInvoice(id, currentUser)
     return invoice
   }
 
@@ -156,5 +158,22 @@ export class InvoiceResolver {
   @FieldResolver(() => String)
   updatedAt(@Root() invoice: InvoiceDetail): string {
     return invoice.updatedAt.toISOString()
+  }
+
+  // Clients only see their own invoices, and never drafts. Report both as
+  // missing so invoice ids can't be probed.
+  private async getVisibleInvoice(
+    id: string,
+    currentUser: UserRecord
+  ): Promise<InvoiceDetail | undefined> {
+    const invoice = await this.invoiceService.getInvoiceById(id)
+    if (!invoice || isAdminRole(currentUser.role)) return invoice
+    if (
+      invoice.clientId !== currentUser.id ||
+      invoice.status === InvoiceStatus.Draft
+    ) {
+      throw notFound()
+    }
+    return invoice
   }
 }
