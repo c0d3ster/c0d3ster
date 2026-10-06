@@ -6,6 +6,7 @@ import { buildSchema } from 'type-graphql'
 import {
   contactService,
   fileService,
+  invoiceService,
   projectInferenceService,
   projectRequestService,
   projectService,
@@ -17,6 +18,7 @@ import {
   ContactResolver,
   DashboardResolver,
   FileResolver,
+  InvoiceResolver,
   ProjectRequestResolver,
   ProjectResolver,
   UserResolver,
@@ -58,6 +60,7 @@ async function createSchema(): Promise<GraphQLSchema> {
         StatusUpdateResolver,
         ContactResolver,
         FileResolver,
+        InvoiceResolver,
       ],
       validate: false,
       // scalarsMap: [{ type: JSONType, scalar: JSONScalar }],
@@ -74,6 +77,8 @@ async function createSchema(): Promise<GraphQLSchema> {
             )
           if (someClass === FileResolver)
             return new FileResolver(fileService, projectService, userService)
+          if (someClass === InvoiceResolver)
+            return new InvoiceResolver(invoiceService, userService)
           if (someClass === ContactResolver)
             return new ContactResolver(contactService)
           if (someClass === DashboardResolver)

@@ -45,6 +45,16 @@ export const createMockProjectRequestService = () => ({
   getProjectRequestStatusUpdates: vi.fn(),
 })
 
+// Mock InvoiceService
+export const createMockInvoiceService = () => ({
+  getInvoiceById: vi.fn(),
+  getProjectInvoices: vi.fn(),
+  getClientInvoices: vi.fn(),
+  createInvoice: vi.fn(),
+  updateInvoice: vi.fn(),
+  sendInvoice: vi.fn(),
+})
+
 // Mock ProjectInferenceService
 export const createMockProjectInferenceService = () => ({
   inferProjectDetails: vi.fn(),

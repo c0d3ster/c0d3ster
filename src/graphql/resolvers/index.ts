@@ -1,6 +1,7 @@
 export { ContactResolver } from './ContactResolver'
 export { DashboardResolver } from './DashboardResolver'
 export { FileResolver } from './FileResolver'
+export { InvoiceResolver } from './invoice'
 export { ProjectRequestResolver } from './ProjectRequestResolver'
 export { ProjectResolver } from './ProjectResolver'
 export { StatusUpdateResolver } from './StatusUpdateResolver'
