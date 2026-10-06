@@ -20,6 +20,8 @@ export const Env = createEnv({
     NEON_API_KEY: z.string().min(1).optional(),
     NEON_ORG_ID: z.string().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
+    STRIPE_SECRET_KEY: z.string().min(1).optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().optional(),
@@ -49,6 +51,8 @@ export const Env = createEnv({
     NEON_API_KEY: process.env.NEON_API_KEY,
     NEON_ORG_ID: process.env.NEON_ORG_ID,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
