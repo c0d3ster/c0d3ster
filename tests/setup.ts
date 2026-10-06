@@ -123,6 +123,8 @@ vi.mock('drizzle-orm', () => ({
   isNull: vi.fn(),
   ne: vi.fn(),
   exists: vi.fn(),
+  inArray: vi.fn(),
+  like: vi.fn(),
   pgEnum: vi.fn(),
   sql: vi.fn(),
   SQL: vi.fn(),
@@ -175,6 +177,13 @@ vi.mock('@/libs/DB', () => ({
       },
       projectFiles: {
         findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
+      invoices: {
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
+      invoiceLineItems: {
         findMany: vi.fn(),
       },
     },

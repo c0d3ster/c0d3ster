@@ -154,3 +154,58 @@ Branch: overnight/2026-10-06/r1-02-t4-invoice-data-model
 
 - Run `npm run db:migrate` and confirm `0022_cold_magik` applies cleanly
   before #5 and later tasks proceed.
+
+## #5 GraphQL schema + resolvers
+
+Branch: overnight/2026-10-06/r1-03-t5-invoice-graphql-resolvers
+
+### What was built
+
+- `src/graphql/schema/invoice.ts` (built on #4's enum stub): `Invoice`,
+  `InvoiceLineItem` object types; `InvoiceLineItemInput`, `CreateInvoiceInput`,
+  `UpdateInvoiceInput` input types. `Invoice` exposes a computed
+  `depositAmount` (post-discount `totalAmount` x `depositPercent`). Dates are
+  ISO strings. Stripe ids are intentionally not exposed.
+- `src/graphql/resolvers/invoice.ts` — `InvoiceResolver(invoiceService, userService)`:
+  `createInvoice`, `updateInvoice`, `sendInvoice`, `getProjectInvoices` (all
+  admin-only via `checkPermission(user, UserRole.Admin)`), `getInvoice`,
+  `getMyInvoices`. Registered in `resolvers/index.ts` and the DI container in
+  `src/graphql/index.ts`. `schema/index.ts` already re-exported `./invoice`.
+- `src/services/InvoiceService.ts` (+ `invoiceService` instance in
+  `services/index.ts`, `InvoiceDetail` type exported): CRUD, status transition
+  map, `INV-YYYY-NNN` generation, feature auto-populate.
+- Exports from `InvoiceService.ts`: `calculateInvoiceTotals` (the one pure
+  subtotal -> discount -> tax -> total function, used by create AND update),
+  `calculateDepositAmount`.
+- Test infra: `invoices`/`invoiceLineItems` added to the global DB mock and
+  `inArray`/`like` to the drizzle-orm mock in `tests/setup.ts`;
+  `createMockInvoiceService` in `tests/mocks/services.ts`.
+
+### Key decisions
+
+- `createInvoice`: omitted `lineItems` = auto-populate from `project.features`
+  via `featurePricing`; an explicit list is used as-is (no merge). `clientId`
+  is taken from the project.
+- Invoice number: `COUNT(*)` of `INV-<year>-%` inside `db.transaction`; a
+  unique violation (pg 23505, also checked on `.cause`) maps to a `CONFLICT`
+  GraphQLError ("please retry"). No automatic retry.
+- Discounts: flat is capped at subtotal; percentage 0-100; `discountAmount`
+  is null when no discount. `updateInvoice` treats `undefined` as unchanged and
+  explicit `null` on discount fields as clear (which nulls all four discount
+  columns). Tax is applied after discount.
+- `updateInvoice` only allowed in draft/sent status; passing `lineItems`
+  replaces all items; totals recomputed from existing items otherwise.
+- Clients never see drafts: `getInvoice` returns NOT_FOUND for another
+  client's invoice or their own draft; `getClientInvoices` excludes drafts.
+  Admins see everything. `getMyInvoices` uses `checkPermission(Client)`, so
+  admins can call it too (existing hierarchy behavior).
+- Status transition map lives in the service; only `sendInvoice` uses it so
+  far (draft -> sent). Later payment tasks should reuse `assertTransition`
+  (currently module-private).
+
+### Deviations from acceptance criteria
+
+- `sendInvoice` only validates and sets `status=sent` + `sentAt`; it does NOT
+  email the client. Email delivery is Phase 5 per the epic.
+- Not verified against a live DB (migration `0022` from #4 still unapplied);
+  covered by mocked unit tests only.
