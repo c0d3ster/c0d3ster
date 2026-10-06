@@ -110,3 +110,47 @@ read-only, not written to a real form field.
   any environment (dev/staging/prod). Without it, `inferProjectDetails`
   throws a clean `PROJECT_INFERENCE_NOT_CONFIGURED` GraphQLError — the rest
   of the app is unaffected.
+
+## #4 Invoice data model
+
+Branch: overnight/2026-10-06/r1-02-t4-invoice-data-model
+
+### What was built
+
+- `src/models/invoices.ts` — `invoices` and `invoiceLineItems` Drizzle tables
+  per the Phase 2 column specs, plus `InvoiceRecord` / `InvoiceLineItemRecord`
+  types. Exported from `src/models/index.ts` (and added to `schemas`).
+- `src/models/enums.ts` — `invoiceStatusEnum` (`invoice_status`) and
+  `discountTypeEnum` (`discount_type`), derived from the TS enums.
+- **`src/graphql/schema/invoice.ts` is a stub created by this task**: only
+  `InvoiceStatus`, `DiscountType` and their `registerEnumType` calls, already
+  re-exported from `schema/index.ts`. **#5 must build on this file, not
+  recreate it.**
+- Migration `migrations/0022_cold_magik.sql` (generated, NOT applied).
+
+### Key decisions
+
+- `projectId` / `clientId` FKs use no cascade (restrict) so invoices survive
+  project/client edits. Judgment call, not in the doc.
+- `invoice_line_items.invoiceId` cascades on delete (line items are owned by
+  the invoice).
+- Money columns are `decimal(10,2, mode number)`; `taxRate` is
+  `decimal(5,4)` (e.g. `0.0800`); `quantity` is `decimal(10,2)` default 1.
+- `subtotal`, `taxRate`, `taxAmount`, `totalAmount`, `paidAmount` are NOT NULL
+  default 0; discount fields nullable per doc.
+- `invoiceLineItems.feature` is `varchar(50)` typed as `ProjectFeature`
+  (nullable = custom item), not a new pg enum, so `ProjectFeature` growth
+  (#2) never needs an enum-alter migration. Same approach as the JSON
+  `features` columns elsewhere.
+- Deposit/balance due dates use `date` columns (mode `date`).
+- `invoiceNumber` unique constraint `uq_invoices_invoice_number`.
+
+### Deviations from acceptance criteria
+
+- Migration generated but not applied (see NEEDS HUMAN). Insert/query
+  against a live DB was therefore not verified here.
+
+### NEEDS HUMAN
+
+- Run `npm run db:migrate` and confirm `0022_cold_magik` applies cleanly
+  before #5 and later tasks proceed.
