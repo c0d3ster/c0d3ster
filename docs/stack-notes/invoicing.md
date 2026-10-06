@@ -354,3 +354,62 @@ Branch: overnight/2026-10-06/r1-06-t8-client-invoice-ui
 
 - Same as #6: apply migration `0022` and set Stripe keys, then click through
   list -> detail -> pay -> return in test mode.
+
+## #9 Admin invoice management
+
+Branch: overnight/2026-10-06/r1-07-t9-admin-invoice-management
+
+### What was built
+
+- Routes (first standalone `/admin` tree): `src/app/(auth)/admin/invoices/`
+  `page.tsx` (list), `new/page.tsx`, `[id]/page.tsx` (detail), `[id]/edit/page.tsx`.
+  `middleware.ts` now protects `/admin(.*)`. Pages carry no role check of
+  their own; every admin query/mutation is admin-gated in the resolver.
+- `src/components/molecules/admin/` (barrel-exported via `molecules/index.ts`):
+  `CreateInvoiceForm` (5 steps: project, line items, discount, terms, preview;
+  also the edit form via an `invoice` prop, which skips the project step),
+  `InvoiceLineItemEditor` (add/edit/remove/reorder), `AdminInvoiceList`
+  (all/draft/sent/overdue/paid filter), `AdminInvoiceDetail` (send, edit,
+  two-click cancel), `InvoiceSummaryCard`.
+- Backend: `InvoiceService.getAllInvoices(status?)`, `cancelInvoice`,
+  `getDashboardSummary`, `getSuggestedLineItems`. Resolver: `cancelInvoice`,
+  `getAllInvoices(status)`, `invoiceDashboardSummary`,
+  `suggestedInvoiceLineItems(projectId)` (all admin-only). Ran `pnpm codegen`.
+- `InvoiceSummaryCard` is rendered at the top of `AdminDashboardSection`.
+- `src/utils/Invoice.ts`: `calculatePreviewTotals` (display-only, no tax),
+  `newLineItemKey`. `GET_INVOICE` now also selects `projectId` and line item
+  `feature` (needed to prefill the edit form).
+
+### Key decisions
+
+- Auto-populated line items come from a new admin-only query rather than
+  shipping `featurePricing` to the client, since default prices are meant to
+  stay admin-only. Create sends the edited list explicitly.
+- "Overdue" is effective, not just stored: nothing sets `status=overdue` on a
+  schedule, so open invoices (sent/viewed/partially_paid) past
+  `balanceDueDate` count as overdue in both the list filter and the dashboard
+  count. Outstanding = sum of `totalAmount - paidAmount` over open statuses.
+- "Paid this month" sums `paidAmount` of `paid` invoices whose `paidAt` is in
+  the current month (partial payments have no timestamp).
+- Cancel reuses the service status map (`assertTransition`): allowed from
+  draft/sent/viewed/partially_paid/overdue, rejected from paid/cancelled.
+- Edit allowed only in draft/sent (service rule); "Save & send" is offered
+  only for new or draft invoices.
+- Cancel confirmation is an in-page second click (eslint `no-alert`).
+
+### Deviations from acceptance criteria
+
+- Tax is not collected in the form (create/update default `taxRate` 0); the
+  preview mirrors that. Not in the doc's form flow.
+- Preview is a simple totals view in the form, not a rendering of the client
+  page.
+- Admin list rows show invoice number/date/total/status only (no project or
+  client name; the `Invoice` type does not expose them).
+- Not exercised against a live DB (migration `0022` still unapplied); covered
+  by mocked unit/component tests. `pnpm check:deps` still reports unused
+  exports from earlier tasks (`InvoiceEmail`, `SendInvoiceEmailInput`, evals).
+
+### NEEDS HUMAN
+
+- Same as earlier tasks: apply migration `0022`, then click through
+  `/admin/invoices/new` -> send -> client `/invoices` in a real environment.
