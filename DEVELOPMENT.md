@@ -55,6 +55,10 @@ R2_SECRET_ACCESS_KEY=your_secret_access_key
 R2_BUCKET_NAME=your_bucket_name
 R2_PUBLIC_URL=your_public_url
 
+# Payments (Stripe)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_signing_secret
+
 # Email (Resend)
 RESEND_API_KEY=your_resend_api_key
 
