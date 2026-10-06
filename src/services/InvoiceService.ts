@@ -465,7 +465,7 @@ export class InvoiceService {
         balanceDueDate: existing.balanceDueDate,
         notes: existing.notes,
         paymentInstructions: existing.paymentInstructions,
-        invoiceUrl: `${getBaseUrl()}/dashboard/invoices/${id}`,
+        invoiceUrl: `${getBaseUrl()}/invoices/${id}`,
       })
     } catch (error) {
       const errorMessage =
@@ -485,6 +485,24 @@ export class InvoiceService {
       })
     }
 
+    return this.requireInvoice(id)
+  }
+
+  // sent -> viewed on a client's first open. Later statuses are left alone; the status guard in the
+  // update keeps a concurrent payment from being overwritten.
+  async markViewed(id: string): Promise<InvoiceDetail> {
+    const invoice = await this.requireInvoice(id)
+    if (invoice.status !== InvoiceStatus.Sent) return invoice
+
+    await db
+      .update(schemas.invoices)
+      .set({ status: InvoiceStatus.Viewed, viewedAt: new Date() })
+      .where(
+        and(
+          eq(schemas.invoices.id, id),
+          eq(schemas.invoices.status, InvoiceStatus.Sent)
+        )
+      )
     return this.requireInvoice(id)
   }
 

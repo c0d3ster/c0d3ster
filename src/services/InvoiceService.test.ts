@@ -249,6 +249,43 @@ describe('InvoiceService', () => {
     })
   })
 
+  describe('markViewed', () => {
+    const set = vi.fn()
+
+    beforeEach(() => {
+      set.mockReset().mockReturnValue({ where: async () => undefined })
+      vi.mocked(db.update).mockReturnValue({ set } as never)
+    })
+
+    it('moves a sent invoice to viewed and stamps viewedAt', async () => {
+      vi.mocked(db.query.invoices.findFirst).mockResolvedValue({
+        ...draftInvoice,
+        status: InvoiceStatus.Sent,
+      } as never)
+
+      await service.markViewed('invoice-1')
+
+      expect(set).toHaveBeenCalledWith({
+        status: InvoiceStatus.Viewed,
+        viewedAt: expect.any(Date),
+      })
+    })
+
+    it.each([InvoiceStatus.Viewed, InvoiceStatus.Paid, InvoiceStatus.Draft])(
+      'leaves a %s invoice untouched',
+      async (status) => {
+        vi.mocked(db.query.invoices.findFirst).mockResolvedValue({
+          ...draftInvoice,
+          status,
+        } as never)
+
+        await service.markViewed('invoice-1')
+
+        expect(set).not.toHaveBeenCalled()
+      }
+    )
+  })
+
   describe('sendInvoice', () => {
     it('refuses to send a cancelled invoice', async () => {
       vi.mocked(db.query.invoices.findFirst).mockResolvedValue({
@@ -287,7 +324,7 @@ describe('InvoiceService', () => {
           lineItems: [lineItem],
           totalAmount: 100,
           invoiceUrl: expect.stringMatching(
-            /\/dashboard\/invoices\/invoice-1$/
+            /\/invoices\/invoice-1$/
           ),
         })
       )

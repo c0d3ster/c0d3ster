@@ -21,14 +21,14 @@ describe('InvoiceEmail', () => {
         subtotal: 500,
         taxAmount: 0,
         totalAmount: 500,
-        invoiceUrl: 'https://example.com/dashboard/invoices/abc',
+        invoiceUrl: 'https://example.com/invoices/abc',
       })
     )
 
     expect(html).toContain('INV-2026-001')
     expect(html).toContain('Auth &lt;setup&gt;')
     expect(html).toContain('$500.00')
-    expect(html).toContain('href="https://example.com/dashboard/invoices/abc"')
+    expect(html).toContain('href="https://example.com/invoices/abc"')
     expect(html).toContain('Pay Now')
   })
 })

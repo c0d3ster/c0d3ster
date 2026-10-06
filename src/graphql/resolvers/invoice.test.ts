@@ -97,6 +97,44 @@ describe('InvoiceResolver', () => {
     expect(result.createdAt).toBe('2026-01-01T00:00:00.000Z')
   })
 
+  describe('markInvoiceViewed', () => {
+    it('marks the owning client invoice viewed', async () => {
+      userService.getCurrentUserWithAuth.mockResolvedValue(createMockUser())
+      invoiceService.getInvoiceById.mockResolvedValue(createMockInvoice())
+      invoiceService.markViewed.mockResolvedValue(
+        createMockInvoice({ status: InvoiceStatus.Viewed })
+      )
+
+      const result = await resolver.markInvoiceViewed('invoice-1')
+
+      expect(invoiceService.markViewed).toHaveBeenCalledWith('invoice-1')
+      expect(result.status).toBe(InvoiceStatus.Viewed)
+    })
+
+    it('hides another client invoice', async () => {
+      userService.getCurrentUserWithAuth.mockResolvedValue(createMockUser())
+      invoiceService.getInvoiceById.mockResolvedValue(
+        createMockInvoice({ clientId: 'someone-else' })
+      )
+
+      await expect(
+        resolver.markInvoiceViewed('invoice-1')
+      ).rejects.toMatchObject({ extensions: { code: 'NOT_FOUND' } })
+      expect(invoiceService.markViewed).not.toHaveBeenCalled()
+    })
+
+    it('does not mark viewed when an admin opens it', async () => {
+      userService.getCurrentUserWithAuth.mockResolvedValue(
+        createMockUser({ role: 'admin' })
+      )
+      invoiceService.getInvoiceById.mockResolvedValue(createMockInvoice())
+
+      await resolver.markInvoiceViewed('invoice-1')
+
+      expect(invoiceService.markViewed).not.toHaveBeenCalled()
+    })
+  })
+
   describe('getInvoice', () => {
     it('lets a client read their own sent invoice', async () => {
       userService.getCurrentUserWithAuth.mockResolvedValue(createMockUser())
