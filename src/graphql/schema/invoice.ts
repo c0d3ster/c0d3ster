@@ -230,3 +230,33 @@ export class UpdateInvoiceInput {
   @Field(() => String, { nullable: true })
   paymentInstructions?: string
 }
+
+@ObjectType('InvoiceDashboardSummary')
+export class InvoiceDashboardSummary {
+  @Field(() => Number)
+  outstandingAmount!: number
+
+  @Field(() => Int)
+  outstandingCount!: number
+
+  @Field(() => Int)
+  overdueCount!: number
+
+  @Field(() => Number)
+  paidThisMonthAmount!: number
+}
+
+@ObjectType('SuggestedInvoiceLineItem')
+export class SuggestedInvoiceLineItem {
+  @Field(() => ProjectFeature, { nullable: true })
+  feature?: ProjectFeature
+
+  @Field(() => String)
+  description!: string
+
+  @Field(() => Number)
+  quantity!: number
+
+  @Field(() => Number)
+  unitPrice!: number
+}

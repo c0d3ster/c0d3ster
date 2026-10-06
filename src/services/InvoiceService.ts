@@ -215,7 +215,97 @@ const lineItemsFromFeatures = (
     ]
   })
 
+type InvoiceDashboardSummary = {
+  outstandingAmount: number
+  outstandingCount: number
+  overdueCount: number
+  paidThisMonthAmount: number
+}
+
+const OPEN_STATUSES: InvoiceStatus[] = [
+  InvoiceStatus.Sent,
+  InvoiceStatus.Viewed,
+  InvoiceStatus.PartiallyPaid,
+  InvoiceStatus.Overdue,
+]
+
+// Nothing flips status to overdue on a schedule, so an open invoice past its
+// balance due date counts as overdue too
+const isOverdue = (
+  invoice: Pick<InvoiceRecord, 'status' | 'balanceDueDate'>,
+  now: Date
+): boolean => {
+  if (invoice.status === InvoiceStatus.Overdue) return true
+  if (!OPEN_STATUSES.includes(invoice.status)) return false
+  return Boolean(invoice.balanceDueDate && invoice.balanceDueDate < now)
+}
+
 export class InvoiceService {
+  // Admin list. The overdue filter uses the effective (date-based) overdue check.
+  async getAllInvoices(status?: InvoiceStatus): Promise<InvoiceDetail[]> {
+    const invoices = await db.query.invoices.findMany({
+      orderBy: [desc(schemas.invoices.createdAt)],
+    })
+    const now = new Date()
+    const filtered = invoices.filter((invoice) => {
+      if (!status) return true
+      if (status === InvoiceStatus.Overdue) return isOverdue(invoice, now)
+      return invoice.status === status
+    })
+    return this.withLineItems(filtered)
+  }
+
+  async getDashboardSummary(): Promise<InvoiceDashboardSummary> {
+    const invoices = await db.query.invoices.findMany()
+    const now = new Date()
+    const open = invoices.filter(({ status }) => OPEN_STATUSES.includes(status))
+    const paidThisMonth = invoices.filter(
+      ({ status, paidAt }) =>
+        status === InvoiceStatus.Paid &&
+        paidAt &&
+        paidAt.getFullYear() === now.getFullYear() &&
+        paidAt.getMonth() === now.getMonth()
+    )
+    return {
+      outstandingAmount: round2(
+        open.reduce(
+          (sum, { totalAmount, paidAmount }) => sum + totalAmount - paidAmount,
+          0
+        )
+      ),
+      outstandingCount: open.length,
+      overdueCount: open.filter((invoice) => isOverdue(invoice, now)).length,
+      paidThisMonthAmount: round2(
+        paidThisMonth.reduce((sum, { paidAmount }) => sum + paidAmount, 0)
+      ),
+    }
+  }
+
+  // Default line items for a project, so the admin form can show and edit them before saving
+  async getSuggestedLineItems(
+    projectId: string
+  ): Promise<NormalizedLineItem[]> {
+    const project = await db.query.projects.findFirst({
+      where: eq(schemas.projects.id, projectId),
+    })
+    if (!project) {
+      throw new GraphQLError('Project not found', {
+        extensions: { code: 'NOT_FOUND' },
+      })
+    }
+    return lineItemsFromFeatures(project.features)
+  }
+
+  async cancelInvoice(id: string): Promise<InvoiceDetail> {
+    const existing = await this.requireInvoice(id)
+    assertTransition(existing.status, InvoiceStatus.Cancelled)
+    await db
+      .update(schemas.invoices)
+      .set({ status: InvoiceStatus.Cancelled })
+      .where(eq(schemas.invoices.id, id))
+    return this.requireInvoice(id)
+  }
+
   async getInvoiceById(id: string): Promise<InvoiceDetail | undefined> {
     const invoice = await db.query.invoices.findFirst({
       where: eq(schemas.invoices.id, id),

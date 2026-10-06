@@ -2,7 +2,11 @@ import type { NextFetchEvent, NextRequest } from 'next/server'
 
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/invoices(.*)'])
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/invoices(.*)',
+  '/admin(.*)',
+])
 
 export default async function middleware(
   request: NextRequest,

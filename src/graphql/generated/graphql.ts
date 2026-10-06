@@ -164,6 +164,14 @@ export type Invoice = {
   readonly viewedAt?: Maybe<Scalars['String']['output']>;
 };
 
+export type InvoiceDashboardSummary = {
+  readonly __typename?: 'InvoiceDashboardSummary';
+  readonly outstandingAmount: Scalars['Float']['output'];
+  readonly outstandingCount: Scalars['Int']['output'];
+  readonly overdueCount: Scalars['Int']['output'];
+  readonly paidThisMonthAmount: Scalars['Float']['output'];
+};
+
 export type InvoiceLineItem = {
   readonly __typename?: 'InvoiceLineItem';
   readonly description: Scalars['String']['output'];
@@ -198,6 +206,7 @@ export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly approveProjectRequest: Scalars['String']['output'];
   readonly assignProject: Project;
+  readonly cancelInvoice: Invoice;
   readonly createInvoice: Invoice;
   readonly createProject: Project;
   readonly createProjectRequest: ProjectRequest;
@@ -229,6 +238,11 @@ export type MutationApproveProjectRequestArgs = {
 export type MutationAssignProjectArgs = {
   developerId: Scalars['ID']['input'];
   projectId: Scalars['ID']['input'];
+};
+
+
+export type MutationCancelInvoiceArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -529,9 +543,11 @@ export type Query = {
   readonly featuredProjects: ReadonlyArray<Project>;
   readonly file?: Maybe<File>;
   readonly files: ReadonlyArray<File>;
+  readonly getAllInvoices: ReadonlyArray<Invoice>;
   readonly getInvoice?: Maybe<Invoice>;
   readonly getMyInvoices: ReadonlyArray<Invoice>;
   readonly getProjectInvoices: ReadonlyArray<Invoice>;
+  readonly invoiceDashboardSummary: InvoiceDashboardSummary;
   readonly me?: Maybe<User>;
   readonly myDashboard: UserDashboard;
   readonly project?: Maybe<Project>;
@@ -540,6 +556,7 @@ export type Query = {
   readonly projectRequest?: Maybe<ProjectRequest>;
   readonly projectRequests: ReadonlyArray<ProjectRequest>;
   readonly projects: ReadonlyArray<Project>;
+  readonly suggestedInvoiceLineItems: ReadonlyArray<SuggestedInvoiceLineItem>;
   readonly user?: Maybe<User>;
   readonly userFiles: ReadonlyArray<File>;
   readonly users: ReadonlyArray<User>;
@@ -558,6 +575,11 @@ export type QueryFileArgs = {
 
 export type QueryFilesArgs = {
   filter?: InputMaybe<FileFilterInput>;
+};
+
+
+export type QueryGetAllInvoicesArgs = {
+  status?: InputMaybe<InvoiceStatus>;
 };
 
 
@@ -602,6 +624,11 @@ export type QueryProjectsArgs = {
 };
 
 
+export type QuerySuggestedInvoiceLineItemsArgs = {
+  projectId: Scalars['ID']['input'];
+};
+
+
 export type QueryUserArgs = {
   id: Scalars['ID']['input'];
 };
@@ -629,6 +656,14 @@ export type StatusUpdate = {
   readonly updateMessage: Scalars['String']['output'];
   readonly updatedBy: Scalars['ID']['output'];
   readonly updatedByUser?: Maybe<User>;
+};
+
+export type SuggestedInvoiceLineItem = {
+  readonly __typename?: 'SuggestedInvoiceLineItem';
+  readonly description: Scalars['String']['output'];
+  readonly feature?: Maybe<ProjectFeature>;
+  readonly quantity: Scalars['Float']['output'];
+  readonly unitPrice: Scalars['Float']['output'];
 };
 
 export type UpdateInvoiceInput = {
@@ -811,7 +846,7 @@ export type GetInvoiceQueryVariables = Exact<{
 }>;
 
 
-export type GetInvoiceQuery = { readonly __typename?: 'Query', readonly getInvoice?: { readonly __typename?: 'Invoice', readonly id: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly depositPercent?: number | null, readonly depositAmount: number, readonly depositDueDate?: string | null, readonly balanceDueDate?: string | null, readonly subtotal: number, readonly discountType?: DiscountType | null, readonly discountValue?: number | null, readonly discountLabel?: string | null, readonly discountAmount?: number | null, readonly taxRate: number, readonly taxAmount: number, readonly totalAmount: number, readonly paidAmount: number, readonly notes?: string | null, readonly paymentInstructions?: string | null, readonly sentAt?: string | null, readonly paidAt?: string | null, readonly createdAt: string, readonly lineItems: ReadonlyArray<{ readonly __typename?: 'InvoiceLineItem', readonly id: string, readonly description: string, readonly quantity: number, readonly unitPrice: number, readonly total: number, readonly sortOrder: number }> } | null };
+export type GetInvoiceQuery = { readonly __typename?: 'Query', readonly getInvoice?: { readonly __typename?: 'Invoice', readonly id: string, readonly projectId: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly depositPercent?: number | null, readonly depositAmount: number, readonly depositDueDate?: string | null, readonly balanceDueDate?: string | null, readonly subtotal: number, readonly discountType?: DiscountType | null, readonly discountValue?: number | null, readonly discountLabel?: string | null, readonly discountAmount?: number | null, readonly taxRate: number, readonly taxAmount: number, readonly totalAmount: number, readonly paidAmount: number, readonly notes?: string | null, readonly paymentInstructions?: string | null, readonly sentAt?: string | null, readonly paidAt?: string | null, readonly createdAt: string, readonly lineItems: ReadonlyArray<{ readonly __typename?: 'InvoiceLineItem', readonly id: string, readonly feature?: ProjectFeature | null, readonly description: string, readonly quantity: number, readonly unitPrice: number, readonly total: number, readonly sortOrder: number }> } | null };
 
 export type MarkInvoiceViewedMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -819,6 +854,54 @@ export type MarkInvoiceViewedMutationVariables = Exact<{
 
 
 export type MarkInvoiceViewedMutation = { readonly __typename?: 'Mutation', readonly markInvoiceViewed: { readonly __typename?: 'Invoice', readonly id: string, readonly status: InvoiceStatus, readonly viewedAt?: string | null } };
+
+export type GetAllInvoicesQueryVariables = Exact<{
+  status?: InputMaybe<InvoiceStatus>;
+}>;
+
+
+export type GetAllInvoicesQuery = { readonly __typename?: 'Query', readonly getAllInvoices: ReadonlyArray<{ readonly __typename?: 'Invoice', readonly id: string, readonly projectId: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly totalAmount: number, readonly paidAmount: number, readonly balanceDueDate?: string | null, readonly sentAt?: string | null, readonly createdAt: string }> };
+
+export type InvoiceDashboardSummaryQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type InvoiceDashboardSummaryQuery = { readonly __typename?: 'Query', readonly invoiceDashboardSummary: { readonly __typename?: 'InvoiceDashboardSummary', readonly outstandingAmount: number, readonly outstandingCount: number, readonly overdueCount: number, readonly paidThisMonthAmount: number } };
+
+export type SuggestedInvoiceLineItemsQueryVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+}>;
+
+
+export type SuggestedInvoiceLineItemsQuery = { readonly __typename?: 'Query', readonly suggestedInvoiceLineItems: ReadonlyArray<{ readonly __typename?: 'SuggestedInvoiceLineItem', readonly feature?: ProjectFeature | null, readonly description: string, readonly quantity: number, readonly unitPrice: number }> };
+
+export type CreateInvoiceMutationVariables = Exact<{
+  input: CreateInvoiceInput;
+}>;
+
+
+export type CreateInvoiceMutation = { readonly __typename?: 'Mutation', readonly createInvoice: { readonly __typename?: 'Invoice', readonly id: string, readonly status: InvoiceStatus } };
+
+export type UpdateInvoiceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateInvoiceInput;
+}>;
+
+
+export type UpdateInvoiceMutation = { readonly __typename?: 'Mutation', readonly updateInvoice: { readonly __typename?: 'Invoice', readonly id: string, readonly status: InvoiceStatus } };
+
+export type SendInvoiceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type SendInvoiceMutation = { readonly __typename?: 'Mutation', readonly sendInvoice: { readonly __typename?: 'Invoice', readonly id: string, readonly status: InvoiceStatus, readonly sentAt?: string | null } };
+
+export type CancelInvoiceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type CancelInvoiceMutation = { readonly __typename?: 'Mutation', readonly cancelInvoice: { readonly __typename?: 'Invoice', readonly id: string, readonly status: InvoiceStatus } };
 
 export type GetProjectsQueryVariables = Exact<{
   filter?: InputMaybe<ProjectFilter>;
@@ -1478,6 +1561,7 @@ export const GetInvoiceDocument = gql`
     query GetInvoice($id: ID!) {
   getInvoice(id: $id) {
     id
+    projectId
     invoiceNumber
     status
     depositPercent
@@ -1500,6 +1584,7 @@ export const GetInvoiceDocument = gql`
     createdAt
     lineItems {
       id
+      feature
       description
       quantity
       unitPrice
@@ -1568,6 +1653,247 @@ export function useMarkInvoiceViewedMutation(baseOptions?: ApolloReactHooks.Muta
         return ApolloReactHooks.useMutation<MarkInvoiceViewedMutation, MarkInvoiceViewedMutationVariables>(MarkInvoiceViewedDocument, options);
       }
 export type MarkInvoiceViewedMutationHookResult = ReturnType<typeof useMarkInvoiceViewedMutation>;
+export const GetAllInvoicesDocument = gql`
+    query GetAllInvoices($status: InvoiceStatus) {
+  getAllInvoices(status: $status) {
+    id
+    projectId
+    invoiceNumber
+    status
+    totalAmount
+    paidAmount
+    balanceDueDate
+    sentAt
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetAllInvoicesQuery__
+ *
+ * To run a query within a React component, call `useGetAllInvoicesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetAllInvoicesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetAllInvoicesQuery({
+ *   variables: {
+ *      status: // value for 'status'
+ *   },
+ * });
+ */
+export function useGetAllInvoicesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetAllInvoicesQuery, GetAllInvoicesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetAllInvoicesQuery, GetAllInvoicesQueryVariables>(GetAllInvoicesDocument, options);
+      }
+export function useGetAllInvoicesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetAllInvoicesQuery, GetAllInvoicesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetAllInvoicesQuery, GetAllInvoicesQueryVariables>(GetAllInvoicesDocument, options);
+        }
+export type GetAllInvoicesQueryHookResult = ReturnType<typeof useGetAllInvoicesQuery>;
+export type GetAllInvoicesLazyQueryHookResult = ReturnType<typeof useGetAllInvoicesLazyQuery>;
+export const InvoiceDashboardSummaryDocument = gql`
+    query InvoiceDashboardSummary {
+  invoiceDashboardSummary {
+    outstandingAmount
+    outstandingCount
+    overdueCount
+    paidThisMonthAmount
+  }
+}
+    `;
+
+/**
+ * __useInvoiceDashboardSummaryQuery__
+ *
+ * To run a query within a React component, call `useInvoiceDashboardSummaryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useInvoiceDashboardSummaryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useInvoiceDashboardSummaryQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useInvoiceDashboardSummaryQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<InvoiceDashboardSummaryQuery, InvoiceDashboardSummaryQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<InvoiceDashboardSummaryQuery, InvoiceDashboardSummaryQueryVariables>(InvoiceDashboardSummaryDocument, options);
+      }
+export function useInvoiceDashboardSummaryLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<InvoiceDashboardSummaryQuery, InvoiceDashboardSummaryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<InvoiceDashboardSummaryQuery, InvoiceDashboardSummaryQueryVariables>(InvoiceDashboardSummaryDocument, options);
+        }
+export type InvoiceDashboardSummaryQueryHookResult = ReturnType<typeof useInvoiceDashboardSummaryQuery>;
+export type InvoiceDashboardSummaryLazyQueryHookResult = ReturnType<typeof useInvoiceDashboardSummaryLazyQuery>;
+export const SuggestedInvoiceLineItemsDocument = gql`
+    query SuggestedInvoiceLineItems($projectId: ID!) {
+  suggestedInvoiceLineItems(projectId: $projectId) {
+    feature
+    description
+    quantity
+    unitPrice
+  }
+}
+    `;
+
+/**
+ * __useSuggestedInvoiceLineItemsQuery__
+ *
+ * To run a query within a React component, call `useSuggestedInvoiceLineItemsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSuggestedInvoiceLineItemsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useSuggestedInvoiceLineItemsQuery({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *   },
+ * });
+ */
+export function useSuggestedInvoiceLineItemsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<SuggestedInvoiceLineItemsQuery, SuggestedInvoiceLineItemsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<SuggestedInvoiceLineItemsQuery, SuggestedInvoiceLineItemsQueryVariables>(SuggestedInvoiceLineItemsDocument, options);
+      }
+export function useSuggestedInvoiceLineItemsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SuggestedInvoiceLineItemsQuery, SuggestedInvoiceLineItemsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<SuggestedInvoiceLineItemsQuery, SuggestedInvoiceLineItemsQueryVariables>(SuggestedInvoiceLineItemsDocument, options);
+        }
+export type SuggestedInvoiceLineItemsQueryHookResult = ReturnType<typeof useSuggestedInvoiceLineItemsQuery>;
+export type SuggestedInvoiceLineItemsLazyQueryHookResult = ReturnType<typeof useSuggestedInvoiceLineItemsLazyQuery>;
+export const CreateInvoiceDocument = gql`
+    mutation CreateInvoice($input: CreateInvoiceInput!) {
+  createInvoice(input: $input) {
+    id
+    status
+  }
+}
+    `;
+
+/**
+ * __useCreateInvoiceMutation__
+ *
+ * To run a mutation, you first call `useCreateInvoiceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateInvoiceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createInvoiceMutation, { data, loading, error }] = useCreateInvoiceMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateInvoiceMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateInvoiceMutation, CreateInvoiceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateInvoiceMutation, CreateInvoiceMutationVariables>(CreateInvoiceDocument, options);
+      }
+export type CreateInvoiceMutationHookResult = ReturnType<typeof useCreateInvoiceMutation>;
+export const UpdateInvoiceDocument = gql`
+    mutation UpdateInvoice($id: ID!, $input: UpdateInvoiceInput!) {
+  updateInvoice(id: $id, input: $input) {
+    id
+    status
+  }
+}
+    `;
+
+/**
+ * __useUpdateInvoiceMutation__
+ *
+ * To run a mutation, you first call `useUpdateInvoiceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateInvoiceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateInvoiceMutation, { data, loading, error }] = useUpdateInvoiceMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateInvoiceMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateInvoiceMutation, UpdateInvoiceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateInvoiceMutation, UpdateInvoiceMutationVariables>(UpdateInvoiceDocument, options);
+      }
+export type UpdateInvoiceMutationHookResult = ReturnType<typeof useUpdateInvoiceMutation>;
+export const SendInvoiceDocument = gql`
+    mutation SendInvoice($id: ID!) {
+  sendInvoice(id: $id) {
+    id
+    status
+    sentAt
+  }
+}
+    `;
+
+/**
+ * __useSendInvoiceMutation__
+ *
+ * To run a mutation, you first call `useSendInvoiceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSendInvoiceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [sendInvoiceMutation, { data, loading, error }] = useSendInvoiceMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useSendInvoiceMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SendInvoiceMutation, SendInvoiceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SendInvoiceMutation, SendInvoiceMutationVariables>(SendInvoiceDocument, options);
+      }
+export type SendInvoiceMutationHookResult = ReturnType<typeof useSendInvoiceMutation>;
+export const CancelInvoiceDocument = gql`
+    mutation CancelInvoice($id: ID!) {
+  cancelInvoice(id: $id) {
+    id
+    status
+  }
+}
+    `;
+
+/**
+ * __useCancelInvoiceMutation__
+ *
+ * To run a mutation, you first call `useCancelInvoiceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCancelInvoiceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [cancelInvoiceMutation, { data, loading, error }] = useCancelInvoiceMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useCancelInvoiceMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CancelInvoiceMutation, CancelInvoiceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CancelInvoiceMutation, CancelInvoiceMutationVariables>(CancelInvoiceDocument, options);
+      }
+export type CancelInvoiceMutationHookResult = ReturnType<typeof useCancelInvoiceMutation>;
 export const GetProjectsDocument = gql`
     query GetProjects($filter: ProjectFilter, $userEmail: String) {
   projects(filter: $filter, userEmail: $userEmail) {
