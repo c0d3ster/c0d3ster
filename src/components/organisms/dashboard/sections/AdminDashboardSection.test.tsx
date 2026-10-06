@@ -11,6 +11,10 @@ const mockGetProjectRequests = vi.fn()
 const mockApproveProjectRequest = vi.fn()
 const mockUpdateProjectRequestStatus = vi.fn()
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}))
+
 vi.mock('@/apiClients', async () => {
   const actual = await vi.importActual('@/apiClients')
   return {
@@ -270,7 +274,7 @@ describe('AdminDashboardSection', () => {
 
     await waitFor(() => {
       expect(mockApproveProjectRequest).toHaveBeenCalledWith({
-        variables: { id: 'request1' },
+        variables: { id: 'request1', input: {} },
       })
     })
 

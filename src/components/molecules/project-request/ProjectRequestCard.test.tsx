@@ -237,7 +237,7 @@ describe('ProjectRequestCard', () => {
     fireEvent.change(completionDateInput, { target: { value: '2024-04-15' } })
 
     const prioritySelect = screen.getByLabelText('Priority')
-    fireEvent.change(prioritySelect, { target: { value: 'high' } })
+    fireEvent.change(prioritySelect, { target: { value: 'High' } })
 
     const budgetInput = screen.getByLabelText('Budget Override')
     fireEvent.change(budgetInput, { target: { value: '6000' } })
@@ -255,7 +255,7 @@ describe('ProjectRequestCard', () => {
       expect(mockApproveAction).toHaveBeenCalledWith('1', {
         startDate: expect.any(String),
         estimatedCompletionDate: '2024-04-15',
-        priority: 'high',
+        priority: 'High',
         techStack: [],
         budget: 6000,
         internalNotes: 'High priority project',

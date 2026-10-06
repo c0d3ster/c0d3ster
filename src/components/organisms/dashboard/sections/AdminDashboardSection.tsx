@@ -1,6 +1,9 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+
+import type { ApproveProjectRequestInput } from '@/graphql/generated/graphql'
 
 import {
   useApproveProjectRequest,
@@ -22,6 +25,7 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
     error: adminError,
     refetch: adminRefetch,
   } = useGetProjectRequests()
+  const router = useRouter()
   const [approveMutation] = useApproveProjectRequest()
   const [updateStatusMutation] = useUpdateProjectRequestStatus()
 
@@ -45,13 +49,18 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
 
   const handleApproveRequest = async (
     requestId: string,
-    _approvalData: any
-  ) => {
+    approvalData: ApproveProjectRequestInput
+  ): Promise<void> => {
     try {
-      await approveMutation({ variables: { id: requestId } })
+      const { data } = await approveMutation({
+        variables: { id: requestId, input: approvalData },
+      })
       Toast.success('Project request approved and project created!')
       await adminRefetch()
       onDataRefreshAction?.()
+      if (data?.approveProjectRequest) {
+        router.push(`/dashboard/projects/${data.approveProjectRequest}`)
+      }
     } catch (error) {
       Toast.error('Failed to approve request')
       console.error('Approve request error:', error)

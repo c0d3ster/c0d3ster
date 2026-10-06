@@ -2,6 +2,7 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import { GraphQLError } from 'graphql'
 
 import type {
+  ApproveProjectRequestInput,
   CreateProjectRequestInput,
   ProjectRequestFilter,
 } from '@/graphql/schema'
@@ -236,7 +237,8 @@ export class ProjectRequestService {
   async approveProjectRequest(
     id: string,
     currentUserId?: string,
-    currentUserRole?: string
+    currentUserRole?: string,
+    approval?: ApproveProjectRequestInput
   ): Promise<any> {
     // Optional: enforce at service layer as defense-in-depth
     if (!isAdminRole(currentUserRole)) {
@@ -294,7 +296,14 @@ export class ProjectRequestService {
           title: request.title ?? request.projectName,
           description: request.description,
           projectType: request.projectType,
-          budget: request.budget,
+          budget: approval?.budget ?? request.budget,
+          internalNotes: approval?.internalNotes || null,
+          priority: approval?.priority,
+          techStack: approval?.techStack?.length ? approval.techStack : null,
+          startDate: approval?.startDate ? new Date(approval.startDate) : null,
+          estimatedCompletionDate: approval?.estimatedCompletionDate
+            ? new Date(approval.estimatedCompletionDate)
+            : null,
           // An explicit empty array means the client cleared all features; only
           // missing/null (no selection made) falls back to the type defaults.
           features: request.features ?? getDefaultFeatures(request.projectType),

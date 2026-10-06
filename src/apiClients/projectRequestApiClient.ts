@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@apollo/client/react'
 import { gql } from 'graphql-tag'
 
 import type {
+  ApproveProjectRequestInput,
   ApproveProjectRequestMutation,
   ApproveProjectRequestMutationVariables,
   CreateProjectRequestMutation,
@@ -16,6 +17,7 @@ import type {
 import {
   CreateProjectRequestDocument,
   GetProjectRequestsDocument,
+  useApproveProjectRequestMutation,
   useCreateProjectRequestMutation,
   useGetProjectRequestsQuery,
 } from '@/graphql/generated/graphql'
@@ -73,8 +75,11 @@ export const INFER_PROJECT_DETAILS = gql`
 `
 
 export const APPROVE_PROJECT_REQUEST = gql`
-  mutation ApproveProjectRequest($id: ID!) {
-    approveProjectRequest(id: $id)
+  mutation ApproveProjectRequest(
+    $id: ID!
+    $input: ApproveProjectRequestInput
+  ) {
+    approveProjectRequest(id: $id, input: $input)
   }
 `
 
@@ -101,7 +106,7 @@ export const useInferProjectDetails = () =>
     INFER_PROJECT_DETAILS
   )
 export const useApproveProjectRequest = () =>
-  useMutation(APPROVE_PROJECT_REQUEST)
+  useApproveProjectRequestMutation()
 export const useUpdateProjectRequestStatus = () =>
   useMutation(UPDATE_PROJECT_REQUEST_STATUS)
 
@@ -130,13 +135,16 @@ export const createProjectRequest = async (
   return result.data.createProjectRequest
 }
 
-export const approveProjectRequest = async (id: string) => {
+export const approveProjectRequest = async (
+  id: string,
+  input?: ApproveProjectRequestInput
+) => {
   const result = await apolloClient.mutate<
     ApproveProjectRequestMutation,
     ApproveProjectRequestMutationVariables
   >({
     mutation: APPROVE_PROJECT_REQUEST,
-    variables: { id },
+    variables: { id, input },
   })
   if (!result.data?.approveProjectRequest)
     throw new Error('No data returned from ApproveProjectRequest mutation')

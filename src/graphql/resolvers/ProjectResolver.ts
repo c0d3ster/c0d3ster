@@ -27,7 +27,7 @@ import {
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
-import { isAdminRole } from '@/utils'
+import { isAdminRole, isDeveloperOrHigherRole } from '@/utils'
 
 @Resolver(() => Project)
 export class ProjectResolver {
@@ -246,6 +246,20 @@ export class ProjectResolver {
     // TODO: Implement collaborators functionality
     // For now, always return empty array
     return []
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  async internalNotes(@Root() parent: ProjectRecord) {
+    if (!parent.internalNotes) return null
+    try {
+      const currentUser = await this.userService.getCurrentUserWithAuth()
+      return isDeveloperOrHigherRole(currentUser.role)
+        ? parent.internalNotes
+        : null
+    } catch {
+      // No auth - never expose internal notes
+      return null
+    }
   }
 
   @FieldResolver(() => String, { nullable: true })

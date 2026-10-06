@@ -15,6 +15,7 @@ import {
   GetProjectBySlugDocument,
   GetProjectsDocument,
   useGetFeaturedProjectsQuery,
+  useGetProjectByIdQuery,
   useGetProjectBySlugQuery,
   useGetProjectsQuery,
   useProvisionProjectRepoMutation,
@@ -111,6 +112,26 @@ export const GET_PROJECT_BY_SLUG = gql`
   ${USER_DISPLAY_FRAGMENT}
 `
 
+export const GET_PROJECT_BY_ID = gql`
+  query GetProjectById($id: ID!) {
+    project(id: $id) {
+      id
+      title
+      projectName
+      description
+      projectType
+      status
+      priority
+      budget
+      techStack
+      startDate
+      estimatedCompletionDate
+      internalNotes
+      createdAt
+    }
+  }
+`
+
 export const UPDATE_PROJECT = gql`
   mutation UpdateProject($id: ID!, $featured: Boolean, $liveUrl: String) {
     updateProject(id: $id, input: { featured: $featured, liveUrl: $liveUrl }) {
@@ -190,6 +211,11 @@ export const useGetFeaturedProjects = (userEmail?: string) =>
 export const useGetProjectBySlug = (slug: string) =>
   useGetProjectBySlugQuery({
     variables: { slug },
+  })
+
+export const useGetProjectById = (id: string) =>
+  useGetProjectByIdQuery({
+    variables: { id },
   })
 
 export const useUpdateProject = () => useMutation(UPDATE_PROJECT)

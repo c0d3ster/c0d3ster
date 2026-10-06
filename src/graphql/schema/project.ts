@@ -127,6 +127,10 @@ export class Project {
   @Field(() => String, { nullable: true })
   actualCompletionDate?: string
 
+  // Admin/developer only; masked by the Project field resolver
+  @Field(() => String, { nullable: true })
+  internalNotes?: string
+
   @Field(() => String, { nullable: true })
   repositoryUrl?: string
 
