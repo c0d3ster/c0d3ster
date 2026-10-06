@@ -17,14 +17,6 @@ Invoice implementation rule (from doc): never hand-write migration SQL — edit 
   - Acceptance: submitting the approval form's internal notes (and the other fields) actually persists on the created `projects` row and is visible to an admin/dev afterward, not just captured in a form that throws it away.
   - Side note (small, same area): in `ProjectRequestCard.tsx` the "Additional Info" block currently renders before "Timeline" (order is Description → Features → Additional Info → Timeline, lines 122-156). Move "Additional Info" to render last, after Timeline, while in this file for the above fix.
 
-- [ ] #3 [stack: invoicing] Add LLM pass for intelligent project type, features, and title, inferred from project description and name.
-  - Note: may eventually merge with the Modernizer categorization package — confirmed that work doesn't exist yet in Modernizer (nothing found there), so this is a standalone task with just a forward-compatibility note, not a real dependency.
-  - NEEDS HUMAN: no LLM SDK dependency exists in `package.json` yet — pick a provider, add the dependency and API key env var before this can run end-to-end. Code can still be written against it.
-  - Keep isolated in a new `src/services/ProjectInferenceService.ts` with a narrow `{ description, projectName } → { projectType, features, title }` contract specifically so it's swappable/mergeable later.
-  - Wire into `ProjectRequestForm.tsx` as a "suggest" action that prefills `projectType`/`features` (from #2's new field)/`title`, all remaining user-editable.
-  - Missing acceptance criteria: malformed/empty LLM response must degrade gracefully — form stays usable, no crash.
-  - Acceptance: submitting a description produces sensible suggested type/features/title; user can override all suggestions.
-
 - [ ] #4 [stack: invoicing] Invoice data model — Phase 2 per docs/INVOICE_BILLING_EPIC.md.
   - Create `src/models/invoices.ts` with Invoice and InvoiceLineItem Drizzle schemas per the column specs in the doc. Follow `projects.ts` conventions: `decimal(...,{mode:'number'})` for money, `.$onUpdate()` for `updatedAt`, `unique()` for `invoiceNumber`, `index()` for FKs.
   - Ordering wrinkle: `InvoiceStatus`/`DiscountType` are TS enums that Phase 3 (#5) is nominally responsible for, but Phase 2's Drizzle enum column needs them first. This task should create `src/graphql/schema/invoice.ts` as a stub containing just those two enums + `registerEnumType` calls; #5 builds the rest of that file on top. Note this in the stack-notes/PR so #5 doesn't recreate the file.
