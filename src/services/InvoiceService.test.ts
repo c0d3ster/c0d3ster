@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { sendInvoiceEmail } from '@/emails'
 import { DiscountType, InvoiceStatus, ProjectFeature } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { featurePricing } from '@/libs/featurePricing'
@@ -9,6 +10,8 @@ import {
   calculateInvoiceTotals,
   InvoiceService,
 } from './InvoiceService'
+
+vi.mock('@/emails', () => ({ sendInvoiceEmail: vi.fn() }))
 
 describe('calculateInvoiceTotals', () => {
   const lineItems = [
@@ -258,14 +261,46 @@ describe('InvoiceService', () => {
       })
     })
 
-    it('sets status to sent for a draft', async () => {
-      const set = vi.fn().mockReturnValue({ where: async () => undefined })
-      vi.mocked(db.update).mockReturnValue({ set } as never)
+    const set = vi.fn()
 
+    beforeEach(() => {
+      set.mockReset().mockReturnValue({ where: async () => undefined })
+      vi.mocked(db.update).mockReturnValue({ set } as never)
+      vi.mocked(db.query.users.findFirst).mockResolvedValue({
+        id: 'client-1',
+        email: 'client@example.com',
+        firstName: 'Casey',
+      } as never)
+      vi.mocked(sendInvoiceEmail).mockResolvedValue({ success: true })
+    })
+
+    it('sets status to sent and emails the client with line items and invoice link', async () => {
       await service.sendInvoice('invoice-1')
 
       expect(set).toHaveBeenCalledWith(
         expect.objectContaining({ status: InvoiceStatus.Sent })
+      )
+      expect(sendInvoiceEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'client@example.com',
+          clientName: 'Casey',
+          lineItems: [lineItem],
+          totalAmount: 100,
+          invoiceUrl: expect.stringMatching(
+            /\/dashboard\/invoices\/invoice-1$/
+          ),
+        })
+      )
+    })
+
+    it('reverts the status and surfaces an error when the email fails', async () => {
+      vi.mocked(sendInvoiceEmail).mockRejectedValue(new Error('resend down'))
+
+      await expect(service.sendInvoice('invoice-1')).rejects.toMatchObject({
+        extensions: { code: 'INVOICE_EMAIL_ERROR' },
+      })
+      expect(set).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: InvoiceStatus.Draft })
       )
     })
   })
@@ -286,7 +321,10 @@ describe('InvoiceService', () => {
       tx.update.mockReset()
     })
 
-    const mockLockedInvoice = (invoice: unknown, projectTotal = '250'): void => {
+    const mockLockedInvoice = (
+      invoice: unknown,
+      projectTotal = '250'
+    ): void => {
       tx.select
         .mockReturnValueOnce({
           from: () => ({

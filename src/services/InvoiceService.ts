@@ -9,10 +9,13 @@ import type {
 } from '@/graphql/schema'
 import type { InvoiceLineItemRecord, InvoiceRecord } from '@/models'
 
+import { sendInvoiceEmail } from '@/emails'
 import { DiscountType, InvoiceStatus } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { featurePricing } from '@/libs/featurePricing'
+import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
+import { getBaseUrl } from '@/utils/Env'
 
 export type InvoiceDetail = InvoiceRecord & {
   lineItems: InvoiceLineItemRecord[]
@@ -410,7 +413,7 @@ export class InvoiceService {
     return this.requireInvoice(id)
   }
 
-  // Email delivery lands in Phase 5; this only validates and flips status
+  // Flips status then emails the client; a failed send reverts the status so it can be retried
   async sendInvoice(id: string): Promise<InvoiceDetail> {
     const existing = await this.requireInvoice(id)
     assertTransition(existing.status, InvoiceStatus.Sent)
@@ -421,10 +424,66 @@ export class InvoiceService {
       })
     }
 
+    const [client, project] = await Promise.all([
+      db.query.users.findFirst({
+        where: eq(schemas.users.id, existing.clientId),
+      }),
+      db.query.projects.findFirst({
+        where: eq(schemas.projects.id, existing.projectId),
+      }),
+    ])
+    if (!client || !project) {
+      throw new GraphQLError('Invoice client or project not found', {
+        extensions: { code: 'NOT_FOUND' },
+      })
+    }
+
     await db
       .update(schemas.invoices)
       .set({ status: InvoiceStatus.Sent, sentAt: new Date() })
       .where(eq(schemas.invoices.id, id))
+
+    try {
+      await sendInvoiceEmail({
+        to: client.email,
+        clientName: client.firstName || client.email,
+        invoiceNumber: existing.invoiceNumber,
+        projectName: project.projectName,
+        lineItems: existing.lineItems,
+        subtotal: existing.subtotal,
+        discountLabel: existing.discountLabel,
+        discountAmount: existing.discountAmount,
+        taxAmount: existing.taxAmount,
+        totalAmount: existing.totalAmount,
+        depositAmount: existing.depositPercent
+          ? calculateDepositAmount(
+              existing.totalAmount,
+              existing.depositPercent
+            )
+          : null,
+        depositDueDate: existing.depositDueDate,
+        balanceDueDate: existing.balanceDueDate,
+        notes: existing.notes,
+        paymentInstructions: existing.paymentInstructions,
+        invoiceUrl: `${getBaseUrl()}/dashboard/invoices/${id}`,
+      })
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred'
+      logger.error('Invoice email failed:', { invoiceId: id, errorMessage })
+
+      await db
+        .update(schemas.invoices)
+        .set({ status: existing.status, sentAt: existing.sentAt })
+        .where(eq(schemas.invoices.id, id))
+
+      throw new GraphQLError(`Failed to send invoice email: ${errorMessage}`, {
+        extensions: {
+          code: 'INVOICE_EMAIL_ERROR',
+          originalError: errorMessage,
+        },
+      })
+    }
 
     return this.requireInvoice(id)
   }
@@ -473,7 +532,9 @@ export class InvoiceService {
       // Project total is derived from every invoice, so replays can never double count
       const [projectTotal] = await tx
         .select({
-          total: sql<string | null>`coalesce(sum(${schemas.invoices.paidAmount}), 0)`,
+          total: sql<
+            string | null
+          >`coalesce(sum(${schemas.invoices.paidAmount}), 0)`,
         })
         .from(schemas.invoices)
         .where(eq(schemas.invoices.projectId, invoice.projectId))
