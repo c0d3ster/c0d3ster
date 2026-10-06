@@ -286,6 +286,139 @@ describe('InvoiceService', () => {
     )
   })
 
+  describe('cancelInvoice', () => {
+    const set = vi.fn()
+
+    beforeEach(() => {
+      set.mockReset().mockReturnValue({ where: async () => undefined })
+      vi.mocked(db.update).mockReturnValue({ set } as never)
+    })
+
+    it('cancels a draft invoice', async () => {
+      await service.cancelInvoice('invoice-1')
+
+      expect(set).toHaveBeenCalledWith({ status: InvoiceStatus.Cancelled })
+    })
+
+    it.each([InvoiceStatus.Paid, InvoiceStatus.Cancelled])(
+      'rejects cancelling a %s invoice',
+      async (status) => {
+        vi.mocked(db.query.invoices.findFirst).mockResolvedValue({
+          ...draftInvoice,
+          status,
+        } as never)
+
+        await expect(service.cancelInvoice('invoice-1')).rejects.toMatchObject({
+          extensions: { code: 'INVALID_STATUS' },
+        })
+        expect(set).not.toHaveBeenCalled()
+      }
+    )
+  })
+
+  describe('getAllInvoices', () => {
+    const past = new Date('2020-01-01')
+    const invoices = [
+      { ...draftInvoice, id: 'a', status: InvoiceStatus.Draft },
+      {
+        ...draftInvoice,
+        id: 'b',
+        status: InvoiceStatus.Sent,
+        balanceDueDate: past,
+      },
+      { ...draftInvoice, id: 'c', status: InvoiceStatus.Overdue },
+      {
+        ...draftInvoice,
+        id: 'd',
+        status: InvoiceStatus.Paid,
+        balanceDueDate: past,
+      },
+    ]
+
+    beforeEach(() => {
+      vi.mocked(db.query.invoices.findMany).mockResolvedValue(invoices as never)
+      vi.mocked(db.query.invoiceLineItems.findMany).mockResolvedValue([])
+    })
+
+    it('returns everything without a status filter', async () => {
+      expect(await service.getAllInvoices()).toHaveLength(4)
+    })
+
+    it('filters by stored status', async () => {
+      const result = await service.getAllInvoices(InvoiceStatus.Draft)
+
+      expect(result.map(({ id }) => id)).toEqual(['a'])
+    })
+
+    it('treats open invoices past their balance due date as overdue', async () => {
+      const result = await service.getAllInvoices(InvoiceStatus.Overdue)
+
+      expect(result.map(({ id }) => id)).toEqual(['b', 'c'])
+    })
+  })
+
+  describe('getDashboardSummary', () => {
+    it('sums outstanding, counts overdue, and totals this month paid', async () => {
+      const past = new Date('2020-01-01')
+      vi.mocked(db.query.invoices.findMany).mockResolvedValue([
+        { ...draftInvoice, status: InvoiceStatus.Draft },
+        { ...draftInvoice, status: InvoiceStatus.Sent, totalAmount: 100 },
+        {
+          ...draftInvoice,
+          status: InvoiceStatus.PartiallyPaid,
+          totalAmount: 200,
+          paidAmount: 50,
+          balanceDueDate: past,
+        },
+        { ...draftInvoice, status: InvoiceStatus.Overdue, totalAmount: 300 },
+        { ...draftInvoice, status: InvoiceStatus.Cancelled, totalAmount: 999 },
+        {
+          ...draftInvoice,
+          status: InvoiceStatus.Paid,
+          totalAmount: 400,
+          paidAmount: 400,
+          paidAt: new Date(),
+        },
+        {
+          ...draftInvoice,
+          status: InvoiceStatus.Paid,
+          totalAmount: 500,
+          paidAmount: 500,
+          paidAt: past,
+        },
+      ] as never)
+
+      expect(await service.getDashboardSummary()).toEqual({
+        outstandingAmount: 550,
+        outstandingCount: 3,
+        overdueCount: 2,
+        paidThisMonthAmount: 400,
+      })
+    })
+  })
+
+  describe('getSuggestedLineItems', () => {
+    it('returns priced line items for the project features', async () => {
+      const items = await service.getSuggestedLineItems('project-1')
+
+      expect(items.map(({ feature }) => feature)).toEqual([
+        ProjectFeature.Database,
+        ProjectFeature.Auth,
+      ])
+      expect(items[0]?.unitPrice).toBe(
+        featurePricing[ProjectFeature.Database].defaultPrice
+      )
+    })
+
+    it('throws NOT_FOUND for an unknown project', async () => {
+      vi.mocked(db.query.projects.findFirst).mockResolvedValue(undefined)
+
+      await expect(service.getSuggestedLineItems('nope')).rejects.toMatchObject(
+        { extensions: { code: 'NOT_FOUND' } }
+      )
+    })
+  })
+
   describe('sendInvoice', () => {
     it('refuses to send a cancelled invoice', async () => {
       vi.mocked(db.query.invoices.findFirst).mockResolvedValue({
@@ -323,9 +456,7 @@ describe('InvoiceService', () => {
           clientName: 'Casey',
           lineItems: [lineItem],
           totalAmount: 100,
-          invoiceUrl: expect.stringMatching(
-            /\/invoices\/invoice-1$/
-          ),
+          invoiceUrl: expect.stringMatching(/\/invoices\/invoice-1$/),
         })
       )
     })

@@ -23,6 +23,7 @@ vi.mock('@/apiClients', async () => {
 
 // Mock ProjectRequestCard
 vi.mock('@/components/molecules', () => ({
+  InvoiceSummaryCard: () => <div data-testid='invoice-summary-card' />,
   ProjectRequestCard: ({ request, updateStatusAction, approveAction }: any) => (
     <div data-testid={`project-request-card-${request.id}`}>
       <div data-testid='request-title'>{request.title}</div>
