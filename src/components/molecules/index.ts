@@ -1,6 +1,7 @@
 export * from './animated-text'
 export * from './auth'
 export * from './contact'
+export * from './invoice'
 export * from './project-card'
 export * from './project-files'
 export * from './project-request'

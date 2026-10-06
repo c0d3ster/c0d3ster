@@ -1,6 +1,7 @@
 import { GraphQLError } from 'graphql'
 import { Arg, ID, Mutation, Query, Resolver } from 'type-graphql'
 
+import type { UserRecord } from '@/models'
 import type { InvoiceDetail, InvoiceService, UserService } from '@/services'
 
 import {
@@ -54,6 +55,9 @@ const toInvoiceType = (detail: InvoiceDetail): Invoice => ({
   })),
 })
 
+const notFound = (): GraphQLError =>
+  new GraphQLError('Invoice not found', { extensions: { code: 'NOT_FOUND' } })
+
 @Resolver(() => Invoice)
 export class InvoiceResolver {
   constructor(
@@ -87,27 +91,23 @@ export class InvoiceResolver {
     return toInvoiceType(await this.invoiceService.sendInvoice(id))
   }
 
+  // Only the owning client's open counts as a view; an admin previewing is a no-op
+  @Mutation(() => Invoice)
+  async markInvoiceViewed(@Arg('id', () => ID) id: string): Promise<Invoice> {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    const invoice = await this.getVisibleInvoice(id, currentUser)
+    if (!invoice) throw notFound()
+    if (isAdminRole(currentUser.role)) return toInvoiceType(invoice)
+    return toInvoiceType(await this.invoiceService.markViewed(id))
+  }
+
   @Query(() => Invoice, { nullable: true })
   async getInvoice(
     @Arg('id', () => ID) id: string
   ): Promise<Invoice | undefined> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
-    const invoice = await this.invoiceService.getInvoiceById(id)
-    if (!invoice) return undefined
-
-    if (isAdminRole(currentUser.role)) return toInvoiceType(invoice)
-
-    // Clients only see their own invoices, and never drafts. Report both as
-    // missing so invoice ids can't be probed.
-    if (
-      invoice.clientId !== currentUser.id ||
-      invoice.status === InvoiceStatus.Draft
-    ) {
-      throw new GraphQLError('Invoice not found', {
-        extensions: { code: 'NOT_FOUND' },
-      })
-    }
-    return toInvoiceType(invoice)
+    const invoice = await this.getVisibleInvoice(id, currentUser)
+    return invoice && toInvoiceType(invoice)
   }
 
   @Query(() => [Invoice])
@@ -126,5 +126,22 @@ export class InvoiceResolver {
     this.userService.checkPermission(currentUser, UserRole.Client)
     const invoices = await this.invoiceService.getClientInvoices(currentUser.id)
     return invoices.map(toInvoiceType)
+  }
+
+  // Clients only see their own invoices, and never drafts. Report both as
+  // missing so invoice ids can't be probed.
+  private async getVisibleInvoice(
+    id: string,
+    currentUser: UserRecord
+  ): Promise<InvoiceDetail | undefined> {
+    const invoice = await this.invoiceService.getInvoiceById(id)
+    if (!invoice || isAdminRole(currentUser.role)) return invoice
+    if (
+      invoice.clientId !== currentUser.id ||
+      invoice.status === InvoiceStatus.Draft
+    ) {
+      throw notFound()
+    }
+    return invoice
   }
 }

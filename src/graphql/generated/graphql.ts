@@ -37,6 +37,20 @@ export type ContactFormSubmission = {
   readonly submittedAt: Scalars['String']['output'];
 };
 
+export type CreateInvoiceInput = {
+  readonly balanceDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositPercent?: InputMaybe<Scalars['Int']['input']>;
+  readonly discountLabel?: InputMaybe<Scalars['String']['input']>;
+  readonly discountType?: InputMaybe<DiscountType>;
+  readonly discountValue?: InputMaybe<Scalars['Float']['input']>;
+  readonly lineItems?: InputMaybe<ReadonlyArray<InvoiceLineItemInput>>;
+  readonly notes?: InputMaybe<Scalars['String']['input']>;
+  readonly paymentInstructions?: InputMaybe<Scalars['String']['input']>;
+  readonly projectId: Scalars['ID']['input'];
+  readonly taxRate?: InputMaybe<Scalars['Float']['input']>;
+};
+
 export type CreateProjectInput = {
   readonly actualCompletionDate?: InputMaybe<Scalars['String']['input']>;
   readonly budget?: InputMaybe<Scalars['Float']['input']>;
@@ -62,6 +76,12 @@ export type CreateProjectRequestInput = {
   readonly timeline?: InputMaybe<Scalars['String']['input']>;
   readonly title?: InputMaybe<Scalars['String']['input']>;
 };
+
+/** How an invoice discount value is applied */
+export enum DiscountType {
+  Flat = 'Flat',
+  Percentage = 'Percentage'
+}
 
 /** Environment for file storage */
 export enum Environment {
@@ -114,21 +134,85 @@ export type FileUploadMetadata = {
   readonly uploadedAt: Scalars['DateTimeISO']['output'];
 };
 
+export type Invoice = {
+  readonly __typename?: 'Invoice';
+  readonly balanceDueDate?: Maybe<Scalars['String']['output']>;
+  readonly clientId: Scalars['ID']['output'];
+  readonly createdAt: Scalars['String']['output'];
+  readonly depositAmount: Scalars['Float']['output'];
+  readonly depositDueDate?: Maybe<Scalars['String']['output']>;
+  readonly depositPercent?: Maybe<Scalars['Int']['output']>;
+  readonly discountAmount?: Maybe<Scalars['Float']['output']>;
+  readonly discountLabel?: Maybe<Scalars['String']['output']>;
+  readonly discountType?: Maybe<DiscountType>;
+  readonly discountValue?: Maybe<Scalars['Float']['output']>;
+  readonly id: Scalars['ID']['output'];
+  readonly invoiceNumber: Scalars['String']['output'];
+  readonly lineItems: ReadonlyArray<InvoiceLineItem>;
+  readonly notes?: Maybe<Scalars['String']['output']>;
+  readonly paidAmount: Scalars['Float']['output'];
+  readonly paidAt?: Maybe<Scalars['String']['output']>;
+  readonly paymentInstructions?: Maybe<Scalars['String']['output']>;
+  readonly projectId: Scalars['ID']['output'];
+  readonly sentAt?: Maybe<Scalars['String']['output']>;
+  readonly status: InvoiceStatus;
+  readonly subtotal: Scalars['Float']['output'];
+  readonly taxAmount: Scalars['Float']['output'];
+  readonly taxRate: Scalars['Float']['output'];
+  readonly totalAmount: Scalars['Float']['output'];
+  readonly updatedAt: Scalars['String']['output'];
+  readonly viewedAt?: Maybe<Scalars['String']['output']>;
+};
+
+export type InvoiceLineItem = {
+  readonly __typename?: 'InvoiceLineItem';
+  readonly description: Scalars['String']['output'];
+  readonly feature?: Maybe<ProjectFeature>;
+  readonly id: Scalars['ID']['output'];
+  readonly invoiceId: Scalars['ID']['output'];
+  readonly quantity: Scalars['Float']['output'];
+  readonly sortOrder: Scalars['Int']['output'];
+  readonly total: Scalars['Float']['output'];
+  readonly unitPrice: Scalars['Float']['output'];
+};
+
+export type InvoiceLineItemInput = {
+  readonly description: Scalars['String']['input'];
+  readonly feature?: InputMaybe<ProjectFeature>;
+  readonly quantity?: InputMaybe<Scalars['Float']['input']>;
+  readonly unitPrice: Scalars['Float']['input'];
+};
+
+/** Status of an invoice */
+export enum InvoiceStatus {
+  Cancelled = 'Cancelled',
+  Draft = 'Draft',
+  Overdue = 'Overdue',
+  Paid = 'Paid',
+  PartiallyPaid = 'PartiallyPaid',
+  Sent = 'Sent',
+  Viewed = 'Viewed'
+}
+
 export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly approveProjectRequest: Scalars['String']['output'];
   readonly assignProject: Project;
+  readonly createInvoice: Invoice;
   readonly createProject: Project;
   readonly createProjectRequest: ProjectRequest;
   readonly deleteFile: Scalars['Boolean']['output'];
   readonly finalizeProjectFileUpload: File;
   readonly finalizeProjectLogoUpload: Scalars['String']['output'];
   readonly inferProjectDetails: ProjectInferenceSuggestion;
+  readonly markInvoiceViewed: Invoice;
   readonly provisionProjectRepo: Project;
   readonly rejectProjectRequest: Scalars['String']['output'];
   readonly requestProjectFileUpload: ProjectFileUploadResult;
   readonly requestProjectLogoUpload: ProjectLogoUploadResult;
+  readonly sendInvoice: Invoice;
   readonly submitContactForm: ContactFormSubmission;
+  readonly updateInvoice: Invoice;
   readonly updateProject: Project;
   readonly updateProjectRequest: ProjectRequest;
   readonly updateProjectRequestStatus: ProjectRequest;
@@ -145,6 +229,11 @@ export type MutationApproveProjectRequestArgs = {
 export type MutationAssignProjectArgs = {
   developerId: Scalars['ID']['input'];
   projectId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateInvoiceArgs = {
+  input: CreateInvoiceInput;
 };
 
 
@@ -182,6 +271,11 @@ export type MutationInferProjectDetailsArgs = {
 };
 
 
+export type MutationMarkInvoiceViewedArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationProvisionProjectRepoArgs = {
   projectId: Scalars['ID']['input'];
 };
@@ -208,8 +302,19 @@ export type MutationRequestProjectLogoUploadArgs = {
 };
 
 
+export type MutationSendInvoiceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationSubmitContactFormArgs = {
   input: ContactFormInput;
+};
+
+
+export type MutationUpdateInvoiceArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateInvoiceInput;
 };
 
 
@@ -424,6 +529,9 @@ export type Query = {
   readonly featuredProjects: ReadonlyArray<Project>;
   readonly file?: Maybe<File>;
   readonly files: ReadonlyArray<File>;
+  readonly getInvoice?: Maybe<Invoice>;
+  readonly getMyInvoices: ReadonlyArray<Invoice>;
+  readonly getProjectInvoices: ReadonlyArray<Invoice>;
   readonly me?: Maybe<User>;
   readonly myDashboard: UserDashboard;
   readonly project?: Maybe<Project>;
@@ -450,6 +558,16 @@ export type QueryFileArgs = {
 
 export type QueryFilesArgs = {
   filter?: InputMaybe<FileFilterInput>;
+};
+
+
+export type QueryGetInvoiceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryGetProjectInvoicesArgs = {
+  projectId: Scalars['ID']['input'];
 };
 
 
@@ -511,6 +629,19 @@ export type StatusUpdate = {
   readonly updateMessage: Scalars['String']['output'];
   readonly updatedBy: Scalars['ID']['output'];
   readonly updatedByUser?: Maybe<User>;
+};
+
+export type UpdateInvoiceInput = {
+  readonly balanceDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositPercent?: InputMaybe<Scalars['Int']['input']>;
+  readonly discountLabel?: InputMaybe<Scalars['String']['input']>;
+  readonly discountType?: InputMaybe<DiscountType>;
+  readonly discountValue?: InputMaybe<Scalars['Float']['input']>;
+  readonly lineItems?: InputMaybe<ReadonlyArray<InvoiceLineItemInput>>;
+  readonly notes?: InputMaybe<Scalars['String']['input']>;
+  readonly paymentInstructions?: InputMaybe<Scalars['String']['input']>;
+  readonly taxRate?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type UpdateProjectInput = {
@@ -669,6 +800,25 @@ export type ProjectDisplayFragment = { readonly __typename?: 'Project', readonly
 export type ProjectRequestDisplayFragment = { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly features?: ReadonlyArray<ProjectFeature> | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null };
 
 export type DashboardProjectFragment = { readonly __typename?: 'Project', readonly budget?: number | null, readonly progressPercentage?: number | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly updatedAt: string, readonly stagingUrl?: string | null, readonly requestId?: string | null, readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly status: ProjectStatus, readonly techStack?: ReadonlyArray<string> | null, readonly featured: boolean, readonly logo?: string | null, readonly liveUrl?: string | null, readonly repositoryUrl?: string | null, readonly createdAt: string, readonly projectRequest?: { readonly __typename?: 'ProjectRequest', readonly id: string, readonly projectName: string, readonly title?: string | null, readonly description: string, readonly projectType: ProjectType, readonly budget?: number | null, readonly timeline?: string | null, readonly features?: ReadonlyArray<ProjectFeature> | null, readonly additionalInfo?: string | null, readonly status: ProjectStatus, readonly createdAt: string, readonly updatedAt: string, readonly statusUpdates: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly newStatus: ProjectStatus, readonly updateMessage: string, readonly createdAt: string }>, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null } | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null };
+
+export type GetMyInvoicesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetMyInvoicesQuery = { readonly __typename?: 'Query', readonly getMyInvoices: ReadonlyArray<{ readonly __typename?: 'Invoice', readonly id: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly totalAmount: number, readonly paidAmount: number, readonly balanceDueDate?: string | null, readonly sentAt?: string | null, readonly createdAt: string }> };
+
+export type GetInvoiceQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetInvoiceQuery = { readonly __typename?: 'Query', readonly getInvoice?: { readonly __typename?: 'Invoice', readonly id: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly depositPercent?: number | null, readonly depositAmount: number, readonly depositDueDate?: string | null, readonly balanceDueDate?: string | null, readonly subtotal: number, readonly discountType?: DiscountType | null, readonly discountValue?: number | null, readonly discountLabel?: string | null, readonly discountAmount?: number | null, readonly taxRate: number, readonly taxAmount: number, readonly totalAmount: number, readonly paidAmount: number, readonly notes?: string | null, readonly paymentInstructions?: string | null, readonly sentAt?: string | null, readonly paidAt?: string | null, readonly createdAt: string, readonly lineItems: ReadonlyArray<{ readonly __typename?: 'InvoiceLineItem', readonly id: string, readonly description: string, readonly quantity: number, readonly unitPrice: number, readonly total: number, readonly sortOrder: number }> } | null };
+
+export type MarkInvoiceViewedMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type MarkInvoiceViewedMutation = { readonly __typename?: 'Mutation', readonly markInvoiceViewed: { readonly __typename?: 'Invoice', readonly id: string, readonly status: InvoiceStatus, readonly viewedAt?: string | null } };
 
 export type GetProjectsQueryVariables = Exact<{
   filter?: InputMaybe<ProjectFilter>;
@@ -1284,6 +1434,140 @@ export function useDeleteFileMutation(baseOptions?: ApolloReactHooks.MutationHoo
         return ApolloReactHooks.useMutation<DeleteFileMutation, DeleteFileMutationVariables>(DeleteFileDocument, options);
       }
 export type DeleteFileMutationHookResult = ReturnType<typeof useDeleteFileMutation>;
+export const GetMyInvoicesDocument = gql`
+    query GetMyInvoices {
+  getMyInvoices {
+    id
+    invoiceNumber
+    status
+    totalAmount
+    paidAmount
+    balanceDueDate
+    sentAt
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetMyInvoicesQuery__
+ *
+ * To run a query within a React component, call `useGetMyInvoicesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetMyInvoicesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetMyInvoicesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useGetMyInvoicesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GetMyInvoicesQuery, GetMyInvoicesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetMyInvoicesQuery, GetMyInvoicesQueryVariables>(GetMyInvoicesDocument, options);
+      }
+export function useGetMyInvoicesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetMyInvoicesQuery, GetMyInvoicesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetMyInvoicesQuery, GetMyInvoicesQueryVariables>(GetMyInvoicesDocument, options);
+        }
+export type GetMyInvoicesQueryHookResult = ReturnType<typeof useGetMyInvoicesQuery>;
+export type GetMyInvoicesLazyQueryHookResult = ReturnType<typeof useGetMyInvoicesLazyQuery>;
+export const GetInvoiceDocument = gql`
+    query GetInvoice($id: ID!) {
+  getInvoice(id: $id) {
+    id
+    invoiceNumber
+    status
+    depositPercent
+    depositAmount
+    depositDueDate
+    balanceDueDate
+    subtotal
+    discountType
+    discountValue
+    discountLabel
+    discountAmount
+    taxRate
+    taxAmount
+    totalAmount
+    paidAmount
+    notes
+    paymentInstructions
+    sentAt
+    paidAt
+    createdAt
+    lineItems {
+      id
+      description
+      quantity
+      unitPrice
+      total
+      sortOrder
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetInvoiceQuery__
+ *
+ * To run a query within a React component, call `useGetInvoiceQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetInvoiceQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetInvoiceQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetInvoiceQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetInvoiceQuery, GetInvoiceQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetInvoiceQuery, GetInvoiceQueryVariables>(GetInvoiceDocument, options);
+      }
+export function useGetInvoiceLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetInvoiceQuery, GetInvoiceQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetInvoiceQuery, GetInvoiceQueryVariables>(GetInvoiceDocument, options);
+        }
+export type GetInvoiceQueryHookResult = ReturnType<typeof useGetInvoiceQuery>;
+export type GetInvoiceLazyQueryHookResult = ReturnType<typeof useGetInvoiceLazyQuery>;
+export const MarkInvoiceViewedDocument = gql`
+    mutation MarkInvoiceViewed($id: ID!) {
+  markInvoiceViewed(id: $id) {
+    id
+    status
+    viewedAt
+  }
+}
+    `;
+
+/**
+ * __useMarkInvoiceViewedMutation__
+ *
+ * To run a mutation, you first call `useMarkInvoiceViewedMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useMarkInvoiceViewedMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [markInvoiceViewedMutation, { data, loading, error }] = useMarkInvoiceViewedMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useMarkInvoiceViewedMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<MarkInvoiceViewedMutation, MarkInvoiceViewedMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<MarkInvoiceViewedMutation, MarkInvoiceViewedMutationVariables>(MarkInvoiceViewedDocument, options);
+      }
+export type MarkInvoiceViewedMutationHookResult = ReturnType<typeof useMarkInvoiceViewedMutation>;
 export const GetProjectsDocument = gql`
     query GetProjects($filter: ProjectFilter, $userEmail: String) {
   projects(filter: $filter, userEmail: $userEmail) {

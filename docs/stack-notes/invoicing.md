@@ -303,3 +303,54 @@ Branch: overnight/2026-10-06/r1-05-t7-invoice-email-delivery
   unit tests on the template output and on `sendInvoice` (email called with
   correct line items/link, failure surfaces and reverts).
 - The "Pay Now" target page does not exist until Phase 6.
+
+## #8 Client invoice UI
+
+Branch: overnight/2026-10-06/r1-06-t8-client-invoice-ui
+
+### What was built
+
+- Routes: `src/app/(auth)/invoices/page.tsx` (list) and `[id]/page.tsx`
+  (detail). URLs are `/invoices` and `/invoices/<id>`. `middleware.ts` now
+  protects `/invoices(.*)` (it only protected `/dashboard` before).
+- `src/components/molecules/invoice/`: `InvoiceStatusBadge`,
+  `InvoiceLineItemsTable`, `PayInvoiceButton`, plus `InvoiceList` and
+  `InvoiceDetail` (container molecules, same pattern as `ProjectRequestDetail`).
+  Barrel-exported via `molecules/index.ts`.
+- `src/apiClients/invoiceApiClient.ts`: `useGetMyInvoices`, `useGetInvoice`,
+  `useMarkInvoiceViewed`. Ran `pnpm codegen` (generated file is tracked).
+- `src/utils/Invoice.ts`: `formatCurrency`, `isInvoicePayable`. NOT in the
+  `utils` barrel: it imports the generated enum, which broke the server
+  bootstrap when pulled in through `@/utils`. Import it as `@/utils/Invoice`.
+- New mutation `markInvoiceViewed(id)` (task asked for it here): resolver +
+  `InvoiceService.markViewed`. Only the owning client's call flips
+  `sent -> viewed` (+ `viewedAt`); the update is guarded on `status = sent`
+  so a concurrent payment is never overwritten. Admin calls and later
+  statuses are no-ops. Resolver visibility logic shared with `getInvoice`
+  via a private `getVisibleInvoice`.
+
+### Key decisions
+
+- Moved `/dashboard/invoices/<id>` to `/invoices/<id>` in the checkout route
+  (success/cancel URLs), the invoice email link, and their tests, since the
+  task puts the route group beside `(auth)/dashboard`.
+- Client enum values are the GraphQL names (`PartiallyPaid`, not
+  `partially_paid`): type-graphql registers enums by key. The badge uses an
+  explicit label map.
+- Pay buttons: deposit shown only while `paidAmount` is 0 and the invoice has
+  a deposit; balance = `totalAmount - paidAmount`. Both POST to
+  `/api/invoices/<id>/checkout?mode=...` and redirect to the returned url.
+- After `?payment=success` the detail page polls every 2s (max 20s) until
+  `paidAmount` rises, since the webhook can land after the redirect.
+- "Billed to" uses `useGetMe`; "From" uses `BRAND_NAME`/`SUPPORT_EMAIL`
+  (the `Invoice` type does not expose client details).
+
+### Deviations from acceptance criteria
+
+- Not exercised against a live DB / Stripe (migration `0022` still
+  unapplied, no keys); covered by unit tests with mocked hooks/fetch/DB.
+
+### NEEDS HUMAN
+
+- Same as #6: apply migration `0022` and set Stripe keys, then click through
+  list -> detail -> pay -> return in test mode.
