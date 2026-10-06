@@ -10,7 +10,7 @@ import {
   useGetProjectRequests,
   useUpdateProjectRequestStatus,
 } from '@/apiClients'
-import { ProjectRequestCard } from '@/components/molecules'
+import { InvoiceSummaryCard, ProjectRequestCard } from '@/components/molecules'
 import { ProjectStatus } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 import { generateSlug } from '@/utils'
@@ -96,6 +96,8 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
 
   return (
     <>
+      <InvoiceSummaryCard />
+
       {/* Filter Bar */}
       <div className='mb-6 flex flex-wrap gap-2'>
         {(

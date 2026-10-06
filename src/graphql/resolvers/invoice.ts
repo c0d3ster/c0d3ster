@@ -15,7 +15,9 @@ import type { InvoiceDetail, InvoiceService, UserService } from '@/services'
 import {
   CreateInvoiceInput,
   Invoice,
+  InvoiceDashboardSummary,
   InvoiceStatus,
+  SuggestedInvoiceLineItem,
   UpdateInvoiceInput,
   UserRole,
 } from '@/graphql/schema'
@@ -64,6 +66,13 @@ export class InvoiceResolver {
     return this.invoiceService.sendInvoice(id)
   }
 
+  @Mutation(() => Invoice)
+  async cancelInvoice(@Arg('id', () => ID) id: string): Promise<InvoiceDetail> {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+    return this.invoiceService.cancelInvoice(id)
+  }
+
   // Only the owning client's open counts as a view; an admin previewing is a no-op
   @Mutation(() => Invoice)
   async markInvoiceViewed(
@@ -93,6 +102,36 @@ export class InvoiceResolver {
     this.userService.checkPermission(currentUser, UserRole.Admin)
     const invoices = await this.invoiceService.getProjectInvoices(projectId)
     return invoices
+  }
+
+  @Query(() => [Invoice])
+  async getAllInvoices(
+    @Arg('status', () => InvoiceStatus, { nullable: true })
+    status?: InvoiceStatus
+  ): Promise<InvoiceDetail[]> {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+    return this.invoiceService.getAllInvoices(status)
+  }
+
+  @Query(() => InvoiceDashboardSummary)
+  async invoiceDashboardSummary(): Promise<InvoiceDashboardSummary> {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+    return this.invoiceService.getDashboardSummary()
+  }
+
+  @Query(() => [SuggestedInvoiceLineItem])
+  async suggestedInvoiceLineItems(
+    @Arg('projectId', () => ID) projectId: string
+  ): Promise<SuggestedInvoiceLineItem[]> {
+    const currentUser = await this.userService.getCurrentUserWithAuth()
+    this.userService.checkPermission(currentUser, UserRole.Admin)
+    const items = await this.invoiceService.getSuggestedLineItems(projectId)
+    return items.map(({ feature, ...rest }) => ({
+      ...rest,
+      feature: feature ?? undefined,
+    }))
   }
 
   @Query(() => [Invoice])

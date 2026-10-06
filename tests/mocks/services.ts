@@ -54,6 +54,10 @@ export const createMockInvoiceService = () => ({
   updateInvoice: vi.fn(),
   sendInvoice: vi.fn(),
   markViewed: vi.fn(),
+  cancelInvoice: vi.fn(),
+  getAllInvoices: vi.fn(),
+  getDashboardSummary: vi.fn(),
+  getSuggestedLineItems: vi.fn(),
 })
 
 // Mock ProjectInferenceService
