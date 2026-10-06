@@ -269,4 +269,115 @@ describe('InvoiceService', () => {
       )
     })
   })
+
+  describe('recordPayment', () => {
+    const update = vi.fn()
+    const sentInvoice = {
+      ...draftInvoice,
+      status: InvoiceStatus.Sent,
+      totalAmount: 1000,
+      paidAmount: 0,
+      stripeCheckoutSessionId: null,
+    }
+
+    // Drops queued once-values a test left unconsumed (e.g. the replay case)
+    beforeEach(() => {
+      tx.select.mockReset()
+      tx.update.mockReset()
+    })
+
+    const mockLockedInvoice = (invoice: unknown, projectTotal = '250'): void => {
+      tx.select
+        .mockReturnValueOnce({
+          from: () => ({
+            where: () => ({ for: async () => [invoice] }),
+          }),
+        })
+        .mockReturnValueOnce({
+          from: () => ({ where: async () => [{ total: projectTotal }] }),
+        })
+      update.mockReturnValue({ where: async () => undefined })
+      tx.update.mockReturnValue({ set: update })
+    }
+
+    const pay = (amount: number, checkoutSessionId = 'cs_1') =>
+      service.recordPayment({
+        invoiceId: 'invoice-1',
+        amount,
+        checkoutSessionId,
+        paymentIntentId: 'pi_1',
+      })
+
+    it('marks the invoice partially paid and syncs project.paidAmount', async () => {
+      mockLockedInvoice(sentInvoice)
+
+      const result = await pay(250)
+
+      expect(result).toEqual({
+        recorded: true,
+        status: InvoiceStatus.PartiallyPaid,
+      })
+      expect(update).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          paidAmount: 250,
+          status: InvoiceStatus.PartiallyPaid,
+          stripeCheckoutSessionId: 'cs_1',
+          stripePaymentIntentId: 'pi_1',
+        })
+      )
+      expect(update).toHaveBeenNthCalledWith(2, { paidAmount: 250 })
+    })
+
+    it('marks the invoice paid once the total is covered', async () => {
+      mockLockedInvoice(
+        {
+          ...sentInvoice,
+          status: InvoiceStatus.PartiallyPaid,
+          paidAmount: 250,
+        },
+        '1000'
+      )
+
+      const result = await pay(750, 'cs_2')
+
+      expect(result.status).toBe(InvoiceStatus.Paid)
+      expect(update).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          paidAmount: 1000,
+          status: InvoiceStatus.Paid,
+          paidAt: expect.any(Date),
+        })
+      )
+      expect(update).toHaveBeenNthCalledWith(2, { paidAmount: 1000 })
+    })
+
+    it('ignores a replayed checkout session', async () => {
+      mockLockedInvoice({ ...sentInvoice, stripeCheckoutSessionId: 'cs_1' })
+
+      const result = await pay(250)
+
+      expect(result.recorded).toBe(false)
+      expect(tx.update).not.toHaveBeenCalled()
+    })
+
+    it('rejects payment on a cancelled invoice', async () => {
+      mockLockedInvoice({ ...sentInvoice, status: InvoiceStatus.Cancelled })
+
+      await expect(pay(250)).rejects.toMatchObject({
+        extensions: { code: 'INVALID_STATUS' },
+      })
+    })
+
+    it('throws NOT_FOUND for an unknown invoice', async () => {
+      tx.select.mockReturnValueOnce({
+        from: () => ({ where: () => ({ for: async () => [] }) }),
+      })
+
+      await expect(pay(250)).rejects.toMatchObject({
+        extensions: { code: 'NOT_FOUND' },
+      })
+    })
+  })
 })

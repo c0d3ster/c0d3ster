@@ -18,6 +18,15 @@ export type InvoiceDetail = InvoiceRecord & {
   lineItems: InvoiceLineItemRecord[]
 }
 
+type RecordPaymentInput = {
+  invoiceId: string
+  amount: number
+  checkoutSessionId: string
+  paymentIntentId: string | null
+}
+
+type RecordPaymentResult = { recorded: boolean; status: InvoiceStatus }
+
 type TotalsInput = {
   lineItems: { quantity: number; unitPrice: number }[]
   discountType?: DiscountType | null
@@ -418,6 +427,63 @@ export class InvoiceService {
       .where(eq(schemas.invoices.id, id))
 
     return this.requireInvoice(id)
+  }
+
+  // Called from the Stripe webhook. Idempotent per checkout session: Stripe retries deliveries.
+  async recordPayment({
+    invoiceId,
+    amount,
+    checkoutSessionId,
+    paymentIntentId,
+  }: RecordPaymentInput): Promise<RecordPaymentResult> {
+    return db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select()
+        .from(schemas.invoices)
+        .where(eq(schemas.invoices.id, invoiceId))
+        .for('update')
+
+      if (!invoice) {
+        throw new GraphQLError('Invoice not found', {
+          extensions: { code: 'NOT_FOUND' },
+        })
+      }
+      if (invoice.stripeCheckoutSessionId === checkoutSessionId) {
+        return { recorded: false, status: invoice.status }
+      }
+
+      const paidAmount = round2(invoice.paidAmount + amount)
+      const status =
+        paidAmount >= invoice.totalAmount
+          ? InvoiceStatus.Paid
+          : InvoiceStatus.PartiallyPaid
+      if (status !== invoice.status) assertTransition(invoice.status, status)
+
+      await tx
+        .update(schemas.invoices)
+        .set({
+          paidAmount,
+          status,
+          stripeCheckoutSessionId: checkoutSessionId,
+          stripePaymentIntentId: paymentIntentId,
+          ...(status === InvoiceStatus.Paid && { paidAt: new Date() }),
+        })
+        .where(eq(schemas.invoices.id, invoiceId))
+
+      // Project total is derived from every invoice, so replays can never double count
+      const [projectTotal] = await tx
+        .select({
+          total: sql<string | null>`coalesce(sum(${schemas.invoices.paidAmount}), 0)`,
+        })
+        .from(schemas.invoices)
+        .where(eq(schemas.invoices.projectId, invoice.projectId))
+      await tx
+        .update(schemas.projects)
+        .set({ paidAmount: round2(Number(projectTotal?.total ?? 0)) })
+        .where(eq(schemas.projects.id, invoice.projectId))
+
+      return { recorded: true, status }
+    })
   }
 
   private async requireInvoice(id: string): Promise<InvoiceDetail> {

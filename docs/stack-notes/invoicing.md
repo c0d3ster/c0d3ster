@@ -209,3 +209,62 @@ Branch: overnight/2026-10-06/r1-03-t5-invoice-graphql-resolvers
   email the client. Email delivery is Phase 5 per the epic.
 - Not verified against a live DB (migration `0022` from #4 still unapplied);
   covered by mocked unit tests only.
+
+## #6 Stripe integration
+
+Branch: overnight/2026-10-06/r1-04-t6-stripe-integration
+
+### What was built
+
+- `src/libs/Stripe.ts`: `getStripe()` lazy singleton (function, not class),
+  throws if `STRIPE_SECRET_KEY` is missing. Added `stripe` dependency.
+- `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` in `src/libs/Env.ts` (optional,
+  like R2/Anthropic) and in `DEVELOPMENT.md`.
+- `src/app/api/invoices/[id]/checkout/route.ts`: `POST ?mode=deposit|balance`.
+  Clerk `auth()` -> `users` by `clerkId` -> `invoiceService.getInvoiceById` ->
+  owner + status checks -> Checkout Session (`metadata: { invoiceId, mode }`).
+  Returns `{ url }`. Non-owners and drafts get 404/400, never another
+  client's data.
+- `src/app/api/webhooks/stripe/route.ts`: raw body + `stripe-signature` ->
+  `constructEvent`; missing/invalid signature = 400, missing secret = 500.
+  Handles `checkout.session.completed` only (and only `payment_status=paid`).
+  Transient errors return 500 (Stripe retries); `NOT_FOUND`/`INVALID_STATUS`
+  return 200 so unfixable states don't retry forever. Path matches the
+  middleware's `api/webhook` exclusion, so no Clerk middleware runs on it.
+- `src/libs/invoiceCheckout.ts`: pure helpers `calculateCheckoutCents`,
+  `buildCheckoutLineItems`, `isCheckoutMode`.
+- `InvoiceService.recordPayment({ invoiceId, amount, checkoutSessionId,
+  paymentIntentId })`: one transaction, row-locked invoice, adds to
+  `paidAmount`, sets `partially_paid` / `paid` (+ `paidAt`), stores the Stripe
+  ids, then sets `project.paidAmount` to the SUM of that project's invoice
+  `paidAmount`s (derived, so replays can't double count).
+
+### Key decisions
+
+- Deposit = `totalAmount * depositPercent`, allowed only while invoice
+  `paidAmount` is 0. Balance = `totalAmount - paidAmount`.
+- Itemized lines: if the charge equals the natural item+tax total, each item
+  is its own Stripe line. Otherwise (deposit, partial balance, discount) the
+  amounts are scaled proportionally with largest-remainder rounding so lines
+  sum to the charge exactly, with " (deposit)"/" (balance)" name suffixes.
+  Each line is quantity 1 (Stripe needs integer quantities; invoice
+  quantities are decimal).
+- Idempotency: `stripeCheckoutSessionId` equal to the event's session = replay,
+  skipped. Only the last session id is kept per invoice.
+- `success_url`/`cancel_url` point to `/dashboard/invoices/<id>?payment=...`,
+  which is the Phase 6 page and does not exist yet.
+
+### Deviations from acceptance criteria
+
+- The true Stripe test-mode end-to-end run was NOT done (no keys, migration
+  `0022` still unapplied). Covered by unit tests: webhook signature is checked
+  with real `constructEvent` against signed/forged/tampered payloads; checkout
+  and `recordPayment` are mocked-DB tests for deposit, balance, partial, paid.
+
+### NEEDS HUMAN
+
+- Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` to `.env` (webhook
+  endpoint `/api/webhooks/stripe`, event `checkout.session.completed`; locally
+  `stripe listen --forward-to localhost:3000/api/webhooks/stripe`).
+- Apply migration `0022` (`pnpm db:migrate`), then run the test-mode flow:
+  create + send invoice, POST checkout in each mode, pay with `4242 4242 4242 4242`.
