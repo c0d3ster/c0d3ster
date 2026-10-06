@@ -268,3 +268,38 @@ Branch: overnight/2026-10-06/r1-04-t6-stripe-integration
   `stripe listen --forward-to localhost:3000/api/webhooks/stripe`).
 - Apply migration `0022` (`pnpm db:migrate`), then run the test-mode flow:
   create + send invoice, POST checkout in each mode, pay with `4242 4242 4242 4242`.
+
+## #7 Email delivery
+
+Branch: overnight/2026-10-06/r1-05-t7-invoice-email-delivery
+
+### What was built
+
+- `src/emails/InvoiceEmail.tsx` (React Email-style JSX template, line items
+  table, totals, deposit/balance dates, notes, "Pay Now" button) and
+  `src/emails/sendInvoiceEmail.ts` (`sendInvoiceEmail({ to, ...props })`),
+  both exported from `src/emails/index.ts`.
+- `InvoiceService.sendInvoice` now loads the client + project, flips status to
+  `sent`, then emails the client. "Pay Now" links to
+  `<getBaseUrl()>/dashboard/invoices/<id>` (the Phase 6 page; same URL the
+  checkout route uses for success/cancel).
+
+### Key decisions
+
+- Followed c0d3ster's convention (plain exported function + JSX template,
+  called straight from `InvoiceService`), NOT the epic's `EmailService` class.
+- `RESEND_API_KEY` is already in `Env.ts` (optional) and used by the contact
+  form, so no new env var and no NEEDS HUMAN beyond it being set.
+- Failure handling mirrors `ContactService`: log, rethrow as `GraphQLError`
+  with `code: 'INVOICE_EMAIL_ERROR'`. Extra step: the status/`sentAt` are
+  reverted to their prior values so the admin can retry (otherwise a failed
+  send would strand the invoice as `sent` with no email, and draft -> sent
+  could not be retried).
+- Recipient name falls back to the client's email when `firstName` is empty.
+
+### Deviations from acceptance criteria
+
+- No real Resend send was performed (no key in this environment); covered by
+  unit tests on the template output and on `sendInvoice` (email called with
+  correct line items/link, failure surfaces and reverts).
+- The "Pay Now" target page does not exist until Phase 6.
