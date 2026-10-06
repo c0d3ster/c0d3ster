@@ -1,6 +1,8 @@
 import { pgEnum } from 'drizzle-orm/pg-core'
 
 import {
+  DiscountType,
+  InvoiceStatus,
   ProjectPriority,
   ProjectStatus,
   ProjectType,
@@ -42,4 +44,14 @@ export const filePlacementEnum = pgEnum('file_placement', [
 export const userRoleEnum = pgEnum(
   'user_role',
   Object.values(UserRole) as [string, ...string[]]
+)
+
+// Invoice-related enums - derived from GraphQL schema
+export const invoiceStatusEnum = pgEnum(
+  'invoice_status',
+  Object.values(InvoiceStatus) as [InvoiceStatus, ...InvoiceStatus[]]
+)
+export const discountTypeEnum = pgEnum(
+  'discount_type',
+  Object.values(DiscountType) as [DiscountType, ...DiscountType[]]
 )
