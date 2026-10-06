@@ -209,7 +209,12 @@ describe('ProjectRequestResolver', () => {
       )
       expect(
         mockProjectRequestService.approveProjectRequest
-      ).toHaveBeenCalledWith('request-1', currentUser.id, currentUser.role)
+      ).toHaveBeenCalledWith(
+        'request-1',
+        currentUser.id,
+        currentUser.role,
+        undefined
+      )
     })
 
     it('should throw error when not admin', async () => {

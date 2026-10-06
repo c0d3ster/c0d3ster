@@ -1,6 +1,11 @@
 import { Field, ID, InputType, ObjectType } from 'type-graphql'
 
-import { ProjectFeature, ProjectStatus, ProjectType } from './project'
+import {
+  ProjectFeature,
+  ProjectPriority,
+  ProjectStatus,
+  ProjectType,
+} from './project'
 import { User } from './user'
 
 @ObjectType('ProjectRequest')
@@ -125,4 +130,25 @@ export class ProjectRequestFilter {
 
   @Field(() => String, { nullable: true })
   projectName?: string
+}
+
+@InputType()
+export class ApproveProjectRequestInput {
+  @Field(() => String, { nullable: true })
+  internalNotes?: string
+
+  @Field(() => ProjectPriority, { nullable: true })
+  priority?: ProjectPriority
+
+  @Field(() => [String], { nullable: true })
+  techStack?: string[]
+
+  @Field(() => Number, { nullable: true })
+  budget?: number
+
+  @Field(() => String, { nullable: true })
+  startDate?: string
+
+  @Field(() => String, { nullable: true })
+  estimatedCompletionDate?: string
 }

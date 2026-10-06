@@ -20,6 +20,15 @@ export type Scalars = {
   DateTimeISO: { input: any; output: any; }
 };
 
+export type ApproveProjectRequestInput = {
+  readonly budget?: InputMaybe<Scalars['Float']['input']>;
+  readonly estimatedCompletionDate?: InputMaybe<Scalars['String']['input']>;
+  readonly internalNotes?: InputMaybe<Scalars['String']['input']>;
+  readonly priority?: InputMaybe<ProjectPriority>;
+  readonly startDate?: InputMaybe<Scalars['String']['input']>;
+  readonly techStack?: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
+};
+
 export type ContactFormInput = {
   readonly email: Scalars['String']['input'];
   readonly message: Scalars['String']['input'];
@@ -139,6 +148,7 @@ export type Mutation = {
 
 export type MutationApproveProjectRequestArgs = {
   id: Scalars['ID']['input'];
+  input?: InputMaybe<ApproveProjectRequestInput>;
 };
 
 
@@ -260,6 +270,7 @@ export type Project = {
   readonly featured: Scalars['Boolean']['output'];
   readonly features?: Maybe<ReadonlyArray<ProjectFeature>>;
   readonly id: Scalars['ID']['output'];
+  readonly internalNotes?: Maybe<Scalars['String']['output']>;
   readonly liveUrl?: Maybe<Scalars['String']['output']>;
   readonly logo?: Maybe<Scalars['String']['output']>;
   readonly overview?: Maybe<Scalars['String']['output']>;
@@ -692,6 +703,13 @@ export type GetProjectBySlugQueryVariables = Exact<{
 
 export type GetProjectBySlugQuery = { readonly __typename?: 'Query', readonly projectBySlug?: { readonly __typename?: 'Project', readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly overview?: string | null, readonly projectType: ProjectType, readonly budget?: number | null, readonly features?: ReadonlyArray<ProjectFeature> | null, readonly techStack?: ReadonlyArray<string> | null, readonly status: ProjectStatus, readonly progressPercentage?: number | null, readonly priority?: ProjectPriority | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly actualCompletionDate?: string | null, readonly repositoryUrl?: string | null, readonly liveUrl?: string | null, readonly stagingUrl?: string | null, readonly featured: boolean, readonly logo?: string | null, readonly createdAt: string, readonly updatedAt: string, readonly clientId: string, readonly developerId?: string | null, readonly requestId?: string | null, readonly client?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly developer?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null, readonly collaborators?: ReadonlyArray<{ readonly __typename?: 'ProjectCollaborator', readonly id: string, readonly role: string, readonly joinedAt: string, readonly user?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> | null, readonly statusUpdates?: ReadonlyArray<{ readonly __typename?: 'StatusUpdate', readonly id: string, readonly entityType: string, readonly entityId: string, readonly oldStatus?: ProjectStatus | null, readonly newStatus: ProjectStatus, readonly progressPercentage?: number | null, readonly updateMessage: string, readonly isClientVisible: boolean, readonly updatedBy: string, readonly createdAt: string, readonly updatedByUser?: { readonly __typename?: 'User', readonly id: string, readonly firstName?: string | null, readonly lastName?: string | null, readonly email: string } | null }> | null } | null };
 
+export type GetProjectByIdQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetProjectByIdQuery = { readonly __typename?: 'Query', readonly project?: { readonly __typename?: 'Project', readonly id: string, readonly title?: string | null, readonly projectName: string, readonly description: string, readonly projectType: ProjectType, readonly status: ProjectStatus, readonly priority?: ProjectPriority | null, readonly budget?: number | null, readonly techStack?: ReadonlyArray<string> | null, readonly startDate?: string | null, readonly estimatedCompletionDate?: string | null, readonly internalNotes?: string | null, readonly createdAt: string } | null };
+
 export type UpdateProjectMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   featured?: InputMaybe<Scalars['Boolean']['input']>;
@@ -755,6 +773,7 @@ export type InferProjectDetailsMutation = { readonly __typename?: 'Mutation', re
 
 export type ApproveProjectRequestMutationVariables = Exact<{
   id: Scalars['ID']['input'];
+  input?: InputMaybe<ApproveProjectRequestInput>;
 }>;
 
 
@@ -1440,6 +1459,52 @@ export function useGetProjectBySlugLazyQuery(baseOptions?: ApolloReactHooks.Lazy
         }
 export type GetProjectBySlugQueryHookResult = ReturnType<typeof useGetProjectBySlugQuery>;
 export type GetProjectBySlugLazyQueryHookResult = ReturnType<typeof useGetProjectBySlugLazyQuery>;
+export const GetProjectByIdDocument = gql`
+    query GetProjectById($id: ID!) {
+  project(id: $id) {
+    id
+    title
+    projectName
+    description
+    projectType
+    status
+    priority
+    budget
+    techStack
+    startDate
+    estimatedCompletionDate
+    internalNotes
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetProjectByIdQuery__
+ *
+ * To run a query within a React component, call `useGetProjectByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetProjectByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetProjectByIdQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetProjectByIdQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetProjectByIdQuery, GetProjectByIdQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetProjectByIdQuery, GetProjectByIdQueryVariables>(GetProjectByIdDocument, options);
+      }
+export function useGetProjectByIdLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetProjectByIdQuery, GetProjectByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetProjectByIdQuery, GetProjectByIdQueryVariables>(GetProjectByIdDocument, options);
+        }
+export type GetProjectByIdQueryHookResult = ReturnType<typeof useGetProjectByIdQuery>;
+export type GetProjectByIdLazyQueryHookResult = ReturnType<typeof useGetProjectByIdLazyQuery>;
 export const UpdateProjectDocument = gql`
     mutation UpdateProject($id: ID!, $featured: Boolean, $liveUrl: String) {
   updateProject(id: $id, input: {featured: $featured, liveUrl: $liveUrl}) {
@@ -1732,8 +1797,8 @@ export function useInferProjectDetailsMutation(baseOptions?: ApolloReactHooks.Mu
       }
 export type InferProjectDetailsMutationHookResult = ReturnType<typeof useInferProjectDetailsMutation>;
 export const ApproveProjectRequestDocument = gql`
-    mutation ApproveProjectRequest($id: ID!) {
-  approveProjectRequest(id: $id)
+    mutation ApproveProjectRequest($id: ID!, $input: ApproveProjectRequestInput) {
+  approveProjectRequest(id: $id, input: $input)
 }
     `;
 
@@ -1751,6 +1816,7 @@ export const ApproveProjectRequestDocument = gql`
  * const [approveProjectRequestMutation, { data, loading, error }] = useApproveProjectRequestMutation({
  *   variables: {
  *      id: // value for 'id'
+ *      input: // value for 'input'
  *   },
  * });
  */

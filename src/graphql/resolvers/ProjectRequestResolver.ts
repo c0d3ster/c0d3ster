@@ -15,6 +15,7 @@ import type {
 } from '@/services'
 
 import {
+  ApproveProjectRequestInput,
   CreateProjectRequestInput,
   ProjectInferenceInput,
   ProjectInferenceSuggestion,
@@ -101,14 +102,19 @@ export class ProjectRequestResolver {
   }
 
   @Mutation(() => String)
-  async approveProjectRequest(@Arg('id', () => ID) id: string) {
+  async approveProjectRequest(
+    @Arg('id', () => ID) id: string,
+    @Arg('input', () => ApproveProjectRequestInput, { nullable: true })
+    input?: ApproveProjectRequestInput
+  ) {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
 
     const project = await this.projectRequestService.approveProjectRequest(
       id,
       currentUser.id,
-      currentUser.role
+      currentUser.role,
+      input
     )
     return project.id
   }

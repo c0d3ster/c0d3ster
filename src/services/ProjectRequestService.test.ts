@@ -1,7 +1,12 @@
 import { GraphQLError } from 'graphql'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ProjectFeature, ProjectStatus, ProjectType } from '@/graphql/schema'
+import {
+  ProjectFeature,
+  ProjectPriority,
+  ProjectStatus,
+  ProjectType,
+} from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { isAdminRole } from '@/utils'
 
@@ -437,6 +442,58 @@ describe('ProjectRequestService', () => {
       expect(insertValues).toHaveBeenCalledWith(
         expect.objectContaining({
           features: [ProjectFeature.PaymentProcessing],
+        })
+      )
+    })
+
+    it('should persist approval form data on the created project', async () => {
+      const inReviewRequest = {
+        ...mockProjectRequest,
+        status: ProjectStatus.InReview,
+      }
+      const mockProject = { id: 'project-123', clientId: 'user-123' }
+      const insertValues = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockProject]),
+      })
+
+      mockDbQuery.findFirst.mockResolvedValue(inReviewRequest)
+      mockIsAdminRole.mockReturnValue(true)
+
+      mockDbTransaction.mockImplementation(async (callback) => {
+        return callback({
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([{ id: 'request-123' }]),
+              }),
+            }),
+          }),
+          insert: vi.fn().mockReturnValue({ values: insertValues }),
+        } as any)
+      })
+
+      await projectRequestService.approveProjectRequest(
+        'request-123',
+        'admin-user',
+        'admin',
+        {
+          internalNotes: 'Watch the scope',
+          priority: ProjectPriority.High,
+          techStack: ['Next.js'],
+          budget: 9000,
+          startDate: '2026-10-01',
+          estimatedCompletionDate: '2026-12-01',
+        }
+      )
+
+      expect(insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({
+          internalNotes: 'Watch the scope',
+          priority: ProjectPriority.High,
+          techStack: ['Next.js'],
+          budget: 9000,
+          startDate: new Date('2026-10-01'),
+          estimatedCompletionDate: new Date('2026-12-01'),
         })
       )
     })

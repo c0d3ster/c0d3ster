@@ -3,10 +3,13 @@
 import Link from 'next/link'
 import { useState } from 'react'
 
-import type { ProjectRequest } from '@/graphql/generated/graphql'
+import type {
+  ApproveProjectRequestInput,
+  ProjectRequest,
+} from '@/graphql/generated/graphql'
 
 import { FeatureList } from '@/components/molecules'
-import { ProjectStatus } from '@/graphql/generated/graphql'
+import { ProjectPriority, ProjectStatus } from '@/graphql/generated/graphql'
 import { formatCardDate } from '@/utils'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
 
@@ -19,14 +22,7 @@ type ProjectRequestCardProps = {
   ) => Promise<void>
   approveAction: (
     requestId: string,
-    approvalData: {
-      startDate?: string
-      estimatedCompletionDate?: string
-      priority?: 'low' | 'medium' | 'high' | 'urgent'
-      techStack?: string[]
-      budget?: number
-      internalNotes?: string
-    }
+    approvalData: ApproveProjectRequestInput
   ) => Promise<void>
 }
 
@@ -37,11 +33,11 @@ export const ProjectRequestCard = ({
 }: ProjectRequestCardProps) => {
   const [isUpdating, setIsUpdating] = useState(false)
   const [showApprovalForm, setShowApprovalForm] = useState(false)
-  const [approvalData, setApprovalData] = useState({
+  const [approvalData, setApprovalData] = useState<ApproveProjectRequestInput>({
     startDate: new Date().toISOString().split('T')[0],
     estimatedCompletionDate: '',
-    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
-    techStack: [] as string[],
+    priority: ProjectPriority.Medium,
+    techStack: [],
     budget: request.budget ?? undefined,
     internalNotes: '',
   })
@@ -135,16 +131,6 @@ export const ProjectRequestCard = ({
         <FeatureList features={request.features} />
       </div>
 
-      {/* Additional Info */}
-      {request.additionalInfo && (
-        <div className='mb-4'>
-          <h4 className='mb-2 font-mono text-sm font-bold text-green-300'>
-            Additional Info:
-          </h4>
-          <p className='text-sm text-green-300/80'>{request.additionalInfo}</p>
-        </div>
-      )}
-
       {/* Timeline */}
       {request.timeline && (
         <div className='mb-4'>
@@ -152,6 +138,16 @@ export const ProjectRequestCard = ({
             Timeline:
           </h4>
           <p className='text-sm text-green-300/80'>{request.timeline}</p>
+        </div>
+      )}
+
+      {/* Additional Info */}
+      {request.additionalInfo && (
+        <div className='mb-4'>
+          <h4 className='mb-2 font-mono text-sm font-bold text-green-300'>
+            Additional Info:
+          </h4>
+          <p className='text-sm text-green-300/80'>{request.additionalInfo}</p>
         </div>
       )}
 
@@ -219,7 +215,7 @@ export const ProjectRequestCard = ({
               <input
                 id='start-date'
                 type='date'
-                value={approvalData.startDate}
+                value={approvalData.startDate ?? ''}
                 onChange={(e) =>
                   setApprovalData({
                     ...approvalData,
@@ -240,7 +236,7 @@ export const ProjectRequestCard = ({
               <input
                 id='completion-date'
                 type='date'
-                value={approvalData.estimatedCompletionDate}
+                value={approvalData.estimatedCompletionDate ?? ''}
                 onChange={(e) =>
                   setApprovalData({
                     ...approvalData,
@@ -260,23 +256,21 @@ export const ProjectRequestCard = ({
               </label>
               <select
                 id='priority'
-                value={approvalData.priority}
+                value={approvalData.priority ?? ProjectPriority.Medium}
                 onChange={(e) =>
                   setApprovalData({
                     ...approvalData,
-                    priority: e.target.value as
-                      | 'low'
-                      | 'medium'
-                      | 'high'
-                      | 'urgent',
+                    priority: Object.values(ProjectPriority).find(
+                      (priority) => priority === e.target.value
+                    ),
                   })
                 }
                 className='w-full rounded border border-green-400/30 bg-black/60 px-3 py-2 font-mono text-sm text-green-300 focus:border-green-400 focus:outline-none'
               >
-                <option value='low'>Low</option>
-                <option value='medium'>Medium</option>
-                <option value='high'>High</option>
-                <option value='urgent'>Urgent</option>
+                <option value={ProjectPriority.Low}>Low</option>
+                <option value={ProjectPriority.Medium}>Medium</option>
+                <option value={ProjectPriority.High}>High</option>
+                <option value={ProjectPriority.Urgent}>Urgent</option>
               </select>
             </div>
 
@@ -315,7 +309,7 @@ export const ProjectRequestCard = ({
             </label>
             <textarea
               id='internal-notes'
-              value={approvalData.internalNotes}
+              value={approvalData.internalNotes ?? ''}
               onChange={(e) =>
                 setApprovalData({
                   ...approvalData,
