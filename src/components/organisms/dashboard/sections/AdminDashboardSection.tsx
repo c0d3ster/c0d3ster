@@ -13,6 +13,7 @@ import {
 import { ProjectRequestCard } from '@/components/molecules'
 import { ProjectStatus } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
+import { generateSlug } from '@/utils'
 
 type AdminDashboardSectionProps = {
   onDataRefreshAction?: () => void
@@ -58,8 +59,11 @@ export const AdminDashboardSection = ({ onDataRefreshAction }: AdminDashboardSec
       Toast.success('Project request approved and project created!')
       await adminRefetch()
       onDataRefreshAction?.()
-      if (data?.approveProjectRequest) {
-        router.push(`/dashboard/projects/${data.approveProjectRequest}`)
+      const projectName = adminRequests.find(
+        (request) => request.id === requestId
+      )?.projectName
+      if (data?.approveProjectRequest && projectName) {
+        router.push(`/projects/${generateSlug(projectName)}`)
       }
     } catch (error) {
       Toast.error('Failed to approve request')
