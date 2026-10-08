@@ -489,6 +489,55 @@ export const ProjectDetailsTemplate = ({
                 </p>
               </div>
 
+              {/* Internal details - admins / assigned dev only (notes are also masked server-side) */}
+              {canPostUpdate && (
+                <div className='space-y-3 rounded-lg border border-yellow-400/20 bg-yellow-400/5 p-4'>
+                  <h3 className='font-mono text-xl font-bold text-yellow-400'>
+                    INTERNAL
+                  </h3>
+                  <dl className='grid grid-cols-2 gap-3 font-mono text-sm'>
+                    {[
+                      ['Priority', project.priority],
+                      [
+                        'Budget',
+                        project.budget
+                          ? `$${project.budget.toLocaleString()}`
+                          : null,
+                      ],
+                      [
+                        'Start',
+                        project.startDate
+                          ? formatCardDate(project.startDate)
+                          : null,
+                      ],
+                      [
+                        'Est. completion',
+                        project.estimatedCompletionDate
+                          ? formatCardDate(project.estimatedCompletionDate)
+                          : null,
+                      ],
+                    ].map(([label, value]) =>
+                      value ? (
+                        <div key={label}>
+                          <dt className='text-xs text-yellow-300/60 uppercase'>
+                            {label}
+                          </dt>
+                          <dd className='text-yellow-300'>{value}</dd>
+                        </div>
+                      ) : null
+                    )}
+                  </dl>
+                  <div>
+                    <p className='text-xs text-yellow-300/60 uppercase'>
+                      Internal notes
+                    </p>
+                    <p className='font-mono text-sm whitespace-pre-wrap text-yellow-300/80'>
+                      {project.internalNotes || 'No internal notes.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Status History */}
               <StatusHistory
                 statusUpdates={project.statusUpdates || []}

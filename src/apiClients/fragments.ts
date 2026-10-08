@@ -66,6 +66,7 @@ export const DASHBOARD_PROJECT_FRAGMENT = gql`
     startDate
     estimatedCompletionDate
     actualCompletionDate
+    internalNotes
     updatedAt
     stagingUrl
     requestId

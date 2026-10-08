@@ -111,6 +111,14 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
           </div>
         )}
 
+        {/* Internal notes (server returns null unless developer or higher) */}
+        {isProject(item) && item.internalNotes && (
+          <p className='line-clamp-2 rounded border border-yellow-400/20 bg-yellow-400/5 p-2 font-mono text-xs text-yellow-300/80'>
+            <span className='text-yellow-300/60'>Internal: </span>
+            {item.internalNotes}
+          </p>
+        )}
+
         {item.budget && (
           <div className='flex justify-between text-sm'>
             <span className='font-mono text-green-300/60'>Budget:</span>
