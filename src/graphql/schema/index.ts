@@ -2,6 +2,7 @@
 export * from './contact'
 export * from './dashboard'
 export * from './files'
+export * from './invoice'
 export * from './project'
 export * from './projectRequest'
 export * from './user'

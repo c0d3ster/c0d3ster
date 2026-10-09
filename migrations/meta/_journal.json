@@ -155,6 +155,13 @@
       "when": 1790043200906,
       "tag": "0021_drop_project_requirements",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791268693378,
+      "tag": "0022_cold_magik",
+      "breakpoints": true
     }
   ]
 }
