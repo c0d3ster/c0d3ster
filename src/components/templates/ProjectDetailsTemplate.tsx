@@ -16,6 +16,7 @@ import {
 } from '@/components/atoms'
 import {
   AnimatedHeading,
+  FeatureList,
   LogoUpload,
   PostUpdatePanel,
   ProjectFilesPanel,
@@ -102,6 +103,17 @@ export const ProjectDetailsTemplate = ({
     meData?.me &&
     (meData.me.role === UserRole.Admin ||
       meData.me.role === UserRole.SuperAdmin)
+
+  const publicFeatureStatuses = [
+    ProjectStatus.InTesting,
+    ProjectStatus.ReadyForLaunch,
+    ProjectStatus.Completed,
+  ]
+  const features = project.features ?? []
+  const showFeatures =
+    features.length > 0 &&
+    (publicFeatureStatuses.includes(optimisticStatus as ProjectStatus) ||
+      !!canEditProject)
 
   const handleProvisionRepo = async () => {
     try {
@@ -431,29 +443,6 @@ export const ProjectDetailsTemplate = ({
                 />
               )}
 
-              {/* Completion */}
-              {optimisticProgress != null && optimisticProgress < 100 && (
-                <div className='space-y-2'>
-                  <h3 className='font-mono text-xl font-bold text-green-400'>
-                    COMPLETION
-                  </h3>
-                  <div className='flex justify-between font-mono text-sm'>
-                    <span className='text-green-300/60'>Progress</span>
-                    <span className='text-green-400'>
-                      {Math.round(optimisticProgress)}%
-                    </span>
-                  </div>
-                  <div className='h-2 w-full rounded-full bg-green-400/20'>
-                    <div
-                      className='h-full max-w-full rounded-full bg-green-400 transition-all duration-300'
-                      style={{
-                        width: `${Math.min(100, Math.max(0, optimisticProgress))}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Tech Stack */}
               {(project.techStack ?? []).filter(
                 (t: string | null | undefined): t is string => Boolean(t)
@@ -476,6 +465,16 @@ export const ProjectDetailsTemplate = ({
                         </span>
                       ))}
                   </div>
+                </div>
+              )}
+
+              {/* Features - public once past InProgress, otherwise client / dev / admin only */}
+              {showFeatures && (
+                <div>
+                  <h3 className='mb-4 font-mono text-xl font-bold text-green-400'>
+                    FEATURES
+                  </h3>
+                  <FeatureList features={features} />
                 </div>
               )}
 
@@ -538,11 +537,36 @@ export const ProjectDetailsTemplate = ({
                 </div>
               )}
 
-              {/* Status History */}
-              <StatusHistory
-                statusUpdates={project.statusUpdates || []}
-                hideInternal={!canPostUpdate}
-              />
+              {/* Progress + status history */}
+              <div className='space-y-4'>
+                {/* Completion */}
+                {optimisticProgress != null && optimisticProgress < 100 && (
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <h3 className='font-mono text-sm font-bold text-green-400'>
+                        PROGRESS
+                      </h3>
+                      <span className='rounded border border-green-400/30 bg-green-400/10 px-2 py-1 font-mono text-xs text-green-400'>
+                        {Math.round(optimisticProgress)}%
+                      </span>
+                    </div>
+                    <div className='h-2 w-full rounded-full bg-green-400/20'>
+                      <div
+                        className='h-full max-w-full rounded-full bg-green-400 transition-all duration-300'
+                        style={{
+                          width: `${Math.min(100, Math.max(0, optimisticProgress))}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Status History */}
+                <StatusHistory
+                  statusUpdates={project.statusUpdates || []}
+                  hideInternal={!canPostUpdate}
+                />
+              </div>
 
               {/* Created date */}
               <p className='border-t border-green-400/10 pt-4 font-mono text-xs text-green-400/30'>
