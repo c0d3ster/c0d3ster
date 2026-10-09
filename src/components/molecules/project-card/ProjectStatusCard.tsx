@@ -51,12 +51,22 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
   const isAssignedProject = itemIsProject && item.developer
 
   return (
-    <div className='flex h-full min-h-70 flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/40 hover:bg-black/80'>
+    <div className='group relative flex h-full min-h-70 cursor-pointer flex-col rounded-lg border border-green-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/10'>
       {/* Header */}
       <div className='mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
         <div className='min-w-0'>
           <h3 className='truncate font-mono text-lg font-bold text-green-400'>
-            {item.title}
+            {/* Stretched link: the ::after covers the whole card so it is all clickable */}
+            <Link
+              href={
+                item.__typename === 'Project'
+                  ? `/projects/${generateSlug(item.projectName || item.title || 'untitled')}`
+                  : `/dashboard/project-requests/${item.id}`
+              }
+              className='group-hover:underline after:absolute after:inset-0 after:content-[""]'
+            >
+              {item.title}
+            </Link>
           </h3>
           <p className='font-mono text-xs tracking-wide text-green-300/60 uppercase'>
             {(item.projectType || 'unknown').replace('_', ' ')}
@@ -176,20 +186,6 @@ export const ProjectStatusCard = ({ item }: ProjectStatusCardProps) => {
               </div>
             </div>
           )}
-      </div>
-
-      {/* Action Links */}
-      <div className='mb-3 flex flex-wrap gap-2'>
-        <Link
-          href={
-            item.__typename === 'Project'
-              ? `/projects/${generateSlug(item.projectName || item.title || 'untitled')}`
-              : `/dashboard/project-requests/${item.id}`
-          }
-          className='min-w-0 flex-1 cursor-pointer rounded border border-green-400/30 bg-green-400/5 px-3 py-2 text-center font-mono text-xs text-green-400/60 transition-all duration-300 hover:border-green-400/50 hover:bg-green-400/20 hover:text-green-400'
-        >
-          {item.__typename === 'Project' ? 'VIEW DETAILS' : 'VIEW REQUEST'}
-        </Link>
       </div>
 
       {/* Footer - pinned to bottom */}

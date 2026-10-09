@@ -125,10 +125,9 @@ describe('ProjectStatusCard', () => {
   it('renders correct action link for projects', () => {
     render(<ProjectStatusCard item={mockProject} />)
 
-    const viewLink = screen.getByText('VIEW DETAILS')
+    const viewLink = screen.getByRole('link', { name: 'Test Project' })
 
-    expect(viewLink).toBeInTheDocument()
-    expect(viewLink.closest('a')).toHaveAttribute(
+    expect(viewLink).toHaveAttribute(
       'href',
       '/projects/test-project'
     )
@@ -137,10 +136,11 @@ describe('ProjectStatusCard', () => {
   it('renders correct action link for project requests', () => {
     render(<ProjectStatusCard item={mockProjectRequest} />)
 
-    const viewLink = screen.getByText('VIEW REQUEST')
+    const viewLink = screen.getByRole('link', {
+      name: 'Test Request',
+    })
 
-    expect(viewLink).toBeInTheDocument()
-    expect(viewLink.closest('a')).toHaveAttribute(
+    expect(viewLink).toHaveAttribute(
       'href',
       '/dashboard/project-requests/1'
     )
