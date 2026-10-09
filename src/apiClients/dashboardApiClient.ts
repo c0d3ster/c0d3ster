@@ -35,6 +35,8 @@ export const GET_MY_DASHBOARD = gql`
       availableProjects {
         ...ProjectDisplay
         budget
+        priority
+        internalNotes
         startDate
         estimatedCompletionDate
         updatedAt
