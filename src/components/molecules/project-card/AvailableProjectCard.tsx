@@ -1,8 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 
 import type { Project } from '@/graphql/generated/graphql'
+
+import { generateSlug } from '@/utils'
 
 type AvailableProjectCardProps = {
   project: Project
@@ -33,11 +36,17 @@ export const AvailableProjectCard = ({
     : 'Unknown Client'
 
   return (
-    <div className='flex h-full min-h-75 flex-col rounded-lg border border-blue-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-blue-400/40 hover:bg-black/80'>
+    <div className='group relative flex h-full min-h-75 cursor-pointer flex-col rounded-lg border border-blue-400/20 bg-black/60 p-4 backdrop-blur-sm transition-all duration-300 hover:border-blue-400/50 hover:bg-blue-400/10'>
       {/* Header */}
       <div className='mb-3 flex items-start justify-between'>
         <h3 className='font-mono text-lg font-bold text-blue-400'>
-          {project.title}
+          {/* Stretched link: the ::after covers the whole card so it is all clickable */}
+          <Link
+            href={`/projects/${generateSlug(project.projectName || project.title || 'untitled')}`}
+            className='group-hover:underline after:absolute after:inset-0 after:content-[""]'
+          >
+            {project.title}
+          </Link>
         </h3>
         <span className='rounded border border-blue-400/30 bg-blue-400/10 px-2 py-1 font-mono text-xs font-bold text-blue-400 uppercase'>
           {project.status}
@@ -65,6 +74,13 @@ export const AvailableProjectCard = ({
           <span className='text-blue-300/60'>Type:</span>
           <span className='text-blue-400'>{project.projectType}</span>
         </div>
+
+        {project.priority && (
+          <div className='flex justify-between font-mono text-xs'>
+            <span className='text-blue-300/60'>Priority:</span>
+            <span className='text-blue-400'>{project.priority}</span>
+          </div>
+        )}
 
         {project.budget && (
           <div className='flex justify-between font-mono text-xs'>
@@ -101,12 +117,19 @@ export const AvailableProjectCard = ({
         )}
       </div>
 
+      {project.internalNotes && (
+        <p className='mb-4 line-clamp-2 rounded border border-yellow-400/20 bg-yellow-400/5 p-2 font-mono text-xs text-yellow-300/80'>
+          <span className='text-yellow-300/60'>Internal: </span>
+          {project.internalNotes}
+        </p>
+      )}
+
       {/* Assign Button */}
       <button
         type='button'
         onClick={handleAssign}
         disabled={isAssigning}
-        className='w-full rounded border border-blue-400/30 bg-blue-400/10 px-4 py-3 font-mono text-sm font-bold text-blue-400 transition-all duration-300 hover:bg-blue-400 hover:text-black disabled:opacity-50'
+        className='relative z-10 w-full cursor-pointer rounded border border-blue-400/30 bg-blue-400/10 px-4 py-3 font-mono text-sm font-bold text-blue-400 transition-all duration-300 hover:bg-blue-400 hover:text-black disabled:opacity-50'
       >
         {isAssigning ? 'ASSIGNING...' : '🚀 ASSIGN TO ME'}
       </button>
