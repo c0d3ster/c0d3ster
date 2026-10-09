@@ -41,8 +41,8 @@ export const StatusHistory = ({ statusUpdates, hideInternal = false }: StatusHis
   })
 
   return (
-    <div className='space-y-4'>
-      <h3 className='font-mono text-xl font-bold text-green-400'>
+    <div className='space-y-3'>
+      <h3 className='font-mono text-sm font-bold text-green-400'>
         STATUS HISTORY
       </h3>
 
@@ -56,16 +56,16 @@ export const StatusHistory = ({ statusUpdates, hideInternal = false }: StatusHis
           return (
             <div
               key={update.id}
-              className='relative flex items-start space-x-4'
+              className='relative flex items-start space-x-3'
             >
               {/* Timeline line */}
               {!isLast && (
-                <div className='absolute top-8 left-4 h-full w-0.5 bg-green-400/20' />
+                <div className='absolute top-5 left-2.5 h-full w-0.5 bg-green-400/20' />
               )}
 
               {/* Timeline dot */}
-              <div className='relative z-10 flex size-8 items-center justify-center rounded-full border-2 border-green-400/40 bg-green-400/20'>
-                <div className='size-2 rounded-full bg-green-400' />
+              <div className='relative z-10 flex size-5 shrink-0 items-center justify-center rounded-full border border-green-400/40 bg-green-400/20'>
+                <div className='size-1.5 rounded-full bg-green-400' />
               </div>
 
               {/* Content */}
@@ -76,7 +76,7 @@ export const StatusHistory = ({ statusUpdates, hideInternal = false }: StatusHis
                     {update.oldStatus && (
                       <>
                         <span
-                          className={`rounded-full border px-3 py-1 font-mono text-xs font-bold ${getStatusCardStyling(update.oldStatus)}`}
+                          className={`rounded-full border px-2 py-0.5 font-mono text-[11px] font-bold ${getStatusCardStyling(update.oldStatus)}`}
                         >
                           {formatStatus(update.oldStatus)}
                         </span>
@@ -84,7 +84,7 @@ export const StatusHistory = ({ statusUpdates, hideInternal = false }: StatusHis
                       </>
                     )}
                     <span
-                      className={`rounded-full border px-3 py-1 font-mono text-xs font-bold ${getStatusCardStyling(update.newStatus)}`}
+                      className={`rounded-full border px-2 py-0.5 font-mono text-[11px] font-bold ${getStatusCardStyling(update.newStatus)}`}
                     >
                       {formatStatus(update.newStatus)}
                     </span>
@@ -100,12 +100,12 @@ export const StatusHistory = ({ statusUpdates, hideInternal = false }: StatusHis
                 </div>
 
                 {/* Update message */}
-                <p className='font-mono text-sm text-green-300/80'>
+                <p className='font-mono text-xs text-green-300/80'>
                   {update.updateMessage}
                 </p>
 
                 {/* Update details */}
-                <div className='flex flex-wrap items-center gap-4 text-xs text-green-400/60'>
+                <div className='flex flex-wrap items-center gap-4 text-[11px] text-green-400/60'>
                   <span>{formattedDate}</span>
                   {update.updatedByUser && (
                     <span>
