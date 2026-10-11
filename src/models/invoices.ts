@@ -38,20 +38,18 @@ export const invoices = pgTable(
     depositPercent: integer('deposit_percent'),
     depositDueDate: date('deposit_due_date', { mode: 'date' }),
     balanceDueDate: date('balance_due_date', { mode: 'date' }),
-    subtotal: money('subtotal').notNull().default(0),
     discountType: discountTypeEnum('discount_type'),
     discountValue: money('discount_value'),
     discountLabel: text('discount_label'),
-    discountAmount: money('discount_amount'),
     taxRate: decimal('tax_rate', { precision: 5, scale: 4, mode: 'number' })
       .notNull()
       .default(0),
-    taxAmount: money('tax_amount').notNull().default(0),
+    // Subtotal, discount amount and tax amount are derived from the line items,
+    // discount inputs and taxRate; only the final total is stored
     totalAmount: money('total_amount').notNull().default(0),
     paidAmount: money('paid_amount').notNull().default(0),
     notes: text('notes'),
     paymentInstructions: text('payment_instructions'),
-    stripePaymentIntentId: text('stripe_payment_intent_id'),
     stripeCheckoutSessionId: text('stripe_checkout_session_id'),
     sentAt: timestamp('sent_at'),
     viewedAt: timestamp('viewed_at'),

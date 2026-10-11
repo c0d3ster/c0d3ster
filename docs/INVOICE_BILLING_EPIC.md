@@ -156,22 +156,22 @@ ProjectManagement
 | `projectId` | FK to projects |
 | `clientId` | FK to users |
 | `invoiceNumber` | Human-readable, e.g. `INV-2025-001` |
-| `status` | Enum: `draft`, `sent`, `viewed`, `partially_paid`, `paid`, `overdue`, `cancelled` |
+| `status` | Enum: `draft`, `sent`, `viewed`, `partially_paid`, `paid`, `cancelled` (overdue is computed from the due dates, not stored) |
 | `depositPercent` | Integer, e.g. `50` |
 | `depositDueDate` | Date |
 | `balanceDueDate` | Date |
-| `subtotal` | Numeric (sum of all line items) |
+| ~~`subtotal`~~ | Derived: sum of all line items (not stored) |
 | `discountType` | Enum: `percentage`, `flat` — nullable |
 | `discountValue` | Numeric — the raw value (e.g. `10` for 10%, `150.00` for flat) — nullable |
 | `discountLabel` | Text — description shown on invoice (e.g. "Friends & Family Discount") — nullable |
-| `discountAmount` | Numeric — computed and stored (subtotal * rate or flat value) — nullable |
+| ~~`discountAmount`~~ | Derived from `discountType` and `discountValue` (not stored) |
 | `taxRate` | Numeric (decimal, e.g. `0.08`) |
-| `taxAmount` | Numeric (applied after discount) |
+| ~~`taxAmount`~~ | Derived: (subtotal - discount) * `taxRate` (not stored) |
 | `totalAmount` | Numeric (subtotal - discountAmount + taxAmount) |
 | `paidAmount` | Numeric |
 | `notes` | Text, nullable |
 | `paymentInstructions` | Text, nullable |
-| `stripePaymentIntentId` | Text, nullable |
+| ~~`stripePaymentIntentId`~~ | Dropped; the Checkout Session id is enough |
 | `stripeCheckoutSessionId` | Text, nullable |
 | `sentAt` | Timestamp, nullable |
 | `viewedAt` | Timestamp, nullable |

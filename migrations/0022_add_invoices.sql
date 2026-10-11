@@ -1,5 +1,5 @@
 CREATE TYPE "public"."discount_type" AS ENUM('percentage', 'flat');--> statement-breakpoint
-CREATE TYPE "public"."invoice_status" AS ENUM('draft', 'sent', 'viewed', 'partially_paid', 'paid', 'overdue', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."invoice_status" AS ENUM('draft', 'sent', 'viewed', 'partially_paid', 'paid', 'cancelled');--> statement-breakpoint
 CREATE TABLE "invoice_line_items" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"invoice_id" uuid NOT NULL,
@@ -20,18 +20,14 @@ CREATE TABLE "invoices" (
 	"deposit_percent" integer,
 	"deposit_due_date" date,
 	"balance_due_date" date,
-	"subtotal" numeric(10, 2) DEFAULT 0 NOT NULL,
 	"discount_type" "discount_type",
 	"discount_value" numeric(10, 2),
 	"discount_label" text,
-	"discount_amount" numeric(10, 2),
 	"tax_rate" numeric(5, 4) DEFAULT 0 NOT NULL,
-	"tax_amount" numeric(10, 2) DEFAULT 0 NOT NULL,
 	"total_amount" numeric(10, 2) DEFAULT 0 NOT NULL,
 	"paid_amount" numeric(10, 2) DEFAULT 0 NOT NULL,
 	"notes" text,
 	"payment_instructions" text,
-	"stripe_payment_intent_id" text,
 	"stripe_checkout_session_id" text,
 	"sent_at" timestamp,
 	"viewed_at" timestamp,

@@ -126,7 +126,7 @@ Branch: overnight/2026-10-06/r1-02-t4-invoice-data-model
   `InvoiceStatus`, `DiscountType` and their `registerEnumType` calls, already
   re-exported from `schema/index.ts`. **#5 must build on this file, not
   recreate it.**
-- Migration `migrations/0022_cold_magik.sql` (generated, NOT applied).
+- Migration `migrations/0022_add_invoices.sql` (generated, NOT applied).
 
 ### Key decisions
 
@@ -152,5 +152,5 @@ Branch: overnight/2026-10-06/r1-02-t4-invoice-data-model
 
 ### NEEDS HUMAN
 
-- Run `npm run db:migrate` and confirm `0022_cold_magik` applies cleanly
+- Run `npm run db:migrate` and confirm `0022_add_invoices` applies cleanly
   before #5 and later tasks proceed.
