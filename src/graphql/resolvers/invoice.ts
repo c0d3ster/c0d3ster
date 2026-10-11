@@ -10,10 +10,16 @@ import {
   UpdateInvoiceInput,
   UserRole,
 } from '@/graphql/schema'
-import { calculateDepositAmount } from '@/services/InvoiceService'
+import {
+  calculateDepositAmount,
+  deriveInvoiceAmounts,
+} from '@/services/InvoiceService'
 import { isAdminRole } from '@/utils'
 
-const toInvoiceType = (detail: InvoiceDetail): Invoice => ({
+const toInvoiceType = (detail: InvoiceDetail): Invoice => {
+  const { subtotal, discountAmount, taxAmount } = deriveInvoiceAmounts(detail)
+
+  return {
   id: detail.id,
   projectId: detail.projectId,
   clientId: detail.clientId,
@@ -26,13 +32,13 @@ const toInvoiceType = (detail: InvoiceDetail): Invoice => ({
   ),
   depositDueDate: detail.depositDueDate?.toISOString(),
   balanceDueDate: detail.balanceDueDate?.toISOString(),
-  subtotal: detail.subtotal,
+  subtotal,
   discountType: detail.discountType ?? undefined,
   discountValue: detail.discountValue ?? undefined,
   discountLabel: detail.discountLabel ?? undefined,
-  discountAmount: detail.discountAmount ?? undefined,
+  discountAmount: discountAmount ?? undefined,
   taxRate: detail.taxRate,
-  taxAmount: detail.taxAmount,
+  taxAmount,
   totalAmount: detail.totalAmount,
   paidAmount: detail.paidAmount,
   notes: detail.notes ?? undefined,
@@ -52,7 +58,8 @@ const toInvoiceType = (detail: InvoiceDetail): Invoice => ({
     total: item.total,
     sortOrder: item.sortOrder,
   })),
-})
+  }
+}
 
 @Resolver(() => Invoice)
 export class InvoiceResolver {
