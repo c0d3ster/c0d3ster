@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 import { useGetMyInvoices } from '@/apiClients/invoiceApiClient'
 import { formatCardDate } from '@/utils'
-import { formatCurrency } from '@/utils/Invoice'
+import { formatCurrency, isInvoiceOverdue } from '@/utils/Invoice'
 
 import { InvoiceStatusBadge } from './InvoiceStatusBadge'
 
@@ -57,7 +57,10 @@ export const InvoiceList = (): React.ReactElement => {
               <span className='font-mono text-green-300'>
                 {formatCurrency(invoice.totalAmount)}
               </span>
-              <InvoiceStatusBadge status={invoice.status} />
+              <InvoiceStatusBadge
+                status={invoice.status}
+                overdue={isInvoiceOverdue(invoice)}
+              />
             </div>
           </Link>
         </li>

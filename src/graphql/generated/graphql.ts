@@ -196,7 +196,6 @@ export type InvoiceLineItemInput = {
 export enum InvoiceStatus {
   Cancelled = 'Cancelled',
   Draft = 'Draft',
-  Overdue = 'Overdue',
   Paid = 'Paid',
   PartiallyPaid = 'PartiallyPaid',
   Sent = 'Sent',
