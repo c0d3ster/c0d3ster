@@ -29,7 +29,9 @@ const invoice = {
   status: InvoiceStatus.Sent,
   depositPercent: 25,
   paidAmount: 0,
-  taxAmount: 0,
+  taxRate: 0,
+  discountType: null,
+  discountValue: null,
   totalAmount: 1000,
   lineItems: [
     { description: 'Database', total: 600 },

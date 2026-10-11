@@ -22,7 +22,6 @@ type RecordPaymentInput = {
   invoiceId: string
   amount: number
   checkoutSessionId: string
-  paymentIntentId: string | null
 }
 
 type RecordPaymentResult = { recorded: boolean; status: InvoiceStatus }
@@ -460,7 +459,6 @@ export class InvoiceService {
     invoiceId,
     amount,
     checkoutSessionId,
-    paymentIntentId,
   }: RecordPaymentInput): Promise<RecordPaymentResult> {
     return db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -491,7 +489,6 @@ export class InvoiceService {
           paidAmount,
           status,
           stripeCheckoutSessionId: checkoutSessionId,
-          stripePaymentIntentId: paymentIntentId,
           ...(status === InvoiceStatus.Paid && { paidAt: new Date() }),
         })
         .where(eq(schemas.invoices.id, invoiceId))

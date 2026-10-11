@@ -35,13 +35,10 @@ const handleCheckoutCompleted = async (
     return
   }
 
-  const paymentIntent = session.payment_intent
   const result = await invoiceService.recordPayment({
     invoiceId,
     amount: (session.amount_total ?? 0) / 100,
     checkoutSessionId: session.id,
-    paymentIntentId:
-      typeof paymentIntent === 'string' ? paymentIntent : (paymentIntent?.id ?? null),
   })
   logger.info('Stripe payment processed', {
     invoiceId,

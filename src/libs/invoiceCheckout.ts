@@ -48,7 +48,7 @@ const allocate = (targetCents: number, weights: number[]): number[] => {
 // pre-discount total the natural amounts are used; otherwise (deposit, partial balance, discount)
 // the amounts are scaled proportionally, since Stripe can't take negative or partial lines.
 export const buildCheckoutLineItems = (
-  invoice: Pick<InvoiceRecord, 'taxAmount'>,
+  { taxAmount }: { taxAmount: number },
   lineItems: Pick<InvoiceLineItemRecord, 'description' | 'total'>[],
   amountCents: number,
   mode: CheckoutMode
@@ -57,8 +57,8 @@ export const buildCheckoutLineItems = (
     name: description,
     cents: toCents(total),
   }))
-  if (invoice.taxAmount > 0) {
-    components.push({ name: 'Tax', cents: toCents(invoice.taxAmount) })
+  if (taxAmount > 0) {
+    components.push({ name: 'Tax', cents: toCents(taxAmount) })
   }
 
   const naturalCents = components.reduce((sum, { cents }) => sum + cents, 0)
