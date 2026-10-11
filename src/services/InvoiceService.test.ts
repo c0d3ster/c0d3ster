@@ -7,6 +7,7 @@ import { featurePricing } from '@/libs/featurePricing'
 import {
   calculateDepositAmount,
   calculateInvoiceTotals,
+  deriveInvoiceAmounts,
   InvoiceService,
 } from './InvoiceService'
 
@@ -82,6 +83,56 @@ describe('calculateInvoiceTotals', () => {
   })
 })
 
+describe('deriveInvoiceAmounts', () => {
+  it('derives subtotal, discount and tax from line items and stored inputs', () => {
+    const invoice = {
+      discountType: DiscountType.Percentage,
+      discountValue: 10,
+      taxRate: 0.08,
+      lineItems: [{ total: 400 }, { total: 600.5 }],
+    }
+
+    expect(deriveInvoiceAmounts(invoice)).toEqual({
+      subtotal: 1000.5,
+      discountAmount: 100.05,
+      taxAmount: 72.04,
+    })
+  })
+
+  it('matches calculateInvoiceTotals for the same inputs', () => {
+    const input = {
+      discountType: DiscountType.Flat,
+      discountValue: 25,
+      taxRate: 0.0825,
+    }
+    const totals = calculateInvoiceTotals({
+      lineItems: [{ quantity: 3, unitPrice: 33.33 }],
+      ...input,
+    })
+    const derived = deriveInvoiceAmounts({
+      ...input,
+      lineItems: totals.lineTotals.map((total) => ({ total })),
+    })
+
+    expect(derived).toEqual({
+      subtotal: totals.subtotal,
+      discountAmount: totals.discountAmount,
+      taxAmount: totals.taxAmount,
+    })
+  })
+
+  it('has no discount when none is stored', () => {
+    const invoice = {
+      discountType: null,
+      discountValue: null,
+      taxRate: 0,
+      lineItems: [{ total: 50 }],
+    }
+
+    expect(deriveInvoiceAmounts(invoice).discountAmount).toBeNull()
+  })
+})
+
 describe('InvoiceService', () => {
   const service = new InvoiceService()
   const mockProject = {
@@ -98,13 +149,10 @@ describe('InvoiceService', () => {
     depositPercent: null,
     depositDueDate: null,
     balanceDueDate: null,
-    subtotal: 100,
     discountType: null,
     discountValue: null,
     discountLabel: null,
-    discountAmount: null,
     taxRate: 0,
-    taxAmount: 0,
     totalAmount: 100,
     paidAmount: 0,
     notes: null,
@@ -165,12 +213,10 @@ describe('InvoiceService', () => {
 
       expect(invoiceValues.invoiceNumber).toBe(`INV-${year}-003`)
       expect(invoiceValues.clientId).toBe('client-1')
-      expect(invoiceValues.discountAmount).toBeNull()
       expect(itemValues).toHaveLength(2)
       expect(itemValues[0].feature).toBe(ProjectFeature.Database)
       expect(itemValues[0].unitPrice).toBe(databasePrice)
-      expect(invoiceValues.subtotal).toBe(databasePrice + authPrice)
-      expect(invoiceValues.totalAmount).toBe(invoiceValues.subtotal)
+      expect(invoiceValues.totalAmount).toBe(databasePrice + authPrice)
     })
 
     it('uses explicit line items as-is', async () => {
@@ -236,9 +282,6 @@ describe('InvoiceService', () => {
 
       expect(setValues).toHaveBeenCalledWith(
         expect.objectContaining({
-          subtotal: 100,
-          discountAmount: 10,
-          taxAmount: 9,
           totalAmount: 99,
           discountLabel: 'Friends & Family',
         })

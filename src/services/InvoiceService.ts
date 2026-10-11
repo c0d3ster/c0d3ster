@@ -52,22 +52,14 @@ const STATUS_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
     InvoiceStatus.Viewed,
     InvoiceStatus.PartiallyPaid,
     InvoiceStatus.Paid,
-    InvoiceStatus.Overdue,
     InvoiceStatus.Cancelled,
   ],
   [InvoiceStatus.Viewed]: [
     InvoiceStatus.PartiallyPaid,
     InvoiceStatus.Paid,
-    InvoiceStatus.Overdue,
     InvoiceStatus.Cancelled,
   ],
   [InvoiceStatus.PartiallyPaid]: [
-    InvoiceStatus.Paid,
-    InvoiceStatus.Overdue,
-    InvoiceStatus.Cancelled,
-  ],
-  [InvoiceStatus.Overdue]: [
-    InvoiceStatus.PartiallyPaid,
     InvoiceStatus.Paid,
     InvoiceStatus.Cancelled,
   ],
@@ -89,25 +81,32 @@ const isUniqueViolation = (error: unknown): boolean => {
   return 'cause' in error && isUniqueViolation(error.cause)
 }
 
+type DerivableInvoice = Pick<
+  InvoiceRecord,
+  'discountType' | 'discountValue' | 'taxRate'
+> & { lineItems: Pick<InvoiceLineItemRecord, 'total'>[] }
+
+type DerivedAmounts = {
+  discountAmount: number | null
+  taxAmount: number
+  totalAmount: number
+}
+
 /**
- * Single source of truth for invoice math, shared by create and update.
- * Order: subtotal -> discountAmount -> taxAmount (on the post-discount amount) -> totalAmount.
+ * Discount -> tax (on the post-discount amount) -> total for a given subtotal.
  * discountAmount is null when no discount applies.
  */
-export const calculateInvoiceTotals = ({
-  lineItems,
-  discountType,
-  discountValue,
-  taxRate,
-}: TotalsInput): InvoiceTotals => {
+const applyDiscountAndTax = (
+  subtotal: number,
+  {
+    discountType,
+    discountValue,
+    taxRate,
+  }: Omit<TotalsInput, 'lineItems'>
+): DerivedAmounts => {
   if (taxRate < 0 || taxRate > 1) {
     throw badInput('taxRate must be a decimal between 0 and 1')
   }
-
-  const lineTotals = lineItems.map(({ quantity, unitPrice }) =>
-    round2(quantity * unitPrice)
-  )
-  const subtotal = round2(lineTotals.reduce((sum, total) => sum + total, 0))
 
   let discountAmount: number | null = null
   if (discountType) {
@@ -132,12 +131,45 @@ export const calculateInvoiceTotals = ({
   const taxAmount = round2(discounted * taxRate)
 
   return {
-    lineTotals,
-    subtotal,
     discountAmount,
     taxAmount,
     totalAmount: round2(discounted + taxAmount),
   }
+}
+
+/**
+ * Single source of truth for invoice math, shared by create and update.
+ * Only totalAmount is persisted; subtotal, discountAmount and taxAmount are
+ * derived on read with deriveInvoiceAmounts.
+ */
+export const calculateInvoiceTotals = ({
+  lineItems,
+  ...rest
+}: TotalsInput): InvoiceTotals => {
+  const lineTotals = lineItems.map(({ quantity, unitPrice }) =>
+    round2(quantity * unitPrice)
+  )
+  const subtotal = round2(lineTotals.reduce((sum, total) => sum + total, 0))
+
+  return { lineTotals, subtotal, ...applyDiscountAndTax(subtotal, rest) }
+}
+
+// Subtotal, discount and tax amounts for a stored invoice, from its line items
+export const deriveInvoiceAmounts = ({
+  lineItems,
+  discountType,
+  discountValue,
+  taxRate,
+}: DerivableInvoice): Omit<DerivedAmounts, 'totalAmount'> & {
+  subtotal: number
+} => {
+  const subtotal = round2(lineItems.reduce((sum, { total }) => sum + total, 0))
+  const { discountAmount, taxAmount } = applyDiscountAndTax(subtotal, {
+    discountType,
+    discountValue,
+    taxRate,
+  })
+  return { subtotal, discountAmount, taxAmount }
 }
 
 // Based on the post-discount totalAmount
@@ -278,13 +310,10 @@ export class InvoiceService {
             depositPercent: input.depositPercent ?? null,
             depositDueDate: toDate(input.depositDueDate),
             balanceDueDate: toDate(input.balanceDueDate),
-            subtotal: totals.subtotal,
             discountType: hasDiscount ? input.discountType : null,
             discountValue: hasDiscount ? (input.discountValue ?? null) : null,
             discountLabel: hasDiscount ? (input.discountLabel ?? null) : null,
-            discountAmount: totals.discountAmount,
             taxRate,
-            taxAmount: totals.taxAmount,
             totalAmount: totals.totalAmount,
             notes: input.notes ?? null,
             paymentInstructions: input.paymentInstructions ?? null,
@@ -371,13 +400,10 @@ export class InvoiceService {
             input.balanceDueDate === undefined
               ? existing.balanceDueDate
               : toDate(input.balanceDueDate),
-          subtotal: totals.subtotal,
           discountType,
           discountValue,
           discountLabel,
-          discountAmount: totals.discountAmount,
           taxRate,
-          taxAmount: totals.taxAmount,
           totalAmount: totals.totalAmount,
           notes: input.notes ?? existing.notes,
           paymentInstructions:
