@@ -369,7 +369,12 @@ describe('InvoiceService', () => {
         status: InvoiceStatus.Sent,
         balanceDueDate: past,
       },
-      { ...draftInvoice, id: 'c', status: InvoiceStatus.Overdue },
+      {
+        ...draftInvoice,
+        id: 'c',
+        status: InvoiceStatus.Viewed,
+        balanceDueDate: past,
+      },
       {
         ...draftInvoice,
         id: 'd',
@@ -394,7 +399,7 @@ describe('InvoiceService', () => {
     })
 
     it('treats open invoices past their balance due date as overdue', async () => {
-      const result = await service.getAllInvoices(InvoiceStatus.Overdue)
+      const result = await service.getAllInvoices(undefined, true)
 
       expect(result.map(({ id }) => id)).toEqual(['b', 'c'])
     })
@@ -413,7 +418,12 @@ describe('InvoiceService', () => {
           paidAmount: 50,
           balanceDueDate: past,
         },
-        { ...draftInvoice, status: InvoiceStatus.Overdue, totalAmount: 300 },
+        {
+          ...draftInvoice,
+          status: InvoiceStatus.Viewed,
+          totalAmount: 300,
+          balanceDueDate: past,
+        },
         { ...draftInvoice, status: InvoiceStatus.Cancelled, totalAmount: 999 },
         {
           ...draftInvoice,

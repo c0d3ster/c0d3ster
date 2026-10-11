@@ -257,31 +257,30 @@ const OPEN_STATUSES: InvoiceStatus[] = [
   InvoiceStatus.Sent,
   InvoiceStatus.Viewed,
   InvoiceStatus.PartiallyPaid,
-  InvoiceStatus.Overdue,
 ]
 
-// Nothing flips status to overdue on a schedule, so an open invoice past its
-// balance due date counts as overdue too
+// Overdue is not a stored status: an open invoice past its balance due date is overdue
 const isOverdue = (
   invoice: Pick<InvoiceRecord, 'status' | 'balanceDueDate'>,
   now: Date
 ): boolean => {
-  if (invoice.status === InvoiceStatus.Overdue) return true
   if (!OPEN_STATUSES.includes(invoice.status)) return false
   return Boolean(invoice.balanceDueDate && invoice.balanceDueDate < now)
 }
 
 export class InvoiceService {
-  // Admin list. The overdue filter uses the effective (date-based) overdue check.
-  async getAllInvoices(status?: InvoiceStatus): Promise<InvoiceDetail[]> {
+  // Admin list. `overdueOnly` uses the date-based overdue check.
+  async getAllInvoices(
+    status?: InvoiceStatus,
+    overdueOnly = false
+  ): Promise<InvoiceDetail[]> {
     const invoices = await db.query.invoices.findMany({
       orderBy: [desc(schemas.invoices.createdAt)],
     })
     const now = new Date()
     const filtered = invoices.filter((invoice) => {
-      if (!status) return true
-      if (status === InvoiceStatus.Overdue) return isOverdue(invoice, now)
-      return invoice.status === status
+      if (status && invoice.status !== status) return false
+      return !overdueOnly || isOverdue(invoice, now)
     })
     return this.withLineItems(filtered)
   }
