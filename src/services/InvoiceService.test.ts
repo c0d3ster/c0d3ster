@@ -328,6 +328,9 @@ describe('InvoiceService', () => {
           to: 'client@example.com',
           clientName: 'Casey',
           lineItems: [lineItem],
+          subtotal: 100,
+          discountAmount: null,
+          taxAmount: 0,
           totalAmount: 100,
           invoiceUrl: expect.stringMatching(
             /\/dashboard\/invoices\/invoice-1$/
