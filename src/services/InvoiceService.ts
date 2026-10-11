@@ -475,10 +475,8 @@ export class InvoiceService {
         invoiceNumber: existing.invoiceNumber,
         projectName: project.projectName,
         lineItems: existing.lineItems,
-        subtotal: existing.subtotal,
+        ...deriveInvoiceAmounts(existing),
         discountLabel: existing.discountLabel,
-        discountAmount: existing.discountAmount,
-        taxAmount: existing.taxAmount,
         totalAmount: existing.totalAmount,
         depositAmount: existing.depositPercent
           ? calculateDepositAmount(
