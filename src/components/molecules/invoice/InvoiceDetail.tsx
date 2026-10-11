@@ -12,7 +12,11 @@ import { useGetMe } from '@/apiClients/userApiClient'
 import { BRAND_NAME, SUPPORT_EMAIL } from '@/constants'
 import { InvoiceStatus } from '@/graphql/generated/graphql'
 import { formatCardDate } from '@/utils'
-import { formatCurrency, isInvoicePayable } from '@/utils/Invoice'
+import {
+  formatCurrency,
+  isInvoiceOverdue,
+  isInvoicePayable,
+} from '@/utils/Invoice'
 
 import { InvoiceLineItemsTable } from './InvoiceLineItemsTable'
 import { InvoiceStatusBadge } from './InvoiceStatusBadge'
@@ -121,7 +125,10 @@ export const InvoiceDetail = ({
               ` · Due ${formatCardDate(invoice.balanceDueDate)}`}
           </p>
         </div>
-        <InvoiceStatusBadge status={invoice.status} />
+        <InvoiceStatusBadge
+          status={invoice.status}
+          overdue={isInvoiceOverdue(invoice)}
+        />
       </div>
 
       <div className='grid grid-cols-2 gap-4 rounded-lg border border-green-400/20 bg-black/60 p-4 font-mono text-sm text-green-300'>
