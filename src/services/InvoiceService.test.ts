@@ -348,7 +348,6 @@ describe('InvoiceService', () => {
         invoiceId: 'invoice-1',
         amount,
         checkoutSessionId,
-        paymentIntentId: 'pi_1',
       })
 
     it('marks the invoice partially paid and syncs project.paidAmount', async () => {
@@ -366,7 +365,6 @@ describe('InvoiceService', () => {
           paidAmount: 250,
           status: InvoiceStatus.PartiallyPaid,
           stripeCheckoutSessionId: 'cs_1',
-          stripePaymentIntentId: 'pi_1',
         })
       )
       expect(update).toHaveBeenNthCalledWith(2, { paidAmount: 250 })

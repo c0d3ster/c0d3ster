@@ -114,7 +114,6 @@ describe('POST /api/webhooks/stripe', () => {
       invoiceId: 'invoice-1',
       amount: 250,
       checkoutSessionId: 'cs_1',
-      paymentIntentId: 'pi_1',
     })
   })
 

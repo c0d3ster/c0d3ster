@@ -18,6 +18,7 @@ import { logger } from '@/libs/Logger'
 import { getStripe } from '@/libs/Stripe'
 import { users } from '@/models'
 import { invoiceService } from '@/services'
+import { deriveInvoiceAmounts } from '@/services/InvoiceService'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -25,7 +26,6 @@ const PAYABLE_STATUSES: InvoiceStatus[] = [
   InvoiceStatus.Sent,
   InvoiceStatus.Viewed,
   InvoiceStatus.PartiallyPaid,
-  InvoiceStatus.Overdue,
 ]
 
 const errorResponse = (error: string, status: number): NextResponse =>
@@ -73,7 +73,7 @@ export const POST = async (
     }
 
     const lineItems = buildCheckoutLineItems(
-      invoice,
+      deriveInvoiceAmounts(invoice),
       invoice.lineItems,
       amountCents,
       mode
