@@ -2,6 +2,7 @@ import { InvoiceStatus } from '@/graphql/generated/graphql'
 
 type InvoiceStatusBadgeProps = {
   status: InvoiceStatus
+  overdue?: boolean
 }
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
@@ -11,9 +12,10 @@ const STATUS_STYLES: Record<InvoiceStatus, string> = {
   [InvoiceStatus.PartiallyPaid]:
     'border-yellow-400/40 bg-yellow-400/20 text-yellow-400',
   [InvoiceStatus.Paid]: 'border-green-400/40 bg-green-400/20 text-green-400',
-  [InvoiceStatus.Overdue]: 'border-red-400/40 bg-red-400/20 text-red-400',
   [InvoiceStatus.Cancelled]: 'border-gray-400/40 bg-gray-400/20 text-gray-400',
 }
+
+const OVERDUE_STYLE = 'border-red-400/40 bg-red-400/20 text-red-400'
 
 const STATUS_LABELS: Record<InvoiceStatus, string> = {
   [InvoiceStatus.Draft]: 'draft',
@@ -21,16 +23,16 @@ const STATUS_LABELS: Record<InvoiceStatus, string> = {
   [InvoiceStatus.Viewed]: 'viewed',
   [InvoiceStatus.PartiallyPaid]: 'partially paid',
   [InvoiceStatus.Paid]: 'paid',
-  [InvoiceStatus.Overdue]: 'overdue',
   [InvoiceStatus.Cancelled]: 'cancelled',
 }
 
 export const InvoiceStatusBadge = ({
   status,
+  overdue = false,
 }: InvoiceStatusBadgeProps): React.ReactElement => (
   <span
-    className={`rounded border px-3 py-1 font-mono text-xs font-bold whitespace-nowrap uppercase ${STATUS_STYLES[status]}`}
+    className={`rounded border px-3 py-1 font-mono text-xs font-bold whitespace-nowrap uppercase ${overdue ? OVERDUE_STYLE : STATUS_STYLES[status]}`}
   >
-    {STATUS_LABELS[status]}
+    {overdue ? 'overdue' : STATUS_LABELS[status]}
   </span>
 )
