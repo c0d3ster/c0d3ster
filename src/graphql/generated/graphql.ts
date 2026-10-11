@@ -589,6 +589,7 @@ export type QueryFilesArgs = {
 
 
 export type QueryGetAllInvoicesArgs = {
+  overdue?: InputMaybe<Scalars['Boolean']['input']>;
   status?: InputMaybe<InvoiceStatus>;
 };
 
@@ -867,6 +868,7 @@ export type MarkInvoiceViewedMutation = { readonly __typename?: 'Mutation', read
 
 export type GetAllInvoicesQueryVariables = Exact<{
   status?: InputMaybe<InvoiceStatus>;
+  overdue?: InputMaybe<Scalars['Boolean']['input']>;
 }>;
 
 
@@ -1668,8 +1670,8 @@ export function useMarkInvoiceViewedMutation(baseOptions?: ApolloReactHooks.Muta
       }
 export type MarkInvoiceViewedMutationHookResult = ReturnType<typeof useMarkInvoiceViewedMutation>;
 export const GetAllInvoicesDocument = gql`
-    query GetAllInvoices($status: InvoiceStatus) {
-  getAllInvoices(status: $status) {
+    query GetAllInvoices($status: InvoiceStatus, $overdue: Boolean) {
+  getAllInvoices(status: $status, overdue: $overdue) {
     id
     projectId
     invoiceNumber
@@ -1696,6 +1698,7 @@ export const GetAllInvoicesDocument = gql`
  * const { data, loading, error } = useGetAllInvoicesQuery({
  *   variables: {
  *      status: // value for 'status'
+ *      overdue: // value for 'overdue'
  *   },
  * });
  */

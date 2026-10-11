@@ -158,13 +158,14 @@ describe('InvoiceResolver', () => {
       expect(result.status).toBe(InvoiceStatus.Cancelled)
     })
 
-    it('getAllInvoices passes the status filter through', async () => {
+    it('getAllInvoices passes the status and overdue filters through', async () => {
       invoiceService.getAllInvoices.mockResolvedValue([createMockInvoice()])
 
-      const result = await resolver.getAllInvoices(InvoiceStatus.Sent)
+      const result = await resolver.getAllInvoices(InvoiceStatus.Sent, true)
 
       expect(invoiceService.getAllInvoices).toHaveBeenCalledWith(
-        InvoiceStatus.Sent
+        InvoiceStatus.Sent,
+        true
       )
       expect(result).toHaveLength(1)
     })

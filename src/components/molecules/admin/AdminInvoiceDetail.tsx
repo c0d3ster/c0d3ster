@@ -7,7 +7,7 @@ import { useCancelInvoice, useGetInvoice, useSendInvoice } from '@/apiClients'
 import { InvoiceStatus } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
 import { formatCardDate } from '@/utils'
-import { formatCurrency } from '@/utils/Invoice'
+import { formatCurrency, isInvoiceOverdue } from '@/utils/Invoice'
 
 import { InvoiceLineItemsTable } from '../invoice/InvoiceLineItemsTable'
 import { InvoiceStatusBadge } from '../invoice/InvoiceStatusBadge'
@@ -24,7 +24,6 @@ const CANCELLABLE: InvoiceStatus[] = [
   InvoiceStatus.Sent,
   InvoiceStatus.Viewed,
   InvoiceStatus.PartiallyPaid,
-  InvoiceStatus.Overdue,
 ]
 
 const buttonClass =
@@ -101,7 +100,10 @@ export const AdminInvoiceDetail = ({
             Created {formatCardDate(invoice.createdAt)}
           </p>
         </div>
-        <InvoiceStatusBadge status={invoice.status} />
+        <InvoiceStatusBadge
+          status={invoice.status}
+          overdue={isInvoiceOverdue(invoice)}
+        />
       </div>
 
       <InvoiceLineItemsTable lineItems={invoice.lineItems} />

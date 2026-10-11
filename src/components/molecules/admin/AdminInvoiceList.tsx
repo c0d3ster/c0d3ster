@@ -6,39 +6,44 @@ import { useState } from 'react'
 import { useGetAllInvoices } from '@/apiClients'
 import { InvoiceStatus } from '@/graphql/generated/graphql'
 import { formatCardDate } from '@/utils'
-import { formatCurrency } from '@/utils/Invoice'
+import { formatCurrency, isInvoiceOverdue } from '@/utils/Invoice'
 
 import { InvoiceStatusBadge } from '../invoice/InvoiceStatusBadge'
 
-const FILTERS: { label: string; value?: InvoiceStatus }[] = [
+type InvoiceFilter = { label: string; status?: InvoiceStatus; overdue?: boolean }
+
+const FILTERS: InvoiceFilter[] = [
   { label: 'ALL' },
-  { label: 'DRAFT', value: InvoiceStatus.Draft },
-  { label: 'SENT', value: InvoiceStatus.Sent },
-  { label: 'OVERDUE', value: InvoiceStatus.Overdue },
-  { label: 'PAID', value: InvoiceStatus.Paid },
+  { label: 'DRAFT', status: InvoiceStatus.Draft },
+  { label: 'SENT', status: InvoiceStatus.Sent },
+  { label: 'OVERDUE', overdue: true },
+  { label: 'PAID', status: InvoiceStatus.Paid },
 ]
 
 export const AdminInvoiceList = (): React.ReactElement => {
-  const [status, setStatus] = useState<InvoiceStatus | undefined>()
-  const { data, loading, error } = useGetAllInvoices(status)
+  const [filter, setFilter] = useState<InvoiceFilter>(FILTERS[0] ?? { label: 'ALL' })
+  const { data, loading, error } = useGetAllInvoices(
+    filter.status,
+    filter.overdue
+  )
   const invoices = data?.getAllInvoices ?? []
 
   return (
     <div className='mx-auto max-w-3xl space-y-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='flex flex-wrap gap-2'>
-          {FILTERS.map(({ label, value }) => (
+          {FILTERS.map((option) => (
             <button
-              key={label}
+              key={option.label}
               type='button'
-              onClick={() => setStatus(value)}
+              onClick={() => setFilter(option)}
               className={`rounded border px-3 py-1 font-mono text-xs font-bold transition-all duration-300 ${
-                status === value
+                filter.label === option.label
                   ? 'border-green-400 bg-green-400 text-black'
                   : 'border-green-400/30 bg-green-400/10 text-green-400 hover:bg-green-400 hover:text-black'
               }`}
             >
-              {label}
+              {option.label}
             </button>
           ))}
         </div>
@@ -85,7 +90,10 @@ export const AdminInvoiceList = (): React.ReactElement => {
                 <span className='font-mono text-green-300'>
                   {formatCurrency(invoice.totalAmount)}
                 </span>
-                <InvoiceStatusBadge status={invoice.status} />
+                <InvoiceStatusBadge
+                  status={invoice.status}
+                  overdue={isInvoiceOverdue(invoice)}
+                />
               </div>
             </Link>
           </li>
