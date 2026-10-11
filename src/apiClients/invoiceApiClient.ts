@@ -104,8 +104,8 @@ export const useMarkInvoiceViewed = () =>
 // Admin operations
 
 export const GET_ALL_INVOICES = gql`
-  query GetAllInvoices($status: InvoiceStatus) {
-    getAllInvoices(status: $status) {
+  query GetAllInvoices($status: InvoiceStatus, $overdue: Boolean) {
+    getAllInvoices(status: $status, overdue: $overdue) {
       id
       projectId
       invoiceNumber
@@ -179,12 +179,13 @@ export const CANCEL_INVOICE = gql`
 `
 
 export const useGetAllInvoices = (
-  status?: GetAllInvoicesQueryVariables['status']
+  status?: GetAllInvoicesQueryVariables['status'],
+  overdue?: GetAllInvoicesQueryVariables['overdue']
 ) =>
   useQuery<GetAllInvoicesQuery, GetAllInvoicesQueryVariables>(
     GET_ALL_INVOICES,
     {
-      variables: { status },
+      variables: { status, overdue },
       fetchPolicy: 'cache-and-network',
     }
   )

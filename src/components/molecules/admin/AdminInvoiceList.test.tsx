@@ -29,10 +29,10 @@ describe('AdminInvoiceList', () => {
     render(<AdminInvoiceList />)
 
     expect(screen.getByText('INV-2026-001')).toBeInTheDocument()
-    expect(useGetAllInvoices).toHaveBeenLastCalledWith(undefined)
+    expect(useGetAllInvoices).toHaveBeenLastCalledWith(undefined, undefined)
 
     fireEvent.click(screen.getByRole('button', { name: 'OVERDUE' }))
 
-    expect(useGetAllInvoices).toHaveBeenLastCalledWith(InvoiceStatus.Overdue)
+    expect(useGetAllInvoices).toHaveBeenLastCalledWith(undefined, true)
   })
 })

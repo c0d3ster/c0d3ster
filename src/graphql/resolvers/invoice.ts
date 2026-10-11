@@ -107,11 +107,13 @@ export class InvoiceResolver {
   @Query(() => [Invoice])
   async getAllInvoices(
     @Arg('status', () => InvoiceStatus, { nullable: true })
-    status?: InvoiceStatus
+    status?: InvoiceStatus,
+    @Arg('overdue', () => Boolean, { nullable: true })
+    overdue?: boolean
   ): Promise<InvoiceDetail[]> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
-    return this.invoiceService.getAllInvoices(status)
+    return this.invoiceService.getAllInvoices(status, overdue)
   }
 
   @Query(() => InvoiceDashboardSummary)
