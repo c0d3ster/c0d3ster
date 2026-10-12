@@ -25,7 +25,7 @@ export type CaseResult = {
   runs: RunResult[]
 }
 
-export type FeatureResult = {
+type FeatureResult = {
   feature: string
   expected: number
   hit: number
@@ -33,7 +33,7 @@ export type FeatureResult = {
   outsideOkSet: number
 }
 
-export type EvalResults = {
+type EvalResults = {
   label: string
   startedAt: string
   runsPerCase: number
