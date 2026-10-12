@@ -46,6 +46,20 @@ export type ContactFormSubmission = {
   readonly submittedAt: Scalars['String']['output'];
 };
 
+export type CreateInvoiceInput = {
+  readonly balanceDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositPercent?: InputMaybe<Scalars['Int']['input']>;
+  readonly discountLabel?: InputMaybe<Scalars['String']['input']>;
+  readonly discountType?: InputMaybe<DiscountType>;
+  readonly discountValue?: InputMaybe<Scalars['Float']['input']>;
+  readonly lineItems?: InputMaybe<ReadonlyArray<InvoiceLineItemInput>>;
+  readonly notes?: InputMaybe<Scalars['String']['input']>;
+  readonly paymentInstructions?: InputMaybe<Scalars['String']['input']>;
+  readonly projectId: Scalars['ID']['input'];
+  readonly taxRate?: InputMaybe<Scalars['Float']['input']>;
+};
+
 export type CreateProjectInput = {
   readonly actualCompletionDate?: InputMaybe<Scalars['String']['input']>;
   readonly budget?: InputMaybe<Scalars['Float']['input']>;
@@ -71,6 +85,12 @@ export type CreateProjectRequestInput = {
   readonly timeline?: InputMaybe<Scalars['String']['input']>;
   readonly title?: InputMaybe<Scalars['String']['input']>;
 };
+
+/** How an invoice discount value is applied */
+export enum DiscountType {
+  Flat = 'Flat',
+  Percentage = 'Percentage'
+}
 
 /** Environment for file storage */
 export enum Environment {
@@ -123,10 +143,70 @@ export type FileUploadMetadata = {
   readonly uploadedAt: Scalars['DateTimeISO']['output'];
 };
 
+export type Invoice = {
+  readonly __typename?: 'Invoice';
+  readonly balanceDueDate?: Maybe<Scalars['String']['output']>;
+  readonly clientId: Scalars['ID']['output'];
+  readonly createdAt: Scalars['String']['output'];
+  readonly depositAmount: Scalars['Float']['output'];
+  readonly depositDueDate?: Maybe<Scalars['String']['output']>;
+  readonly depositPercent?: Maybe<Scalars['Int']['output']>;
+  readonly discountAmount?: Maybe<Scalars['Float']['output']>;
+  readonly discountLabel?: Maybe<Scalars['String']['output']>;
+  readonly discountType?: Maybe<DiscountType>;
+  readonly discountValue?: Maybe<Scalars['Float']['output']>;
+  readonly id: Scalars['ID']['output'];
+  readonly invoiceNumber: Scalars['String']['output'];
+  readonly lineItems: ReadonlyArray<InvoiceLineItem>;
+  readonly notes?: Maybe<Scalars['String']['output']>;
+  readonly paidAmount: Scalars['Float']['output'];
+  readonly paidAt?: Maybe<Scalars['String']['output']>;
+  readonly paymentInstructions?: Maybe<Scalars['String']['output']>;
+  readonly projectId: Scalars['ID']['output'];
+  readonly sentAt?: Maybe<Scalars['String']['output']>;
+  readonly status: InvoiceStatus;
+  readonly subtotal: Scalars['Float']['output'];
+  readonly taxAmount: Scalars['Float']['output'];
+  readonly taxRate: Scalars['Float']['output'];
+  readonly totalAmount: Scalars['Float']['output'];
+  readonly updatedAt: Scalars['String']['output'];
+  readonly viewedAt?: Maybe<Scalars['String']['output']>;
+};
+
+export type InvoiceLineItem = {
+  readonly __typename?: 'InvoiceLineItem';
+  readonly description: Scalars['String']['output'];
+  readonly feature?: Maybe<ProjectFeature>;
+  readonly id: Scalars['ID']['output'];
+  readonly invoiceId: Scalars['ID']['output'];
+  readonly quantity: Scalars['Float']['output'];
+  readonly sortOrder: Scalars['Int']['output'];
+  readonly total: Scalars['Float']['output'];
+  readonly unitPrice: Scalars['Float']['output'];
+};
+
+export type InvoiceLineItemInput = {
+  readonly description: Scalars['String']['input'];
+  readonly feature?: InputMaybe<ProjectFeature>;
+  readonly quantity?: InputMaybe<Scalars['Float']['input']>;
+  readonly unitPrice: Scalars['Float']['input'];
+};
+
+/** Status of an invoice */
+export enum InvoiceStatus {
+  Cancelled = 'Cancelled',
+  Draft = 'Draft',
+  Paid = 'Paid',
+  PartiallyPaid = 'PartiallyPaid',
+  Sent = 'Sent',
+  Viewed = 'Viewed'
+}
+
 export type Mutation = {
   readonly __typename?: 'Mutation';
   readonly approveProjectRequest: Scalars['String']['output'];
   readonly assignProject: Project;
+  readonly createInvoice: Invoice;
   readonly createProject: Project;
   readonly createProjectRequest: ProjectRequest;
   readonly deleteFile: Scalars['Boolean']['output'];
@@ -137,7 +217,9 @@ export type Mutation = {
   readonly rejectProjectRequest: Scalars['String']['output'];
   readonly requestProjectFileUpload: ProjectFileUploadResult;
   readonly requestProjectLogoUpload: ProjectLogoUploadResult;
+  readonly sendInvoice: Invoice;
   readonly submitContactForm: ContactFormSubmission;
+  readonly updateInvoice: Invoice;
   readonly updateProject: Project;
   readonly updateProjectRequest: ProjectRequest;
   readonly updateProjectRequestStatus: ProjectRequest;
@@ -155,6 +237,11 @@ export type MutationApproveProjectRequestArgs = {
 export type MutationAssignProjectArgs = {
   developerId: Scalars['ID']['input'];
   projectId: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateInvoiceArgs = {
+  input: CreateInvoiceInput;
 };
 
 
@@ -218,8 +305,19 @@ export type MutationRequestProjectLogoUploadArgs = {
 };
 
 
+export type MutationSendInvoiceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationSubmitContactFormArgs = {
   input: ContactFormInput;
+};
+
+
+export type MutationUpdateInvoiceArgs = {
+  id: Scalars['ID']['input'];
+  input: UpdateInvoiceInput;
 };
 
 
@@ -435,6 +533,9 @@ export type Query = {
   readonly featuredProjects: ReadonlyArray<Project>;
   readonly file?: Maybe<File>;
   readonly files: ReadonlyArray<File>;
+  readonly getInvoice?: Maybe<Invoice>;
+  readonly getMyInvoices: ReadonlyArray<Invoice>;
+  readonly getProjectInvoices: ReadonlyArray<Invoice>;
   readonly me?: Maybe<User>;
   readonly myDashboard: UserDashboard;
   readonly project?: Maybe<Project>;
@@ -461,6 +562,16 @@ export type QueryFileArgs = {
 
 export type QueryFilesArgs = {
   filter?: InputMaybe<FileFilterInput>;
+};
+
+
+export type QueryGetInvoiceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryGetProjectInvoicesArgs = {
+  projectId: Scalars['ID']['input'];
 };
 
 
@@ -522,6 +633,19 @@ export type StatusUpdate = {
   readonly updateMessage: Scalars['String']['output'];
   readonly updatedBy: Scalars['ID']['output'];
   readonly updatedByUser?: Maybe<User>;
+};
+
+export type UpdateInvoiceInput = {
+  readonly balanceDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositDueDate?: InputMaybe<Scalars['String']['input']>;
+  readonly depositPercent?: InputMaybe<Scalars['Int']['input']>;
+  readonly discountLabel?: InputMaybe<Scalars['String']['input']>;
+  readonly discountType?: InputMaybe<DiscountType>;
+  readonly discountValue?: InputMaybe<Scalars['Float']['input']>;
+  readonly lineItems?: InputMaybe<ReadonlyArray<InvoiceLineItemInput>>;
+  readonly notes?: InputMaybe<Scalars['String']['input']>;
+  readonly paymentInstructions?: InputMaybe<Scalars['String']['input']>;
+  readonly taxRate?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type UpdateProjectInput = {
