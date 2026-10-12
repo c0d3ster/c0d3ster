@@ -35,7 +35,7 @@ components (atoms/molecules/organisms/templates)
 Adding a feature end-to-end touches: `graphql/schema` (type-graphql decorator class) → `graphql/resolvers` → `services` → `apiClients` (gql op) → `pnpm codegen` to get the typed hook.
 
 - **Auth/permissions are centralized in services**, not resolvers — `UserService.getCurrentUserWithAuth()` and `checkPermission()`. Resolvers call services directly; there is no separate repository/DAO layer.
-- `src/graphql/generated` is gitignored and codegen-produced — never hand-edit.
+- `src/graphql/generated` is committed and codegen-produced: never hand-edit, regenerate with `pnpm codegen` and commit the result.
 - Route groups: `app/(auth)` = signed-in dashboard (project requests, user profile), `app/(public)` = marketing/project pages, plus `app/api` for GraphQL, Clerk webhooks, and user sync.
 - `services/` includes provisioning integrations beyond CRUD: `GitHubService` (repo creation from template), `VercelService` (deployment provisioning), `NeonService` (DB provisioning), `FileService` (Cloudflare R2), `ContactService` (contact form → email via Resend).
 
