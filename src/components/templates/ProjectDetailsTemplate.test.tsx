@@ -130,21 +130,21 @@ describe('ProjectDetailsTemplate', () => {
     const inProgressProject = { ...mockProject, progressPercentage: 75 }
     render(<ProjectDetailsTemplate project={inProgressProject} />)
 
-    expect(screen.getByText('COMPLETION')).toBeInTheDocument()
+    expect(screen.getByText('PROGRESS')).toBeInTheDocument()
     expect(screen.getByText('75%')).toBeInTheDocument()
   })
 
-  it('does not render completion block when progressPercentage is null', () => {
+  it('does not render progress block when progressPercentage is null', () => {
     const noProgress = { ...mockProject, progressPercentage: null }
     render(<ProjectDetailsTemplate project={noProgress} />)
 
-    expect(screen.queryByText('COMPLETION')).not.toBeInTheDocument()
+    expect(screen.queryByText('PROGRESS')).not.toBeInTheDocument()
   })
 
-  it('does not render completion block when progressPercentage is 100', () => {
+  it('does not render progress block when progressPercentage is 100', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 
-    expect(screen.queryByText('COMPLETION')).not.toBeInTheDocument()
+    expect(screen.queryByText('PROGRESS')).not.toBeInTheDocument()
   })
 
   it('renders technologies used section', () => {
