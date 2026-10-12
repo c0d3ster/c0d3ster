@@ -6,6 +6,7 @@ commit-msg:
 
 # Validate content before committing
 pre-commit:
+  parallel: true
   commands:
     lint:
       glob: '*'

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { createMockFullProject } from '@/tests/mocks'
