@@ -1,5 +1,13 @@
 import { GraphQLError } from 'graphql'
-import { Arg, ID, Mutation, Query, Resolver } from 'type-graphql'
+import {
+  Arg,
+  FieldResolver,
+  ID,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+} from 'type-graphql'
 
 import type { InvoiceDetail, InvoiceService, UserService } from '@/services'
 
@@ -16,50 +24,8 @@ import {
 } from '@/services/InvoiceService'
 import { isAdminRole } from '@/utils'
 
-const toInvoiceType = (detail: InvoiceDetail): Invoice => {
-  const { subtotal, discountAmount, taxAmount } = deriveInvoiceAmounts(detail)
-
-  return {
-  id: detail.id,
-  projectId: detail.projectId,
-  clientId: detail.clientId,
-  invoiceNumber: detail.invoiceNumber,
-  status: detail.status,
-  depositPercent: detail.depositPercent ?? undefined,
-  depositAmount: calculateDepositAmount(
-    detail.totalAmount,
-    detail.depositPercent
-  ),
-  depositDueDate: detail.depositDueDate?.toISOString(),
-  balanceDueDate: detail.balanceDueDate?.toISOString(),
-  subtotal,
-  discountType: detail.discountType ?? undefined,
-  discountValue: detail.discountValue ?? undefined,
-  discountLabel: detail.discountLabel ?? undefined,
-  discountAmount: discountAmount ?? undefined,
-  taxRate: detail.taxRate,
-  taxAmount,
-  totalAmount: detail.totalAmount,
-  paidAmount: detail.paidAmount,
-  notes: detail.notes ?? undefined,
-  paymentInstructions: detail.paymentInstructions ?? undefined,
-  sentAt: detail.sentAt?.toISOString(),
-  viewedAt: detail.viewedAt?.toISOString(),
-  paidAt: detail.paidAt?.toISOString(),
-  createdAt: detail.createdAt.toISOString(),
-  updatedAt: detail.updatedAt.toISOString(),
-  lineItems: detail.lineItems.map((item) => ({
-    id: item.id,
-    invoiceId: item.invoiceId,
-    feature: item.feature ?? undefined,
-    description: item.description,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    total: item.total,
-    sortOrder: item.sortOrder,
-  })),
-  }
-}
+const toIso = (date: Date | null): string | null =>
+  date?.toISOString() ?? null
 
 @Resolver(() => Invoice)
 export class InvoiceResolver {
@@ -71,38 +37,38 @@ export class InvoiceResolver {
   @Mutation(() => Invoice)
   async createInvoice(
     @Arg('input', () => CreateInvoiceInput) input: CreateInvoiceInput
-  ): Promise<Invoice> {
+  ): Promise<InvoiceDetail> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
-    return toInvoiceType(await this.invoiceService.createInvoice(input))
+    return this.invoiceService.createInvoice(input)
   }
 
   @Mutation(() => Invoice)
   async updateInvoice(
     @Arg('id', () => ID) id: string,
     @Arg('input', () => UpdateInvoiceInput) input: UpdateInvoiceInput
-  ): Promise<Invoice> {
+  ): Promise<InvoiceDetail> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
-    return toInvoiceType(await this.invoiceService.updateInvoice(id, input))
+    return this.invoiceService.updateInvoice(id, input)
   }
 
   @Mutation(() => Invoice)
-  async sendInvoice(@Arg('id', () => ID) id: string): Promise<Invoice> {
+  async sendInvoice(@Arg('id', () => ID) id: string): Promise<InvoiceDetail> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
-    return toInvoiceType(await this.invoiceService.sendInvoice(id))
+    return this.invoiceService.sendInvoice(id)
   }
 
   @Query(() => Invoice, { nullable: true })
   async getInvoice(
     @Arg('id', () => ID) id: string
-  ): Promise<Invoice | undefined> {
+  ): Promise<InvoiceDetail | undefined> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     const invoice = await this.invoiceService.getInvoiceById(id)
     if (!invoice) return undefined
 
-    if (isAdminRole(currentUser.role)) return toInvoiceType(invoice)
+    if (isAdminRole(currentUser.role)) return invoice
 
     // Clients only see their own invoices, and never drafts. Report both as
     // missing so invoice ids can't be probed.
@@ -114,24 +80,81 @@ export class InvoiceResolver {
         extensions: { code: 'NOT_FOUND' },
       })
     }
-    return toInvoiceType(invoice)
+    return invoice
   }
 
   @Query(() => [Invoice])
   async getProjectInvoices(
     @Arg('projectId', () => ID) projectId: string
-  ): Promise<Invoice[]> {
+  ): Promise<InvoiceDetail[]> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Admin)
     const invoices = await this.invoiceService.getProjectInvoices(projectId)
-    return invoices.map(toInvoiceType)
+    return invoices
   }
 
   @Query(() => [Invoice])
-  async getMyInvoices(): Promise<Invoice[]> {
+  async getMyInvoices(): Promise<InvoiceDetail[]> {
     const currentUser = await this.userService.getCurrentUserWithAuth()
     this.userService.checkPermission(currentUser, UserRole.Client)
     const invoices = await this.invoiceService.getClientInvoices(currentUser.id)
-    return invoices.map(toInvoiceType)
+    return invoices
+  }
+
+  // Derived on read: only totalAmount is stored (see deriveInvoiceAmounts)
+  @FieldResolver(() => Number)
+  subtotal(@Root() invoice: InvoiceDetail): number {
+    return deriveInvoiceAmounts(invoice).subtotal
+  }
+
+  @FieldResolver(() => Number, { nullable: true })
+  discountAmount(@Root() invoice: InvoiceDetail): number | null {
+    return deriveInvoiceAmounts(invoice).discountAmount
+  }
+
+  @FieldResolver(() => Number)
+  taxAmount(@Root() invoice: InvoiceDetail): number {
+    return deriveInvoiceAmounts(invoice).taxAmount
+  }
+
+  @FieldResolver(() => Number)
+  depositAmount(@Root() invoice: InvoiceDetail): number {
+    return calculateDepositAmount(invoice.totalAmount, invoice.depositPercent)
+  }
+
+  // Dates are exposed as ISO strings, matching the rest of the schema
+  @FieldResolver(() => String, { nullable: true })
+  depositDueDate(@Root() invoice: InvoiceDetail): string | null {
+    return toIso(invoice.depositDueDate)
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  balanceDueDate(@Root() invoice: InvoiceDetail): string | null {
+    return toIso(invoice.balanceDueDate)
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  sentAt(@Root() invoice: InvoiceDetail): string | null {
+    return toIso(invoice.sentAt)
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  viewedAt(@Root() invoice: InvoiceDetail): string | null {
+    return toIso(invoice.viewedAt)
+  }
+
+  @FieldResolver(() => String, { nullable: true })
+  paidAt(@Root() invoice: InvoiceDetail): string | null {
+    return toIso(invoice.paidAt)
+  }
+
+  @FieldResolver(() => String)
+  createdAt(@Root() invoice: InvoiceDetail): string {
+    return invoice.createdAt.toISOString()
+  }
+
+  @FieldResolver(() => String)
+  updatedAt(@Root() invoice: InvoiceDetail): string {
+    return invoice.updatedAt.toISOString()
   }
 }

@@ -80,17 +80,57 @@ describe('InvoiceResolver', () => {
     })
   })
 
-  it('createInvoice maps the result for admins, including depositAmount', async () => {
+  it('createInvoice returns the stored invoice for admins', async () => {
     userService.getCurrentUserWithAuth.mockResolvedValue(
       createMockUser({ role: 'admin' })
     )
-    invoiceService.createInvoice.mockResolvedValue(createMockInvoice())
+    const invoice = createMockInvoice()
+    invoiceService.createInvoice.mockResolvedValue(invoice)
 
     const result = await resolver.createInvoice({ projectId: 'project-1' })
 
-    expect(result.depositAmount).toBe(500)
-    expect(result.discountAmount).toBeUndefined()
-    expect(result.createdAt).toBe('2026-01-01T00:00:00.000Z')
+    expect(result).toBe(invoice)
+  })
+
+  describe('computed field resolvers', () => {
+    const lineItems = [
+      { total: 600 },
+      { total: 400 },
+    ]
+
+    it('derives amounts from line items, discount and tax', () => {
+      const invoice = createMockInvoice({
+        lineItems,
+        discountType: 'percentage',
+        discountValue: 10,
+        taxRate: 0.1,
+        totalAmount: 990,
+        depositPercent: 50,
+      })
+
+      expect(resolver.subtotal(invoice as never)).toBe(1000)
+      expect(resolver.discountAmount(invoice as never)).toBe(100)
+      expect(resolver.taxAmount(invoice as never)).toBe(90)
+      expect(resolver.depositAmount(invoice as never)).toBe(495)
+    })
+
+    it('returns a null discountAmount when there is no discount', () => {
+      const invoice = createMockInvoice({ lineItems })
+
+      expect(resolver.discountAmount(invoice as never)).toBeNull()
+      expect(resolver.taxAmount(invoice as never)).toBe(0)
+    })
+
+    it('formats dates as ISO strings and keeps empty ones null', () => {
+      const invoice = createMockInvoice({ sentAt: new Date('2026-02-03') })
+
+      expect(resolver.createdAt(invoice as never)).toBe(
+        '2026-01-01T00:00:00.000Z'
+      )
+      expect(resolver.sentAt(invoice as never)).toBe('2026-02-03T00:00:00.000Z')
+      expect(resolver.paidAt(invoice as never)).toBeNull()
+      expect(resolver.depositDueDate(invoice as never)).toBeNull()
+    })
   })
 
   describe('getInvoice', () => {
