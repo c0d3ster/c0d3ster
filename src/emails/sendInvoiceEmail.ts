@@ -6,7 +6,7 @@ import type { InvoiceEmailProps } from './InvoiceEmail'
 
 import { InvoiceEmail } from './InvoiceEmail'
 
-export type SendInvoiceEmailInput = InvoiceEmailProps & { to: string }
+type SendInvoiceEmailInput = InvoiceEmailProps & { to: string }
 
 export const sendInvoiceEmail = async ({
   to,
