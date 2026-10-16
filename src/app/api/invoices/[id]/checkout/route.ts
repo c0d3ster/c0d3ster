@@ -79,7 +79,7 @@ export const POST = async (
       mode
     )
     const baseUrl = Env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin
-    const invoiceUrl = `${baseUrl}/dashboard/invoices/${invoice.id}`
+    const invoiceUrl = `${baseUrl}/invoices/${invoice.id}`
 
     const session = await getStripe().checkout.sessions.create({
       mode: 'payment',

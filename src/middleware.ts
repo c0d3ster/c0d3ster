@@ -2,7 +2,7 @@ import type { NextFetchEvent, NextRequest } from 'next/server'
 
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)'])
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/invoices(.*)'])
 
 export default async function middleware(
   request: NextRequest,
@@ -10,7 +10,7 @@ export default async function middleware(
 ) {
   // Note: API routes need Clerk middleware for auth() to work
   return clerkMiddleware(async (auth, req) => {
-    // Only protect dashboard routes
+    // Only protect signed-in routes
     if (isProtectedRoute(req)) {
       await auth.protect()
     }
