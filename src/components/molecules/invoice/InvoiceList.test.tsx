@@ -34,7 +34,10 @@ describe('InvoiceList', () => {
     expect(screen.getByText('INV-2026-001')).toBeInTheDocument()
     expect(screen.getByText('partially paid')).toBeInTheDocument()
     expect(screen.getByText('$900.00')).toBeInTheDocument()
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/invoices/inv-1')
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/dashboard/invoices/inv-1'
+    )
   })
 
   it('shows an empty state', () => {

@@ -4,6 +4,11 @@
 
 @custom-variant hover (&:hover); /* Override Tailwind v4's @media (hover: hover) wrapper — fixes Chromium bug on touch-capable devices */
 
+/* Override Tailwind's default text-6xl (3.75rem) */
+@theme {
+  --text-6xl: 3.5rem;
+}
+
 @layer theme {
   :root {
     --font-size-2xs: 12px;

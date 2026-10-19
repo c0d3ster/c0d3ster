@@ -100,10 +100,7 @@ describe('InvoiceResolver', () => {
   })
 
   describe('computed field resolvers', () => {
-    const lineItems = [
-      { total: 600 },
-      { total: 400 },
-    ]
+    const lineItems = [{ total: 600 }, { total: 400 }]
 
     it('derives amounts from line items, discount and tax', () => {
       const invoice = createMockInvoice({
@@ -137,6 +134,22 @@ describe('InvoiceResolver', () => {
       expect(resolver.sentAt(invoice as never)).toBe('2026-02-03T00:00:00.000Z')
       expect(resolver.paidAt(invoice as never)).toBeNull()
       expect(resolver.depositDueDate(invoice as never)).toBeNull()
+    })
+  })
+
+  describe('party field resolvers', () => {
+    it('exposes the project and client details and looks them up once per invoice', async () => {
+      const invoice = createMockInvoice()
+      invoiceService.getInvoiceParties.mockResolvedValue({
+        projectName: 'Acme Portal',
+        clientName: 'Casey Client',
+        clientEmail: 'c@x.io',
+      })
+
+      expect(await resolver.projectName(invoice as never)).toBe('Acme Portal')
+      expect(await resolver.clientName(invoice as never)).toBe('Casey Client')
+      expect(await resolver.clientEmail(invoice as never)).toBe('c@x.io')
+      expect(invoiceService.getInvoiceParties).toHaveBeenCalledTimes(1)
     })
   })
 

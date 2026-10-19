@@ -91,14 +91,22 @@ export const AdminInvoiceDetail = ({
 
   return (
     <div className='mx-auto max-w-3xl space-y-6'>
-      <div className='flex flex-wrap items-center justify-between gap-2'>
-        <div>
-          <h1 className='font-mono text-2xl font-bold text-green-400'>
-            {invoice.invoiceNumber}
-          </h1>
-          <p className='font-mono text-xs text-green-300/60'>
-            Created {formatCardDate(invoice.createdAt)}
-          </p>
+      <div className='flex items-start justify-between gap-4 rounded-lg border border-green-400/20 bg-black/60 p-4 font-mono text-sm text-green-300'>
+        <div className='grid flex-1 grid-cols-2 gap-4'>
+          <div>
+            <p className='text-xs text-green-300/60 uppercase'>Client</p>
+            <p>{invoice.clientName}</p>
+            {invoice.clientEmail !== invoice.clientName && (
+              <p>{invoice.clientEmail}</p>
+            )}
+            <p className='mt-2 text-xs text-green-300/60'>
+              Created {formatCardDate(invoice.createdAt)}
+            </p>
+          </div>
+          <div>
+            <p className='text-xs text-green-300/60 uppercase'>Project</p>
+            <p>{invoice.projectName}</p>
+          </div>
         </div>
         <InvoiceStatusBadge
           status={invoice.status}
@@ -124,7 +132,7 @@ export const AdminInvoiceDetail = ({
 
       <div className='flex flex-wrap gap-2'>
         {EDITABLE.includes(invoice.status) && (
-          <Link href={`/admin/invoices/${id}/edit`} className={buttonClass}>
+          <Link href={`/dashboard/invoices/${id}/edit`} className={buttonClass}>
             EDIT
           </Link>
         )}
@@ -150,9 +158,6 @@ export const AdminInvoiceDetail = ({
             {confirmingCancel ? 'CONFIRM CANCEL' : 'CANCEL INVOICE'}
           </button>
         )}
-        <Link href='/admin/invoices' className={buttonClass}>
-          BACK TO LIST
-        </Link>
       </div>
     </div>
   )

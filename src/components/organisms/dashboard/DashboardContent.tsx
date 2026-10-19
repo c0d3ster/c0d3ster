@@ -33,7 +33,7 @@ export const DashboardContent = () => {
   const isContentLoading = userLoading || dashboardLoading
 
   return (
-    <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
+    <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
       {/* User Profile */}
       <div className='mb-8 rounded-lg border border-green-400/20 bg-black/60 p-3 backdrop-blur-sm sm:p-6'>
         <div className='flex flex-col items-center justify-between space-y-4 lg:flex-row lg:space-y-0'>

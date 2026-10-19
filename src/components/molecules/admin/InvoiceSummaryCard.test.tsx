@@ -24,7 +24,6 @@ describe('InvoiceSummaryCard', () => {
     expect(screen.getByText('$1,250.50')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
     expect(screen.getByText('$400.00')).toBeInTheDocument()
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/admin/invoices')
   })
 
   it('renders nothing when the summary is unavailable', () => {

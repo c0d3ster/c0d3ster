@@ -48,6 +48,7 @@ export const createMockProjectRequestService = () => ({
 // Mock InvoiceService
 export const createMockInvoiceService = () => ({
   getInvoiceById: vi.fn(),
+  getInvoiceParties: vi.fn(),
   getProjectInvoices: vi.fn(),
   getClientInvoices: vi.fn(),
   createInvoice: vi.fn(),

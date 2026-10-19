@@ -16,7 +16,7 @@ export default function Dashboard() {
       <div className='container mx-auto px-4'>
         <div className='mx-auto max-w-7xl'>
           {/* Header Section */}
-          <div className='mb-16 text-center'>
+          <div className='mb-8 text-center'>
             <AnimatedHeading
               text='DASHBOARD'
               level='h1'

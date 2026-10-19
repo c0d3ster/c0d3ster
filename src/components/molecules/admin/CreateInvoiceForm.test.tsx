@@ -58,6 +58,32 @@ describe('CreateInvoiceForm', () => {
     expect(screen.getByText('NEXT')).toBeDisabled()
   })
 
+  it('lets you jump back to completed steps but not ahead to upcoming ones', async () => {
+    render(<CreateInvoiceForm />)
+    fireEvent.change(screen.getByLabelText('Project'), {
+      target: { value: 'p1' },
+    })
+    await waitFor(() => expect(loadSuggestions).toHaveBeenCalled())
+    fireEvent.click(await screen.findByText('NEXT'))
+    fireEvent.click(await screen.findByText('NEXT'))
+
+    // On the discount step: project and items are completed, terms and preview are upcoming
+    expect(screen.getByRole('button', { name: 'PROJECT' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'LINE ITEMS' })).toBeEnabled()
+    expect(screen.getByText('DISCOUNT')).toHaveAttribute('aria-current', 'step')
+    expect(
+      screen.queryByRole('button', { name: 'TERMS' })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'PREVIEW' })
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'PROJECT' }))
+
+    expect(screen.getByLabelText('Project')).toBeInTheDocument()
+    expect(screen.getByText('PROJECT')).toHaveAttribute('aria-current', 'step')
+  })
+
   it('walks the steps, previews the total and saves a draft', async () => {
     render(<CreateInvoiceForm />)
     await goToPreview()
@@ -67,7 +93,7 @@ describe('CreateInvoiceForm', () => {
     fireEvent.click(screen.getByText('SAVE DRAFT'))
 
     await waitFor(() =>
-      expect(push).toHaveBeenCalledWith('/admin/invoices/inv-1')
+      expect(push).toHaveBeenCalledWith('/dashboard/invoices/inv-1')
     )
 
     expect(createInvoice.mock.calls[0]?.[0].variables.input).toMatchObject({

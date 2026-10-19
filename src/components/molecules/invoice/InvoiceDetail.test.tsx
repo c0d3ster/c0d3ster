@@ -5,7 +5,6 @@ import {
   useGetInvoice,
   useMarkInvoiceViewed,
 } from '@/apiClients/invoiceApiClient'
-import { useGetMe } from '@/apiClients/userApiClient'
 import { InvoiceStatus } from '@/graphql/generated/graphql'
 
 import { InvoiceDetail } from './InvoiceDetail'
@@ -14,7 +13,6 @@ vi.mock('@/apiClients/invoiceApiClient', () => ({
   useGetInvoice: vi.fn(),
   useMarkInvoiceViewed: vi.fn(),
 }))
-vi.mock('@/apiClients/userApiClient', () => ({ useGetMe: vi.fn() }))
 
 const searchParams = new URLSearchParams()
 vi.mock('next/navigation', () => ({
@@ -27,6 +25,9 @@ const stopPolling = vi.fn()
 
 const baseInvoice = {
   id: 'inv-1',
+  projectName: 'Acme Portal',
+  clientName: 'Casey Client',
+  clientEmail: 'c@x.io',
   invoiceNumber: 'INV-2026-001',
   status: InvoiceStatus.Sent,
   depositPercent: 50,
@@ -72,22 +73,20 @@ describe('InvoiceDetail', () => {
     searchParams.delete('payment')
     markViewed.mockResolvedValue({})
     vi.mocked(useMarkInvoiceViewed).mockReturnValue([markViewed] as never)
-    vi.mocked(useGetMe).mockReturnValue({
-      data: { me: { firstName: 'Casey', lastName: 'Client', email: 'c@x.io' } },
-    } as never)
   })
 
   it('renders the itemized breakdown with the labeled discount', () => {
     mockInvoice()
     render(<InvoiceDetail id='inv-1' />)
 
-    expect(screen.getByText('INV-2026-001')).toBeInTheDocument()
     expect(screen.getByText('Authentication')).toBeInTheDocument()
     expect(
       screen.getByText('Friends & Family Discount -10%')
     ).toBeInTheDocument()
     expect(screen.getByText('-$100.00')).toBeInTheDocument()
     expect(screen.getByText('Casey Client')).toBeInTheDocument()
+    expect(screen.getByText('c@x.io')).toBeInTheDocument()
+    expect(screen.getByText('Acme Portal')).toBeInTheDocument()
   })
 
   it('marks a sent invoice as viewed on first load', () => {

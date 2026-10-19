@@ -8,7 +8,7 @@ import { ProjectService } from './ProjectService'
 import { UserService } from './UserService'
 
 export * from './GitHubService'
-export type { InvoiceDetail } from './InvoiceService'
+export type { InvoiceDetail, InvoiceParties } from './InvoiceService'
 
 // Create services with their dependencies
 export const fileService = new FileService()

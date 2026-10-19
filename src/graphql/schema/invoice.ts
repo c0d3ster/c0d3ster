@@ -141,6 +141,16 @@ export class Invoice {
 
   @Field(() => [InvoiceLineItem])
   lineItems!: InvoiceLineItem[]
+
+  // Resolved on demand from the project and client by InvoiceResolver
+  @Field(() => String)
+  projectName!: string
+
+  @Field(() => String)
+  clientName!: string
+
+  @Field(() => String)
+  clientEmail!: string
 }
 
 @InputType('InvoiceLineItemInput')

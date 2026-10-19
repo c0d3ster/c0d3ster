@@ -1,5 +1,7 @@
 export * from './InvoiceDetail'
 export * from './InvoiceLineItemsTable'
 export * from './InvoiceList'
+export * from './InvoicesHeader'
 export * from './InvoiceStatusBadge'
 export * from './PayInvoiceButton'
+export * from './RoleInvoiceViews'
