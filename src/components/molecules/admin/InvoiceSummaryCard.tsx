@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-
 import { useInvoiceDashboardSummary } from '@/apiClients'
 import { formatCurrency } from '@/utils/Invoice'
 
@@ -20,10 +18,7 @@ export const InvoiceSummaryCard = (): React.ReactElement | null => {
   ]
 
   return (
-    <Link
-      href='/admin/invoices'
-      className='mb-6 block rounded-lg border border-green-400/20 bg-black/60 p-4 transition-colors hover:border-green-400/60'
-    >
+    <div className='mb-6 rounded-lg border border-green-400/20 bg-black/60 p-4'>
       <p className='mb-3 font-mono text-xs font-bold text-green-300/60'>
         INVOICES
       </p>
@@ -37,6 +32,6 @@ export const InvoiceSummaryCard = (): React.ReactElement | null => {
           </div>
         ))}
       </div>
-    </Link>
+    </div>
   )
 }

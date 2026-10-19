@@ -29,6 +29,8 @@ type ExistingInvoice = NonNullable<GetInvoiceQuery['getInvoice']>
 type CreateInvoiceFormProps = {
   // When set, edits this invoice instead of creating one (the project is fixed)
   invoice?: ExistingInvoice
+  // Preselects the project when creating, e.g. when arriving from a project page
+  initialProjectId?: string
 }
 
 type Step = 'project' | 'items' | 'discount' | 'terms' | 'preview'
@@ -75,11 +77,14 @@ const toDraft = (
 
 export const CreateInvoiceForm = ({
   invoice,
+  initialProjectId,
 }: CreateInvoiceFormProps): React.ReactElement => {
   const router = useRouter()
   const isEdit = Boolean(invoice)
   const [step, setStep] = useState<Step>(isEdit ? 'items' : 'project')
-  const [projectId, setProjectId] = useState(invoice?.projectId ?? '')
+  const [projectId, setProjectId] = useState(
+    invoice?.projectId ?? initialProjectId ?? ''
+  )
   const [items, setItems] = useState<LineItemDraft[]>(
     invoice?.lineItems.map(toDraft) ?? []
   )
@@ -209,7 +214,7 @@ export const CreateInvoiceForm = ({
       })
       if (sendNow) await sendInvoice({ variables: { id } })
       Toast.success(sendNow ? 'Invoice sent' : 'Invoice saved')
-      router.push(`/admin/invoices/${id}`)
+      router.push(`/dashboard/invoices/${id}`)
     } catch (err) {
       Toast.error('Failed to save invoice')
       console.error('Save invoice error:', err)
@@ -221,18 +226,38 @@ export const CreateInvoiceForm = ({
   return (
     <div className='mx-auto max-w-3xl space-y-6'>
       <ol className='flex flex-wrap gap-2'>
-        {STEPS.slice(firstStepIndex).map(({ id, label }) => (
-          <li
-            key={id}
-            className={`rounded border px-3 py-1 font-mono text-xs font-bold ${
-              id === step
-                ? 'border-green-400 bg-green-400 text-black'
-                : 'border-green-400/30 text-green-400'
-            }`}
-          >
-            {label.toUpperCase()}
-          </li>
-        ))}
+        {STEPS.slice(firstStepIndex).map(({ id, label }, offset) => {
+          const index = firstStepIndex + offset
+          const isCurrent = id === step
+          const isCompleted = index < stepIndex
+          const baseClass =
+            'rounded border px-3 py-1 font-mono text-xs font-bold'
+
+          return (
+            <li key={id}>
+              {isCompleted ? (
+                <button
+                  type='button'
+                  onClick={() => setStep(id)}
+                  className={`${baseClass} border-green-400/30 text-green-400 transition-colors hover:border-green-400`}
+                >
+                  {label.toUpperCase()}
+                </button>
+              ) : (
+                <span
+                  aria-current={isCurrent ? 'step' : undefined}
+                  className={`${baseClass} inline-block ${
+                    isCurrent
+                      ? 'border-green-400 bg-green-400 text-black'
+                      : 'border-green-400/10 text-green-400/30'
+                  }`}
+                >
+                  {label.toUpperCase()}
+                </span>
+              )}
+            </li>
+          )
+        })}
       </ol>
 
       {step === 'project' && (

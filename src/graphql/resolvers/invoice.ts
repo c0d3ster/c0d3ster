@@ -10,7 +10,12 @@ import {
 } from 'type-graphql'
 
 import type { UserRecord } from '@/models'
-import type { InvoiceDetail, InvoiceService, UserService } from '@/services'
+import type {
+  InvoiceDetail,
+  InvoiceParties,
+  InvoiceService,
+  UserService,
+} from '@/services'
 
 import {
   CreateInvoiceInput,
@@ -27,14 +32,16 @@ import {
 } from '@/services/InvoiceService'
 import { isAdminRole } from '@/utils'
 
-const toIso = (date: Date | null): string | null =>
-  date?.toISOString() ?? null
+const toIso = (date: Date | null): string | null => date?.toISOString() ?? null
 
 const notFound = (): GraphQLError =>
   new GraphQLError('Invoice not found', { extensions: { code: 'NOT_FOUND' } })
 
 @Resolver(() => Invoice)
 export class InvoiceResolver {
+  // Keyed by the parent object so the three party fields share one lookup per request
+  private partiesByInvoice = new WeakMap<object, Promise<InvoiceParties>>()
+
   constructor(
     private invoiceService: InvoiceService,
     private userService: UserService
@@ -144,6 +151,22 @@ export class InvoiceResolver {
     return invoices
   }
 
+  // Only hit the DB when a query selects them; visibility is already enforced by the parent query
+  @FieldResolver(() => String)
+  async projectName(@Root() invoice: InvoiceDetail): Promise<string> {
+    return (await this.getParties(invoice)).projectName
+  }
+
+  @FieldResolver(() => String)
+  async clientName(@Root() invoice: InvoiceDetail): Promise<string> {
+    return (await this.getParties(invoice)).clientName
+  }
+
+  @FieldResolver(() => String)
+  async clientEmail(@Root() invoice: InvoiceDetail): Promise<string> {
+    return (await this.getParties(invoice)).clientEmail
+  }
+
   // Derived on read: only totalAmount is stored (see deriveInvoiceAmounts)
   @FieldResolver(() => Number)
   subtotal(@Root() invoice: InvoiceDetail): number {
@@ -216,5 +239,13 @@ export class InvoiceResolver {
       throw notFound()
     }
     return invoice
+  }
+
+  private getParties(invoice: InvoiceDetail): Promise<InvoiceParties> {
+    const cached = this.partiesByInvoice.get(invoice)
+    if (cached) return cached
+    const lookup = this.invoiceService.getInvoiceParties(invoice)
+    this.partiesByInvoice.set(invoice, lookup)
+    return lookup
   }
 }

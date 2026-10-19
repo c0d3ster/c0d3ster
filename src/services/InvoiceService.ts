@@ -17,6 +17,12 @@ import { logger } from '@/libs/Logger'
 import { schemas } from '@/models'
 import { getBaseUrl } from '@/utils/Env'
 
+export type InvoiceParties = {
+  projectName: string
+  clientName: string
+  clientEmail: string
+}
+
 export type InvoiceDetail = InvoiceRecord & {
   lineItems: InvoiceLineItemRecord[]
 }
@@ -345,6 +351,32 @@ export class InvoiceService {
     return detail
   }
 
+  async getInvoiceParties({
+    projectId,
+    clientId,
+  }: Pick<InvoiceRecord, 'projectId' | 'clientId'>): Promise<InvoiceParties> {
+    const [client, project] = await Promise.all([
+      db.query.users.findFirst({ where: eq(schemas.users.id, clientId) }),
+      db.query.projects.findFirst({
+        where: eq(schemas.projects.id, projectId),
+      }),
+    ])
+    if (!client || !project) {
+      throw new GraphQLError('Invoice client or project not found', {
+        extensions: { code: 'NOT_FOUND' },
+      })
+    }
+
+    const clientName = [client.firstName, client.lastName]
+      .filter(Boolean)
+      .join(' ')
+    return {
+      projectName: project.title ?? project.projectName,
+      clientName: clientName || client.email,
+      clientEmail: client.email,
+    }
+  }
+
   async getProjectInvoices(projectId: string): Promise<InvoiceDetail[]> {
     const invoices = await db.query.invoices.findMany({
       where: eq(schemas.invoices.projectId, projectId),
@@ -577,7 +609,7 @@ export class InvoiceService {
         balanceDueDate: existing.balanceDueDate,
         notes: existing.notes,
         paymentInstructions: existing.paymentInstructions,
-        invoiceUrl: `${getBaseUrl()}/invoices/${id}`,
+        invoiceUrl: `${getBaseUrl()}/dashboard/invoices/${id}`,
       })
     } catch (error) {
       const errorMessage =

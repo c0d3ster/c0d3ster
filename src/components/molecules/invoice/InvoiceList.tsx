@@ -42,7 +42,7 @@ export const InvoiceList = (): React.ReactElement => {
       {invoices.map((invoice) => (
         <li key={invoice.id}>
           <Link
-            href={`/invoices/${invoice.id}`}
+            href={`/dashboard/invoices/${invoice.id}`}
             className='flex items-center justify-between gap-4 rounded-lg border border-green-400/20 bg-black/60 p-4 transition-colors hover:border-green-400/60'
           >
             <div>

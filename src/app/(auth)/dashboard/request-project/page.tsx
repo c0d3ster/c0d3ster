@@ -16,7 +16,7 @@ export default function RequestProjectPage() {
       <div className='container mx-auto px-4'>
         <div className='mx-auto max-w-4xl'>
           {/* Header Section */}
-          <div className='mb-16 text-center'>
+          <div className='mb-8 text-center'>
             <AnimatedHeading
               text='REQUEST PROJECT'
               level='h1'

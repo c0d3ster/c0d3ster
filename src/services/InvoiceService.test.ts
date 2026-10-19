@@ -472,6 +472,69 @@ describe('InvoiceService', () => {
     })
   })
 
+  describe('getInvoiceParties', () => {
+    it('returns the project title, client full name and email', async () => {
+      vi.mocked(db.query.users.findFirst).mockResolvedValue({
+        id: 'client-1',
+        email: 'client@example.com',
+        firstName: 'Casey',
+        lastName: 'Client',
+      } as never)
+      vi.mocked(db.query.projects.findFirst).mockResolvedValue({
+        id: 'project-1',
+        projectName: 'acme-portal',
+        title: 'Acme Portal',
+      } as never)
+
+      await expect(
+        service.getInvoiceParties({
+          projectId: 'project-1',
+          clientId: 'client-1',
+        })
+      ).resolves.toEqual({
+        projectName: 'Acme Portal',
+        clientName: 'Casey Client',
+        clientEmail: 'client@example.com',
+      })
+    })
+
+    it('falls back to the project name and client email when titles and names are missing', async () => {
+      vi.mocked(db.query.users.findFirst).mockResolvedValue({
+        id: 'client-1',
+        email: 'client@example.com',
+        firstName: null,
+        lastName: null,
+      } as never)
+      vi.mocked(db.query.projects.findFirst).mockResolvedValue({
+        id: 'project-1',
+        projectName: 'acme-portal',
+        title: null,
+      } as never)
+
+      await expect(
+        service.getInvoiceParties({
+          projectId: 'project-1',
+          clientId: 'client-1',
+        })
+      ).resolves.toMatchObject({
+        projectName: 'acme-portal',
+        clientName: 'client@example.com',
+      })
+    })
+
+    it('throws NOT_FOUND when the client or project is gone', async () => {
+      vi.mocked(db.query.users.findFirst).mockResolvedValue(undefined)
+      vi.mocked(db.query.projects.findFirst).mockResolvedValue(undefined)
+
+      await expect(
+        service.getInvoiceParties({
+          projectId: 'project-1',
+          clientId: 'client-1',
+        })
+      ).rejects.toMatchObject({ extensions: { code: 'NOT_FOUND' } })
+    })
+  })
+
   describe('sendInvoice', () => {
     it('refuses to send a cancelled invoice', async () => {
       vi.mocked(db.query.invoices.findFirst).mockResolvedValue({

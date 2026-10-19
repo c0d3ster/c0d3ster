@@ -7,6 +7,7 @@ import { InvoiceStatus } from '@/graphql/generated/graphql'
 import { AdminInvoiceList } from './AdminInvoiceList'
 
 vi.mock('@/apiClients', () => ({ useGetAllInvoices: vi.fn() }))
+vi.mock('./InvoiceSummaryCard', () => ({ InvoiceSummaryCard: () => null }))
 
 describe('AdminInvoiceList', () => {
   it('lists invoices and re-queries with the chosen status filter', () => {

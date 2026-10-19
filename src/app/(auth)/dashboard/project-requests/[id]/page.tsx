@@ -21,7 +21,7 @@ const ProjectRequestPage = async ({ params }: PageProps) => {
     <CleanPageTemplate>
       <div className='container mx-auto px-4'>
         <div className='mx-auto max-w-4xl'>
-          <div className='mb-12 text-center'>
+          <div className='mb-8 text-center'>
             <AnimatedHeading
               text='PROJECT REQUEST'
               level='h1'

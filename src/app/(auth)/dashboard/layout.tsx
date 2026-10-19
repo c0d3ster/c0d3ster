@@ -1,7 +1,6 @@
 import type { NavItem } from '@/components/organisms'
 
-import { BackButton } from '@/components/atoms'
-import { SiteHeader } from '@/components/organisms'
+import { DashboardBackButton, DashboardHeader } from '@/components/organisms'
 
 export default function DashboardLayout({
   children,
@@ -17,8 +16,8 @@ export default function DashboardLayout({
 
   return (
     <div className='bg-black'>
-      <SiteHeader menuItems={menuItems} isDashboard />
-      <BackButton href='/' text='BACK TO SITE' />
+      <DashboardHeader menuItems={menuItems} />
+      <DashboardBackButton />
       {/* Content - No wrapper needed */}
       {children}
     </div>

@@ -9,8 +9,13 @@ import { formatCardDate } from '@/utils'
 import { formatCurrency, isInvoiceOverdue } from '@/utils/Invoice'
 
 import { InvoiceStatusBadge } from '../invoice/InvoiceStatusBadge'
+import { InvoiceSummaryCard } from './InvoiceSummaryCard'
 
-type InvoiceFilter = { label: string; status?: InvoiceStatus; overdue?: boolean }
+type InvoiceFilter = {
+  label: string
+  status?: InvoiceStatus
+  overdue?: boolean
+}
 
 const FILTERS: InvoiceFilter[] = [
   { label: 'ALL' },
@@ -21,7 +26,9 @@ const FILTERS: InvoiceFilter[] = [
 ]
 
 export const AdminInvoiceList = (): React.ReactElement => {
-  const [filter, setFilter] = useState<InvoiceFilter>(FILTERS[0] ?? { label: 'ALL' })
+  const [filter, setFilter] = useState<InvoiceFilter>(
+    FILTERS[0] ?? { label: 'ALL' }
+  )
   const { data, loading, error } = useGetAllInvoices(
     filter.status,
     filter.overdue
@@ -30,6 +37,7 @@ export const AdminInvoiceList = (): React.ReactElement => {
 
   return (
     <div className='mx-auto max-w-3xl space-y-4'>
+      <InvoiceSummaryCard />
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='flex flex-wrap gap-2'>
           {FILTERS.map((option) => (
@@ -48,7 +56,7 @@ export const AdminInvoiceList = (): React.ReactElement => {
           ))}
         </div>
         <Link
-          href='/admin/invoices/new'
+          href='/dashboard/invoices/new'
           className='rounded border border-green-400 bg-green-400 px-3 py-1 font-mono text-xs font-bold text-black'
         >
           + NEW INVOICE
@@ -75,7 +83,7 @@ export const AdminInvoiceList = (): React.ReactElement => {
         {invoices.map((invoice) => (
           <li key={invoice.id}>
             <Link
-              href={`/admin/invoices/${invoice.id}`}
+              href={`/dashboard/invoices/${invoice.id}`}
               className='flex items-center justify-between gap-4 rounded-lg border border-green-400/20 bg-black/60 p-4 transition-colors hover:border-green-400/60'
             >
               <div>

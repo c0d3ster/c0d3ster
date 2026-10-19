@@ -10,6 +10,7 @@ import { ProjectDetailsTemplate } from './ProjectDetailsTemplate'
 const mockGetMe = vi.fn()
 const mockUseResolvedFileUrl = vi.fn()
 const mockGetProjectFiles = vi.fn()
+const mockGetProjectInvoices = vi.fn()
 
 // Mock the specific functions we need, let the rest use real implementations
 const mockProvisionProjectRepo = vi.fn()
@@ -24,6 +25,7 @@ vi.mock('@/apiClients', async () => {
     useUpdateProject: () => [vi.fn(), { loading: false }],
     useUpdateProjectStatus: () => [vi.fn(), { loading: false }],
     useGetProjectFiles: () => mockGetProjectFiles(),
+    useGetProjectInvoices: () => mockGetProjectInvoices(),
   }
 })
 
@@ -75,6 +77,10 @@ describe('ProjectDetailsTemplate', () => {
       url: key ?? undefined,
       loading: false,
     }))
+    mockGetProjectInvoices.mockReturnValue({
+      data: { getProjectInvoices: [] },
+      loading: false,
+    })
     mockGetProjectFiles.mockReturnValue({
       data: { projectFiles: [] },
       loading: false,
@@ -226,6 +232,26 @@ describe('ProjectDetailsTemplate', () => {
     expect(
       screen.getByRole('button', { name: 'Upload file' })
     ).toBeInTheDocument()
+  })
+
+  it('shows the invoices panel to admins only', () => {
+    mockGetMe.mockReturnValue({
+      data: { me: { id: 'some-other-admin-id', role: UserRole.Admin } },
+      loading: false,
+    })
+    const { unmount } = render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(screen.getByText('INVOICES')).toBeInTheDocument()
+
+    unmount()
+
+    mockGetMe.mockReturnValue({
+      data: { me: { id: mockProject.clientId, role: UserRole.Client } },
+      loading: false,
+    })
+    render(<ProjectDetailsTemplate project={mockProject} />)
+
+    expect(screen.queryByText('INVOICES')).not.toBeInTheDocument()
   })
 
   it('renders project without logo gracefully', () => {

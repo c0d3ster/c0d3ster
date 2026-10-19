@@ -8,7 +8,6 @@ import {
   useGetInvoice,
   useMarkInvoiceViewed,
 } from '@/apiClients/invoiceApiClient'
-import { useGetMe } from '@/apiClients/userApiClient'
 import { BRAND_NAME, SUPPORT_EMAIL } from '@/constants'
 import { InvoiceStatus } from '@/graphql/generated/graphql'
 import { formatCardDate } from '@/utils'
@@ -38,7 +37,6 @@ export const InvoiceDetail = ({
   const paymentResult = searchParams.get('payment')
   const returnedFromStripe = paymentResult === 'success'
   const { data, loading, error, startPolling, stopPolling } = useGetInvoice(id)
-  const { data: meData } = useGetMe()
   const [markViewed] = useMarkInvoiceViewed()
   const viewedRequested = useRef(false)
   const initialPaid = useRef<number | null>(null)
@@ -84,7 +82,7 @@ export const InvoiceDetail = ({
       <div className='py-20 text-center font-mono text-red-400/60'>
         Invoice not found.{' '}
         <Link
-          href='/invoices'
+          href='/dashboard/invoices'
           className='text-green-400 underline hover:text-green-300'
         >
           Back to invoices
@@ -93,9 +91,6 @@ export const InvoiceDetail = ({
     )
   }
 
-  const me = meData?.me
-  const clientName =
-    [me?.firstName, me?.lastName].filter(Boolean).join(' ') || me?.email
   const balance = Math.max(invoice.totalAmount - invoice.paidAmount, 0)
   const payable = isInvoicePayable(invoice.status) && balance > 0
   const depositAvailable =
@@ -114,34 +109,34 @@ export const InvoiceDetail = ({
         </p>
       )}
 
-      <div className='flex items-start justify-between gap-4'>
-        <div>
-          <h1 className='font-mono text-2xl font-bold text-green-400'>
-            {invoice.invoiceNumber}
-          </h1>
-          <p className='mt-1 font-mono text-sm text-green-300/60'>
-            Issued {formatCardDate(invoice.sentAt ?? invoice.createdAt)}
-            {invoice.balanceDueDate &&
-              ` · Due ${formatCardDate(invoice.balanceDueDate)}`}
-          </p>
+      <div className='flex items-start justify-between gap-4 rounded-lg border border-green-400/20 bg-black/60 p-4 font-mono text-sm text-green-300'>
+        <div className='grid flex-1 grid-cols-2 gap-4'>
+          <div>
+            <p className='text-xs text-green-300/60 uppercase'>Billed to</p>
+            <p>{invoice.clientName}</p>
+            {invoice.clientEmail !== invoice.clientName && (
+              <p>{invoice.clientEmail}</p>
+            )}
+            <p className='mt-2 text-sm text-green-300/60'>
+              Issued {formatCardDate(invoice.sentAt ?? invoice.createdAt)}
+              {invoice.balanceDueDate &&
+                ` · Due ${formatCardDate(invoice.balanceDueDate)}`}
+            </p>
+          </div>
+          <div>
+            <p className='text-xs text-green-300/60 uppercase'>From</p>
+            <p>{BRAND_NAME}</p>
+            <p>{SUPPORT_EMAIL}</p>
+          </div>
+          <div className='col-span-2'>
+            <p className='text-xs text-green-300/60 uppercase'>Project</p>
+            <p>{invoice.projectName}</p>
+          </div>
         </div>
         <InvoiceStatusBadge
           status={invoice.status}
           overdue={isInvoiceOverdue(invoice)}
         />
-      </div>
-
-      <div className='grid grid-cols-2 gap-4 rounded-lg border border-green-400/20 bg-black/60 p-4 font-mono text-sm text-green-300'>
-        <div>
-          <p className='text-xs text-green-300/60 uppercase'>Billed to</p>
-          <p>{clientName}</p>
-          {me?.email && clientName !== me.email && <p>{me.email}</p>}
-        </div>
-        <div>
-          <p className='text-xs text-green-300/60 uppercase'>From</p>
-          <p>{BRAND_NAME}</p>
-          <p>{SUPPORT_EMAIL}</p>
-        </div>
       </div>
 
       <div className='rounded-lg border border-green-400/20 bg-black/60 p-4'>
@@ -205,13 +200,6 @@ export const InvoiceDetail = ({
           </div>
         )}
       </div>
-
-      <Link
-        href='/invoices'
-        className='inline-block font-mono text-sm text-green-400 underline hover:text-green-300'
-      >
-        Back to invoices
-      </Link>
     </div>
   )
 }

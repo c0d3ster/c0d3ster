@@ -11,6 +11,8 @@ import type {
   GetInvoiceQuery,
   GetInvoiceQueryVariables,
   GetMyInvoicesQuery,
+  GetProjectInvoicesQuery,
+  GetProjectInvoicesQueryVariables,
   InvoiceDashboardSummaryQuery,
   MarkInvoiceViewedMutation,
   MarkInvoiceViewedMutationVariables,
@@ -37,11 +39,29 @@ export const GET_MY_INVOICES = gql`
   }
 `
 
+export const GET_PROJECT_INVOICES = gql`
+  query GetProjectInvoices($projectId: ID!) {
+    getProjectInvoices(projectId: $projectId) {
+      id
+      invoiceNumber
+      status
+      totalAmount
+      paidAmount
+      balanceDueDate
+      sentAt
+      createdAt
+    }
+  }
+`
+
 export const GET_INVOICE = gql`
   query GetInvoice($id: ID!) {
     getInvoice(id: $id) {
       id
       projectId
+      projectName
+      clientName
+      clientEmail
       invoiceNumber
       status
       depositPercent
@@ -90,9 +110,16 @@ export const useGetMyInvoices = () =>
     fetchPolicy: 'cache-and-network',
   })
 
-export const useGetInvoice = (id: string) =>
+export const useGetProjectInvoices = (projectId: string) =>
+  useQuery<GetProjectInvoicesQuery, GetProjectInvoicesQueryVariables>(
+    GET_PROJECT_INVOICES,
+    { variables: { projectId }, fetchPolicy: 'cache-and-network' }
+  )
+
+export const useGetInvoice = (id: string, skip = false) =>
   useQuery<GetInvoiceQuery, GetInvoiceQueryVariables>(GET_INVOICE, {
     variables: { id },
+    skip,
     fetchPolicy: 'cache-and-network',
   })
 

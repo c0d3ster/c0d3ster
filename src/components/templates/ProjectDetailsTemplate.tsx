@@ -20,6 +20,7 @@ import {
   LogoUpload,
   PostUpdatePanel,
   ProjectFilesPanel,
+  ProjectInvoicesPanel,
   StatusHistory,
 } from '@/components/molecules'
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
@@ -535,6 +536,11 @@ export const ProjectDetailsTemplate = ({
                     </p>
                   </div>
                 </div>
+              )}
+
+              {/* Billing - admins only */}
+              {canManageFeatured && (
+                <ProjectInvoicesPanel projectId={project.id} />
               )}
 
               {/* Progress + status history */}

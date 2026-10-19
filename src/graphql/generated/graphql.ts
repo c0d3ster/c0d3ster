@@ -146,7 +146,9 @@ export type FileUploadMetadata = {
 export type Invoice = {
   readonly __typename?: 'Invoice';
   readonly balanceDueDate?: Maybe<Scalars['String']['output']>;
+  readonly clientEmail: Scalars['String']['output'];
   readonly clientId: Scalars['ID']['output'];
+  readonly clientName: Scalars['String']['output'];
   readonly createdAt: Scalars['String']['output'];
   readonly depositAmount: Scalars['Float']['output'];
   readonly depositDueDate?: Maybe<Scalars['String']['output']>;
@@ -163,6 +165,7 @@ export type Invoice = {
   readonly paidAt?: Maybe<Scalars['String']['output']>;
   readonly paymentInstructions?: Maybe<Scalars['String']['output']>;
   readonly projectId: Scalars['ID']['output'];
+  readonly projectName: Scalars['String']['output'];
   readonly sentAt?: Maybe<Scalars['String']['output']>;
   readonly status: InvoiceStatus;
   readonly subtotal: Scalars['Float']['output'];
@@ -852,12 +855,19 @@ export type GetMyInvoicesQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type GetMyInvoicesQuery = { readonly __typename?: 'Query', readonly getMyInvoices: ReadonlyArray<{ readonly __typename?: 'Invoice', readonly id: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly totalAmount: number, readonly paidAmount: number, readonly balanceDueDate?: string | null, readonly sentAt?: string | null, readonly createdAt: string }> };
 
+export type GetProjectInvoicesQueryVariables = Exact<{
+  projectId: Scalars['ID']['input'];
+}>;
+
+
+export type GetProjectInvoicesQuery = { readonly __typename?: 'Query', readonly getProjectInvoices: ReadonlyArray<{ readonly __typename?: 'Invoice', readonly id: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly totalAmount: number, readonly paidAmount: number, readonly balanceDueDate?: string | null, readonly sentAt?: string | null, readonly createdAt: string }> };
+
 export type GetInvoiceQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetInvoiceQuery = { readonly __typename?: 'Query', readonly getInvoice?: { readonly __typename?: 'Invoice', readonly id: string, readonly projectId: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly depositPercent?: number | null, readonly depositAmount: number, readonly depositDueDate?: string | null, readonly balanceDueDate?: string | null, readonly subtotal: number, readonly discountType?: DiscountType | null, readonly discountValue?: number | null, readonly discountLabel?: string | null, readonly discountAmount?: number | null, readonly taxRate: number, readonly taxAmount: number, readonly totalAmount: number, readonly paidAmount: number, readonly notes?: string | null, readonly paymentInstructions?: string | null, readonly sentAt?: string | null, readonly paidAt?: string | null, readonly createdAt: string, readonly lineItems: ReadonlyArray<{ readonly __typename?: 'InvoiceLineItem', readonly id: string, readonly feature?: ProjectFeature | null, readonly description: string, readonly quantity: number, readonly unitPrice: number, readonly total: number, readonly sortOrder: number }> } | null };
+export type GetInvoiceQuery = { readonly __typename?: 'Query', readonly getInvoice?: { readonly __typename?: 'Invoice', readonly id: string, readonly projectId: string, readonly projectName: string, readonly clientName: string, readonly clientEmail: string, readonly invoiceNumber: string, readonly status: InvoiceStatus, readonly depositPercent?: number | null, readonly depositAmount: number, readonly depositDueDate?: string | null, readonly balanceDueDate?: string | null, readonly subtotal: number, readonly discountType?: DiscountType | null, readonly discountValue?: number | null, readonly discountLabel?: string | null, readonly discountAmount?: number | null, readonly taxRate: number, readonly taxAmount: number, readonly totalAmount: number, readonly paidAmount: number, readonly notes?: string | null, readonly paymentInstructions?: string | null, readonly sentAt?: string | null, readonly paidAt?: string | null, readonly createdAt: string, readonly lineItems: ReadonlyArray<{ readonly __typename?: 'InvoiceLineItem', readonly id: string, readonly feature?: ProjectFeature | null, readonly description: string, readonly quantity: number, readonly unitPrice: number, readonly total: number, readonly sortOrder: number }> } | null };
 
 export type MarkInvoiceViewedMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1573,11 +1583,55 @@ export function useGetMyInvoicesLazyQuery(baseOptions?: ApolloReactHooks.LazyQue
         }
 export type GetMyInvoicesQueryHookResult = ReturnType<typeof useGetMyInvoicesQuery>;
 export type GetMyInvoicesLazyQueryHookResult = ReturnType<typeof useGetMyInvoicesLazyQuery>;
+export const GetProjectInvoicesDocument = gql`
+    query GetProjectInvoices($projectId: ID!) {
+  getProjectInvoices(projectId: $projectId) {
+    id
+    invoiceNumber
+    status
+    totalAmount
+    paidAmount
+    balanceDueDate
+    sentAt
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useGetProjectInvoicesQuery__
+ *
+ * To run a query within a React component, call `useGetProjectInvoicesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetProjectInvoicesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetProjectInvoicesQuery({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *   },
+ * });
+ */
+export function useGetProjectInvoicesQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetProjectInvoicesQuery, GetProjectInvoicesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetProjectInvoicesQuery, GetProjectInvoicesQueryVariables>(GetProjectInvoicesDocument, options);
+      }
+export function useGetProjectInvoicesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetProjectInvoicesQuery, GetProjectInvoicesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetProjectInvoicesQuery, GetProjectInvoicesQueryVariables>(GetProjectInvoicesDocument, options);
+        }
+export type GetProjectInvoicesQueryHookResult = ReturnType<typeof useGetProjectInvoicesQuery>;
+export type GetProjectInvoicesLazyQueryHookResult = ReturnType<typeof useGetProjectInvoicesLazyQuery>;
 export const GetInvoiceDocument = gql`
     query GetInvoice($id: ID!) {
   getInvoice(id: $id) {
     id
     projectId
+    projectName
+    clientName
+    clientEmail
     invoiceNumber
     status
     depositPercent
