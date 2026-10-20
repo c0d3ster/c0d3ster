@@ -9,9 +9,17 @@ export default function DashboardLayout({
 }) {
   // Dashboard menu items
   const menuItems: NavItem[] = [
-    { label: 'DASHBOARD', href: '/dashboard' },
-    { label: 'REQUEST PROJECT', href: '/dashboard/request-project' },
-    { label: 'USER PROFILE', href: '/dashboard/user-profile' },
+    { label: 'DASHBOARD', href: '/dashboard', shortLabel: 'DASH' },
+    {
+      label: 'REQUEST PROJECT',
+      href: '/dashboard/request-project',
+      shortLabel: 'REQ',
+    },
+    {
+      label: 'USER PROFILE',
+      href: '/dashboard/user-profile',
+      shortLabel: 'PROF',
+    },
   ]
 
   return (
