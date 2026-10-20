@@ -11,6 +11,7 @@ import { SiteHeader } from './SiteHeader'
 const INVOICES_ITEM: NavItem = {
   label: 'INVOICES',
   href: '/dashboard/invoices',
+  shortLabel: 'INV',
 }
 
 type DashboardHeaderProps = {
@@ -21,8 +22,12 @@ type DashboardHeaderProps = {
 export const DashboardHeader = ({
   menuItems,
 }: DashboardHeaderProps): React.ReactElement => {
-  const { data: meData } = useGetMe()
-  const { data: invoiceData } = useGetMyInvoices()
+  const { data: meData, loading: meLoading } = useGetMe()
+  const { data: invoiceData, loading: invoicesLoading } = useGetMyInvoices()
+
+  // The nav is centered, so a late INVOICES item shifts every other item
+  const isNavLoading =
+    (meLoading && !meData) || (invoicesLoading && !invoiceData)
 
   const showInvoices =
     isAdminRole(meData?.me?.role) ||
@@ -34,5 +39,7 @@ export const DashboardHeader = ({
       )
     : menuItems
 
-  return <SiteHeader menuItems={items} isDashboard />
+  return (
+    <SiteHeader menuItems={items} isDashboard isNavPending={isNavLoading} />
+  )
 }

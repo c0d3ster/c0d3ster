@@ -8,16 +8,18 @@ import { useEffect, useRef, useState } from 'react'
 
 import { BRAND_NAME, LOGO_PATH } from '@/constants'
 
-export type NavItem = { label: string; href: string }
+export type NavItem = { label: string; href: string; shortLabel?: string }
 
 type SiteHeaderProps = {
   menuItems: NavItem[]
   isDashboard?: boolean
+  isNavPending?: boolean
 }
 
 export const SiteHeader = ({
   menuItems,
   isDashboard = false,
+  isNavPending = false,
 }: SiteHeaderProps) => {
   const [scrollY, setScrollY] = useState(0)
   const [activeItem, setActiveItem] = useState<string>('home')
@@ -175,7 +177,16 @@ export const SiteHeader = ({
             isActive ? 'text-green-400' : 'text-green-300 opacity-40'
           }`}
         >
-          {item.label}
+          {item.shortLabel ? (
+            <>
+              <span aria-hidden='true' className='md:hidden'>
+                {item.shortLabel}
+              </span>
+              <span className='sr-only md:not-sr-only'>{item.label}</span>
+            </>
+          ) : (
+            item.label
+          )}
         </Link>
       )
     })
@@ -288,7 +299,12 @@ export const SiteHeader = ({
         </div>
 
         {/* Navigation - centered */}
-        <nav className='absolute left-1/2 flex -translate-x-1/2 items-center space-x-4 md:space-x-8'>
+        <nav
+          className={`absolute left-1/2 flex -translate-x-1/2 items-center space-x-4 transition-opacity duration-200 md:space-x-8 ${
+            isNavPending ? 'opacity-0' : 'opacity-100'
+          }`}
+          aria-busy={isNavPending}
+        >
           {renderMenuItems()}
         </nav>
 

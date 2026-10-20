@@ -13,8 +13,16 @@ vi.mock('@/apiClients/invoiceApiClient', () => ({
   useGetMyInvoices: mockUseGetMyInvoices,
 }))
 vi.mock('./SiteHeader', () => ({
-  SiteHeader: ({ menuItems }: { menuItems: NavItem[] }) => (
-    <nav>{menuItems.map(({ label }) => label).join(',')}</nav>
+  SiteHeader: ({
+    menuItems,
+    isNavPending,
+  }: {
+    menuItems: NavItem[]
+    isNavPending?: boolean
+  }) => (
+    <nav aria-busy={isNavPending}>
+      {menuItems.map(({ label }) => label).join(',')}
+    </nav>
   ),
 }))
 
@@ -49,6 +57,16 @@ describe('DashboardHeader', () => {
     render(<DashboardHeader menuItems={menuItems} />)
 
     expect(screen.getByRole('navigation').textContent).toContain('INVOICES')
+  })
+
+  it('marks the nav pending until the queries resolve', () => {
+    mockUseGetMe.mockReturnValue({ data: undefined, loading: true })
+    mockUseGetMyInvoices.mockReturnValue({ data: undefined, loading: true })
+    render(<DashboardHeader menuItems={menuItems} />)
+
+    expect(screen.getByRole('navigation').getAttribute('aria-busy')).toBe(
+      'true'
+    )
   })
 
   it('hides the invoices tab from clients with no invoices', () => {
