@@ -16,12 +16,25 @@ const httpLink = new HttpLink({
   credentials: 'include', // send cookies if you need auth
 })
 
-// Attach cookies for SSR requests
+// Attach cookies for SSR requests. The request goes to the host the user came in
+// on, because fetch drops the cookie header when a redirect crosses hosts (e.g.
+// apex -> www), which turns an authenticated page load into an anonymous query.
 const authLink = setContext(async (_, { headers }) => {
   if (typeof window === 'undefined') {
     const { headers: nextHeaders } = await import('next/headers')
-    const cookie = (await nextHeaders()).get('cookie') ?? ''
-    return { headers: { ...headers, cookie } }
+    const requestHeaders = await nextHeaders()
+    const cookie = requestHeaders.get('cookie') ?? ''
+    const host =
+      requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host')
+    if (!host) return { headers: { ...headers, cookie } }
+
+    const proto =
+      requestHeaders.get('x-forwarded-proto') ??
+      (host.startsWith('localhost') ? 'http' : 'https')
+    return {
+      uri: `${proto}://${host}/api/graphql`,
+      headers: { ...headers, cookie },
+    }
   }
   return { headers }
 })
