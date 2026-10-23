@@ -18,14 +18,19 @@ import {
   AnimatedHeading,
   FeatureList,
   LogoUpload,
-  PostUpdatePanel,
   ProjectFilesPanel,
-  ProjectInvoicesPanel,
+  ProjectStaffPanel,
   StatusHistory,
 } from '@/components/molecules'
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
 import { Toast } from '@/libs/Toast'
-import { formatCardDate, formatStatus, getStatusCardStyling, normalizeHttpUrl } from '@/utils'
+import {
+  formatCardDate,
+  formatStatus,
+  getStatusCardStyling,
+  isDeveloperOrHigherRole,
+  normalizeHttpUrl,
+} from '@/utils'
 
 import { CleanPageTemplate } from './CleanPageTemplate'
 
@@ -98,6 +103,14 @@ export const ProjectDetailsTemplate = ({
       meData.me.role === UserRole.SuperAdmin ||
       (meData.me.role === UserRole.Developer &&
         meData.me.id === project.developerId))
+
+  // Approved and unowned: any developer or admin can take it from the banner
+  const canAssignToSelf =
+    !meLoading &&
+    !!meData?.me &&
+    isDeveloperOrHigherRole(meData.me.role) &&
+    !project.developerId &&
+    optimisticStatus === ProjectStatus.Approved
 
   const canManageFeatured =
     !meLoading &&
@@ -221,6 +234,32 @@ export const ProjectDetailsTemplate = ({
           </div>
         </ScrollFade>
 
+        {(canPostUpdate || canAssignToSelf) && (
+          // Left edge lines up with the logo: it is 300px, centered in a column that is
+          // half the width minus half the 3rem grid gap
+          <div className='lg:ml-[calc((100%-3rem)/4-150px)]'>
+            <ProjectStaffPanel
+              project={project}
+              showTabs={!!canPostUpdate}
+              assignUserId={canAssignToSelf ? meData?.me?.id : undefined}
+              onAssigned={() => router.refresh()}
+              status={optimisticStatus}
+              progress={optimisticProgress}
+              canViewInvoices={!!canManageFeatured}
+              canProvisionRepo={!!canProvisionRepo}
+              provisioning={provisioning}
+              onProvisionRepo={handleProvisionRepo}
+              onUpdated={(newStatus, newProgress) => {
+                startTransition(() => {
+                  setOptimisticStatus(newStatus)
+                  if (newProgress !== undefined) setOptimisticProgress(newProgress)
+                  router.refresh()
+                })
+              }}
+            />
+          </div>
+        )}
+
         {/* Project Content */}
         <div className='grid gap-12 lg:grid-cols-2'>
           {/* Project Logo and Visual */}
@@ -305,21 +344,13 @@ export const ProjectDetailsTemplate = ({
               )}
 
               {/* Repo / Staging / Live links */}
-              {(repoUrl || canProvisionRepo || stagingUrl || liveUrl || canPostUpdate) && (
+              {(repoUrl || stagingUrl || liveUrl || canPostUpdate) && (
                 <div className='flex w-75 flex-col gap-3'>
-                  {repoUrl ? (
+                  {repoUrl && (
                     <Button href={repoUrl} external size='md'>
                       VIEW REPOSITORY
                     </Button>
-                  ) : canProvisionRepo ? (
-                    <Button
-                      onClick={handleProvisionRepo}
-                      disabled={provisioning}
-                      size='md'
-                    >
-                      {provisioning ? 'PROVISIONING...' : 'PROVISION REPO'}
-                    </Button>
-                  ) : null}
+                  )}
                   {stagingUrl && (
                     <Button href={stagingUrl} external size='md'>
                       VIEW STAGING
@@ -428,22 +459,6 @@ export const ProjectDetailsTemplate = ({
                   </div>
                 )}
               </div>
-              {/* Post update — primary action for admins / assigned dev */}
-              {canPostUpdate && (
-                <PostUpdatePanel
-                  projectId={project.id}
-                  currentStatus={optimisticStatus}
-                  currentProgress={optimisticProgress}
-                  onSuccess={(newStatus, newProgress) => {
-                    startTransition(() => {
-                      setOptimisticStatus(newStatus)
-                      if (newProgress !== undefined) setOptimisticProgress(newProgress)
-                      router.refresh()
-                    })
-                  }}
-                />
-              )}
-
               {/* Tech Stack */}
               {(project.techStack ?? []).filter(
                 (t: string | null | undefined): t is string => Boolean(t)
@@ -488,60 +503,6 @@ export const ProjectDetailsTemplate = ({
                   {project.description || 'Project details coming soon...'}
                 </p>
               </div>
-
-              {/* Internal details - admins / assigned dev only (notes are also masked server-side) */}
-              {canPostUpdate && (
-                <div className='space-y-3 rounded-lg border border-yellow-400/20 bg-yellow-400/5 p-4'>
-                  <h3 className='font-mono text-xl font-bold text-yellow-400'>
-                    INTERNAL
-                  </h3>
-                  <dl className='grid grid-cols-2 gap-3 font-mono text-sm'>
-                    {[
-                      ['Priority', project.priority],
-                      [
-                        'Budget',
-                        project.budget
-                          ? `$${project.budget.toLocaleString()}`
-                          : null,
-                      ],
-                      [
-                        'Start',
-                        project.startDate
-                          ? formatCardDate(project.startDate)
-                          : null,
-                      ],
-                      [
-                        'Est. completion',
-                        project.estimatedCompletionDate
-                          ? formatCardDate(project.estimatedCompletionDate)
-                          : null,
-                      ],
-                    ].map(([label, value]) =>
-                      value ? (
-                        <div key={label}>
-                          <dt className='text-xs text-yellow-300/60 uppercase'>
-                            {label}
-                          </dt>
-                          <dd className='text-yellow-300'>{value}</dd>
-                        </div>
-                      ) : null
-                    )}
-                  </dl>
-                  <div>
-                    <p className='text-xs text-yellow-300/60 uppercase'>
-                      Internal notes
-                    </p>
-                    <p className='font-mono text-sm whitespace-pre-wrap text-yellow-300/80'>
-                      {project.internalNotes || 'No internal notes.'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Billing - admins only */}
-              {canManageFeatured && (
-                <ProjectInvoicesPanel projectId={project.id} />
-              )}
 
               {/* Progress + status history */}
               <div className='space-y-4'>
