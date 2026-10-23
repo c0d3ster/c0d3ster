@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ProjectStatus, UserRole } from '@/graphql/generated/graphql'
@@ -24,6 +24,7 @@ vi.mock('@/apiClients', async () => {
     useProvisionProjectRepo: () => [mockProvisionProjectRepo, { loading: false }],
     useUpdateProject: () => [vi.fn(), { loading: false }],
     useUpdateProjectStatus: () => [vi.fn(), { loading: false }],
+    useAssignProject: () => [vi.fn(), { loading: false }],
     useGetProjectFiles: () => mockGetProjectFiles(),
     useGetProjectInvoices: () => mockGetProjectInvoices(),
   }
@@ -241,7 +242,7 @@ describe('ProjectDetailsTemplate', () => {
     })
     const { unmount } = render(<ProjectDetailsTemplate project={mockProject} />)
 
-    expect(screen.getByText('INVOICES')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'INVOICES' })).toBeInTheDocument()
 
     unmount()
 
@@ -251,7 +252,164 @@ describe('ProjectDetailsTemplate', () => {
     })
     render(<ProjectDetailsTemplate project={mockProject} />)
 
-    expect(screen.queryByText('INVOICES')).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'INVOICES' })).not.toBeInTheDocument()
+  })
+
+  describe('assign banner', () => {
+    const unassignedApproved = {
+      ...mockProject,
+      status: ProjectStatus.Approved,
+      developerId: null,
+      developer: null,
+    }
+
+    it('shows for a developer when the project is approved and unassigned', () => {
+      mockGetMe.mockReturnValue({
+        data: { me: { id: 'dev2', role: UserRole.Developer } },
+        loading: false,
+      })
+      render(<ProjectDetailsTemplate project={unassignedApproved} />)
+
+      expect(
+        screen.getByRole('button', { name: 'ASSIGN TO ME' })
+      ).toBeInTheDocument()
+    })
+
+    it('does not show once a developer is assigned', () => {
+      mockGetMe.mockReturnValue({
+        data: { me: { id: 'dev2', role: UserRole.Developer } },
+        loading: false,
+      })
+      render(
+        <ProjectDetailsTemplate
+          project={{ ...unassignedApproved, developerId: 'dev1' }}
+        />
+      )
+
+      expect(
+        screen.queryByRole('button', { name: 'ASSIGN TO ME' })
+      ).not.toBeInTheDocument()
+    })
+
+    it('does not show for clients', () => {
+      mockGetMe.mockReturnValue({
+        data: { me: { id: mockProject.clientId, role: UserRole.Client } },
+        loading: false,
+      })
+      render(<ProjectDetailsTemplate project={unassignedApproved} />)
+
+      expect(
+        screen.queryByRole('button', { name: 'ASSIGN TO ME' })
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  describe('staff panel', () => {
+    it('shows the update and internal tabs to an admin', () => {
+      mockGetMe.mockReturnValue({
+        data: { me: { id: 'some-other-admin-id', role: UserRole.Admin } },
+        loading: false,
+      })
+      render(<ProjectDetailsTemplate project={mockProject} />)
+
+      expect(screen.getByRole('tab', { name: 'UPDATE' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'NOTES' })).toBeInTheDocument()
+    })
+
+    it('opens a tab on click and collapses when it is clicked again', () => {
+      mockGetMe.mockReturnValue({
+        data: { me: { id: 'some-other-admin-id', role: UserRole.Admin } },
+        loading: false,
+      })
+      render(<ProjectDetailsTemplate project={mockProject} />)
+      const notesTab = screen.getByRole('tab', { name: 'NOTES' })
+
+      expect(notesTab).toHaveAttribute('aria-selected', 'false')
+
+      fireEvent.click(notesTab)
+
+      expect(notesTab).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByText('Internal notes')).toBeVisible()
+
+      fireEvent.click(notesTab)
+
+      expect(notesTab).toHaveAttribute('aria-selected', 'false')
+      expect(screen.getByText('Internal notes')).not.toBeVisible()
+    })
+
+    describe('default open tab', () => {
+      const adminProject = (
+        status: ProjectStatus,
+        developerId: string | null
+      ) => ({ ...mockProject, status, developerId })
+
+      beforeEach(() => {
+        mockGetMe.mockReturnValue({
+          data: { me: { id: 'some-other-admin-id', role: UserRole.Admin } },
+          loading: false,
+        })
+      })
+
+      it.each([
+        [ProjectStatus.Approved, null, 'NOTES'],
+        [ProjectStatus.Approved, 'dev1', 'INVOICES'],
+        [ProjectStatus.InProgress, 'dev1', 'UPDATE'],
+        [ProjectStatus.InTesting, 'dev1', 'UPDATE'],
+        [ProjectStatus.ReadyForLaunch, 'dev1', 'INVOICES'],
+      ])('%s with developer %s opens %s', (status, developerId, tabName) => {
+        render(
+          <ProjectDetailsTemplate project={adminProject(status, developerId)} />
+        )
+
+        expect(screen.getByRole('tab', { name: tabName })).toHaveAttribute(
+          'aria-selected',
+          'true'
+        )
+      })
+
+      it.each([ProjectStatus.Completed, ProjectStatus.Cancelled])(
+        'stays collapsed when %s',
+        (status) => {
+          render(
+            <ProjectDetailsTemplate project={adminProject(status, 'dev1')} />
+          )
+
+          screen
+            .getAllByRole('tab')
+            .forEach((tab) =>
+              expect(tab).toHaveAttribute('aria-selected', 'false')
+            )
+        }
+      )
+
+      it('falls back to collapsed when the wanted tab is admin-only', () => {
+        mockGetMe.mockReturnValue({
+          data: { me: { id: 'dev1', role: UserRole.Developer } },
+          loading: false,
+        })
+        render(
+          <ProjectDetailsTemplate
+            project={adminProject(ProjectStatus.ReadyForLaunch, 'dev1')}
+          />
+        )
+
+        screen
+          .getAllByRole('tab')
+          .forEach((tab) =>
+            expect(tab).toHaveAttribute('aria-selected', 'false')
+          )
+      })
+    })
+
+    it('hides the staff panel from the project client', () => {
+      mockGetMe.mockReturnValue({
+        data: { me: { id: mockProject.clientId, role: UserRole.Client } },
+        loading: false,
+      })
+      render(<ProjectDetailsTemplate project={mockProject} />)
+
+      expect(screen.queryByRole('tab', { name: 'UPDATE' })).not.toBeInTheDocument()
+    })
   })
 
   it('renders project without logo gracefully', () => {
