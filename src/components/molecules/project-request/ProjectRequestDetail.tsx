@@ -1,19 +1,70 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
-import { useGetProjectRequestById } from '@/apiClients/projectRequestApiClient'
-import { formatCardDate } from '@/utils'
+import type { ApproveProjectRequestInput } from '@/graphql/generated/graphql'
+
+import {
+  useApproveProjectRequest,
+  useGetProjectRequestById,
+  useUpdateProjectRequestStatus,
+} from '@/apiClients/projectRequestApiClient'
+import { useGetMe } from '@/apiClients/userApiClient'
+import { Toast } from '@/libs/Toast'
+import { formatCardDate, generateSlug } from '@/utils'
 import { formatStatus, getStatusCardStyling } from '@/utils/Project'
+import { isAdminRole } from '@/utils/RoleConstants'
 
 import { FeatureList } from './FeatureList'
+import { ProjectRequestActions } from './ProjectRequestActions'
 
 type ProjectRequestDetailProps = {
   id: string
 }
 
 export const ProjectRequestDetail = ({ id }: ProjectRequestDetailProps) => {
-  const { data, loading, error } = useGetProjectRequestById(id)
+  const router = useRouter()
+  const { data, loading, error, refetch } = useGetProjectRequestById(id)
+  const { data: meData } = useGetMe()
+  const [approveMutation] = useApproveProjectRequest()
+  const [updateStatusMutation] = useUpdateProjectRequestStatus()
+
+  const handleUpdateStatus = async (
+    requestId: string,
+    newStatus: string
+  ): Promise<void> => {
+    try {
+      await updateStatusMutation({
+        variables: { id: requestId, status: newStatus },
+      })
+      Toast.success(`Project request status updated to ${newStatus}`)
+      await refetch()
+    } catch (updateError) {
+      Toast.error('Failed to update request status')
+      console.error('Update request status error:', updateError)
+    }
+  }
+
+  const handleApprove = async (
+    requestId: string,
+    approvalData: ApproveProjectRequestInput
+  ): Promise<void> => {
+    try {
+      const { data: approved } = await approveMutation({
+        variables: { id: requestId, input: approvalData },
+      })
+      Toast.success('Project request approved and project created!')
+      await refetch()
+      const projectName = data?.projectRequest?.projectName
+      if (approved?.approveProjectRequest && projectName) {
+        router.push(`/projects/${generateSlug(projectName)}`)
+      }
+    } catch (approveError) {
+      Toast.error('Failed to approve request')
+      console.error('Approve request error:', approveError)
+    }
+  }
 
   if (loading) {
     return (
@@ -58,6 +109,18 @@ export const ProjectRequestDetail = ({ id }: ProjectRequestDetailProps) => {
           {formatStatus(status)}
         </span>
       </div>
+
+      {isAdminRole(meData?.me?.role) && (
+        <div className='mb-6'>
+          <ProjectRequestActions
+            requestId={request.id}
+            status={request.status}
+            budget={request.budget}
+            updateStatusAction={handleUpdateStatus}
+            approveAction={handleApprove}
+          />
+        </div>
+      )}
 
       <div className='space-y-6'>
         {/* Meta */}

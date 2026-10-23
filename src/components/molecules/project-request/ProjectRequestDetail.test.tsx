@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useGetProjectRequestById } from '@/apiClients/projectRequestApiClient'
+import { useGetMe } from '@/apiClients/userApiClient'
 import {
   ProjectFeature,
   ProjectStatus,
@@ -11,8 +12,18 @@ import { createMockProjectRequest } from '@/tests/mocks'
 
 import { ProjectRequestDetail } from './ProjectRequestDetail'
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}))
+
 vi.mock('@/apiClients/projectRequestApiClient', () => ({
   useGetProjectRequestById: vi.fn(),
+  useApproveProjectRequest: () => [vi.fn()],
+  useUpdateProjectRequestStatus: () => [vi.fn()],
+}))
+
+vi.mock('@/apiClients/userApiClient', () => ({
+  useGetMe: vi.fn(),
 }))
 
 vi.mock('./FeatureList', () => ({
@@ -20,6 +31,13 @@ vi.mock('./FeatureList', () => ({
 }))
 
 const mockUseGetProjectRequestById = vi.mocked(useGetProjectRequestById)
+const mockUseGetMe = vi.mocked(useGetMe)
+
+const mockMeWithRole = (role: string): void => {
+  mockUseGetMe.mockReturnValue({
+    data: { me: { role } },
+  } as ReturnType<typeof useGetMe>)
+}
 
 const mockRequest = createMockProjectRequest({
   id: '1',
@@ -44,6 +62,10 @@ const mockRequest = createMockProjectRequest({
 })
 
 describe('ProjectRequestDetail', () => {
+  beforeEach(() => {
+    mockMeWithRole('client')
+  })
+
   it('renders loading state', () => {
     mockUseGetProjectRequestById.mockReturnValue({
       data: undefined,
@@ -207,5 +229,35 @@ describe('ProjectRequestDetail', () => {
     render(<ProjectRequestDetail id='1' />)
 
     expect(screen.getByText('my-website')).toBeInTheDocument()
+  })
+
+  it('shows review actions to admins', () => {
+    mockMeWithRole('admin')
+    mockUseGetProjectRequestById.mockReturnValue({
+      data: { projectRequest: mockRequest },
+      loading: false,
+      error: undefined,
+    } as ReturnType<typeof useGetProjectRequestById>)
+
+    render(<ProjectRequestDetail id='1' />)
+
+    expect(
+      screen.getByRole('button', { name: /approve & create project/i })
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /reject/i })).toBeInTheDocument()
+  })
+
+  it('hides review actions from non-admins', () => {
+    mockUseGetProjectRequestById.mockReturnValue({
+      data: { projectRequest: mockRequest },
+      loading: false,
+      error: undefined,
+    } as ReturnType<typeof useGetProjectRequestById>)
+
+    render(<ProjectRequestDetail id='1' />)
+
+    expect(
+      screen.queryByRole('button', { name: /approve & create project/i })
+    ).not.toBeInTheDocument()
   })
 })
