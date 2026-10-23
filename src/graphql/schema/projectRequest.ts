@@ -132,7 +132,7 @@ export class ProjectRequestFilter {
   projectName?: string
 }
 
-@InputType()
+@InputType('ApproveProjectRequestInput')
 export class ApproveProjectRequestInput {
   @Field(() => String, { nullable: true })
   internalNotes?: string

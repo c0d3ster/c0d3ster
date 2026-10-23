@@ -63,7 +63,7 @@ export class User {
   updatedAt?: string
 }
 
-@ObjectType()
+@ObjectType('UserDisplay')
 export class UserDisplay {
   @Field(() => ID)
   id!: string
