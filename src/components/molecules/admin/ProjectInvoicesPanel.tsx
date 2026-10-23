@@ -19,7 +19,7 @@ export const ProjectInvoicesPanel = ({
   const invoices = data?.getProjectInvoices ?? []
 
   return (
-    <div className='space-y-3 rounded-lg border border-green-400/20 bg-black/40 p-4'>
+    <div className='space-y-3 rounded-lg border border-green-400/20 bg-black/80 p-6'>
       <div className='flex items-center justify-between gap-2'>
         <h3 className='font-mono text-xl font-bold text-green-400'>INVOICES</h3>
         <Link

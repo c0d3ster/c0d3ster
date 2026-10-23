@@ -197,7 +197,7 @@ export const ProjectStaffPanel = ({
             hidden={activeTab !== 'notes'}
             className='space-y-3'
           >
-            <dl className='grid grid-cols-2 gap-3 font-mono text-sm'>
+            <dl className='grid grid-cols-2 gap-3 font-mono text-sm sm:auto-cols-fr sm:grid-flow-col sm:grid-cols-none'>
               {internalDetails.map(([label, value]) =>
                 value ? (
                   <div key={label}>
