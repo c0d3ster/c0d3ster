@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { SUPPORT_EMAIL } from '@/constants'
 import { ProjectResolver } from '@/graphql/resolvers/ProjectResolver'
-import { UserRole } from '@/graphql/schema'
 import { createMockUser } from '@/tests/mocks/auth'
 import { createMockProject } from '@/tests/mocks/projects'
 import {
@@ -174,51 +173,6 @@ describe('ProjectResolver', () => {
 
       expect(result).toEqual(mockProjects)
       expect(mockProjectService.getFeaturedProjects).toHaveBeenCalledWith()
-    })
-  })
-
-  describe('createProject', () => {
-    it('should create project when admin', async () => {
-      const mockProject = createMockProject()
-      const currentUser = createMockUser({ role: UserRole.Admin })
-      const input = {
-        projectName: 'New Project',
-        description: 'A new project',
-        projectType: 'WEB_APP' as any,
-        status: 'DRAFT' as any,
-      }
-
-      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockUserService.checkPermission.mockImplementation(() => {})
-      mockProjectService.createProject.mockResolvedValue(mockProject)
-
-      const result = await projectResolver.createProject(input)
-
-      expect(result).toEqual(mockProject)
-      expect(mockUserService.checkPermission).toHaveBeenCalledWith(
-        currentUser,
-        UserRole.Admin
-      )
-      expect(mockProjectService.createProject).toHaveBeenCalledWith(input)
-    })
-
-    it('should throw error when not admin', async () => {
-      const currentUser = createMockUser({ role: UserRole.Client })
-      const input = {
-        projectName: 'New Project',
-        description: 'A new project',
-        projectType: 'WebApp' as any,
-        status: 'Requested' as any,
-      }
-
-      mockUserService.getCurrentUserWithAuth.mockResolvedValue(currentUser)
-      mockUserService.checkPermission.mockImplementation(() => {
-        throw new Error('Access denied')
-      })
-
-      await expect(projectResolver.createProject(input)).rejects.toThrow(
-        'Access denied'
-      )
     })
   })
 

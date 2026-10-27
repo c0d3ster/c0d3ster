@@ -270,42 +270,6 @@ export class ProjectCollaborator {
   user?: User
 }
 
-@InputType('CreateProjectInput')
-export class CreateProjectInput {
-  @Field(() => String, { nullable: true })
-  title?: string
-
-  @Field(() => String)
-  projectName!: string
-
-  @Field(() => String)
-  description!: string
-
-  @Field(() => ProjectType)
-  projectType!: ProjectType
-
-  @Field(() => Number, { nullable: true })
-  budget?: number
-
-  @Field(() => [String], { nullable: true })
-  techStack?: string[]
-
-  @Field(() => ProjectStatus)
-  status!: ProjectStatus
-
-  @Field(() => Number, { nullable: true })
-  progressPercentage?: number
-
-  @Field(() => String, { nullable: true })
-  startDate?: string
-
-  @Field(() => String, { nullable: true })
-  estimatedCompletionDate?: string
-
-  @Field(() => String, { nullable: true })
-  actualCompletionDate?: string
-}
-
 @InputType('UpdateProjectInput')
 export class UpdateProjectInput {
   @Field(() => String, { nullable: true })

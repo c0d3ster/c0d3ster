@@ -14,7 +14,6 @@ import type { FileService, ProjectService, UserService } from '@/services'
 
 import { SUPPORT_EMAIL } from '@/constants'
 import {
-  CreateProjectInput,
   Project,
   ProjectCollaborator,
   ProjectFilter,
@@ -22,7 +21,6 @@ import {
   StatusUpdate,
   UpdateProjectInput,
   User,
-  UserRole,
 } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
@@ -114,15 +112,6 @@ export class ProjectResolver {
       }
     }
     return await this.projectService.getFeaturedProjects()
-  }
-
-  @Mutation(() => Project)
-  async createProject(
-    @Arg('input', () => CreateProjectInput) input: CreateProjectInput
-  ) {
-    const currentUser = await this.userService.getCurrentUserWithAuth()
-    this.userService.checkPermission(currentUser, UserRole.Admin)
-    return await this.projectService.createProject(input)
   }
 
   @Mutation(() => Project)
