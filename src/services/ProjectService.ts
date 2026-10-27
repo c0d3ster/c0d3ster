@@ -902,8 +902,9 @@ export class ProjectService {
         }
 
         // Fire and forget: the workflow prunes the template to the selected
-        // features and pushes to main, which makes Vercel deploy. The env vars
-        // above are already set, so that first deployment has what it needs.
+        // features and opens a pull request into main. Vercel deploys main once
+        // that PR is merged, and previews the PR branch in the meantime. The
+        // env vars above are already set for both.
         await bootstrapRepo(repo.name, features)
 
         const [updatedProject] = await tx
@@ -931,7 +932,7 @@ export class ProjectService {
           newStatus: project.status,
           progressPercentage: 30,
           updateMessage:
-            'Repository, database, and deployment pipeline provisioned. Feature bootstrap is running in the repository.',
+            'Repository, database, and deployment pipeline provisioned. Feature bootstrap will open a pull request in the repository.',
           isClientVisible: false,
           updatedBy: currentUserId,
         })
