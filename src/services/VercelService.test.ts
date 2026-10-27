@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addVercelEnvVar,
   createVercelProject,
-  triggerVercelDeployment,
 } from './VercelService'
 
 const mockEnv = vi.hoisted(() => ({
@@ -86,51 +85,6 @@ describe('VercelService', () => {
         repo: expect.stringContaining('my-project'),
       })
       expect(body.framework).toBe('nextjs')
-    })
-  })
-
-  describe('triggerVercelDeployment', () => {
-    it('should trigger a deployment with correct gitSource', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: true })
-
-      await triggerVercelDeployment('my-project')
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.vercel.com/v13/deployments',
-        expect.objectContaining({ method: 'POST' })
-      )
-
-      const body = JSON.parse(mockFetch.mock.calls[0]![1].body)
-
-      expect(body.gitSource).toEqual({
-        type: 'github',
-        org: 'test-org',
-        repo: 'my-project',
-        ref: 'main',
-      })
-      expect(body.target).toBe('production')
-    })
-
-    it('should throw VERCEL_NOT_CONFIGURED when VERCEL_TOKEN is missing', async () => {
-      mockEnv.VERCEL_TOKEN = undefined
-
-      await expect(triggerVercelDeployment('my-project')).rejects.toMatchObject({
-        extensions: { code: 'VERCEL_NOT_CONFIGURED' },
-      })
-
-      mockEnv.VERCEL_TOKEN = 'test-vercel-token'
-    })
-
-    it('should throw VERCEL_DEPLOYMENT_FAILED when deployment trigger fails', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        text: vi.fn().mockResolvedValue('Bad request'),
-      })
-
-      await expect(triggerVercelDeployment('my-project')).rejects.toMatchObject({
-        extensions: { code: 'VERCEL_DEPLOYMENT_FAILED' },
-      })
     })
   })
 

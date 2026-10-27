@@ -50,48 +50,6 @@ export async function createVercelProject(repoName: string): Promise<string> {
   return stagingUrl
 }
 
-export async function triggerVercelDeployment(repoName: string): Promise<void> {
-  const TOKEN = Env.VERCEL_TOKEN
-  const ORG = Env.GITHUB_ORG
-
-  if (!TOKEN) {
-    throw new GraphQLError(
-      'Vercel provisioning is not configured on this server',
-      {
-        extensions: { code: 'VERCEL_NOT_CONFIGURED' },
-      }
-    )
-  }
-
-  const res = await fetch(`${VERCEL_API}/v13/deployments`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      name: repoName,
-      gitSource: {
-        type: 'github',
-        org: ORG,
-        repo: repoName,
-        ref: 'main',
-      },
-      target: 'production',
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    logger.error('Vercel deployment trigger failed', { status: res.status, body })
-    throw new GraphQLError(`Vercel deployment trigger failed: ${body}`, {
-      extensions: { code: 'VERCEL_DEPLOYMENT_FAILED' },
-    })
-  }
-
-  logger.info('Vercel deployment triggered', { repoName })
-}
-
 export async function addVercelEnvVar(
   projectName: string,
   key: string,

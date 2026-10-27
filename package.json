@@ -55,6 +55,7 @@
     "file-type": "^21.0.0",
     "graphql": "^16.14.2",
     "graphql-tag": "^2.12.7",
+    "libsodium-wrappers": "^0.8.4",
     "next": "15.5.26",
     "pg": "^8.23.0",
     "posthog-js": "^1.434.15",
