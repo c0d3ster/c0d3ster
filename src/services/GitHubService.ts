@@ -1,5 +1,7 @@
 import { GraphQLError } from 'graphql'
 import sodium from 'libsodium-wrappers'
+import { Buffer } from 'node:buffer'
+import { createSign } from 'node:crypto'
 
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
@@ -61,7 +63,8 @@ export async function createRepoFromTemplate(
 
 // Workflow in the template repo that runs `pnpm bootstrap` and pushes the result to main
 const BOOTSTRAP_WORKFLOW = 'bootstrap.yml'
-// Secret the workflow pushes with: GITHUB_TOKEN cannot change files under .github/workflows
+// Secret the workflow pushes and opens its PR with: GITHUB_TOKEN cannot change files under
+// .github/workflows, and the server's own PAT is too powerful to leave in a client repo
 const BOOTSTRAP_SECRET = 'BOOTSTRAP_TOKEN'
 // A repo generated from a template takes a moment before its secrets and workflows are reachable
 const RETRY_ATTEMPTS = 6
@@ -105,6 +108,72 @@ const fetchWhenReady = async (
   return res.ok ? res : failBootstrap(res, failure)
 }
 
+const base64Url = (value: string | Buffer): string =>
+  Buffer.from(value).toString('base64url')
+
+// Short-lived JWT that authenticates as the GitHub App itself
+const createAppJwt = (appId: string, privateKey: string): string => {
+  const now = Math.floor(Date.now() / 1000)
+  const unsigned = [
+    base64Url(JSON.stringify({ alg: 'RS256', typ: 'JWT' })),
+    // iat is backdated to allow for clock drift, 10 minutes is GitHub's maximum lifetime
+    base64Url(JSON.stringify({ iat: now - 60, exp: now + 540, iss: appId })),
+  ].join('.')
+  const signature = createSign('RSA-SHA256').update(unsigned).sign(privateKey)
+
+  return `${unsigned}.${base64Url(signature)}`
+}
+
+/**
+ * Mints an installation token that can only touch the new repo, for an hour,
+ * with just the permissions the bootstrap workflow needs. Leaving it behind
+ * as a repo secret is harmless once it expires, unlike the server's own PAT.
+ */
+const createBootstrapToken = async (repoName: string): Promise<string> => {
+  const APP_ID = Env.GITHUB_APP_ID
+  const PRIVATE_KEY = Env.GITHUB_APP_PRIVATE_KEY
+  const ORG = Env.GITHUB_ORG
+
+  if (!APP_ID || !PRIVATE_KEY) {
+    throw new GraphQLError(
+      'GitHub App bootstrap is not configured on this server',
+      { extensions: { code: 'GITHUB_NOT_CONFIGURED' } }
+    )
+  }
+
+  // Env files often hold the PEM on one line with escaped newlines
+  const headers = githubHeaders(
+    createAppJwt(APP_ID, PRIVATE_KEY.replace(/\\n/g, '\n'))
+  )
+
+  const installationRes = await fetchWhenReady(
+    `${GITHUB_API}/repos/${ORG}/${repoName}/installation`,
+    { headers },
+    'GitHub App installation lookup failed'
+  )
+  const { id } = (await installationRes.json()) as { id: number }
+
+  const tokenRes = await fetchWhenReady(
+    `${GITHUB_API}/app/installations/${id}/access_tokens`,
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        repositories: [repoName],
+        permissions: {
+          contents: 'write',
+          pull_requests: 'write',
+          workflows: 'write',
+        },
+      }),
+    },
+    'GitHub App token creation failed'
+  )
+  const { token } = (await tokenRes.json()) as { token: string }
+
+  return token
+}
+
 const encryptSecret = async (
   value: string,
   publicKey: string
@@ -136,6 +205,9 @@ export const bootstrapRepo = async (
     )
   }
 
+  // Minted first so a missing App config fails before the secret is touched
+  const bootstrapToken = await createBootstrapToken(repoName)
+
   const repoUrl = `${GITHUB_API}/repos/${ORG}/${repoName}`
   const headers = githubHeaders(TOKEN)
 
@@ -155,7 +227,7 @@ export const bootstrapRepo = async (
       method: 'PUT',
       headers,
       body: JSON.stringify({
-        encrypted_value: await encryptSecret(TOKEN, key),
+        encrypted_value: await encryptSecret(bootstrapToken, key),
         key_id: keyId,
       }),
     },
