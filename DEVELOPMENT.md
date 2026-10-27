@@ -66,13 +66,32 @@ RESEND_API_KEY=your_resend_api_key
 ARCJET_KEY=your_arcjet_key
 
 # Project Provisioning (GitHub)
-GITHUB_TOKEN=your_fine_grained_pat   # needs: Actions, Administration, Contents, Metadata, Pull requests, Secrets, Workflows (read/write)
+GITHUB_TOKEN=your_fine_grained_pat   # needs: Actions, Administration, Contents, Metadata, Secrets (read/write)
 GITHUB_ORG=your_github_org           # defaults to c0d3ster
 GITHUB_TEMPLATE_REPO=your_template   # defaults to nextjs-graphql-template
+# GitHub App that bootstraps new repos (see below)
+GITHUB_APP_ID=your_github_app_id
+GITHUB_APP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----"
 
 # Project Provisioning (Vercel)
 VERCEL_TOKEN=your_vercel_personal_access_token
 ```
+
+#### GitHub App for bootstrapping new repos
+
+After a repo is created from the template, provisioning dispatches the template's `bootstrap.yml` workflow, which
+opens a PR that trims the project down to its selected features. That workflow has to push workflow-file changes,
+which `GITHUB_TOKEN` cannot do, so it needs a token. The server mints a one-hour GitHub App installation token
+limited to the new repo and stores it as the `BOOTSTRAP_TOKEN` secret. The long-lived PAT above never leaves the server.
+
+1. Create a GitHub App (Settings > Developer settings > GitHub Apps) with repository permissions
+   **Contents**, **Pull requests** and **Workflows** set to read and write. No webhook is needed.
+2. Generate a private key and set `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` (the PEM, with `
+` for newlines
+   if it sits on one line).
+3. Install the App on `GITHUB_ORG` with access to all repositories, so repos created later are covered.
 
 ### 4. Database Setup
 

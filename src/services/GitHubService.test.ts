@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer'
+import { createVerify, generateKeyPairSync } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { logger } from '@/libs/Logger'
@@ -6,6 +8,8 @@ import { bootstrapRepo, createRepoFromTemplate } from './GitHubService'
 
 const mockEnv = vi.hoisted(() => ({
   GITHUB_TOKEN: 'test-github-token' as string | undefined,
+  GITHUB_APP_ID: '12345' as string | undefined,
+  GITHUB_APP_PRIVATE_KEY: undefined as string | undefined,
   GITHUB_ORG: 'test-org',
   GITHUB_TEMPLATE_REPO: 'test-template',
 }))
@@ -34,7 +38,10 @@ describe('GitHubService', () => {
         json: vi.fn().mockResolvedValue(mockRepo),
       })
 
-      const result = await createRepoFromTemplate('my-project', 'A test project')
+      const result = await createRepoFromTemplate(
+        'my-project',
+        'A test project'
+      )
 
       expect(result).toEqual(mockRepo)
     })
@@ -98,7 +105,9 @@ describe('GitHubService', () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 422,
-        text: vi.fn().mockResolvedValue('{"message":"Repository already exists"}'),
+        text: vi
+          .fn()
+          .mockResolvedValue('{"message":"Repository already exists"}'),
       })
 
       await expect(createRepoFromTemplate('my-project')).rejects.toMatchObject({
@@ -113,7 +122,12 @@ describe('GitHubService', () => {
   })
 
   describe('bootstrapRepo', () => {
-    const publicKey = {
+    const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    })
+    const secretKey = {
       key_id: 'key-1',
       key: 'EXZEoZj8dYa2fvhH/Hq0HtRrBvvg4ukzOwFy8fiBm3k=',
     }
@@ -121,10 +135,22 @@ describe('GitHubService', () => {
       ok: true,
       json: vi.fn().mockResolvedValue(body),
     })
+    const repoUrl = 'https://api.github.com/repos/test-org/my-project'
+
+    // Installation lookup, installation token, secret key, secret, dispatch
+    const mockHappyPath = () =>
+      mockFetch
+        .mockResolvedValueOnce(okResponse({ id: 42 }))
+        .mockResolvedValueOnce(okResponse({ token: 'ghs_app_token' }))
+        .mockResolvedValueOnce(okResponse(secretKey))
+        .mockResolvedValueOnce(okResponse())
+        .mockResolvedValueOnce(okResponse())
 
     beforeEach(() => {
       vi.useFakeTimers()
       mockFetch.mockReset()
+      mockEnv.GITHUB_APP_ID = '12345'
+      mockEnv.GITHUB_APP_PRIVATE_KEY = privateKey
     })
 
     afterEach(() => {
@@ -142,23 +168,61 @@ describe('GitHubService', () => {
       return { promise, settled }
     }
 
-    it('should set the push secret then dispatch the workflow, without waiting for it', async () => {
-      mockFetch
-        .mockResolvedValueOnce(okResponse(publicKey))
-        .mockResolvedValueOnce(okResponse())
-        .mockResolvedValueOnce(okResponse())
+    it('should mint a repo-scoped app token, store it as the secret, then dispatch without waiting', async () => {
+      mockHappyPath()
 
       const { promise } = await run()
 
       await expect(promise).resolves.toBeUndefined()
-      expect(mockFetch).toHaveBeenCalledTimes(3)
+      expect(mockFetch).toHaveBeenCalledTimes(5)
 
-      const [keyUrl] = mockFetch.mock.calls[0]!
-      const [secretUrl, secretOptions] = mockFetch.mock.calls[1]!
-      const [dispatchUrl, dispatchOptions] = mockFetch.mock.calls[2]!
-      const repoUrl = 'https://api.github.com/repos/test-org/my-project'
+      const [installationUrl, installationOptions] = mockFetch.mock.calls[0]!
+      const [tokenUrl, tokenOptions] = mockFetch.mock.calls[1]!
+      const [keyUrl, keyOptions] = mockFetch.mock.calls[2]!
+      const [secretUrl, secretOptions] = mockFetch.mock.calls[3]!
+      const [dispatchUrl, dispatchOptions] = mockFetch.mock.calls[4]!
 
+      expect(installationUrl).toBe(`${repoUrl}/installation`)
+      expect(tokenUrl).toBe(
+        'https://api.github.com/app/installations/42/access_tokens'
+      )
+      expect(tokenOptions.method).toBe('POST')
+      expect(JSON.parse(tokenOptions.body)).toEqual({
+        repositories: ['my-project'],
+        permissions: {
+          contents: 'write',
+          pull_requests: 'write',
+          workflows: 'write',
+        },
+      })
+
+      // The App requests are authenticated with a JWT signed by the App's key
+      const jwt: string = installationOptions.headers.Authorization.replace(
+        'Bearer ',
+        ''
+      )
+      const [header, payload, signature] = jwt.split('.') as [
+        string,
+        string,
+        string,
+      ]
+
+      expect(JSON.parse(Buffer.from(header, 'base64url').toString())).toEqual({
+        alg: 'RS256',
+        typ: 'JWT',
+      })
+      expect(
+        JSON.parse(Buffer.from(payload, 'base64url').toString())
+      ).toMatchObject({ iss: '12345' })
+      expect(
+        createVerify('RSA-SHA256')
+          .update(`${header}.${payload}`)
+          .verify(publicKey, Buffer.from(signature, 'base64url'))
+      ).toBe(true)
+
+      // The server's own PAT is used for the repo itself, never stored in it
       expect(keyUrl).toBe(`${repoUrl}/actions/secrets/public-key`)
+      expect(keyOptions.headers.Authorization).toBe('Bearer test-github-token')
       expect(secretUrl).toBe(`${repoUrl}/actions/secrets/BOOTSTRAP_TOKEN`)
       expect(secretOptions.method).toBe('PUT')
 
@@ -166,6 +230,7 @@ describe('GitHubService', () => {
 
       expect(secretBody.key_id).toBe('key-1')
       expect(secretBody.encrypted_value).not.toContain('test-github-token')
+      expect(secretBody.encrypted_value).not.toContain('ghs_app_token')
 
       expect(dispatchUrl).toBe(
         `${repoUrl}/actions/workflows/bootstrap.yml/dispatches`
@@ -177,17 +242,23 @@ describe('GitHubService', () => {
       })
     })
 
+    it('should accept a private key stored on one line with escaped newlines', async () => {
+      mockEnv.GITHUB_APP_PRIVATE_KEY = privateKey.replace(/\n/g, '\\n')
+      mockHappyPath()
+
+      const { promise } = await run()
+
+      await expect(promise).resolves.toBeUndefined()
+    })
+
     it('should send an empty features input when none are selected', async () => {
-      mockFetch
-        .mockResolvedValueOnce(okResponse(publicKey))
-        .mockResolvedValueOnce(okResponse())
-        .mockResolvedValueOnce(okResponse())
+      mockHappyPath()
 
       const { promise } = await run([])
 
       await promise
 
-      expect(JSON.parse(mockFetch.mock.calls[2]![1].body).inputs).toEqual({
+      expect(JSON.parse(mockFetch.mock.calls[4]![1].body).inputs).toEqual({
         features: '',
       })
     })
@@ -195,7 +266,9 @@ describe('GitHubService', () => {
     it('should retry while the new repo is not reachable yet', async () => {
       mockFetch
         .mockResolvedValueOnce({ ok: false, status: 404 })
-        .mockResolvedValueOnce(okResponse(publicKey))
+        .mockResolvedValueOnce(okResponse({ id: 42 }))
+        .mockResolvedValueOnce(okResponse({ token: 'ghs_app_token' }))
+        .mockResolvedValueOnce(okResponse(secretKey))
         .mockResolvedValueOnce(okResponse())
         .mockResolvedValueOnce({ ok: false, status: 404 })
         .mockResolvedValueOnce(okResponse())
@@ -203,7 +276,7 @@ describe('GitHubService', () => {
       const { promise } = await run()
 
       await expect(promise).resolves.toBeUndefined()
-      expect(mockFetch).toHaveBeenCalledTimes(5)
+      expect(mockFetch).toHaveBeenCalledTimes(7)
     })
 
     it('should throw GITHUB_BOOTSTRAP_FAILED when a request is rejected', async () => {
@@ -234,6 +307,15 @@ describe('GitHubService', () => {
         extensions: { code: 'GITHUB_BOOTSTRAP_FAILED' },
       })
       expect(mockFetch).toHaveBeenCalledTimes(6)
+    })
+
+    it('should throw GITHUB_NOT_CONFIGURED without touching GitHub when the App is not configured', async () => {
+      mockEnv.GITHUB_APP_PRIVATE_KEY = undefined
+
+      await expect(bootstrapRepo('my-project', [])).rejects.toMatchObject({
+        extensions: { code: 'GITHUB_NOT_CONFIGURED' },
+      })
+      expect(mockFetch).not.toHaveBeenCalled()
     })
 
     it('should throw GITHUB_NOT_CONFIGURED when GITHUB_TOKEN is missing', async () => {
