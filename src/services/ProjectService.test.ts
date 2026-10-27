@@ -6,10 +6,10 @@ import { db } from '@/libs/DB'
 import { logger } from '@/libs/Logger'
 import {
   findProjectBySlug,
-  hasSlugConflict,
   isAdminRole,
   isDeveloperOrHigherRole,
 } from '@/utils'
+import { assertProjectNameAvailable } from '@/utils/ProjectName'
 
 import {
   bootstrapRepo,
@@ -36,6 +36,11 @@ const mockEnv = vi.hoisted(() => ({
 }))
 
 vi.mock('@/libs/Env', () => ({ Env: mockEnv }))
+
+// Slug availability is covered by the ProjectName tests
+vi.mock('@/utils/ProjectName', () => ({
+  assertProjectNameAvailable: vi.fn(),
+}))
 
 // Mock GitHub, Vercel, and Neon provisioning services
 vi.mock('./GitHubService', () => ({
@@ -67,7 +72,6 @@ vi.mock('@/utils', async () => {
   const { normalizeHttpUrl } = await import('@/utils/Url')
   return {
     findProjectBySlug: vi.fn(),
-    hasSlugConflict: vi.fn(),
     isAdminRole: vi.fn(),
     isDeveloperOrHigherRole: vi.fn(),
     generateSlug: vi.fn().mockReturnValue('test-project'),
@@ -90,7 +94,7 @@ describe('ProjectService', () => {
   const mockDbTransaction = vi.mocked(db.transaction)
   const mockLogger = vi.mocked(logger)
   const mockFindProjectBySlug = vi.mocked(findProjectBySlug)
-  const mockHasSlugConflict = vi.mocked(hasSlugConflict)
+  const mockAssertProjectNameAvailable = vi.mocked(assertProjectNameAvailable)
   const mockIsAdminRole = vi.mocked(isAdminRole)
   const mockIsDeveloperOrHigherRole = vi.mocked(isDeveloperOrHigherRole)
   const mockBootstrapRepo = vi.mocked(bootstrapRepo)
@@ -447,7 +451,6 @@ describe('ProjectService', () => {
       }
 
       mockDbQuery.findMany.mockResolvedValue([])
-      mockHasSlugConflict.mockReturnValue(false)
       mockDbInsert.mockReturnValue({
         values: vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue([mockProject]),
@@ -460,22 +463,36 @@ describe('ProjectService', () => {
       expect(result).toEqual(mockProject)
     })
 
-    it('should throw error for duplicate slug', async () => {
-      const createInput = {
+    it('should check that the project name is available before creating', async () => {
+      mockDbInsert.mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([mockProject]),
+        }),
+      } as any)
+
+      await projectService.createProject({
         clientId: 'client-123',
-        projectName: 'Existing Project',
-        title: 'Title',
-        description: 'Description',
-      }
+        projectName: 'New Project',
+      })
 
-      mockDbQuery.findMany.mockResolvedValue([
-        { ...mockProject, id: 'existing', projectName: 'Existing Project' },
-      ])
-      mockHasSlugConflict.mockReturnValue(true)
+      expect(mockAssertProjectNameAvailable).toHaveBeenCalledWith('New Project')
+    })
 
-      await expect(projectService.createProject(createInput)).rejects.toThrow(
-        GraphQLError
+    it('should not create a project whose name is already taken', async () => {
+      mockAssertProjectNameAvailable.mockRejectedValueOnce(
+        new GraphQLError('A project with this name already exists', {
+          extensions: { code: 'DUPLICATE_SLUG' },
+        })
       )
+
+      await expect(
+        projectService.createProject({
+          clientId: 'client-123',
+          projectName: 'Existing Project',
+        })
+      ).rejects.toMatchObject({ extensions: { code: 'DUPLICATE_SLUG' } })
+
+      expect(mockDbInsert).not.toHaveBeenCalled()
     })
 
     it('should throw error for invalid status', async () => {
@@ -486,7 +503,6 @@ describe('ProjectService', () => {
       }
 
       mockDbQuery.findMany.mockResolvedValue([])
-      mockHasSlugConflict.mockReturnValue(false)
 
       await expect(projectService.createProject(createInput)).rejects.toThrow(
         GraphQLError
@@ -503,7 +519,6 @@ describe('ProjectService', () => {
       }
 
       mockDbQuery.findMany.mockResolvedValue([])
-      mockHasSlugConflict.mockReturnValue(false)
 
       let capturedValues: any
       mockDbInsert.mockReturnValue({
@@ -532,7 +547,6 @@ describe('ProjectService', () => {
       }
 
       mockDbQuery.findMany.mockResolvedValue([])
-      mockHasSlugConflict.mockReturnValue(false)
 
       let capturedValues: any
       mockDbInsert.mockReturnValue({
@@ -557,7 +571,6 @@ describe('ProjectService', () => {
       }
 
       mockDbQuery.findMany.mockResolvedValue([])
-      mockHasSlugConflict.mockReturnValue(false)
       mockDbInsert.mockReturnValue({
         values: vi.fn().mockReturnValue({
           returning: vi.fn().mockResolvedValue([]),
@@ -597,6 +610,73 @@ describe('ProjectService', () => {
       )
 
       expect(result).toEqual(updatedProject)
+    })
+
+    describe('renaming', () => {
+      const setupUpdate = (updated: object) => {
+        mockDbQuery.findFirst.mockResolvedValue(mockProject)
+        mockDbTransaction.mockImplementation(async (callback) => {
+          return callback({
+            update: vi.fn().mockReturnValue({
+              set: vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({
+                  returning: vi.fn().mockResolvedValue([updated]),
+                }),
+              }),
+            }),
+            insert: vi.fn(),
+          } as any)
+        })
+      }
+
+      it('should check the new name against other projects, excluding itself', async () => {
+        setupUpdate({ ...mockProject, projectName: 'Renamed Project' })
+
+        await projectService.updateProject(
+          'project-123',
+          { projectName: 'Renamed Project' },
+          'client-123',
+          'client'
+        )
+
+        expect(mockAssertProjectNameAvailable).toHaveBeenCalledWith(
+          'Renamed Project',
+          'project-123'
+        )
+      })
+
+      it('should not check when the name is unchanged', async () => {
+        setupUpdate(mockProject)
+
+        await projectService.updateProject(
+          'project-123',
+          { projectName: mockProject.projectName, title: 'New title' },
+          'client-123',
+          'client'
+        )
+
+        expect(mockAssertProjectNameAvailable).not.toHaveBeenCalled()
+      })
+
+      it('should not rename a project to a name that is already taken', async () => {
+        setupUpdate(mockProject)
+        mockAssertProjectNameAvailable.mockRejectedValueOnce(
+          new GraphQLError('A project with this name already exists', {
+            extensions: { code: 'DUPLICATE_SLUG' },
+          })
+        )
+
+        await expect(
+          projectService.updateProject(
+            'project-123',
+            { projectName: 'Taken Name' },
+            'client-123',
+            'client'
+          )
+        ).rejects.toMatchObject({ extensions: { code: 'DUPLICATE_SLUG' } })
+
+        expect(mockDbTransaction).not.toHaveBeenCalled()
+      })
     })
 
     it('should throw error when project not found', async () => {

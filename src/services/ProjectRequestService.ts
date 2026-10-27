@@ -13,6 +13,7 @@ import { db } from '@/libs/DB'
 import { getDefaultFeatures } from '@/libs/projectTypeFeatures'
 import { schemas } from '@/models'
 import { isAdminRole } from '@/utils'
+import { assertProjectNameAvailable } from '@/utils/ProjectName'
 import { normalizeProjectStatusInput } from '@/utils/ProjectStatus'
 
 export class ProjectRequestService {
@@ -107,6 +108,9 @@ export class ProjectRequestService {
     input: CreateProjectRequestInput,
     currentUserId: string
   ): Promise<ProjectRequestRecord> {
+    // Fail early: this name would end up as an existing project's slug
+    await assertProjectNameAvailable(input.projectName)
+
     const [request] = await db
       .insert(schemas.projectRequests)
       .values({
@@ -263,6 +267,9 @@ export class ProjectRequestService {
         extensions: { code: 'INVALID_STATUS' },
       })
     }
+
+    // Another project may have taken this slug since the request was made
+    await assertProjectNameAvailable(request.projectName)
 
     // Atomic transition + project creation + status update
     const project = await db.transaction(async (tx) => {
