@@ -14,11 +14,11 @@ import { projectStatusEnum, schemas } from '@/models'
 import {
   findProjectBySlug,
   generateSlug,
-  hasSlugConflict,
   isAdminRole,
   isDeveloperOrHigherRole,
   normalizeHttpUrl,
 } from '@/utils'
+import { assertProjectNameAvailable } from '@/utils/ProjectName'
 import { normalizeProjectStatusInput } from '@/utils/ProjectStatus'
 
 import type { FileService } from './FileService'
@@ -262,16 +262,7 @@ export class ProjectService {
   }
 
   async createProject(input: any) {
-    // Check for slug conflicts before creating
-    const existingProjects = await db.query.projects.findMany({
-      columns: { id: true, projectName: true },
-    })
-
-    if (hasSlugConflict(input.projectName, existingProjects)) {
-      throw new GraphQLError('Project name would create a duplicate slug', {
-        extensions: { code: 'DUPLICATE_SLUG' },
-      })
-    }
+    await assertProjectNameAvailable(input.projectName)
 
     // Validate project status
     if (input.status && !projectStatusEnum.enumValues.includes(input.status)) {
@@ -409,6 +400,14 @@ export class ProjectService {
     const sanitizedInput = Object.fromEntries(
       Object.entries(input).filter(([k]) => allowedFields.includes(k))
     )
+
+    // A rename must not collide with another project's slug
+    if (
+      typeof sanitizedInput.projectName === 'string' &&
+      sanitizedInput.projectName !== project.projectName
+    ) {
+      await assertProjectNameAvailable(sanitizedInput.projectName, id)
+    }
 
     // Check if status is being changed
     const nextStatus = sanitizedInput.status as ProjectStatus | undefined

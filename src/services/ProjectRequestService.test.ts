@@ -9,12 +9,18 @@ import {
 } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { isAdminRole } from '@/utils'
+import { assertProjectNameAvailable } from '@/utils/ProjectName'
 
 import { ProjectRequestService } from './ProjectRequestService'
 
 // Mock specific dependencies not covered by global setup
 vi.mock('@/utils', () => ({
   isAdminRole: vi.fn(),
+}))
+
+// Slug availability is covered by the ProjectName tests
+vi.mock('@/utils/ProjectName', () => ({
+  assertProjectNameAvailable: vi.fn(),
 }))
 
 describe('ProjectRequestService', () => {
@@ -25,6 +31,7 @@ describe('ProjectRequestService', () => {
   const mockDbUpdate = vi.mocked(db.update)
   const mockDbTransaction = vi.mocked(db.transaction)
   const mockIsAdminRole = vi.mocked(isAdminRole)
+  const mockAssertProjectNameAvailable = vi.mocked(assertProjectNameAvailable)
 
   const mockProjectRequest = {
     id: 'request-123',
@@ -240,6 +247,37 @@ describe('ProjectRequestService', () => {
       expect(result).toEqual(mockProjectRequest)
     })
 
+    it('should check the requested name against existing projects', async () => {
+      mockDbInsert.mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([mockProjectRequest]),
+        }),
+      } as any)
+
+      await projectRequestService.createProjectRequest(
+        mockCreateInput,
+        'user-123'
+      )
+
+      expect(mockAssertProjectNameAvailable).toHaveBeenCalledWith(
+        mockCreateInput.projectName
+      )
+    })
+
+    it('should not create a request whose name matches an existing project', async () => {
+      mockAssertProjectNameAvailable.mockRejectedValueOnce(
+        new GraphQLError('A project with this name already exists', {
+          extensions: { code: 'DUPLICATE_SLUG' },
+        })
+      )
+
+      await expect(
+        projectRequestService.createProjectRequest(mockCreateInput, 'user-123')
+      ).rejects.toMatchObject({ extensions: { code: 'DUPLICATE_SLUG' } })
+
+      expect(mockDbInsert).not.toHaveBeenCalled()
+    })
+
     it('should persist client-selected features', async () => {
       const mockValues = vi.fn().mockReturnValue({
         returning: vi.fn().mockResolvedValue([mockProjectRequest]),
@@ -404,6 +442,29 @@ describe('ProjectRequestService', () => {
 
       expect(mockDbTransaction).toHaveBeenCalled()
       expect(result).toEqual(mockProject)
+    })
+
+    it('should not approve a request whose name now matches an existing project', async () => {
+      mockDbQuery.findFirst.mockResolvedValue({
+        ...mockProjectRequest,
+        status: ProjectStatus.InReview,
+      })
+      mockIsAdminRole.mockReturnValue(true)
+      mockAssertProjectNameAvailable.mockRejectedValueOnce(
+        new GraphQLError('A project with this name already exists', {
+          extensions: { code: 'DUPLICATE_SLUG' },
+        })
+      )
+
+      await expect(
+        projectRequestService.approveProjectRequest(
+          'request-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toMatchObject({ extensions: { code: 'DUPLICATE_SLUG' } })
+
+      expect(mockDbTransaction).not.toHaveBeenCalled()
     })
 
     it("should prefer the request's explicit features over project-type defaults", async () => {
