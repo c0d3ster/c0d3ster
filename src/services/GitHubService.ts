@@ -118,7 +118,8 @@ const encryptSecret = async (
 /**
  * Starts the template's bootstrap workflow so the new repo keeps only the
  * selected features, and returns without waiting for it to finish. The
- * workflow pushes the pruned code to main, which triggers the Vercel deploy.
+ * workflow opens a pull request with the pruned code, so the repo starts
+ * with a reviewable record of what was removed.
  * Feature ids the template does not know are ignored by its bootstrap script.
  */
 export const bootstrapRepo = async (
