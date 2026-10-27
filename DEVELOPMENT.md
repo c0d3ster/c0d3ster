@@ -66,7 +66,7 @@ RESEND_API_KEY=your_resend_api_key
 ARCJET_KEY=your_arcjet_key
 
 # Project Provisioning (GitHub)
-GITHUB_TOKEN=your_fine_grained_pat   # needs: Administration, Contents, Metadata, Secrets (read/write)
+GITHUB_TOKEN=your_fine_grained_pat   # needs: Actions, Administration, Contents, Metadata, Secrets, Workflows (read/write)
 GITHUB_ORG=your_github_org           # defaults to c0d3ster
 GITHUB_TEMPLATE_REPO=your_template   # defaults to nextjs-graphql-template
 

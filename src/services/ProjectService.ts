@@ -23,13 +23,16 @@ import { normalizeProjectStatusInput } from '@/utils/ProjectStatus'
 
 import type { FileService } from './FileService'
 
-import { createRepoFromTemplate, deleteRepo } from './GitHubService'
+import {
+  bootstrapRepo,
+  createRepoFromTemplate,
+  deleteRepo,
+} from './GitHubService'
 import { createNeonProject, deleteNeonProject } from './NeonService'
 import {
   addVercelEnvVar,
   createVercelProject,
   deleteVercelProject,
-  triggerVercelDeployment,
 } from './VercelService'
 
 export class ProjectService {
@@ -854,6 +857,8 @@ export class ProjectService {
           `Repository for ${project.projectName}`
         )
 
+        const features = project.features ?? []
+
         const stagingUrl = await createVercelProject(repo.name)
         vercelProjectName = repo.name
 
@@ -863,8 +868,6 @@ export class ProjectService {
           project.projectName
         )
         await addVercelEnvVar(repo.name, 'SUPPORT_EMAIL', client.email)
-
-        const features = project.features ?? []
 
         if (features.includes(ProjectFeature.Database)) {
           const { neonProjectId: neonId, databaseUrl } =
@@ -898,7 +901,10 @@ export class ProjectService {
           await addVercelEnvVar(repo.name, 'PROJECT_LOGO_KEY', project.logo)
         }
 
-        await triggerVercelDeployment(repo.name)
+        // Fire and forget: the workflow prunes the template to the selected
+        // features and pushes to main, which makes Vercel deploy. The env vars
+        // above are already set, so that first deployment has what it needs.
+        await bootstrapRepo(repo.name, features)
 
         const [updatedProject] = await tx
           .update(schemas.projects)
@@ -925,7 +931,7 @@ export class ProjectService {
           newStatus: project.status,
           progressPercentage: 30,
           updateMessage:
-            'Repository, database, and deployment pipeline provisioned.',
+            'Repository, database, and deployment pipeline provisioned. Feature bootstrap is running in the repository.',
           isClientVisible: false,
           updatedBy: currentUserId,
         })

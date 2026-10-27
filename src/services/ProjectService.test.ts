@@ -12,6 +12,7 @@ import {
 } from '@/utils'
 
 import {
+  bootstrapRepo,
   createRepoFromTemplate,
   deleteRepo,
 } from './GitHubService'
@@ -23,7 +24,7 @@ import { ProjectService } from './ProjectService'
 import {
   addVercelEnvVar,
   createVercelProject,
-  triggerVercelDeployment,
+  deleteVercelProject,
 } from './VercelService'
 
 const mockEnv = vi.hoisted(() => ({
@@ -38,6 +39,7 @@ vi.mock('@/libs/Env', () => ({ Env: mockEnv }))
 
 // Mock GitHub, Vercel, and Neon provisioning services
 vi.mock('./GitHubService', () => ({
+  bootstrapRepo: vi.fn(),
   createRepoFromTemplate: vi.fn(),
   deleteRepo: vi.fn(),
 }))
@@ -46,7 +48,6 @@ vi.mock('./VercelService', () => ({
   createVercelProject: vi.fn(),
   deleteVercelProject: vi.fn(),
   addVercelEnvVar: vi.fn(),
-  triggerVercelDeployment: vi.fn(),
 }))
 
 vi.mock('./NeonService', () => ({
@@ -92,11 +93,12 @@ describe('ProjectService', () => {
   const mockHasSlugConflict = vi.mocked(hasSlugConflict)
   const mockIsAdminRole = vi.mocked(isAdminRole)
   const mockIsDeveloperOrHigherRole = vi.mocked(isDeveloperOrHigherRole)
+  const mockBootstrapRepo = vi.mocked(bootstrapRepo)
   const mockCreateRepoFromTemplate = vi.mocked(createRepoFromTemplate)
   const mockDeleteRepo = vi.mocked(deleteRepo)
   const mockCreateVercelProject = vi.mocked(createVercelProject)
+  const mockDeleteVercelProject = vi.mocked(deleteVercelProject)
   const mockAddVercelEnvVar = vi.mocked(addVercelEnvVar)
-  const mockTriggerVercelDeployment = vi.mocked(triggerVercelDeployment)
   const mockCreateNeonProject = vi.mocked(createNeonProject)
   const mockDeleteNeonProject = vi.mocked(deleteNeonProject)
 
@@ -1351,13 +1353,13 @@ describe('ProjectService', () => {
 
     beforeEach(() => {
       mockCreateRepoFromTemplate.mockResolvedValue(mockRepo)
+      mockBootstrapRepo.mockResolvedValue(undefined)
       mockCreateVercelProject.mockResolvedValue(mockStagingUrl)
       mockCreateNeonProject.mockResolvedValue({
         neonProjectId: mockNeonProjectId,
         databaseUrl: mockDatabaseUrl,
       })
       mockAddVercelEnvVar.mockResolvedValue(undefined)
-      mockTriggerVercelDeployment.mockResolvedValue(undefined)
       mockIsAdminRole.mockReturnValue(false)
       mockEnv.R2_ACCOUNT_ID = 'test-r2-account-id'
       mockEnv.R2_ACCESS_KEY_ID = 'test-r2-access-key'
@@ -1418,6 +1420,47 @@ describe('ProjectService', () => {
         'SUPPORT_EMAIL',
         mockClientEmail
       )
+    })
+
+    it('should bootstrap the repo with the project features after the Vercel env vars are set', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      setupHappyPathTransaction()
+
+      await projectService.provisionProjectRepo(
+        'project-123',
+        'admin-user',
+        'admin'
+      )
+
+      expect(mockBootstrapRepo).toHaveBeenCalledWith(
+        mockRepo.name,
+        mockProject.features
+      )
+
+      const lastEnvVarCall = Math.max(
+        ...mockAddVercelEnvVar.mock.invocationCallOrder
+      )
+
+      expect(mockBootstrapRepo.mock.invocationCallOrder[0]).toBeGreaterThan(
+        lastEnvVarCall
+      )
+    })
+
+    it('should roll back the repo and Vercel project when bootstrap fails', async () => {
+      mockIsAdminRole.mockReturnValue(true)
+      mockBootstrapRepo.mockRejectedValue(new Error('bootstrap failed'))
+      setupHappyPathTransaction()
+
+      await expect(
+        projectService.provisionProjectRepo(
+          'project-123',
+          'admin-user',
+          'admin'
+        )
+      ).rejects.toThrow('bootstrap failed')
+
+      expect(mockDeleteRepo).toHaveBeenCalledWith(mockRepo.name)
+      expect(mockDeleteVercelProject).toHaveBeenCalledWith(mockRepo.name)
     })
 
     it('should throw CLIENT_NOT_FOUND when client user does not exist', async () => {
