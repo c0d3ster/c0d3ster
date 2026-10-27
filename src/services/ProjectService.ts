@@ -9,7 +9,6 @@ import { ProjectFeature, ProjectStatus, UserRole } from '@/graphql/schema'
 import { db } from '@/libs/DB'
 import { Env } from '@/libs/Env'
 import { logger } from '@/libs/Logger'
-import { getDefaultFeatures } from '@/libs/projectTypeFeatures'
 import { projectStatusEnum, schemas } from '@/models'
 import {
   findProjectBySlug,
@@ -259,47 +258,6 @@ export class ProjectService {
       where: eq(schemas.projects.developerId, developerId),
       orderBy: [desc(schemas.projects.createdAt)],
     })
-  }
-
-  async createProject(input: any) {
-    await assertProjectNameAvailable(input.projectName)
-
-    // Validate project status
-    if (input.status && !projectStatusEnum.enumValues.includes(input.status)) {
-      throw new GraphQLError(
-        `Invalid project status. Must be one of: ${projectStatusEnum.enumValues.join(', ')}`,
-        {
-          extensions: { code: 'INVALID_STATUS' },
-        }
-      )
-    }
-
-    const defaultFeatures = getDefaultFeatures(input.projectType)
-
-    const [project] = await db
-      .insert(schemas.projects)
-      .values({
-        clientId: input.clientId,
-        requestId: input.requestId,
-        title: input.title ?? input.projectName,
-        projectName: input.projectName,
-        description: input.description,
-        projectType: input.projectType,
-        budget: input.budget,
-        features: input.features ?? defaultFeatures,
-        techStack: input.techStack,
-        status: input.status,
-        featured: false,
-      })
-      .returning()
-
-    if (!project) {
-      throw new GraphQLError('Failed to create project', {
-        extensions: { code: 'CREATION_FAILED' },
-      })
-    }
-
-    return project
   }
 
   async updateProject(

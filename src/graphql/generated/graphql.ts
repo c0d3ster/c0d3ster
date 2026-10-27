@@ -60,20 +60,6 @@ export type CreateInvoiceInput = {
   readonly taxRate?: InputMaybe<Scalars['Float']['input']>;
 };
 
-export type CreateProjectInput = {
-  readonly actualCompletionDate?: InputMaybe<Scalars['String']['input']>;
-  readonly budget?: InputMaybe<Scalars['Float']['input']>;
-  readonly description: Scalars['String']['input'];
-  readonly estimatedCompletionDate?: InputMaybe<Scalars['String']['input']>;
-  readonly progressPercentage?: InputMaybe<Scalars['Float']['input']>;
-  readonly projectName: Scalars['String']['input'];
-  readonly projectType: ProjectType;
-  readonly startDate?: InputMaybe<Scalars['String']['input']>;
-  readonly status: ProjectStatus;
-  readonly techStack?: InputMaybe<ReadonlyArray<Scalars['String']['input']>>;
-  readonly title?: InputMaybe<Scalars['String']['input']>;
-};
-
 export type CreateProjectRequestInput = {
   readonly additionalInfo?: InputMaybe<Scalars['String']['input']>;
   readonly budget?: InputMaybe<Scalars['Float']['input']>;
@@ -219,7 +205,6 @@ export type Mutation = {
   readonly assignProject: Project;
   readonly cancelInvoice: Invoice;
   readonly createInvoice: Invoice;
-  readonly createProject: Project;
   readonly createProjectRequest: ProjectRequest;
   readonly deleteFile: Scalars['Boolean']['output'];
   readonly finalizeProjectFileUpload: File;
@@ -260,11 +245,6 @@ export type MutationCancelInvoiceArgs = {
 
 export type MutationCreateInvoiceArgs = {
   input: CreateInvoiceInput;
-};
-
-
-export type MutationCreateProjectArgs = {
-  input: CreateProjectInput;
 };
 
 
