@@ -12,7 +12,6 @@ Invoice implementation rule (from doc): never hand-write migration SQL — edit 
 
 ## Decisions (human only, do not attempt)
 
-- [ ] #12 [stack: solo] Should project type move into advanced request options and be intelligently selected?
 - [ ] #13 [stack: solo] Client acquisition calls: Alec, Kelly, one more Edgehill contact (James?).
 
 ## Discovered
