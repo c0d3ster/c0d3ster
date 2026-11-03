@@ -1,5 +1,9 @@
 {
   "nextTaskNumber": 16,
   "tasksCompleted": 10,
-  "tasksBlocked": 0
+  "tasksBlocked": 0,
+  "taskSource": "linear",
+  "linear": {
+    "teamId": "C0D"
+  }
 }
