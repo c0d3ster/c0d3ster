@@ -1211,6 +1211,7 @@ describe('ProjectService', () => {
         userId: 'user-123',
         projectName: 'Test Project',
         title: 'Test Title',
+        overview: null,
         description: 'Test Description',
         projectType: ProjectType.WebApp,
         budget: 5000,

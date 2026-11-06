@@ -66,7 +66,7 @@ export const ProjectRequestReviewStep = ({
         </h3>
         <p className='font-mono text-sm text-green-300/70'>
           {suggestionStatus === 'applied'
-            ? 'We filled in a title, project type, and features based on your description. Change anything that is off.'
+            ? 'We filled in a title, overview, project type, and features based on your description. Change anything that is off.'
             : 'We could not generate suggestions this time, so these are defaults. Pick the project type and features that fit.'}
         </p>
         <p className='font-mono text-xs text-green-300/60'>
@@ -90,6 +90,22 @@ export const ProjectRequestReviewStep = ({
             placeholder='A short, descriptive title (optional, defaults to project name)'
           />
           <FieldError error={errors.title} />
+        </div>
+
+        <div>
+          <label htmlFor='overview' className={labelClassName}>
+            OVERVIEW
+          </label>
+          <input
+            id='overview'
+            ref={registerField('overview')}
+            type='text'
+            value={formData.overview ?? ''}
+            onChange={(e) => onChange('overview', e.target.value)}
+            className={inputClassName}
+            placeholder='One sentence shown on your project card (optional)'
+          />
+          <FieldError error={errors.overview} />
         </div>
 
         <div>

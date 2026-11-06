@@ -38,6 +38,7 @@ describe('ProjectRequestService', () => {
     userId: 'user-123',
     projectName: 'Test Project',
     title: 'Test Title',
+    overview: null,
     description: 'Test Description',
     projectType: ProjectType.WebApp,
     budget: 5000,
@@ -296,6 +297,33 @@ describe('ProjectRequestService', () => {
         expect.objectContaining({
           features: [ProjectFeature.Auth, ProjectFeature.PaymentProcessing],
         })
+      )
+    })
+
+    it('should persist the overview and store null when it is blank', async () => {
+      const mockValues = vi.fn().mockReturnValue({
+        returning: vi.fn().mockResolvedValue([mockProjectRequest]),
+      })
+      mockDbInsert.mockReturnValue({
+        values: mockValues,
+      } as unknown as ReturnType<typeof db.insert>)
+
+      await projectRequestService.createProjectRequest(
+        { ...mockCreateInput, overview: 'A short pitch.' },
+        'user-123'
+      )
+      await projectRequestService.createProjectRequest(
+        { ...mockCreateInput, overview: '' },
+        'user-123'
+      )
+
+      expect(mockValues).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ overview: 'A short pitch.' })
+      )
+      expect(mockValues).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ overview: null })
       )
     })
 

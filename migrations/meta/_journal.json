@@ -162,6 +162,13 @@
       "when": 1791698432502,
       "tag": "0022_add_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793942600261,
+      "tag": "0023_add_project_request_overview",
+      "breakpoints": true
     }
   ]
 }

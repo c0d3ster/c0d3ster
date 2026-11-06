@@ -11,6 +11,7 @@ export const projectRequestSchema = z.object({
     .min(1, 'Project name is required')
     .max(255, 'Project name too long'),
   title: z.string().trim().max(255, 'Title too long').optional(),
+  overview: z.string().trim().max(200, 'Overview too long').optional(),
   description: z
     .string()
     .min(20, 'Description must be at least 20 characters')

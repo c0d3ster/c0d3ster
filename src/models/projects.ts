@@ -33,6 +33,7 @@ export const projectRequests = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     projectName: varchar('project_name', { length: 255 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
+    overview: text('overview'),
     description: text('description').notNull(),
     projectType: projectTypeEnum('project_type').notNull(),
     budget: decimal('budget', { precision: 10, scale: 2, mode: 'number' }),
