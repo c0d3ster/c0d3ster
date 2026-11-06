@@ -508,6 +508,7 @@ export enum ProjectStatus {
   InProgress = 'InProgress',
   InReview = 'InReview',
   InTesting = 'InTesting',
+  Live = 'Live',
   ReadyForLaunch = 'ReadyForLaunch',
   Requested = 'Requested'
 }

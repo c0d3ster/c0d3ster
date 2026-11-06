@@ -100,6 +100,7 @@ describe('Project utilities', () => {
       expect(formatStatus('readyForLaunch')).toBe('READY FOR LAUNCH')
       expect(formatStatus('inReview')).toBe('IN REVIEW')
       expect(formatStatus('completed')).toBe('COMPLETED')
+      expect(formatStatus('live')).toBe('LIVE')
     })
 
     it('should handle empty or null values', () => {
@@ -117,6 +118,7 @@ describe('Project utilities', () => {
       expect(getStatusIcon(ProjectStatus.InProgress)).toBe('🚧')
       expect(getStatusIcon(ProjectStatus.InTesting)).toBe('🧪')
       expect(getStatusIcon(ProjectStatus.ReadyForLaunch)).toBe('🚀')
+      expect(getStatusIcon(ProjectStatus.Live)).toBe('🟢')
       expect(getStatusIcon(ProjectStatus.Completed)).toBe('✅')
       expect(getStatusIcon(ProjectStatus.Cancelled)).toBe('❌')
     })
@@ -131,6 +133,7 @@ describe('Project utilities', () => {
   describe('getStatusStyling', () => {
     it('should return correct CSS classes for each status', () => {
       expect(getStatusStyling(ProjectStatus.Completed)).toBe('text-green-400')
+      expect(getStatusStyling(ProjectStatus.Live)).toBe('text-cyan-400')
       expect(getStatusStyling(ProjectStatus.InProgress)).toBe('text-yellow-400')
       expect(getStatusStyling(ProjectStatus.InTesting)).toBe('text-yellow-400')
       expect(getStatusStyling(ProjectStatus.ReadyForLaunch)).toBe(
@@ -153,6 +156,9 @@ describe('Project utilities', () => {
     it('should return correct CSS classes for card styling', () => {
       expect(getStatusCardStyling(ProjectStatus.Completed)).toBe(
         'border-green-400/40 bg-green-400/20 text-green-400'
+      )
+      expect(getStatusCardStyling(ProjectStatus.Live)).toBe(
+        'border-cyan-400/40 bg-cyan-400/20 text-cyan-400'
       )
       expect(getStatusCardStyling(ProjectStatus.InProgress)).toBe(
         'border-yellow-400/40 bg-yellow-400/20 text-yellow-400'

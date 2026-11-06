@@ -27,6 +27,8 @@ const normalizeStatus = (status: unknown): ProjectStatus | undefined => {
     InTesting: ProjectStatus.InTesting,
     ready_for_launch: ProjectStatus.ReadyForLaunch,
     ReadyForLaunch: ProjectStatus.ReadyForLaunch,
+    live: ProjectStatus.Live,
+    Live: ProjectStatus.Live,
     completed: ProjectStatus.Completed,
     Completed: ProjectStatus.Completed,
     requested: ProjectStatus.Requested,
@@ -108,7 +110,8 @@ export class DashboardResolver {
       return (
         s === ProjectStatus.InProgress ||
         s === ProjectStatus.InTesting ||
-        s === ProjectStatus.ReadyForLaunch
+        s === ProjectStatus.ReadyForLaunch ||
+        s === ProjectStatus.Live
       )
     }).length
     const completedProjects = userProjects.filter((p: ProjectRecord) => {

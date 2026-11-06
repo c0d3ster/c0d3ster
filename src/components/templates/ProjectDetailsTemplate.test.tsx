@@ -154,6 +154,30 @@ describe('ProjectDetailsTemplate', () => {
     expect(screen.queryByText('PROGRESS')).not.toBeInTheDocument()
   })
 
+  it('renders a LIVE bar instead of a percentage for a live project', () => {
+    const liveProject = {
+      ...mockProject,
+      status: ProjectStatus.Live,
+      progressPercentage: 70,
+    }
+    render(<ProjectDetailsTemplate project={liveProject} />)
+
+    expect(screen.getByText('PROGRESS')).toBeInTheDocument()
+    expect(screen.getAllByText('LIVE').length).toBeGreaterThan(0)
+    expect(screen.queryByText('70%')).not.toBeInTheDocument()
+  })
+
+  it('renders the LIVE bar even when no progress is stored', () => {
+    const liveProject = {
+      ...mockProject,
+      status: ProjectStatus.Live,
+      progressPercentage: null,
+    }
+    render(<ProjectDetailsTemplate project={liveProject} />)
+
+    expect(screen.getByText('PROGRESS')).toBeInTheDocument()
+  })
+
   it('renders technologies used section', () => {
     render(<ProjectDetailsTemplate project={mockProject} />)
 

@@ -19,6 +19,7 @@ const ALL_STATUSES = [
   ProjectStatus.InProgress,
   ProjectStatus.InTesting,
   ProjectStatus.ReadyForLaunch,
+  ProjectStatus.Live,
   ProjectStatus.Completed,
   ProjectStatus.Cancelled,
 ]
@@ -27,6 +28,12 @@ const READY_FOR_REVIEW_PRESET = {
   status: ProjectStatus.InTesting,
   progressPercentage: 80,
   message: 'Your project is ready for review. Please check the staging environment and share any feedback.',
+  isClientVisible: true,
+}
+
+const LIVE_PRESET = {
+  status: ProjectStatus.Live,
+  message: 'Launched. This project is live and ongoing.',
   isClientVisible: true,
 }
 
@@ -50,12 +57,19 @@ export const PostUpdatePanel = ({
   )
   const [message, setMessage] = useState('')
   const [isClientVisible, setIsClientVisible] = useState(true)
+  const isLive = status === ProjectStatus.Live
 
   const applyReadyForReview = () => {
     setStatus(READY_FOR_REVIEW_PRESET.status)
     setProgress(String(READY_FOR_REVIEW_PRESET.progressPercentage))
     setMessage(READY_FOR_REVIEW_PRESET.message)
     setIsClientVisible(READY_FOR_REVIEW_PRESET.isClientVisible)
+  }
+
+  const applyLive = () => {
+    setStatus(LIVE_PRESET.status)
+    setMessage(LIVE_PRESET.message)
+    setIsClientVisible(LIVE_PRESET.isClientVisible)
   }
 
   const applyCompleted = () => {
@@ -68,7 +82,9 @@ export const PostUpdatePanel = ({
   const handleSubmit = async () => {
     const trimmed = message.trim()
 
-    const parsedProgress = progress !== '' ? Number(progress) : undefined
+    // A live project has no percentage: the page shows a full LIVE bar instead
+    const parsedProgress =
+      isLive || progress === '' ? undefined : Number(progress)
 
     try {
       await updateProjectStatus({
@@ -104,6 +120,13 @@ export const PostUpdatePanel = ({
                 className='rounded-md border-2 border-yellow-400/60 bg-yellow-400/10 px-3 py-2 font-mono text-xs font-semibold text-yellow-300 shadow-[inset_0_0_0_1px_rgba(250,204,21,0.12)] transition-colors hover:bg-yellow-400/20 hover:text-yellow-200'
               >
                 READY FOR REVIEW
+              </button>
+              <button
+                type='button'
+                onClick={applyLive}
+                className='rounded-md border-2 border-cyan-400/55 bg-cyan-400/10 px-3 py-2 font-mono text-xs font-semibold text-cyan-400 transition-colors hover:bg-cyan-400/20 hover:text-cyan-300'
+              >
+                LAUNCHED · LIVE
               </button>
               <button
                 type='button'
@@ -152,10 +175,11 @@ export const PostUpdatePanel = ({
               type='number'
               min={0}
               max={100}
-              value={progress}
+              value={isLive ? '' : progress}
               onChange={(e) => setProgress(e.target.value)}
-              placeholder='0 - 100'
-              className='w-full rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none'
+              disabled={isLive}
+              placeholder={isLive ? 'Not tracked while live' : '0 - 100'}
+              className='w-full rounded border border-green-400/30 bg-black/50 p-3 font-mono text-green-400 placeholder-green-600 focus:border-green-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50'
             />
           </div>
         </div>
