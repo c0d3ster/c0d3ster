@@ -684,6 +684,7 @@ export type UpdateProjectInput = {
   readonly featured?: InputMaybe<Scalars['Boolean']['input']>;
   readonly liveUrl?: InputMaybe<Scalars['String']['input']>;
   readonly logo?: InputMaybe<Scalars['String']['input']>;
+  readonly overview?: InputMaybe<Scalars['String']['input']>;
   readonly progressPercentage?: InputMaybe<Scalars['Float']['input']>;
   readonly projectName?: InputMaybe<Scalars['String']['input']>;
   readonly projectType?: InputMaybe<ProjectType>;
@@ -934,10 +935,11 @@ export type UpdateProjectMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   featured?: InputMaybe<Scalars['Boolean']['input']>;
   liveUrl?: InputMaybe<Scalars['String']['input']>;
+  overview?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type UpdateProjectMutation = { readonly __typename?: 'Mutation', readonly updateProject: { readonly __typename?: 'Project', readonly id: string, readonly featured: boolean, readonly liveUrl?: string | null } };
+export type UpdateProjectMutation = { readonly __typename?: 'Mutation', readonly updateProject: { readonly __typename?: 'Project', readonly id: string, readonly featured: boolean, readonly liveUrl?: string | null, readonly overview?: string | null } };
 
 export type AssignProjectMutationVariables = Exact<{
   projectId: Scalars['ID']['input'];
@@ -2107,11 +2109,15 @@ export function useGetProjectBySlugLazyQuery(baseOptions?: ApolloReactHooks.Lazy
 export type GetProjectBySlugQueryHookResult = ReturnType<typeof useGetProjectBySlugQuery>;
 export type GetProjectBySlugLazyQueryHookResult = ReturnType<typeof useGetProjectBySlugLazyQuery>;
 export const UpdateProjectDocument = gql`
-    mutation UpdateProject($id: ID!, $featured: Boolean, $liveUrl: String) {
-  updateProject(id: $id, input: {featured: $featured, liveUrl: $liveUrl}) {
+    mutation UpdateProject($id: ID!, $featured: Boolean, $liveUrl: String, $overview: String) {
+  updateProject(
+    id: $id
+    input: {featured: $featured, liveUrl: $liveUrl, overview: $overview}
+  ) {
     id
     featured
     liveUrl
+    overview
   }
 }
     `;
@@ -2132,6 +2138,7 @@ export const UpdateProjectDocument = gql`
  *      id: // value for 'id'
  *      featured: // value for 'featured'
  *      liveUrl: // value for 'liveUrl'
+ *      overview: // value for 'overview'
  *   },
  * });
  */

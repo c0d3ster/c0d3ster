@@ -344,6 +344,7 @@ export class ProjectService {
     // Whitelist allowed fields to prevent mass assignment
     const allowedFields = [
       'title',
+      'overview',
       'projectName',
       'description',
       'projectType',

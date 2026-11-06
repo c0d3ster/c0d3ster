@@ -113,11 +113,20 @@ export const GET_PROJECT_BY_SLUG = gql`
 `
 
 export const UPDATE_PROJECT = gql`
-  mutation UpdateProject($id: ID!, $featured: Boolean, $liveUrl: String) {
-    updateProject(id: $id, input: { featured: $featured, liveUrl: $liveUrl }) {
+  mutation UpdateProject(
+    $id: ID!
+    $featured: Boolean
+    $liveUrl: String
+    $overview: String
+  ) {
+    updateProject(
+      id: $id
+      input: { featured: $featured, liveUrl: $liveUrl, overview: $overview }
+    ) {
       id
       featured
       liveUrl
+      overview
     }
   }
 `
