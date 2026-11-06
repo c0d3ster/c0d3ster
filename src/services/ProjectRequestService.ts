@@ -117,6 +117,7 @@ export class ProjectRequestService {
         userId: currentUserId,
         projectName: input.projectName,
         title: input.title ?? input.projectName,
+        overview: input.overview || null,
         description: input.description,
         projectType: input.projectType,
         budget: input.budget,
@@ -186,6 +187,7 @@ export class ProjectRequestService {
     // Whitelist allowed fields to prevent mass assignment
     const allowedFields = [
       'title',
+      'overview',
       'description',
       'projectType',
       'budget',
@@ -301,6 +303,7 @@ export class ProjectRequestService {
           requestId: id, // Link the project to its original request
           projectName: request.projectName,
           title: request.title ?? request.projectName,
+          overview: request.overview,
           description: request.description,
           projectType: request.projectType,
           budget: approval?.budget ?? request.budget,

@@ -50,6 +50,7 @@ export const CREATE_PROJECT_REQUEST = gql`
       id
       projectName
       title
+      overview
       description
       projectType
       budget
@@ -70,6 +71,7 @@ export const INFER_PROJECT_DETAILS = gql`
       projectType
       features
       title
+      overview
     }
   }
 `

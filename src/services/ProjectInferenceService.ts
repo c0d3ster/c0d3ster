@@ -22,7 +22,11 @@ type ProjectInferenceResult = {
   projectType: ProjectType
   features: ProjectFeature[]
   title: string
+  overview: string
 }
+
+// Hard cap for the one-line overview; the prompt asks for about 120 characters
+const OVERVIEW_MAX_LENGTH = 200
 
 // Features are read as plain strings and filtered afterwards, so one invented
 // feature name doesn't throw away an otherwise good suggestion
@@ -30,6 +34,13 @@ const inferenceResponseSchema = z.object({
   projectType: z.nativeEnum(ProjectType),
   features: z.array(z.string()).default([]),
   title: z.string().trim().min(1).max(255),
+  // Optional and trimmed to length rather than rejected, so a missing or overlong
+  // overview never throws away an otherwise good suggestion
+  overview: z
+    .string()
+    .trim()
+    .default('')
+    .transform((value) => value.slice(0, OVERVIEW_MAX_LENGTH)),
 })
 
 const validFeatures = new Set<string>(Object.values(ProjectFeature))
@@ -101,7 +112,7 @@ ${guidanceLines}
 Classify this request. Pick the single best project type. Select a feature only if the description asks for it or clearly implies it; do not pad the list, and return an empty array when nothing is clearly called for (an empty array is a perfectly good answer for a simple project). Respect explicit exclusions: if the client says they do not want something, such as accounts or saved data, do not pick the features that provide it. Use only the exact feature values listed above.
 
 Respond with ONLY a JSON object (no prose, no markdown fences, no code blocks) matching exactly this shape:
-{"projectType": one of [${projectTypes.map((type) => `"${type}"`).join(', ')}], "features": an array of zero or more of [${features.map((feature) => `"${feature}"`).join(', ')}], "title": a short, human-readable project title (max 60 characters)}`
+{"projectType": one of [${projectTypes.map((type) => `"${type}"`).join(', ')}], "features": an array of zero or more of [${features.map((feature) => `"${feature}"`).join(', ')}], "title": a short descriptor of what the project is, such as "Online Bakery Store" (max 60 characters). The project name is always displayed next to the title, so never repeat the project name or its words in the title, "overview": one plain sentence (about 120 characters) saying what the project is, written for a public portfolio card. End it with a period, do not repeat the project name, and do not claim anything the description does not say}`
 }
 
 // Haiku occasionally wraps JSON in a markdown fence despite the prompt saying not to

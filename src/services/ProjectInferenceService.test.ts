@@ -44,6 +44,7 @@ describe('ProjectInferenceService', () => {
             projectType: ProjectType.ECommerce,
             features: [ProjectFeature.Auth, ProjectFeature.Email],
             title: 'Handmade Goods Store',
+            overview: 'An online shop for handmade goods.',
           })
         )
       )
@@ -55,7 +56,56 @@ describe('ProjectInferenceService', () => {
         projectType: ProjectType.ECommerce,
         features: [ProjectFeature.Auth, ProjectFeature.Email],
         title: 'Handmade Goods Store',
+        overview: 'An online shop for handmade goods.',
       })
+    })
+
+    it('defaults the overview to an empty string when omitted', async () => {
+      mockFetch.mockResolvedValue(
+        anthropicResponse(
+          JSON.stringify({
+            projectType: ProjectType.Website,
+            title: 'Simple Website',
+          })
+        )
+      )
+
+      const result =
+        await projectInferenceService.inferProjectDetails(validInput)
+
+      expect(result.overview).toBe('')
+    })
+
+    it('trims an overlong overview to 200 characters instead of failing', async () => {
+      mockFetch.mockResolvedValue(
+        anthropicResponse(
+          JSON.stringify({
+            projectType: ProjectType.Website,
+            title: 'Simple Website',
+            overview: 'x'.repeat(500),
+          })
+        )
+      )
+
+      const result =
+        await projectInferenceService.inferProjectDetails(validInput)
+
+      expect(result.overview).toHaveLength(200)
+    })
+
+    it('asks the model not to repeat the project name in the title or overview', async () => {
+      mockFetch.mockResolvedValue(
+        anthropicResponse(
+          JSON.stringify({ projectType: ProjectType.Website, title: 'Site' })
+        )
+      )
+
+      await projectInferenceService.inferProjectDetails(validInput)
+
+      const [, options] = mockFetch.mock.calls[0]!
+
+      expect(options.body).toContain('never repeat the project name')
+      expect(options.body).toContain('overview')
     })
 
     it('defaults to an empty features array when omitted', async () => {
@@ -174,6 +224,7 @@ describe('ProjectInferenceService', () => {
         projectType: ProjectType.ECommerce,
         features: [ProjectFeature.Database],
         title: 'My Store',
+        overview: '',
       })
     })
 

@@ -35,6 +35,7 @@ export const PROJECT_REQUEST_DISPLAY_FRAGMENT = gql`
     id
     projectName
     title
+    overview
     description
     projectType
     budget

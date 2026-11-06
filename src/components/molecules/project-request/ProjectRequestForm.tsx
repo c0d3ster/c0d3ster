@@ -32,6 +32,7 @@ const FIELD_ORDER: readonly (keyof ProjectRequestData)[] = [
   'projectName',
   'description',
   'title',
+  'overview',
   'projectType',
   'budget',
   'timeline',
@@ -78,6 +79,7 @@ export const ProjectRequestForm = () => {
   const [formData, setFormData] = useState<ProjectRequestData>(() => ({
     projectName: '',
     title: '',
+    overview: '',
     description: '',
     projectType: ProjectType.Website,
     budget: '',
@@ -185,6 +187,7 @@ export const ProjectRequestForm = () => {
         ...prev,
         projectType: suggestion.projectType,
         title: suggestion.title,
+        overview: suggestion.overview,
         features: [...suggestion.features],
       }))
       setSuggestionStatus('applied')

@@ -19,6 +19,9 @@ export class ProjectRequest {
   @Field(() => String, { nullable: true })
   title?: string
 
+  @Field(() => String, { nullable: true })
+  overview?: string
+
   @Field(() => String)
   description!: string
 
@@ -71,6 +74,9 @@ export class CreateProjectRequestInput {
   @Field(() => String, { nullable: true })
   title?: string
 
+  @Field(() => String, { nullable: true })
+  overview?: string
+
   @Field(() => String)
   description!: string
 
@@ -112,6 +118,9 @@ export class ProjectInferenceSuggestion {
 
   @Field(() => String)
   title!: string
+
+  @Field(() => String)
+  overview!: string
 }
 
 @InputType('ProjectRequestFilter')
