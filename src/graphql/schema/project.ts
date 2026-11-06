@@ -276,6 +276,9 @@ export class UpdateProjectInput {
   title?: string
 
   @Field(() => String, { nullable: true })
+  overview?: string
+
+  @Field(() => String, { nullable: true })
   projectName?: string
 
   @Field(() => String, { nullable: true })

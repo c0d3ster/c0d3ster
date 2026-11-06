@@ -469,6 +469,35 @@ describe('ProjectService', () => {
       expect(result).toEqual(updatedProject)
     })
 
+    it('should persist an updated overview', async () => {
+      const mockSet = vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          returning: vi
+            .fn()
+            .mockResolvedValue([{ ...mockProject, overview: 'A short pitch.' }]),
+        }),
+      })
+
+      mockDbQuery.findFirst.mockResolvedValue(mockProject)
+      mockDbTransaction.mockImplementation(async (callback) => {
+        return callback({
+          update: vi.fn().mockReturnValue({ set: mockSet }),
+          insert: vi.fn(),
+        } as unknown as Parameters<typeof callback>[0])
+      })
+
+      await projectService.updateProject(
+        'project-123',
+        { overview: 'A short pitch.' },
+        'client-123',
+        'client'
+      )
+
+      expect(mockSet).toHaveBeenCalledWith(
+        expect.objectContaining({ overview: 'A short pitch.' })
+      )
+    })
+
     describe('renaming', () => {
       const setupUpdate = (updated: object) => {
         mockDbQuery.findFirst.mockResolvedValue(mockProject)
