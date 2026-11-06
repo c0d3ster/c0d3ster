@@ -103,6 +103,8 @@ export const getStatusIcon = (status: string | undefined | null): string => {
       return '🧪'
     case ProjectStatus.ReadyForLaunch:
       return '🚀'
+    case ProjectStatus.Live:
+      return '🟢'
     case ProjectStatus.Completed:
       return '✅'
     case ProjectStatus.Cancelled:
@@ -123,6 +125,8 @@ export const getStatusStyling = (status: string | undefined | null): string => {
   switch (status) {
     case ProjectStatus.Completed:
       return 'text-green-400'
+    case ProjectStatus.Live:
+      return 'text-cyan-400'
     case ProjectStatus.InProgress:
     case ProjectStatus.InTesting:
     case ProjectStatus.ReadyForLaunch:
@@ -152,6 +156,8 @@ export const getStatusCardStyling = (
   switch (status) {
     case ProjectStatus.Completed:
       return 'border-green-400/40 bg-green-400/20 text-green-400'
+    case ProjectStatus.Live:
+      return 'border-cyan-400/40 bg-cyan-400/20 text-cyan-400'
     case ProjectStatus.InProgress:
     case ProjectStatus.InTesting:
     case ProjectStatus.ReadyForLaunch:

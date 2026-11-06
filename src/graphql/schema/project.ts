@@ -16,6 +16,7 @@ export enum ProjectStatus {
   InProgress = 'in_progress',
   InTesting = 'in_testing',
   ReadyForLaunch = 'ready_for_launch',
+  Live = 'live',
   Completed = 'completed',
   Cancelled = 'cancelled',
 }

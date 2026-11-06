@@ -53,6 +53,7 @@ const getDefaultTab = (
         return hasDeveloper ? 'invoices' : 'notes'
       case ProjectStatus.InProgress:
       case ProjectStatus.InTesting:
+      case ProjectStatus.Live:
         return 'update'
       case ProjectStatus.ReadyForLaunch:
         return 'invoices'

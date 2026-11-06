@@ -121,6 +121,7 @@ export const ProjectDetailsTemplate = ({
   const publicFeatureStatuses = [
     ProjectStatus.InTesting,
     ProjectStatus.ReadyForLaunch,
+    ProjectStatus.Live,
     ProjectStatus.Completed,
   ]
   const features = project.features ?? []
@@ -506,8 +507,27 @@ export const ProjectDetailsTemplate = ({
 
               {/* Progress + status history */}
               <div className='space-y-4'>
+                {/* Live: shipped and still evolving, so a full bar labeled LIVE instead of a percentage */}
+                {optimisticStatus === ProjectStatus.Live && (
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <h3 className='font-mono text-sm font-bold text-cyan-400'>
+                        PROGRESS
+                      </h3>
+                      <span className='rounded border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 font-mono text-xs text-cyan-400'>
+                        LIVE
+                      </span>
+                    </div>
+                    <div className='h-2 w-full rounded-full bg-cyan-400/20'>
+                      <div className='size-full rounded-full bg-cyan-400' />
+                    </div>
+                  </div>
+                )}
+
                 {/* Completion */}
-                {optimisticProgress != null && optimisticProgress < 100 && (
+                {optimisticStatus !== ProjectStatus.Live &&
+                  optimisticProgress != null &&
+                  optimisticProgress < 100 && (
                   <div className='space-y-2'>
                     <div className='flex items-center justify-between'>
                       <h3 className='font-mono text-sm font-bold text-green-400'>

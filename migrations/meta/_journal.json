@@ -169,6 +169,13 @@
       "when": 1793942600261,
       "tag": "0023_add_project_request_overview",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793946245050,
+      "tag": "0024_add_live_project_status",
+      "breakpoints": true
     }
   ]
 }
