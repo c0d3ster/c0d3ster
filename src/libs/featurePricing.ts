@@ -92,4 +92,16 @@ export const featurePricing: Record<ProjectFeature, FeaturePricing> = {
     ...getFeatureLabel(ProjectFeature.TechnicalAdvisory),
     defaultPrice: 450,
   },
+  [ProjectFeature.OnlineBooking]: {
+    ...getFeatureLabel(ProjectFeature.OnlineBooking),
+    defaultPrice: 500,
+  },
+  [ProjectFeature.LiveChat]: {
+    ...getFeatureLabel(ProjectFeature.LiveChat),
+    defaultPrice: 250,
+  },
+  [ProjectFeature.Reviews]: {
+    ...getFeatureLabel(ProjectFeature.Reviews),
+    defaultPrice: 350,
+  },
 }

@@ -416,10 +416,13 @@ export enum ProjectFeature {
   EcommercePlatformIntegration = 'EcommercePlatformIntegration',
   Email = 'Email',
   FileUploads = 'FileUploads',
+  LiveChat = 'LiveChat',
   MaintenanceRetainer = 'MaintenanceRetainer',
+  OnlineBooking = 'OnlineBooking',
   PaymentProcessing = 'PaymentProcessing',
   QaLaunchTesting = 'QaLaunchTesting',
   ResponsiveDesign = 'ResponsiveDesign',
+  Reviews = 'Reviews',
   Seo = 'Seo',
   TechnicalAdvisory = 'TechnicalAdvisory'
 }
