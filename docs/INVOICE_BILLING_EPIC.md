@@ -67,6 +67,11 @@ Rows below `Analytics setup` were added/revised after the taxonomy refinement th
 | QA & launch testing (manual/cross-browser/UAT only) | $250–$600 |
 | Ongoing maintenance & support (monthly retainer) | $150–$400/mo |
 | Technical advisory (flat planning session) | $300–$600 |
+| Online booking (third-party scheduler setup and embed) | $250–$750 |
+| Live chat (widget install, hours, auto-replies, routing) | $125–$375 |
+| Reviews & testimonials (widget or Google Places section) | $200–$500 |
+
+The last three rows were added for the Modernizer's lead pitches. Public pricing data for these jobs is thin (mostly vendor pages, e.g. a Square Appointments embed quoted at $200 and a Vagaro widget install at $250), so each range is an hours estimate at the blended rate: booking 2–6 hrs, live chat 1–3 hrs, reviews 1.5–4 hrs. Revisit once real invoices exist.
 
 ---
 
