@@ -59,6 +59,9 @@ export enum ProjectFeature {
   QaLaunchTesting = 'qa_launch_testing',
   MaintenanceRetainer = 'maintenance_retainer',
   TechnicalAdvisory = 'technical_advisory',
+  OnlineBooking = 'online_booking',
+  LiveChat = 'live_chat',
+  Reviews = 'reviews',
 }
 
 registerEnumType(ProjectStatus, {

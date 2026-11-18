@@ -92,6 +92,18 @@ const featureLabels: Record<string, FeatureLabel> = {
     label: 'Technical Advisory',
     description: 'Technical consultation and planning session',
   },
+  online_booking: {
+    label: 'Online Booking',
+    description: 'Appointment or reservation scheduling customers can complete on the site',
+  },
+  live_chat: {
+    label: 'Live Chat',
+    description: 'Chat or text-messaging widget so visitors can reach the business from the site',
+  },
+  reviews: {
+    label: 'Reviews & Testimonials',
+    description: 'Customer reviews pulled from Google or other platforms and shown on the site',
+  },
 }
 
 /**
