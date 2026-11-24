@@ -120,10 +120,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      # Unit tests run in jsdom and never launch a browser, so they run directly on
+      # the runner: no Playwright image to keep in sync with package.json.
       - name: Run unit tests
-        uses: docker://mcr.microsoft.com/playwright:v1.64.1-noble
-        with:
-          args: sh -c "corepack enable && pnpm test -- --run --project=unit --coverage"
+        run: pnpm test -- --run --project=unit --coverage
         env:
           # Required Clerk variables
           # tests/setup.ts mocks @/libs/Env, pg, drizzle-orm, and @/libs/DB outright,
@@ -187,10 +187,30 @@ jobs:
           # Build environment
           NODE_ENV: production
 
-      - name: Run E2E tests
-        uses: docker://mcr.microsoft.com/playwright:v1.64.1-noble
+      # Browsers come from the @playwright/test version in package.json, so a
+      # Dependabot bump can never leave CI on mismatched browsers. They're cached
+      # per Playwright version; a cache hit only installs the system libraries.
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v6
         with:
-          args: sh -c "HOME=/root corepack enable && HOME=/root pnpm test:e2e" # Set HOME to /root to avoid Playwright error with Firebox
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium firefox
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium firefox
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
         env:
           # Required Clerk variables
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
