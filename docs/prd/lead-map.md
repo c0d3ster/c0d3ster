@@ -98,6 +98,7 @@ Schema described only. Per CLAUDE.md: edit `src/models/**`, then `pnpm db:genera
 | review_count | integer | |
 | rating | decimal(2,1), nullable | |
 | score | decimal(5,2), nullable | latest composite |
+| previous_score | decimal(5,2), nullable | composite from the prior run that saw this lead; drives a "changed since last scan" badge |
 | pitch | boolean, nullable | |
 | signals | json | latest breakdown (`visual`, `staticV2`, `code`, `seo`, `accessibility`, `bestPractices`, `performance`) |
 | detected_features | json | `ProjectFeature[]`-compatible |
@@ -108,11 +109,11 @@ Schema described only. Per CLAUDE.md: edit `src/models/**`, then `pnpm db:genera
 | project_request_id | uuid fk project_requests, nullable | set on conversion |
 | created_at, updated_at | timestamp | `$onUpdate` like other tables |
 
-**`lead_scores`** (history): id, lead_id fk, run_id fk, score, pitch, signals json, created_at. Unique (lead_id, run_id).
+No score history table: scores from runs with different weights or thresholds aren't comparable, so history adds a table and a join for little value. `previous_score` covers "did this site change". If real trends are needed later, keep raw run payloads in R2 and replay them.
 
 **`lead_activity`**: id, lead_id fk, status, note text, created_by fk users, created_at. Append only; the latest row sets `leads.status`.
 
-Re-import rule: an upsert updates the latest-score fields and appends a `lead_scores` row, never touches `status` or activity. A lead missing from a later run stays (it may have closed; mark stale in a later version).
+Re-import rule: an upsert copies the current `score` into `previous_score` (only when the incoming run is a different run than `last_seen_run_id`, so re-pushing the same run is a no-op), then updates `score`, `pitch`, `signals` and the other latest fields; it never touches `status` or activity. A lead missing from a later run stays (it may have closed; mark stale in a later version).
 
 ## Ingest (handoff contract)
 
@@ -187,8 +188,8 @@ No Linear project exists for this yet. Under nightlight's Linear mode, milestone
 
 c0d3ster (team C0D):
 
-1. **Add lead and discovery run tables.** Acceptance: `src/models/leads.ts` defines `discovery_runs`, `leads`, `lead_scores`, `lead_activity` and the two enums as above; marked NEEDS HUMAN for migration.
-2. **Add `LeadService` with idempotent run ingest.** Acceptance: pushing the same payload twice leaves one run and unchanged lead counts; a second run appends `lead_scores` and keeps statuses; unit tests cover both.
+1. **Add lead and discovery run tables.** Acceptance: `src/models/leads.ts` defines `discovery_runs`, `leads`, `lead_activity` and the two enums as above; marked NEEDS HUMAN for migration.
+2. **Add `LeadService` with idempotent run ingest.** Acceptance: pushing the same payload twice leaves one run and unchanged lead counts; a second run moves the old score to `previous_score`, updates `score` and `signals`, and keeps statuses; unit tests cover both.
 3. **Add `/api/discovery/runs` ingest route with token auth.** Acceptance: rejects a missing or wrong `DISCOVERY_INGEST_TOKEN` with 401 and an invalid payload with 400; valid payload calls `LeadService`.
 4. **Add lead GraphQL schema, resolvers and `leadApiClient`.** Acceptance: admin-only `leads(filter)`, `discoveryRuns`, `setLeadStatus`; non-admin gets a permission error; codegen committed.
 5. **Build admin lead map page.** Acceptance: `dashboard/leads` renders MapLibre with clustered markers per the marker table, filters, and admin-only nav; works at phone width.
