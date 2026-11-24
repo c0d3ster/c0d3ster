@@ -81,6 +81,8 @@ Schema described only. Per CLAUDE.md: edit `src/models/**`, then `pnpm db:genera
 | pitch_threshold | integer | stored per run so old scores keep their meaning |
 | schema_version | integer | payload `version` |
 | lead_count, pitch_count, greenfield_count, unreachable_count | integer | |
+| found_count, filtered_count, skipped_known_count | integer | coverage funnel, see Run coverage |
+| truncated_queries | json | queries that hit the 60-result cap, e.g. `["restaurant 23451 VA"]` |
 | cost_usd | decimal(10,2) | model spend reported by the run, nullable |
 | pushed_by | uuid fk users | the admin the ingest token maps to |
 | created_at | timestamp | |
@@ -119,8 +121,18 @@ Re-import rule: an upsert copies the current `score` into `previous_score` (only
 
 - the-modernizer defines `DiscoveryRunExport` (zod, `@modernizer/schema`, version 1, shape in the research doc) and adds `pnpm push-run <dir>` that builds it from a run's CSVs and POSTs it.
 - c0d3ster adds a route handler `src/app/api/discovery/runs/route.ts` (not GraphQL: bulk upload, and the CLI stays free of Apollo). It checks `Authorization: Bearer <DISCOVERY_INGEST_TOKEN>` in a new `LeadService`, validates with a vendored copy of the zod schema, and upserts in one transaction.
+- Known-leads lookup: `POST /api/discovery/known` with the same token. Body `{ placeIds: string[] }` (max 500 per call); response lists only the ids c0d3ster already has, each with `lastScoredAt`, `score` and `status`. It never returns ids the caller didn't send, so a leaked token can't dump the lead list, and it exposes nothing beyond what the token can already overwrite. The modernizer calls it after the Places search and before scoring.
+- Skip rule (modernizer side): a known lead is not re-scored when its `status` is anything but `new` (you've visited, pitched or ruled it out) or it was scored within `--rescore-after` days (default 90). Skipped leads still count in the run summary as `skipped_known_count`. `--rescore` forces a full re-score.
+- Offline fallback: `--skip-seen <dir...>` does the same against earlier runs' output folders when c0d3ster is unreachable or not set up yet.
 - Screenshots: optional second step, `POST /api/discovery/runs/:id/screenshots` per lead, stored through `FileService` to R2. v1 can skip them.
 - Fallback for the first trip if the page is not ready: import `candidates.csv` (pitch only) and `greenfield-leads.csv` into Google My Maps as two layers.
+
+## Run coverage
+
+Places Text Search returns no total count, so "how many exist" can't be known exactly. What a run can report:
+
+- **Truncated queries:** a query that still returns a `nextPageToken` after its third page (60 results) has more results than it gave. The run lists those queries; any listed query means that vertical in that area needs a finer split (ZIP, neighborhood, narrower term). No truncated queries means the run saw everything Places would show for those searches.
+- **Funnel counts per run:** found (raw results across queries), after dedupe, filtered (chains and review-count bounds), skipped as known, scored, unreachable, pitch. Printed at the end of the run, included in `DiscoveryRunExport`, stored on `discovery_runs`, and shown per run on the map page.
 
 ## Map UI (c0d3ster)
 
@@ -163,7 +175,7 @@ Why not run scans inside c0d3ster now: a city run takes one to two hours, launch
 
 **M0: Trip fallback (now).** Run Virginia Beach with coordinates (#39 merged), import into Google My Maps. No code in c0d3ster.
 
-**M1: Handoff contract.** the-modernizer: ZIP split, `DiscoveryRunExport`, `push-run`. c0d3ster: tables, `LeadService`, ingest route. Answers C0D-8.
+**M1: Handoff contract.** the-modernizer: ZIP split, run coverage, `DiscoveryRunExport`, `push-run`, skip known leads. c0d3ster: tables, `LeadService`, ingest route, known-leads lookup. Answers C0D-8.
 
 **M2: Map MVP.** Admin `dashboard/leads` page, markers, filters, detail sheet, near me, status and notes.
 
@@ -191,6 +203,7 @@ c0d3ster (team C0D):
 1. **Add lead and discovery run tables.** Acceptance: `src/models/leads.ts` defines `discovery_runs`, `leads`, `lead_activity` and the two enums as above; marked NEEDS HUMAN for migration.
 2. **Add `LeadService` with idempotent run ingest.** Acceptance: pushing the same payload twice leaves one run and unchanged lead counts; a second run moves the old score to `previous_score`, updates `score` and `signals`, and keeps statuses; unit tests cover both.
 3. **Add `/api/discovery/runs` ingest route with token auth.** Acceptance: rejects a missing or wrong `DISCOVERY_INGEST_TOKEN` with 401 and an invalid payload with 400; valid payload calls `LeadService`.
+3a. **Add `/api/discovery/known` lookup route.** Acceptance: same token auth; returns `lastScoredAt`, `score`, `status` only for sent `placeIds` that exist; over 500 ids is a 400; unit tests cover unknown ids, a mixed batch and a bad token.
 4. **Add lead GraphQL schema, resolvers and `leadApiClient`.** Acceptance: admin-only `leads(filter)`, `discoveryRuns`, `setLeadStatus`; non-admin gets a permission error; codegen committed.
 5. **Build admin lead map page.** Acceptance: `dashboard/leads` renders MapLibre with clustered markers per the marker table, filters, and admin-only nav; works at phone width.
 6. **Lead detail sheet with near me, call, directions and status.** Acceptance: tapping a marker shows score, top problems, tel link, maps link, status buttons; status change persists and updates the badge.
@@ -200,6 +213,8 @@ c0d3ster (team C0D):
 the-modernizer (local TASKS.md):
 
 9. **Split Places queries by ZIP or neighborhood for large cities.** Acceptance: a city config with ZIPs runs one query per vertical per ZIP, dedupes by `place_id`, and stops paging when a page is empty.
+9a. **Report run coverage.** Acceptance: each query records whether it hit the 60-result cap; the run prints the funnel counts and truncated queries and writes them to a `run-summary.json`; tests with mocked Places pages.
+9b. **Skip known leads before scoring.** Acceptance: `--skip-seen <dir...>` drops `place_id`s found in earlier runs' output; with `C0D3STER_URL` and the token set, known leads come from `/api/discovery/known` instead, applying the skip rule (`--rescore-after`, `--rescore`); skipped count reported; tests with mocked fetch and fixture dirs.
 10. **Add `DiscoveryRunExport` schema and `push-run` command.** Acceptance: zod schema v1 in `@modernizer/schema`; `pnpm push-run <dir>` builds it from a run's CSVs and POSTs to a configured URL with the token; `--dry-run` writes `leads.json`.
 11. **Verify current Places API (New) pricing and update `docs/market-discovery.md`.** Acceptance: doc states the current Enterprise-tier Text Search price and free cap with a source link, and an estimated cost for a ZIP-split Virginia Beach run.
 
