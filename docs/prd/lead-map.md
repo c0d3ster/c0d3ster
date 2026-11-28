@@ -4,7 +4,7 @@ Status: draft, 2026-11-23. Owner: c0d3ster admin. First market: Virginia (Virgin
 
 Inputs this builds on:
 
-- the-modernizer `docs/lead-map-research.md` (open PR c0d3ster/the-modernizer#40): integration options, data contract, map stack. This PRD adopts its recommendation (option A) and does not repeat the full comparison.
+- the-modernizer `docs/prd/lead-map.md`: the modernizer's side of this PRD (export payload, coverage, skip rule, milestones). It replaced the earlier research doc, whose recommendation (option A: a local CLI that pushes runs here) this PRD adopts.
 - the-modernizer `docs/market-discovery.md`: Places discovery, composite score, CSV contracts.
 - Linear C0D-8 (handoff design) and C0D-5 (acquisition channels). This PRD answers most of C0D-8's questions; see "Linear mapping".
 
@@ -22,7 +22,7 @@ The Modernizer can find local businesses and score how dated their sites are, bu
 
 ## Non-goals (v1)
 
-- Starting scans from the website (option B in the research doc). Runs stay a local CLI.
+- Starting scans from the website (option B in the original research). Runs stay a local CLI.
 - Automated email or SMS outreach. The Modernizer's outreach package (its task #9) and deliverability decisions stay separate.
 - Multi-user sales teams, assignment, or territories.
 - Showing scores or the map to clients. Admin only.
@@ -59,7 +59,7 @@ Reuse as is. No scoring logic moves into c0d3ster.
 - **Visual score** comes from `packages/design-guide` (rubric and per-vertical profiles, 100-point deductions) applied to Playwright screenshots by `packages/discovery/src/visual-score`. It is the one LLM step in scoring.
 - **Detected features** (`detectProjectFeatures`: booking, chat, reviews) map onto c0d3ster's project features (see open PR c0d3ster#113), so a lead arrives pre-filled.
 - **Crawl budget:** homepage plus the browser inspection only, not a full-site crawl. Full crawl and extraction happen only for a lead worth a demo (see Outreach handoff).
-- **Cost and time** (from the research doc, not yet measured on a ZIP-split run): about $0.03 per site for visual scoring, so about $9 for 300 sites; PSI is free with a key (25,000 queries/day per the-modernizer doc) but dominates wall-clock; plan on one to two hours per large-city run.
+- **Cost and time** (estimated in the original research, not yet measured on a ZIP-split run): about $0.03 per site for visual scoring, so about $9 for 300 sites; PSI is free with a key (25,000 queries/day per the-modernizer doc) but dominates wall-clock; plan on one to two hours per large-city run.
 
 ## Data model (c0d3ster, Drizzle)
 
@@ -119,7 +119,7 @@ Re-import rule: an upsert copies the current `score` into `previous_score` (only
 
 ## Ingest (handoff contract)
 
-- the-modernizer defines `DiscoveryRunExport` (zod, `@modernizer/schema`, version 1, shape in the research doc) and adds `pnpm push-run <dir>` that builds it from a run's CSVs and POSTs it.
+- the-modernizer defines `DiscoveryRunExport` (zod, `@modernizer/schema`, version 1, shape in the-modernizer's `docs/prd/lead-map.md`) and adds `pnpm push-run <dir>` that builds it from a run's CSVs and POSTs it.
 - c0d3ster adds a route handler `src/app/api/discovery/runs/route.ts` (not GraphQL: bulk upload, and the CLI stays free of Apollo). It checks `Authorization: Bearer <DISCOVERY_INGEST_TOKEN>` in a new `LeadService`, validates with a vendored copy of the zod schema, and upserts in one transaction.
 - Known-leads lookup: `POST /api/discovery/known` with the same token. Body `{ placeIds: string[] }` (max 500 per call); response lists only the ids c0d3ster already has, each with `lastScoredAt`, `score` and `status`. It never returns ids the caller didn't send, so a leaked token can't dump the lead list, and it exposes nothing beyond what the token can already overwrite. The modernizer calls it after the Places search and before scoring.
 - Skip rule (modernizer side): a known lead is not re-scored when its `status` is anything but `new` (you've visited, pitched or ruled it out) or it was scored within `--rescore-after` days (default 90). Skipped leads still count in the run summary as `skipped_known_count`. `--rescore` forces a full re-score.
@@ -187,7 +187,7 @@ Why not run scans inside c0d3ster now: a city run takes one to two hours, launch
 
 | Issue | Status | How it relates |
 |---|---|---|
-| C0D-8 Design the Modernizer greenfield-leads handoff | Backlog, High | Superseded in scope by this PRD plus the research doc: transport (push to route), ingestion (zod validation), dedupe (`place_id`), data model, ownership are decided here. Remaining open part: compliance detail. Suggest closing it as done by this PRD, or narrowing it to compliance. Note it predates scored leads: the handoff now covers all three CSVs, not only greenfield. |
+| C0D-8 Design the Modernizer greenfield-leads handoff | Backlog, High | Superseded in scope by this PRD: transport (push to route), ingestion (zod validation), dedupe (`place_id`), data model, ownership are decided here. Remaining open part: compliance detail. Suggest closing it as done by this PRD, or narrowing it to compliance. Note it predates scored leads: the handoff now covers all three CSVs, not only greenfield. |
 | C0D-5 Research client acquisition channels | Backlog, High | Related. Keep the channel survey; link this PRD for the Modernizer lead source instead of re-researching it. |
 | C0D-7 Stripe refunds and disputes | Backlog | Unrelated. |
 | C0D-6 Hero video | Backlog | Unrelated. |
